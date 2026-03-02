@@ -12,6 +12,8 @@ import NewArrivals from '@/pages/NewArrivals';
 import ProductDetail from '@/pages/ProductDetail';
 import Checkout from '@/pages/Checkout';
 import OrderConfirmation from '@/pages/OrderConfirmation';
+import AdminLogin from '@/pages/AdminLogin';
+import Dashboard from '@/pages/Dashboard';
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/order-confirmation" element={<OrderConfirmation />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={<Dashboard />} />
             </Routes>
           </main>
           <Footer />
