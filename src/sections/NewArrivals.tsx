@@ -61,7 +61,7 @@ export default function NewArrivals() {
               </p>
               
               <a
-                href="#categories"
+                href="/new-arrivals"
                 className="group inline-flex items-center gap-2 text-black font-medium hover:text-gold transition-colors duration-300"
               >
                 View All New Arrivals

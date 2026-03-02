@@ -22,6 +22,7 @@ export default function Navigation() {
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Shop', href: '/shop' },
+    { name: 'Brands', href: '/brands' },
     { name: 'Collection', href: '/#featured' },
     { name: 'New Arrivals', href: '/#new-arrivals' },
     { name: 'About', href: '/#about' },

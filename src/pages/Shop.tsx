@@ -15,6 +15,7 @@ export default function Shop() {
     priceRange: 'all',
     rating: 'all',
     status: 'all',
+    brand: 'all',
   });
 
   const allProducts = [...featuredProducts, ...newArrivals];
@@ -47,6 +48,7 @@ export default function Shop() {
       priceRange: 'all',
       rating: 'all',
       status: 'all',
+      brand: 'all',
     });
   };
 
@@ -166,6 +168,35 @@ export default function Shop() {
                               className="w-4 h-4"
                             />
                             <span className="text-sm">{status.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Brand Filter */}
+                    <div className="border-t pt-6">
+                      <h3 className="font-semibold mb-3">Brand</h3>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="brand"
+                            checked={filters.brand === 'all'}
+                            onChange={() => setFilters({ ...filters, brand: 'all' })}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm">All Brands</span>
+                        </label>
+                        {['Al Karam', 'Gul Ahmed', 'Khaadi', 'Sapphire', 'Maria B', 'Asim Jofa', 'Sana Safinaz', 'Nishat Linen', 'Baroque', 'Elan'].map((brand) => (
+                          <label key={brand} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="brand"
+                              checked={filters.brand === brand}
+                              onChange={() => setFilters({ ...filters, brand })}
+                              className="w-4 h-4"
+                            />
+                            <span className="text-sm">{brand}</span>
                           </label>
                         ))}
                       </div>

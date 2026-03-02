@@ -91,14 +91,14 @@ export default function Hero() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up animation-delay-500">
             <a
-              href="#featured"
+              href="/shop"
               className="group inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-black font-medium text-sm tracking-wide rounded-full transition-all duration-300 hover:bg-gold hover:text-white hover:shadow-xl hover:-translate-y-0.5"
             >
               Shop Collection
               <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </a>
             <a
-              href="#new-arrivals"
+              href="/new-arrivals"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent text-white border border-white/30 font-medium text-sm tracking-wide rounded-full transition-all duration-300 hover:bg-white/10 hover:border-white/50"
             >
               Explore New Arrivals
