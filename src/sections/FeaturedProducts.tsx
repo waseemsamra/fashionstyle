@@ -69,7 +69,7 @@ export default function FeaturedProducts() {
               }}
             >
               {/* Image Container */}
-              <div className="relative aspect-[3/4] overflow-hidden bg-beige-50">
+              <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(`/product/${product.id}`)}>
                 <img
                   src={product.image}
                   alt={product.name}

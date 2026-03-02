@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { featuredProducts, newArrivals } from '@/data/products';
 import { useCart } from '@/hooks/useCart';

@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard, Truck, MapPin, Check } from 'lucide-react';
-import { toast } from 'sonner';
+import { ArrowLeft, CreditCard, Truck, MapPin } from 'lucide-react';
 
 export default function Checkout() {
   const navigate = useNavigate();

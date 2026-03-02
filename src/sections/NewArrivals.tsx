@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
 import { newArrivals } from '@/data/products';
 import { useCart } from '@/hooks/useCart';
@@ -8,6 +9,7 @@ export default function NewArrivals() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const { addToCart, setIsCartOpen } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -93,7 +95,10 @@ export default function NewArrivals() {
                   }}
                 >
                   {/* Image */}
-                  <div className="relative aspect-[4/5] overflow-hidden bg-beige-50">
+                  <div 
+                    className="relative aspect-[4/5] overflow-hidden bg-beige-50 cursor-pointer"
+                    onClick={() => navigate(`/product/${product.id}`)}
+                  >
                     <img
                       src={product.image}
                       alt={product.name}
@@ -108,7 +113,10 @@ export default function NewArrivals() {
                     {/* Quick Add */}
                     <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                       <button
-                        onClick={() => handleAddToCart(product)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product);
+                        }}
                         className="w-full py-3 bg-white text-black text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold hover:text-white transition-colors duration-300 shadow-lg"
                       >
                         <ShoppingBag className="w-4 h-4" />
