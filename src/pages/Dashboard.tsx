@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, ShoppingCart, Users, DollarSign, TrendingUp, Eye, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X } from 'lucide-react';
+import { Package, ShoppingCart, Users, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
