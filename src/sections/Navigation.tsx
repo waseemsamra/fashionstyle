@@ -171,6 +171,7 @@ export default function Navigation() {
             </button>
             
             <button
+              onClick={() => navigate('/admin/login')}
               className={`hidden md:block p-2 rounded-full transition-all duration-300 hover:bg-black/5 ${
                 isScrolled ? 'text-black' : 'text-white'
               }`}

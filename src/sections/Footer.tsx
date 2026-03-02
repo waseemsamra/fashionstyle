@@ -23,6 +23,7 @@ const footerLinks = {
     { name: 'Privacy Policy', href: '#' },
     { name: 'Terms of Service', href: '#' },
     { name: 'Cookie Policy', href: '#' },
+    { name: 'Admin', href: '/admin/login' },
   ],
 };
 
