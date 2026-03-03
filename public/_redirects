@@ -1,1 +1,10 @@
+# Static assets - serve directly
+/*.jpg    /
+/*.png    /
+/*.svg    /
+/*.ico    /
+/*.css    /
+/*.js     /
+
+# SPA fallback for all other routes
 /*    /index.html   200
