@@ -24,7 +24,8 @@ exports.handler = async (event) => {
     const items = result.Items.map(item => ({
       ...item,
       id: item.PK.replace('PROD#', ''),
-      price: item.basePrice || item.price
+      price: item.basePrice || item.price,
+      image: item.image ? item.image.replace('http://', 'https://') : item.image
     }));
 
     return {
