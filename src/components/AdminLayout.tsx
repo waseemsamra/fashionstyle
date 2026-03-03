@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { type ReactNode, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { signOut, getCurrentUser } from 'aws-amplify/auth';
 import { checkAdminAccess } from '@/utils/auth';
