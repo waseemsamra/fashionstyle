@@ -8,7 +8,7 @@ import { api } from '@/services/api';
 export default function FeaturedProducts() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const { addToCart, setIsCartOpen } = useCart();
   const navigate = useNavigate();
 

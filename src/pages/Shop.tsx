@@ -10,7 +10,7 @@ export default function Shop() {
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
   const [showFilters, setShowFilters] = useState(false);
-  const [allProducts, setAllProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [filters, setFilters] = useState({
     category: 'all',
     priceRange: 'all',
