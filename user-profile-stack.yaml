@@ -1,0 +1,272 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: User Profile API - Add to existing API Gateway
+
+Parameters:
+  RestApiId:
+    Type: String
+    Description: Existing API Gateway REST API ID
+    Default: 8ur8l436ff
+  
+  TableName:
+    Type: String
+    Description: DynamoDB table name
+    Default: fashionstore-prod
+  
+  Environment:
+    Type: String
+    Default: prod
+
+Resources:
+  UserProfileFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub fashionstore-${Environment}-user-profile
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt UserProfileRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+          
+          const TABLE_NAME = process.env.TABLE_NAME;
+          
+          exports.handler = async (event) => {
+            const headers = {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': 'Content-Type',
+              'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS'
+            };
+          
+            if (event.httpMethod === 'OPTIONS') {
+              return { statusCode: 200, headers, body: '' };
+            }
+          
+            try {
+              const userId = event.pathParameters?.userId;
+              const method = event.httpMethod;
+          
+              if (method === 'GET') {
+                const result = await dynamodb.get({
+                  TableName: TABLE_NAME,
+                  Key: { PK: `USER#${userId}`, SK: 'PROFILE' }
+                }).promise();
+          
+                return {
+                  statusCode: 200,
+                  headers,
+                  body: JSON.stringify({ profile: result.Item?.profile || {} })
+                };
+              }
+          
+              if (method === 'PUT') {
+                const profile = JSON.parse(event.body);
+                
+                await dynamodb.put({
+                  TableName: TABLE_NAME,
+                  Item: {
+                    PK: `USER#${userId}`,
+                    SK: 'PROFILE',
+                    profile,
+                    updatedAt: new Date().toISOString()
+                  }
+                }).promise();
+          
+                return {
+                  statusCode: 200,
+                  headers,
+                  body: JSON.stringify({ message: 'Profile updated', profile })
+                };
+              }
+          
+              return {
+                statusCode: 405,
+                headers,
+                body: JSON.stringify({ error: 'Method not allowed' })
+              };
+            } catch (error) {
+              console.error('Error:', error);
+              return {
+                statusCode: 500,
+                headers,
+                body: JSON.stringify({ error: error.message })
+              };
+            }
+          };
+
+  UserProfileRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+
+  UsersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApiId
+      ParentId: !GetAtt RestApiRootId.RootResourceId
+      PathPart: users
+
+  UserIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApiId
+      ParentId: !Ref UsersResource
+      PathPart: '{userId}'
+
+  ProfileResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApiId
+      ParentId: !Ref UserIdResource
+      PathPart: profile
+
+  ProfileGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref ProfileResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserProfileFunction.Arn}/invocations
+
+  ProfilePutMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref ProfileResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UserProfileFunction.Arn}/invocations
+
+  ProfileOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref ProfileResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,PUT,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UserProfileFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApiId}/*/*
+
+  RestApiRootId:
+    Type: Custom::GetRootResourceId
+    Properties:
+      ServiceToken: !GetAtt GetRootResourceFunction.Arn
+      RestApiId: !Ref RestApiId
+
+  GetRootResourceFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.9
+      Handler: index.handler
+      Role: !GetAtt GetRootResourceRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          
+          def handler(event, context):
+            if event['RequestType'] == 'Delete':
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+              return
+            
+            try:
+              api_client = boto3.client('apigateway')
+              response = api_client.get_resources(
+                restApiId=event['ResourceProperties']['RestApiId'],
+                limit=500
+              )
+              root = [r for r in response['items'] if r['path'] == '/'][0]
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, {
+                'RootResourceId': root['id']
+              })
+            except Exception as e:
+              cfnresponse.send(event, context, cfnresponse.FAILED, {'Error': str(e)})
+
+  GetRootResourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ApiGatewayAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: apigateway:GET
+                Resource: '*'
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ProfileGetMethod
+      - ProfilePutMethod
+      - ProfileOptionsMethod
+    Properties:
+      RestApiId: !Ref RestApiId
+      StageName: !Ref Environment
+
+Outputs:
+  UserProfileFunctionArn:
+    Value: !GetAtt UserProfileFunction.Arn
+  
+  ProfileEndpoint:
+    Value: !Sub https://${RestApiId}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/users/{userId}/profile

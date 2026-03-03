@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, ShoppingCart, Users, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X } from 'lucide-react';
+import { signOut, getCurrentUser } from 'aws-amplify/auth';
+import { checkAdminAccess } from '@/utils/auth';
+import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -78,15 +81,30 @@ export default function Dashboard() {
   ]);
 
   useEffect(() => {
-    const isAuth = localStorage.getItem('adminAuth');
-    if (!isAuth) {
-      navigate('/admin/login');
-    }
+    const checkAuth = async () => {
+      try {
+        await getCurrentUser();
+        const isAdmin = await checkAdminAccess();
+        if (!isAdmin) {
+          alert('Access denied. Admin privileges required.');
+          navigate('/admin/login');
+          return;
+        }
+        setLoading(false);
+      } catch {
+        navigate('/admin/login');
+      }
+    };
+    checkAuth();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth');
-    navigate('/admin/login');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const handleEdit = (product: any) => {
@@ -245,17 +263,27 @@ export default function Dashboard() {
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'products', label: 'Products', icon: Package },
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
-    { id: 'customers', label: 'Customers', icon: Users },
+    { id: 'customers', label: 'Customers', icon: UsersIcon },
+    { id: 'users', label: 'Users', icon: UsersIcon, link: '/admin/users' },
     { id: 'brands', label: 'Brands', icon: Tag },
     { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'profile', label: 'Profile', icon: UserCircle, link: '/admin/profile' },
   ];
 
   const stats = [
     { label: 'Total Revenue', value: '$45,231', change: '+20.1%', icon: DollarSign, color: 'bg-green-500' },
     { label: 'Orders', value: '356', change: '+12.5%', icon: ShoppingCart, color: 'bg-blue-500' },
     { label: 'Products', value: '1,234', change: '+5.2%', icon: Package, color: 'bg-purple-500' },
-    { label: 'Customers', value: '8,549', change: '+18.3%', icon: Users, color: 'bg-orange-500' },
+    { label: 'Customers', value: '8,549', change: '+18.3%', icon: UsersIcon, color: 'bg-orange-500' },
   ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -267,7 +295,7 @@ export default function Dashboard() {
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => item.link ? navigate(item.link) : setActiveTab(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 ${
                 activeTab === item.id ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
               }`}

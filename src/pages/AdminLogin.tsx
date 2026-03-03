@@ -1,20 +1,36 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signIn } from 'aws-amplify/auth';
 import { Button } from '@/components/ui/button';
-import { Lock, User } from 'lucide-react';
+import { Lock, User, KeyRound } from 'lucide-react';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple prototype authentication - username only
-    if (credentials.username === 'admin') {
-      localStorage.setItem('adminAuth', 'true');
-      navigate('/admin/dashboard');
-    } else {
-      alert('Invalid username. Use: admin');
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await signIn({
+        username: credentials.username,
+        password: credentials.password
+      });
+      
+      if (result.isSignedIn) {
+        navigate('/admin/dashboard');
+      } else {
+        setError(`Login step: ${result.nextStep?.signInStep || 'Unknown'}`);
+        setLoading(false);
+      }
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'Invalid credentials');
+      setLoading(false);
     }
   };
 
@@ -30,28 +46,55 @@ export default function AdminLogin() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+          
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
-                type="text"
+                type="email"
                 value={credentials.username}
                 onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
                 className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                placeholder="Enter username"
+                placeholder="admin@example.com"
                 required
+                disabled={loading}
               />
             </div>
           </div>
 
-          <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white py-3">
-            Login
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <div className="relative">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="password"
+                value={credentials.password}
+                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
+                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
+                placeholder="Enter password"
+                required
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <Button 
+            type="submit" 
+            className="w-full bg-gold hover:bg-gold/90 text-white py-3"
+            disabled={loading}
+          >
+            {loading ? 'Signing in...' : 'Login'}
           </Button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Demo username: <span className="font-mono">admin</span></p>
+          <p>Use your Cognito credentials</p>
         </div>
       </div>
     </div>

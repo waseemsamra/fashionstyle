@@ -1,97 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentUser } from 'aws-amplify/auth';
 import { ShoppingBag, Menu, X, Search, User } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
+import { useSearch } from '@/hooks/useProducts';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { featuredProducts, newArrivals } from '@/data/products';
-
-const brands = [
-  'AIK Atelier', 'AJR Couture - Abbas Jamil Rajpoot', 'AR Apparel', 'AWA Scrunchies', 'AY Textile',
-  'Aabyaan', 'Aahang', 'Aalaya', 'Aayra', 'Abaan Zohan', 'Abaya pk', 'Adaa By Mahnoor',
-  "Adam's Couture", 'Addee', 'Afrozeh', 'Aisha Fatema', 'Aizaz Zafar', 'Akbar Aslam',
-  'Al Dawood Textile', 'Al Harir Apparel', 'Al Karam', 'Al Siyaab', 'Al Zohaib', 'Aleen',
-  'Alif Yay', 'Alizeh Fashion by Bilal Embroidery', 'Amal', 'Ameerah Usman', 'Anayra Amal',
-  'Annafeu Apparels', 'Annara Begum', 'Annus Abrar', 'Ansab Jahangir', 'Apricocia', 'Aqs n Man',
-  'Arif Ashraf', 'Artistic Wear', 'Asifa & Nabeel', 'Asim Jofa', 'Atiya Irfan Studio',
-  'Avyana', 'Awwal', 'Ayesha Closet', 'Ayla Studio', 'Aylin', 'Ayzel By Afrozeh', 'Azure',
-  'Azzal By Ayesha & Usman', 'BURAQ', 'Baby Nest', 'Bagsify', 'Banafsheh', 'Bareeq', 'Baroque',
-  'Beechtree', 'Bibayas', 'Bin Ilyas', 'Bin Musab', 'Bin Saeed', 'Blanche Fashion',
-  'Brands & Blends', 'Brumano', 'Buraq Online', 'Bonanza Satrangi', 'Canvas Gallery',
-  'Casual Lite', 'Chandan Nagri', 'Charizma', 'Cheeco Chic', 'Clarity Glam',
-  'Coco By Zara Shahjahan', 'Crimson', 'Cross Stitch', 'Cyanic', 'Damask Clothing Studio',
-  'Deck Up', 'Dhaga', 'Dhanak', 'Dhara Couture', 'Diara Couture', 'Divinely Crafted',
-  'Dot & Dot', 'Diners', 'Deepak Perwani', 'Dhaani', 'Edge Republic', 'Edowlark', 'Eileen',
-  'Elaf', 'Elan', 'Elegance', 'Eleshia', 'Emaan Adeel', 'Eman Butt', 'Erum Khan', 'Esmel',
-  'Esra Fashion', 'Ezra', 'Ethnic', 'Embroidered', 'Fabiha Fatima', 'Fabrich', 'Fahza',
-  'Fais Couture', 'Faiza Faisal', 'Faiza Saqlain', 'Farah Agha', 'Farah Talib', 'Farasha',
-  'Fascino', 'Fashion With Style Hub', 'Fauve', 'Feathers', 'Feroza', 'Filly', 'Fine Tex',
-  'Fiona', 'Firdous Fashion', 'Florent', 'Flossie', 'Fozia Khalid', 'Freesia Premium',
-  'Farah Talib Aziz', 'Firdous', 'Feeha Jamshed', 'Garnet Clothing Pret', 'Gem Garments',
-  'Gisele', 'Gul Ahmed', 'Gulaal', 'Gulmina', 'Gulposh', 'Generation', 'HEM', 'HK Fashion',
-  'HZ Textiles', 'Hana', 'Hanim', 'Haniya Mahnoor', 'Happy Princess', 'Hareem Fatima',
-  'Hassan Jee', 'Hijab ul Ameer', 'House of Maryum N Maria', 'House of Nawab',
-  'House of Nyyra', 'Hues Atelier', 'Humdum', 'Hussain Rehar', 'Hypnotic', 'HSY',
-  'House of Ittehad', 'IQ Exclusive', 'Ibraysha', 'Imran Aftab', 'Imran Ramzan',
-  'Imrozia Premium', 'Inayat', 'Innovative Official', 'Insiya Clothing', 'Ixample', 'Izel',
-  'Iznik', 'Ideas', 'Imrozia', 'Javeria khalid', 'Jazmin', 'Jild', 'Junaid Jamshed', 'Jeem',
-  'Kahf Premium', 'Kanwal Malik', 'Kanwal Zainab', 'Karashe', 'Kesori', 'Ketifa',
-  'Khaatoon Clothing', 'Khair-ul-wara', "Khan's Wear", 'Khurshid', 'Khussa Darbar',
-  'Khuwab by Kazma', 'Khaadi', 'Kayseria', 'Kross Kulture', 'La Khilaba', 'La Rosaa',
-  'Label M', 'Lafanzo', 'Lajwanti', 'Lakhany', 'Lamorado', 'Lapel By Gem Garments',
-  'Lavish Premium', 'Lawrencepur', 'Layout', 'Leena Fatima', 'LimeLight', 'LuxebyFatima',
-  'Lawn Studio', 'Lala Textiles', 'MHK Pret', 'MIRAS', 'MOB', 'Madame', 'Madiha Gohar',
-  'Maham Sultan', 'Mahiymaan By Al Zohaib', 'Mahnoor Ejaaz', 'Mahnur', 'Mahroo',
-  'Malika Shahnaz', 'Malook By Shazia Ovais', 'Manahils', 'Manara', 'Manara by Maria',
-  'Mannat Clothing', 'Marasim', 'Mardaz Fashion', 'Maria B', 'Maria Osama Khan',
-  'Mariam Malik London', 'Maroon by Iqra Chaudhry', 'Marwat Textiles', 'Maryam Hussain',
-  'Maryum Hussain', 'Maryum N Maria', 'Mashq', 'Mashriki', 'Mavie', 'Mazham',
-  'MeBae Apparel', 'Meerak', 'Meeral', 'Meerina By Hinshah', 'Mehak Yaqoob', 'Mina Hasan',
-  'Minahil Collections', 'Minutiae', 'Misaal by Ayesha Somaya', 'Modest', 'Mohagni',
-  'Mohsin Naveed Ranjha - MNR', 'Mom4Little', 'Mona Embroidery', 'Morbagh by Beechtree',
-  'Motifz', 'Movement', 'Muneefa Naz', 'Muraad', 'Muraqsh', 'Musferah Saad', 'Mushq',
-  'Muzains', 'Myeesha', 'Maheen Karim', 'Mausummery', 'Naayas', 'Naaz Couture', 'Nadia Khan',
-  "Narmin by Narkin's", 'Nayab', 'Nazmina', 'Neeshay', 'Nisa Hussain', 'Nosheen Khalid',
-  'Nishat Linen', 'Nomi Ansari', 'Nimsay', 'Ochre', 'Omal by Komal', 'Ombrella Official',
-  'On Your Feets', 'Orient Textile', 'Outfitters', 'Orient Textiles', 'Oyemah', 'PSK Couture',
-  'Pakdaman', 'Panache Apparel', 'Paras by Pasha', 'Parishay', 'Pashma Khan', 'Pashmire',
-  'Plush Mink', 'Pret Bee', 'Pret by Kayseria', 'Phatyma Khan', 'Panache', 'Qalamkar',
-  'Qurratulain Saqib', 'Qline', 'REET CLOTHING', 'RTW Creation', "Rabia's Textiles",
-  'RajBari', 'Rajwani By HM', 'Ramsha', 'Rang Rasiya', 'Rangeen', 'Real Image', "Reeza's",
-  'Regalia Textiles', 'Rehan N Muzammil', 'Reign', 'Republic WomensWear', 'Resham Ghar',
-  'Retro', 'Riaz Arts', 'Ricamo', 'Riley', 'Ripret', 'Roheenaz', 'Ruby Suleiman',
-  'Rozina Munib', 'Republic', 'SEJ', 'Saadia Asad', 'Sable Vogue', 'Sadaf Fawad Khan',
-  'Saffron', 'Safwa', 'Sahane', 'Saheliyan', 'Saira Rizwan', 'Saira Shakira', 'Saira Sultana',
-  'Salitex', 'Sana Safinaz', "Sana Sarah's Salon", 'Sanaulla Exclusive Range', 'Sania Khan',
-  'Saphron', 'Sara Jahan', 'Sardinia', 'Sarkhail', 'Scherezade', 'Seran', 'Seraph',
-  'Serene Premium', 'Shahjahan', 'Shahzeb Textiles', 'Shamaeel Ansari', 'Shamooz',
-  'Shariq Textiles', 'Shazme', 'Sheen By Shaista Lodhi', 'Shiza Hassan', 'Shurooq',
-  'Sidra Aleem', 'Silcot', 'Sitara', 'Sk by Sahar Kashif', 'Sobia Nazir', 'Sprinkles',
-  'Stitch Vibes', 'Strawberry', 'Studio By ARJ', 'Stylish Garments', 'Suffuse by Sana Yasir',
-  'Sundas Ahad', 'Syah', 'sahar', 'Sapphire', 'Suffuse', 'Shehla Chatoor', 'TNG', 'Tabeer',
-  'Tahra By Zainab Chottani', 'Tana Bana', 'Tassawur', 'Tassels', 'Tawakkal Fabrics',
-  'Tee Zania', 'TeeKayDot', 'Tessa', 'Textilelime', 'The Girl Store', 'The Great Master (TGM)',
-  'The Slay Wear', 'Threads & Motifs', 'Threads & Weaves', 'Topnotch', 'Tosheeza Saith',
-  'Taana Baana', 'Tena Durrani', 'URBAN CUT', 'Unstitched', 'Umsha by Uzma Babar',
-  'VS Textiles', 'Valerie', 'Vibgyor Fashion', 'Vitalia', 'Vivawalk', 'Vaneeza Ahmed',
-  'Veena Durrani', 'Wardha Saleem', 'Wearik', 'Warda', 'Warda Saleem', 'Wardha',
-  'Xenia Formals', 'Xevor', 'Xenia', 'Yusra Ansari', 'Yasmeen Jiwa', 'Yolo', 'ZEB', 'ZLooms',
-  'ZS Textiles', 'Zaaviay', 'Zaha By Khadijah Shah', 'Zaib un Nisa', 'Zainab Chottani',
-  'Zainab Hasan', 'Zam Zam', 'Zar', 'Zara Shahjahan', 'Zara Yamin', 'Zarah & Sarah', 'Zaren',
-  'Zarif', 'Zariya', 'Zarizaa', 'Zarposh', 'Zarqash', 'Zauk', 'Zeek Store', 'Zellbury',
-  'Zenyre', 'Ziara pk', 'Ziphyer', 'Zohan Ateeq', 'Zouhaira', 'Zouj', 'Zoya & Fatima',
-  'Zunuj', 'Zuri', 'Zuruj', 'Zyna', 'Zyra', 'Zeen', 'Zonia Anwaar'
-];
-
-const allProducts = [...featuredProducts, ...newArrivals];
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { data: searchResults } = useSearch(searchQuery);
   const { items, totalItems, totalPrice, removeFromCart, updateQuantity, isCartOpen, setIsCartOpen } = useCart();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      await getCurrentUser();
+      setIsLoggedIn(true);
+    } catch {
+      setIsLoggedIn(false);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -171,11 +108,12 @@ export default function Navigation() {
             </button>
             
             <button
-              onClick={() => navigate('/admin/login')}
+              onClick={() => navigate(isLoggedIn ? '/dashboard' : '/login')}
               className={`hidden md:block p-2 rounded-full transition-all duration-300 hover:bg-black/5 ${
                 isScrolled ? 'text-black' : 'text-white'
               }`}
               aria-label="Account"
+              title={isLoggedIn ? 'My Dashboard' : 'Login'}
             >
               <User className="w-5 h-5" />
             </button>
@@ -338,71 +276,43 @@ export default function Navigation() {
               </button>
             </div>
             
-            {searchQuery.length >= 3 && (() => {
-              const query = searchQuery.toLowerCase();
-              const matchedProducts = allProducts.filter(p => 
-                p.name.toLowerCase().includes(query) || 
-                p.category.toLowerCase().includes(query)
-              );
-              const matchedBrands = brands.filter(b => 
-                b.toLowerCase().includes(query)
-              );
-              
-              return (
-                <div className="space-y-8">
-                  {matchedProducts.length > 0 && (
-                    <div>
-                      <h3 className="text-xl font-semibold mb-4">Products ({matchedProducts.length})</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {matchedProducts.map(product => (
-                          <div
-                            key={product.id}
-                            onClick={() => {
-                              navigate(`/product/${product.id}`);
-                              setShowSearch(false);
-                              setSearchQuery('');
-                            }}
-                            className="flex gap-4 p-4 bg-beige-50 rounded-lg cursor-pointer hover:shadow-lg transition"
-                          >
-                            <img src={product.image} alt={product.name} className="w-20 h-20 object-cover rounded" />
-                            <div>
-                              <h4 className="font-medium">{product.name}</h4>
-                              <p className="text-sm text-gray-600">{product.category}</p>
-                              <p className="text-gold font-semibold mt-1">${product.price}</p>
-                            </div>
+            {searchQuery.length >= 3 && searchResults && (
+              <div className="space-y-8">
+                {searchResults.items && searchResults.items.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Products ({searchResults.items.length})</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {searchResults.items.map((product: any) => (
+                        <div
+                          key={product.id || product.PK}
+                          onClick={() => {
+                            navigate(`/product/${product.id || product.PK}`);
+                            setShowSearch(false);
+                            setSearchQuery('');
+                          }}
+                          className="flex gap-4 p-4 bg-beige-50 rounded-lg cursor-pointer hover:shadow-lg transition"
+                        >
+                          <img 
+                            src={product.images?.[0] || product.image || '/product-1.jpg'} 
+                            alt={product.name} 
+                            className="w-20 h-20 object-cover rounded" 
+                          />
+                          <div>
+                            <h4 className="font-medium">{product.name}</h4>
+                            <p className="text-sm text-gray-600">{product.brand || product.category}</p>
+                            <p className="text-gold font-semibold mt-1">${product.basePrice || product.price}</p>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  
-                  {matchedBrands.length > 0 && (
-                    <div>
-                      <h3 className="text-xl font-semibold mb-4">Brands ({matchedBrands.length})</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {matchedBrands.map(brand => (
-                          <div
-                            key={brand}
-                            onClick={() => {
-                              navigate(`/brand/${encodeURIComponent(brand)}`);
-                              setShowSearch(false);
-                              setSearchQuery('');
-                            }}
-                            className="p-4 bg-beige-50 rounded-lg cursor-pointer hover:shadow-lg transition"
-                          >
-                            <p className="font-medium">{brand}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {matchedProducts.length === 0 && matchedBrands.length === 0 && (
-                    <p className="text-center text-gray-500 py-8">No results found for "{searchQuery}"</p>
-                  )}
-                </div>
-              );
-            })()}
+                  </div>
+                )}
+                
+                {(!searchResults.items || searchResults.items.length === 0) && (
+                  <p className="text-center text-gray-500 py-8">No results found for "{searchQuery}"</p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
