@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, Eye } from 'lucide-react';
-import { featuredProducts } from '@/data/products';
 import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
+import { api } from '@/services/api';
 
 export default function FeaturedProducts() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [products, setProducts] = useState([]);
   const { addToCart, setIsCartOpen } = useCart();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    api.listProducts().then(data => setProducts(data.items?.slice(0, 4) || []));
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -29,7 +34,7 @@ export default function FeaturedProducts() {
     return () => observer.disconnect();
   }, []);
 
-  const handleAddToCart = (product: typeof featuredProducts[0]) => {
+  const handleAddToCart = (product: any) => {
     addToCart(product);
     toast.success(`${product.name} added to cart!`, {
       action: {
@@ -58,7 +63,7 @@ export default function FeaturedProducts() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredProducts.map((product, index) => (
+          {products.map((product: any, index) => (
             <div
               key={product.id}
               className={`group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2 ${

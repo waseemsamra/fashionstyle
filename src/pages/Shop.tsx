@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { featuredProducts, newArrivals } from '@/data/products';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, X, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/services/api';
 
 export default function Shop() {
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
   const [showFilters, setShowFilters] = useState(false);
+  const [allProducts, setAllProducts] = useState([]);
   const [filters, setFilters] = useState({
     category: 'all',
     priceRange: 'all',
@@ -18,7 +19,9 @@ export default function Shop() {
     brand: 'all',
   });
 
-  const allProducts = [...featuredProducts, ...newArrivals];
+  useEffect(() => {
+    api.listProducts().then(data => setAllProducts(data.items || []));
+  }, []);
 
   const filteredProducts = allProducts.filter((product) => {
     if (filters.category !== 'all' && product.category !== filters.category) return false;
