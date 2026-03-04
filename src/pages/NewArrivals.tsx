@@ -5,6 +5,7 @@ import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { getProductUrl } from '@/utils/productUrl';
 
 export default function NewArrivals() {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ export default function NewArrivals() {
             >
               <div
                 className="relative aspect-[3/4] overflow-hidden cursor-pointer"
-                onClick={() => navigate(`/product/${product.id}`)}
+                onClick={() => navigate(getProductUrl(product))}
               >
                 <img
                   src={product.image}
@@ -82,7 +83,7 @@ export default function NewArrivals() {
               <div className="p-4">
                 <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
                 <h3
-                  onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => navigate(getProductUrl(product))}
                   className="font-semibold text-lg mb-2 cursor-pointer hover:text-gold transition"
                 >
                   {product.name}

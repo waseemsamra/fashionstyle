@@ -1,23 +1,60 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { featuredProducts, newArrivals } from '@/data/products';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/services/api';
+import { getProductUrl } from '@/utils/productUrl';
 
 export default function BrandDetail() {
   const { name } = useParams();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
+  const [products, setProducts] = useState<any[]>([]);
+
+  const normalize = (value: unknown) =>
+    String(value ?? '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+  const brandName = decodeURIComponent(name || '');
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [name]);
 
-  const allProducts = [...featuredProducts, ...newArrivals];
+  useEffect(() => {
+    let isMounted = true;
 
-  const handleAddToCart = (product: typeof allProducts[0]) => {
+    const fetchProducts = async () => {
+      try {
+        const data = await api.listProducts();
+        if (isMounted) {
+          setProducts(Array.isArray(data?.items) ? data.items : []);
+        }
+      } catch (error) {
+        console.error('Failed to load brand products:', error);
+        if (isMounted) {
+          setProducts([]);
+        }
+      }
+    };
+
+    fetchProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const brandProducts = useMemo(
+    () => products.filter((product) => normalize(product?.brand) === normalize(brandName)),
+    [products, brandName]
+  );
+
+  const handleAddToCart = (product: any) => {
     addToCart(product);
     toast.success(`${product.name} added to cart!`, {
       action: {
@@ -47,9 +84,9 @@ export default function BrandDetail() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Brands
           </Button>
-          <h1 className="text-5xl font-bold text-white mb-4">{name}</h1>
+          <h1 className="text-5xl font-bold text-white mb-4">{brandName}</h1>
           <p className="text-white/80 text-lg max-w-2xl">
-            Discover the latest collection from {name}. Premium quality and timeless designs.
+            Discover the latest collection from {brandName}. Premium quality and timeless designs.
           </p>
         </div>
       </div>
@@ -59,19 +96,19 @@ export default function BrandDetail() {
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-3xl font-bold">Products</h2>
           <p className="text-gray-600">
-            Showing {allProducts.length} products
+            Showing {brandProducts.length} products
           </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {allProducts.map((product) => (
+          {brandProducts.map((product) => (
             <div
               key={product.id}
               className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition"
             >
               <div
                 className="relative aspect-[3/4] overflow-hidden cursor-pointer"
-                onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => navigate(getProductUrl(product))}
               >
                 <img
                   src={product.image}
@@ -106,7 +143,7 @@ export default function BrandDetail() {
               <div className="p-4">
                 <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
                 <h3
-                  onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => navigate(getProductUrl(product))}
                   className="font-semibold text-lg mb-2 cursor-pointer hover:text-gold transition"
                 >
                   {product.name}
@@ -116,7 +153,7 @@ export default function BrandDetail() {
                     <Star
                       key={i}
                       className={`w-3 h-3 ${
-                        i < Math.floor(product.rating || 0)
+                        i < Math.floor(Number(product.rating || 0))
                           ? 'text-gold fill-gold'
                           : 'text-gray-300'
                       }`}
@@ -136,6 +173,15 @@ export default function BrandDetail() {
             </div>
           ))}
         </div>
+
+        {brandProducts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No products found for this brand.</p>
+            <Button onClick={() => navigate('/shop')} className="mt-4">
+              Browse All Products
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

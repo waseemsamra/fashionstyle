@@ -35,7 +35,7 @@ function Layout() {
           <Route path="/brand/:name" element={<BrandDetail />} />
           <Route path="/category/:name" element={<Category />} />
           <Route path="/new-arrivals" element={<NewArrivals />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
           <Route path="/login" element={<Login />} />

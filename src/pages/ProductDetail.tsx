@@ -1,22 +1,65 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import { featuredProducts, newArrivals } from '@/data/products';
+import { useEffect, useState } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { Star, ShoppingCart, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/services/api';
+import { getProductIdFromSlug } from '@/utils/productUrl';
 
 export default function ProductDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const [product, setProduct] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const productId = getProductIdFromSlug(slug);
   
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [id]);
-  
-  const allProducts = [...featuredProducts, ...newArrivals];
-  const product = allProducts.find(p => p.id === Number(id));
+  }, [slug]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getProduct(productId);
+        if (isMounted) {
+          setProduct(data || null);
+        }
+      } catch (error) {
+        console.error('Failed to load product details:', error);
+        if (isMounted) {
+          setProduct(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    if (productId) {
+      fetchProduct();
+    } else {
+      setProduct(null);
+      setLoading(false);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [productId]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Loading product...</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -59,6 +102,9 @@ export default function ProductDetail() {
             <div>
               <span className="text-sm text-gray-500 uppercase">{product.category}</span>
               <h1 className="text-3xl font-bold mt-2">{product.name}</h1>
+              {product.brand && (
+                <p className="text-sm text-gray-600 mt-1">Brand: {product.brand}</p>
+              )}
             </div>
 
             {product.rating && (
@@ -68,7 +114,7 @@ export default function ProductDetail() {
                     <Star
                       key={i}
                       className={`h-5 w-5 ${
-                        i < Math.floor(product.rating!)
+                        i < Math.floor(Number(product.rating || 0))
                           ? 'fill-yellow-400 text-yellow-400'
                           : 'text-gray-300'
                       }`}
@@ -101,9 +147,8 @@ export default function ProductDetail() {
             <div className="space-y-4">
               <h3 className="font-semibold text-lg">Description</h3>
               <p className="text-gray-600">
-                Experience the perfect blend of traditional craftsmanship and modern design. 
-                This exquisite piece features intricate embroidery work and premium quality fabric 
-                that ensures both comfort and elegance. Perfect for any special occasion.
+                {product.description ||
+                  'Experience the perfect blend of traditional craftsmanship and modern design.'}
               </p>
             </div>
 

@@ -4,6 +4,7 @@ import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
+import { getProductUrl } from '@/utils/productUrl';
 
 export default function NewArrivals() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -102,7 +103,7 @@ export default function NewArrivals() {
                   {/* Image */}
                   <div 
                     className="relative aspect-[4/5] overflow-hidden bg-beige-50 cursor-pointer"
-                    onClick={() => navigate(`/product/${product.id}`)}
+                    onClick={() => navigate(getProductUrl(product))}
                   >
                     <img
                       src={product.image}

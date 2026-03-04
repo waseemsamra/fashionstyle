@@ -4,6 +4,7 @@ import { ShoppingBag, Heart, Star, Eye } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
+import { getProductUrl } from '@/utils/productUrl';
 
 export default function FeaturedProducts() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -74,7 +75,7 @@ export default function FeaturedProducts() {
               }}
             >
               {/* Image Container */}
-              <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(`/product/${product.id}`)}>
+              <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                 <img
                   src={product.image}
                   alt={product.name}
@@ -104,7 +105,7 @@ export default function FeaturedProducts() {
                     <Heart className="w-4 h-4" />
                   </button>
                   <button 
-                    onClick={() => navigate(`/product/${product.id}`)}
+                    onClick={() => navigate(getProductUrl(product))}
                     className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white transition-colors duration-300"
                     aria-label="Quick view"
                   >
@@ -130,7 +131,7 @@ export default function FeaturedProducts() {
                   {product.category}
                 </p>
                 <h3 
-                  onClick={() => navigate(`/product/${product.id}`)}
+                  onClick={() => navigate(getProductUrl(product))}
                   className="font-playfair text-lg font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer"
                 >
                   {product.name}

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, X, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
+import { getProductUrl } from '@/utils/productUrl';
 
 export default function Shop() {
   const navigate = useNavigate();
@@ -19,19 +20,111 @@ export default function Shop() {
     brand: 'all',
   });
 
+  const normalize = (value: unknown) =>
+    String(value ?? '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+  const categories = [
+    'all',
+    ...Array.from(
+      new Set(
+        allProducts
+          .map((p) => p?.category)
+          .filter(Boolean)
+      )
+    ),
+  ];
+
+  const brands = [
+    'all',
+    ...Array.from(
+      new Set(
+        allProducts
+          .map((p) => p?.brand)
+          .filter(Boolean)
+      )
+    ),
+  ];
+
+  const hasRatingData = allProducts.some((p) => typeof p?.rating === 'number');
+  const hasStatusData = allProducts.some(
+    (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
+  );
+
   useEffect(() => {
-    api.listProducts().then(data => setAllProducts(data.items || []));
+    let isMounted = true;
+
+    const fetchAllProducts = async () => {
+      try {
+        const allItems: any[] = [];
+        let nextToken: string | undefined;
+
+        do {
+          const data = await api.listProducts(
+            nextToken ? { nextToken } : {}
+          );
+
+          if (Array.isArray(data?.items)) {
+            allItems.push(...data.items);
+          }
+
+          nextToken =
+            data?.nextToken ||
+            data?.lastEvaluatedKey ||
+            data?.LastEvaluatedKey ||
+            data?.paginationToken;
+        } while (nextToken);
+
+        if (isMounted) {
+          setAllProducts(allItems);
+        }
+      } catch (error) {
+        console.error('Failed to load products:', error);
+      }
+    };
+
+    fetchAllProducts();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const filteredProducts = allProducts.filter((product) => {
-    if (filters.category !== 'all' && product.category !== filters.category) return false;
-    if (filters.priceRange === 'under50' && product.price >= 50) return false;
-    if (filters.priceRange === '50-100' && (product.price < 50 || product.price > 100)) return false;
-    if (filters.priceRange === '100-200' && (product.price < 100 || product.price > 200)) return false;
-    if (filters.priceRange === 'over200' && product.price <= 200) return false;
-    if (filters.rating !== 'all' && product.rating && product.rating < Number(filters.rating)) return false;
-    if (filters.status === 'new' && !product.isNew) return false;
-    if (filters.status === 'sale' && !product.isSale) return false;
+    const productPrice = Number(product.price ?? 0);
+    const productRating = typeof product.rating === 'number' ? product.rating : null;
+
+    if (
+      filters.category !== 'all' &&
+      normalize(product.category) !== normalize(filters.category)
+    ) {
+      return false;
+    }
+
+    if (
+      filters.brand !== 'all' &&
+      normalize(product.brand) !== normalize(filters.brand)
+    ) {
+      return false;
+    }
+
+    if (filters.priceRange === 'under50' && productPrice >= 50) return false;
+    if (filters.priceRange === '50-100' && (productPrice < 50 || productPrice > 100)) return false;
+    if (filters.priceRange === '100-200' && (productPrice < 100 || productPrice > 200)) return false;
+    if (filters.priceRange === 'over200' && productPrice <= 200) return false;
+
+    if (
+      filters.rating !== 'all' &&
+      (productRating === null || productRating < Number(filters.rating))
+    ) {
+      return false;
+    }
+
+    if (filters.status === 'new' && product.isNew !== true) return false;
+    if (filters.status === 'sale' && product.isSale !== true) return false;
+
     return true;
   });
 
@@ -92,13 +185,13 @@ export default function Shop() {
                     <div>
                       <h3 className="font-semibold mb-3">Category</h3>
                       <div className="space-y-2">
-                        {['all', 'Bridal Wear', 'Casual Wear', 'Formal Wear', 'Accessories'].map((cat) => (
+                        {categories.map((cat) => (
                           <label key={cat} className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="radio"
                               name="category"
                               checked={filters.category === cat}
-                              onChange={() => setFilters({ ...filters, category: cat })}
+                              onChange={() => setFilters((prev) => ({ ...prev, category: cat }))}
                               className="w-4 h-4"
                             />
                             <span className="text-sm">{cat === 'all' ? 'All Categories' : cat}</span>
@@ -123,7 +216,7 @@ export default function Shop() {
                               type="radio"
                               name="priceRange"
                               checked={filters.priceRange === range.value}
-                              onChange={() => setFilters({ ...filters, priceRange: range.value })}
+                              onChange={() => setFilters((prev) => ({ ...prev, priceRange: range.value }))}
                               className="w-4 h-4"
                             />
                             <span className="text-sm">{range.label}</span>
@@ -132,71 +225,65 @@ export default function Shop() {
                       </div>
                     </div>
 
-                    {/* Rating Filter */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-semibold mb-3">Rating</h3>
-                      <div className="space-y-2">
-                        {['all', '4', '4.5'].map((rating) => (
-                          <label key={rating} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="rating"
-                              checked={filters.rating === rating}
-                              onChange={() => setFilters({ ...filters, rating })}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm">
-                              {rating === 'all' ? 'All Ratings' : `${rating}+ Stars`}
-                            </span>
-                          </label>
-                        ))}
+                    {hasRatingData && (
+                      <div className="border-t pt-6">
+                        <h3 className="font-semibold mb-3">Rating</h3>
+                        <div className="space-y-2">
+                          {['all', '4', '4.5'].map((rating) => (
+                            <label key={rating} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="rating"
+                                checked={filters.rating === rating}
+                                onChange={() => setFilters((prev) => ({ ...prev, rating }))}
+                                className="w-4 h-4"
+                              />
+                              <span className="text-sm">
+                                {rating === 'all' ? 'All Ratings' : `${rating}+ Stars`}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    {/* Status Filter */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-semibold mb-3">Status</h3>
-                      <div className="space-y-2">
-                        {[
-                          { value: 'all', label: 'All Items' },
-                          { value: 'new', label: 'New Arrivals' },
-                          { value: 'sale', label: 'On Sale' },
-                        ].map((status) => (
-                          <label key={status.value} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="status"
-                              checked={filters.status === status.value}
-                              onChange={() => setFilters({ ...filters, status: status.value })}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm">{status.label}</span>
-                          </label>
-                        ))}
+                    {hasStatusData && (
+                      <div className="border-t pt-6">
+                        <h3 className="font-semibold mb-3">Status</h3>
+                        <div className="space-y-2">
+                          {[
+                            { value: 'all', label: 'All Items' },
+                            { value: 'new', label: 'New Arrivals' },
+                            { value: 'sale', label: 'On Sale' },
+                          ].map((status) => (
+                            <label key={status.value} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="status"
+                                checked={filters.status === status.value}
+                                onChange={() =>
+                                  setFilters((prev) => ({ ...prev, status: status.value }))
+                                }
+                                className="w-4 h-4"
+                              />
+                              <span className="text-sm">{status.label}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Brand Filter */}
                     <div className="border-t pt-6">
                       <h3 className="font-semibold mb-3">Brand</h3>
                       <div className="space-y-2 max-h-48 overflow-y-auto">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="brand"
-                            checked={filters.brand === 'all'}
-                            onChange={() => setFilters({ ...filters, brand: 'all' })}
-                            className="w-4 h-4"
-                          />
-                          <span className="text-sm">All Brands</span>
-                        </label>
-                        {['Al Karam', 'Gul Ahmed', 'Khaadi', 'Sapphire', 'Maria B', 'Asim Jofa', 'Sana Safinaz', 'Nishat Linen', 'Baroque', 'Elan'].map((brand) => (
+                        {brands.map((brand) => (
                           <label key={brand} className="flex items-center gap-2 cursor-pointer">
                             <input
                               type="radio"
                               name="brand"
                               checked={filters.brand === brand}
-                              onChange={() => setFilters({ ...filters, brand })}
+                              onChange={() => setFilters((prev) => ({ ...prev, brand }))}
                               className="w-4 h-4"
                             />
                             <span className="text-sm">{brand}</span>
@@ -227,7 +314,7 @@ export default function Shop() {
                 >
                   <div 
                     className="relative aspect-[3/4] overflow-hidden cursor-pointer"
-                    onClick={() => navigate(`/product/${product.id}`)}
+                    onClick={() => navigate(getProductUrl(product))}
                   >
                     <img
                       src={product.image}
@@ -262,7 +349,7 @@ export default function Shop() {
                   <div className="p-4">
                     <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
                     <h3
-                      onClick={() => navigate(`/product/${product.id}`)}
+                      onClick={() => navigate(getProductUrl(product))}
                       className="font-semibold text-lg mb-2 cursor-pointer hover:text-gold transition"
                     >
                       {product.name}
