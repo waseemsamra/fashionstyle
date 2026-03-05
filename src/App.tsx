@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
+import { getCurrentUser, signOut } from 'aws-amplify/auth';
 import { CartProvider } from '@/hooks/useCart';
 import { Toaster } from '@/components/ui/sonner';
 import Navigation from '@/components/layout/Navigation';
@@ -60,6 +61,42 @@ function Layout() {
 }
 
 function App() {
+  useEffect(() => {
+    // Handle authentication state restoration on app startup
+    const checkAuthState = async () => {
+      try {
+        await getCurrentUser();
+        // User is authenticated, no action needed
+      } catch (error: any) {
+        // Handle authentication session issues
+        if (error.name === 'UserUnAuthenticatedException' ||
+            error.message?.includes('already') ||
+            error.message?.includes('session') ||
+            error.message?.includes('signed in')) {
+          // Clear any corrupted authentication data from localStorage
+          try {
+            // Clear Amplify-specific localStorage keys
+            const keysToRemove = Object.keys(localStorage).filter(key =>
+              key.startsWith('CognitoIdentityServiceProvider') ||
+              key.startsWith('aws-amplify') ||
+              key.includes('amplify')
+            );
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+
+            // Also try to sign out globally
+            await signOut({ global: true });
+          } catch {
+            // Ignore cleanup errors
+          }
+        }
+        // This is normal and expected - don't show error to user
+        console.log('Authentication session cleared and reset');
+      }
+    };
+
+    checkAuthState();
+  }, []);
+
   return (
     <BrowserRouter>
       <CartProvider>
