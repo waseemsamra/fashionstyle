@@ -31,5 +31,20 @@ export const api = {
   updateUserProfile: async (userId: string, profile: any) => {
     const response = await axios.put(`${API_URL}/users/${userId}/profile`, profile);
     return response.data;
+  },
+
+  createOrder: async (userId: string, orderData: any) => {
+    const response = await axios.post(`${API_URL}/users/${userId}/orders`, orderData);
+    return response.data;
+  },
+
+  getUserOrders: async (userId: string) => {
+    const response = await axios.get(`${API_URL}/users/${userId}/orders`);
+    return response.data;
+  },
+
+  getOrder: async (userId: string, orderId: string) => {
+    const response = await axios.get(`${API_URL}/users/${userId}/orders/${orderId}`);
+    return response.data;
   }
 };

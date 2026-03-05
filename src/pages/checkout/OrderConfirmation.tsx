@@ -1,27 +1,113 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { getCurrentUser } from 'aws-amplify/auth';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Package, Truck, MapPin, CreditCard } from 'lucide-react';
+import { api } from '@/services/api';
+import { toast } from 'sonner';
 
 export default function OrderConfirmation() {
   const navigate = useNavigate();
   const location = useLocation();
   const { clearCart } = useCart();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [orderNumber, setOrderNumber] = useState('');
   const orderData = location.state;
 
   useEffect(() => {
-    if (orderData) {
-      clearCart();
+    const checkAuth = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      } catch {
+        // User not logged in, redirect to login
+        navigate('/login', { state: { from: '/checkout' } });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (orderData && isAuthenticated && user && !isSavingOrder) {
+      saveOrder();
     }
-  }, [orderData, clearCart]);
+  }, [orderData, isAuthenticated, user, isSavingOrder]);
+
+  const saveOrder = async () => {
+    if (!orderData || !user) return;
+    
+    setIsSavingOrder(true);
+    try {
+      const orderId = `ORD-${Date.now().toString().slice(-8)}`;
+      const orderPayload = {
+        orderId,
+        date: new Date().toISOString(),
+        items: orderData.items,
+        totalPrice: orderData.totalPrice,
+        paymentMethod: orderData.paymentMethod,
+        status: 'Processing',
+        fullName: orderData.fullName,
+        email: orderData.email,
+        phone: orderData.phone,
+        address: orderData.address,
+        city: orderData.city,
+        postalCode: orderData.postalCode,
+        itemCount: orderData.items.length
+      };
+
+      await api.createOrder(user.userId, orderPayload);
+      setOrderNumber(orderId);
+      clearCart();
+    } catch (error: any) {
+      console.error('Failed to save order:', error);
+      toast.error('Order created locally but failed to sync. Please contact support.');
+      setOrderNumber(`ORD-${Date.now().toString().slice(-8)}`);
+      clearCart();
+    } finally {
+      setIsSavingOrder(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-beige-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Redirect happens in useEffect
+  }
 
   if (!orderData) {
     navigate('/');
     return null;
   }
 
-  const orderNumber = `ORD-${Date.now().toString().slice(-8)}`;
+  if (isSavingOrder) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-beige-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
+          <p className="text-gray-600">Processing your order...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const finalOrderNumber = orderNumber || `ORD-${Date.now().toString().slice(-8)}`;
   const estimatedDelivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -45,7 +131,7 @@ export default function OrderConfirmation() {
             <div className="grid md:grid-cols-2 gap-6 text-left">
               <div>
                 <p className="text-sm text-gray-500 mb-1">Order Number</p>
-                <p className="font-semibold text-lg">{orderNumber}</p>
+                <p className="font-semibold text-lg">{finalOrderNumber}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Estimated Delivery</p>

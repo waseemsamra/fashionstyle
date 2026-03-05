@@ -16,13 +16,7 @@ Amplify.configure({
         }
       }
     }
-  },
-  ssr: false
-}, {
-  // Disable automatic authentication state restoration to prevent conflicts
-  autoSignIn: false,
-  // Clear any existing authentication state on configuration
-  clearCacheOnStart: true
+  }
 });
 
 export default Amplify;

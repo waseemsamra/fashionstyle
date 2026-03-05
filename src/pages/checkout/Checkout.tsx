@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentUser } from 'aws-amplify/auth';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CreditCard, Truck, MapPin } from 'lucide-react';
@@ -7,6 +8,8 @@ import { ArrowLeft, CreditCard, Truck, MapPin } from 'lucide-react';
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, totalPrice } = useCart();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [formData, setFormData] = useState({
     fullName: '',
@@ -19,6 +22,37 @@ export default function Checkout() {
     cardExpiry: '',
     cardCvv: '',
   });
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        await getCurrentUser();
+        setIsAuthenticated(true);
+      } catch {
+        // User not logged in, redirect to login
+        navigate('/login', { state: { from: '/checkout' } });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-beige-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null; // Redirect happens in useEffect
+  }
 
   if (items.length === 0) {
     return (

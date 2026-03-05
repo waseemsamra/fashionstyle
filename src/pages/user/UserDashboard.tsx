@@ -26,11 +26,8 @@ export default function UserDashboard() {
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [orders] = useState([
-    { id: 'ORD-001', date: '2024-03-15', items: 3, total: 299, status: 'Delivered' },
-    { id: 'ORD-002', date: '2024-03-10', items: 1, total: 89, status: 'Shipped' },
-    { id: 'ORD-003', date: '2024-03-05', items: 2, total: 178, status: 'Processing' },
-  ]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
   const [wishlist] = useState([
     { id: 1, name: 'Embroidered Lawn Suit', price: 89, image: '/product-1.jpg', brand: 'Al Karam' },
@@ -56,6 +53,12 @@ export default function UserDashboard() {
     loadUser();
   }, []);
 
+  useEffect(() => {
+    if (user) {
+      loadOrders();
+    }
+  }, [user]);
+
   const loadUser = async () => {
     try {
       const currentUser = await getCurrentUser();
@@ -75,6 +78,38 @@ export default function UserDashboard() {
       }
     } catch (err) {
       console.log('No profile found, using defaults');
+    }
+  };
+
+  const loadOrders = async () => {
+    if (!user) return;
+    setOrdersLoading(true);
+    try {
+      const data = await api.getUserOrders(user.userId);
+      if (data.items && Array.isArray(data.items)) {
+        const formattedOrders = data.items.map((order: any) => ({
+          id: order.orderId || order.id,
+          date: new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          items: order.itemCount || order.items?.length || 0,
+          total: order.totalPrice || 0,
+          status: order.status || 'Processing'
+        }));
+        setOrders(formattedOrders);
+      } else if (Array.isArray(data)) {
+        const formattedOrders = data.map((order: any) => ({
+          id: order.orderId || order.id,
+          date: new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          items: order.itemCount || order.items?.length || 0,
+          total: order.totalPrice || 0,
+          status: order.status || 'Processing'
+        }));
+        setOrders(formattedOrders);
+      }
+    } catch (err) {
+      console.log('No orders found for user');
+      setOrders([]);
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -257,26 +292,38 @@ export default function UserDashboard() {
                 <div className="p-6 border-b">
                   <h2 className="text-2xl font-bold">My Orders</h2>
                 </div>
-                <div className="divide-y">
-                  {orders.map(order => (
-                    <div key={order.id} className="p-6 hover:bg-gray-50">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-bold">{order.id}</p>
-                          <p className="text-sm text-gray-600">{order.date} • {order.items} items</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold">${order.total}</p>
-                          <span className={`text-xs px-3 py-1 rounded-full ${
-                            order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
-                            order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
-                            'bg-yellow-100 text-yellow-700'
-                          }`}>{order.status}</span>
+                {ordersLoading ? (
+                  <div className="p-6 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading orders...</p>
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600">No orders yet</p>
+                  </div>
+                ) : (
+                  <div className="divide-y">
+                    {orders.map(order => (
+                      <div key={order.id} className="p-6 hover:bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-bold">{order.id}</p>
+                            <p className="text-sm text-gray-600">{order.date} • {order.items} items</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold">${order.total}</p>
+                            <span className={`text-xs px-3 py-1 rounded-full ${
+                              order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                              order.status === 'Shipped' ? 'bg-blue-100 text-blue-700' :
+                              'bg-yellow-100 text-yellow-700'
+                            }`}>{order.status}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
