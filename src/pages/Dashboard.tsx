@@ -73,12 +73,14 @@ export default function Dashboard() {
     { id: 4, name: 'Khaadi', description: 'Contemporary fashion', products: 89 },
   ]);
   const [products, setProducts] = useState([
-    { id: 1, name: 'Embroidered Lawn Suit', category: 'Casual Wear', price: 89, stock: 45, brand: 'Al Karam', image: '/product-1.jpg' },
-    { id: 2, name: 'Chiffon Formal Dress', category: 'Formal Wear', price: 149, stock: 32, brand: 'Gul Ahmed', image: '/product-2.jpg' },
-    { id: 3, name: 'Silk Lehenga Set', category: 'Bridal Wear', price: 299, stock: 18, brand: 'Maria B', image: '/product-3.jpg' },
-    { id: 4, name: 'Cotton Kurti', category: 'Casual Wear', price: 59, stock: 67, brand: 'Khaadi', image: '/product-4.jpg' },
-    { id: 5, name: 'Bridal Sharara', category: 'Bridal Wear', price: 499, stock: 12, brand: 'Asim Jofa', image: '/product-5.jpg' },
+    { id: 1, name: 'Embroidered Lawn Suit', category: 'Casual Wear', price: 89, stock: 45, brand: 'Al Karam', image: '/product-1.jpg', occasions: ['Casual'], patterns: ['Embroidered'], sizes: ['S', 'M', 'L'], materials: ['Lawn', 'Cotton'], colors: ['Blue', 'White'], genders: ['Women'] },
+    { id: 2, name: 'Chiffon Formal Dress', category: 'Formal Wear', price: 149, stock: 32, brand: 'Gul Ahmed', image: '/product-2.jpg', occasions: ['Party'], patterns: ['Printed'], sizes: ['S', 'M', 'L', 'XL'], materials: ['Chiffon'], colors: ['White', 'Beige'], genders: ['Women'] },
+    { id: 3, name: 'Silk Lehenga Set', category: 'Bridal Wear', price: 299, stock: 18, brand: 'Maria B', image: '/product-3.jpg', occasions: ['Wedding'], patterns: ['Embroidered'], sizes: ['S', 'M', 'L'], materials: ['Silk'], colors: ['Gold', 'Red'], genders: ['Women'] },
+    { id: 4, name: 'Cotton Kurti', category: 'Casual Wear', price: 59, stock: 67, brand: 'Khaadi', image: '/product-4.jpg', occasions: ['Casual'], patterns: ['Plain'], sizes: ['S', 'M', 'L', 'XL'], materials: ['Cotton'], colors: ['Green', 'Black'], genders: ['Women'] },
+    { id: 5, name: 'Bridal Sharara', category: 'Bridal Wear', price: 499, stock: 12, brand: 'Asim Jofa', image: '/product-5.jpg', occasions: ['Wedding'], patterns: ['Embroidered'], sizes: ['S', 'M', 'L'], materials: ['Silk', 'Chiffon'], colors: ['Red', 'Gold'], genders: ['Women'] },
   ]);
+
+  const ensureArray = (value: any): string[] => Array.isArray(value) ? value : [];
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -108,12 +110,50 @@ export default function Dashboard() {
   };
 
   const handleEdit = (product: any) => {
-    setEditingProduct(product);
+    setEditingProduct({
+      ...product,
+      sku: product.sku || '',
+      description: product.description || '',
+      genders: ensureArray(product.genders),
+      occasions: ensureArray(product.occasions),
+      patterns: ensureArray(product.patterns),
+      sizes: ensureArray(product.sizes),
+      materials: ensureArray(product.materials),
+      colors: ensureArray(product.colors),
+    });
+    setShowEditModal(true);
+  };
+
+  const handleAddProduct = () => {
+    const defaultCategory = categories[0]?.name || '';
+    const defaultBrand = brands[0]?.name || '';
+
+    setEditingProduct({
+      id: Date.now(),
+      name: '',
+      sku: '',
+      description: '',
+      category: defaultCategory,
+      brand: defaultBrand,
+      price: 0,
+      stock: 0,
+      image: '/product-1.jpg',
+      genders: [],
+      occasions: [],
+      patterns: [],
+      sizes: [],
+      materials: [],
+      colors: [],
+    });
     setShowEditModal(true);
   };
 
   const handleSave = () => {
-    setProducts(products.map(p => p.id === editingProduct.id ? editingProduct : p));
+    if (products.find(p => p.id === editingProduct.id)) {
+      setProducts(products.map(p => p.id === editingProduct.id ? editingProduct : p));
+    } else {
+      setProducts([...products, editingProduct]);
+    }
     setShowEditModal(false);
   };
 
@@ -335,6 +375,11 @@ export default function Dashboard() {
 
           {activeTab === 'products' && (
             <div className="bg-white rounded-lg shadow">
+              <div className="p-6 border-b flex justify-end">
+                <button onClick={handleAddProduct} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
+                  Add Product
+                </button>
+              </div>
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
@@ -683,10 +728,10 @@ export default function Dashboard() {
       </div>
 
       {showEditModal && editingProduct && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Edit Product</h2>
+              <h2 className="text-2xl font-bold">{products.find(p => p.id === editingProduct.id) ? 'Edit Product' : 'Add Product'}</h2>
               <button onClick={() => setShowEditModal(false)}>
                 <X className="w-6 h-6" />
               </button>
@@ -708,21 +753,48 @@ export default function Dashboard() {
                   onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
                   className="w-full p-3 border rounded-lg"
                 >
-                  <option>Casual Wear</option>
-                  <option>Formal Wear</option>
-                  <option>Bridal Wear</option>
-                  <option>Accessories</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.name}>{category.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Brand</label>
-                <input
-                  type="text"
+                <select
                   value={editingProduct.brand}
                   onChange={(e) => setEditingProduct({...editingProduct, brand: e.target.value})}
                   className="w-full p-3 border rounded-lg"
-                />
+                >
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.name}>{brand.name}</option>
+                  ))}
+                </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Gender</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {genders.map((gender) => (
+                    <label key={gender.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={ensureArray(editingProduct.genders).includes(gender.name)}
+                        onChange={(e) => {
+                          const current = ensureArray(editingProduct.genders);
+                          setEditingProduct({
+                            ...editingProduct,
+                            genders: e.target.checked
+                              ? [...current, gender.name]
+                              : current.filter((x: string) => x !== gender.name),
+                          });
+                        }}
+                      />
+                      {gender.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Price ($)</label>
@@ -743,6 +815,127 @@ export default function Dashboard() {
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Occasions</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {occasions.map((occ) => (
+                    <label key={occ.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={ensureArray(editingProduct.occasions).includes(occ.name)}
+                        onChange={(e) => {
+                          const current = ensureArray(editingProduct.occasions);
+                          setEditingProduct({
+                            ...editingProduct,
+                            occasions: e.target.checked
+                              ? [...current, occ.name]
+                              : current.filter((x: string) => x !== occ.name),
+                          });
+                        }}
+                      />
+                      {occ.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Patterns</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {patterns.map((pat) => (
+                    <label key={pat.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={ensureArray(editingProduct.patterns).includes(pat.name)}
+                        onChange={(e) => {
+                          const current = ensureArray(editingProduct.patterns);
+                          setEditingProduct({
+                            ...editingProduct,
+                            patterns: e.target.checked
+                              ? [...current, pat.name]
+                              : current.filter((x: string) => x !== pat.name),
+                          });
+                        }}
+                      />
+                      {pat.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Sizes</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {sizes.map((size) => (
+                    <label key={size.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={ensureArray(editingProduct.sizes).includes(size.code)}
+                        onChange={(e) => {
+                          const current = ensureArray(editingProduct.sizes);
+                          setEditingProduct({
+                            ...editingProduct,
+                            sizes: e.target.checked
+                              ? [...current, size.code]
+                              : current.filter((x: string) => x !== size.code),
+                          });
+                        }}
+                      />
+                      {size.code}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Cloth Materials</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {materials.map((mat) => (
+                    <label key={mat.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={ensureArray(editingProduct.materials).includes(mat.name)}
+                        onChange={(e) => {
+                          const current = ensureArray(editingProduct.materials);
+                          setEditingProduct({
+                            ...editingProduct,
+                            materials: e.target.checked
+                              ? [...current, mat.name]
+                              : current.filter((x: string) => x !== mat.name),
+                          });
+                        }}
+                      />
+                      {mat.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Colours</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {colors.map((color) => (
+                    <label key={color.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={ensureArray(editingProduct.colors).includes(color.name)}
+                        onChange={(e) => {
+                          const current = ensureArray(editingProduct.colors);
+                          setEditingProduct({
+                            ...editingProduct,
+                            colors: e.target.checked
+                              ? [...current, color.name]
+                              : current.filter((x: string) => x !== color.name),
+                          });
+                        }}
+                      />
+                      {color.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex gap-4 pt-4">
                 <button onClick={handleSave} className="flex-1 py-3 bg-gold text-white rounded-lg hover:bg-gold/90">
                   Save Changes

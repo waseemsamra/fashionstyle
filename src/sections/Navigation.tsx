@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { ShoppingBag, Menu, X, Search, User } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
-import { useSearch } from '@/hooks/useProducts';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { api } from '@/services/api';
+import { getProductUrl } from '@/utils/productUrl';
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -13,13 +14,97 @@ export default function Navigation() {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { data: searchResults } = useSearch(searchQuery);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const { items, totalItems, totalPrice, removeFromCart, updateQuantity, isCartOpen, setIsCartOpen } = useCart();
   const navigate = useNavigate();
+
+  const normalize = (value: unknown) =>
+    String(value ?? '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+  const filteredProducts = useMemo(() => {
+    const query = normalize(searchQuery);
+    if (query.length < 2) return [];
+
+    return allProducts.filter((product) => {
+      const name = normalize(product?.name);
+      const brand = normalize(product?.brand);
+      const category = normalize(product?.category);
+      const id = normalize(product?.id);
+      const pk = normalize(product?.PK);
+      return (
+        name.includes(query) ||
+        brand.includes(query) ||
+        category.includes(query) ||
+        id.includes(query) ||
+        pk.includes(query)
+      );
+    });
+  }, [allProducts, searchQuery]);
+
+  const filteredBrands = useMemo(() => {
+    const query = normalize(searchQuery);
+    if (query.length < 2) return [];
+
+    return Array.from(
+      new Set(
+        allProducts
+          .map((p) => p?.brand)
+          .filter(Boolean)
+          .filter((brand) => normalize(brand).includes(query))
+      )
+    );
+  }, [allProducts, searchQuery]);
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (!showSearch || allProducts.length > 0) return;
+
+    let isMounted = true;
+
+    const fetchAllProducts = async () => {
+      try {
+        setIsSearchLoading(true);
+        const items: any[] = [];
+        let nextToken: string | undefined;
+
+        do {
+          const data = await api.listProducts(nextToken ? { nextToken } : {});
+          if (Array.isArray(data?.items)) {
+            items.push(...data.items);
+          }
+
+          nextToken =
+            data?.nextToken ||
+            data?.lastEvaluatedKey ||
+            data?.LastEvaluatedKey ||
+            data?.paginationToken;
+        } while (nextToken);
+
+        if (isMounted) {
+          setAllProducts(items);
+        }
+      } catch (error) {
+        console.error('Failed to load search products:', error);
+      } finally {
+        if (isMounted) {
+          setIsSearchLoading(false);
+        }
+      }
+    };
+
+    fetchAllProducts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showSearch, allProducts.length]);
 
   const checkAuth = async () => {
     try {
@@ -258,7 +343,7 @@ export default function Navigation() {
     {showSearch && (
       <div className="fixed inset-0 bg-white z-[100] overflow-y-auto">
         <div className="container mx-auto px-4 py-8">
-          <div className="max-w-3xl mx-auto">
+          <div className="w-full">
             <div className="relative mb-8">
               <input
                 type="text"
@@ -276,30 +361,54 @@ export default function Navigation() {
               </button>
             </div>
             
-            {searchQuery.length >= 3 && searchResults && (
+            {searchQuery.length >= 2 && (
               <div className="space-y-8">
-                {searchResults.items && searchResults.items.length > 0 && (
+                {filteredBrands.length > 0 && (
                   <div>
-                    <h3 className="text-xl font-semibold mb-4">Products ({searchResults.items.length})</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {searchResults.items.map((product: any) => (
-                        <div
-                          key={product.id || product.PK}
+                    <h3 className="text-xl font-semibold mb-4">Brands ({filteredBrands.length})</h3>
+                    <div className="flex flex-wrap gap-3">
+                      {filteredBrands.map((brand) => (
+                        <button
+                          key={brand}
                           onClick={() => {
-                            navigate(`/product/${product.id || product.PK}`);
+                            navigate(`/brand/${encodeURIComponent(String(brand))}`);
                             setShowSearch(false);
                             setSearchQuery('');
                           }}
-                          className="flex gap-4 p-4 bg-beige-50 rounded-lg cursor-pointer hover:shadow-lg transition"
+                          className="px-4 py-2 bg-beige-50 hover:bg-beige-100 rounded-full text-sm"
                         >
-                          <img 
-                            src={product.images?.[0] || product.image || '/product-1.jpg'} 
-                            alt={product.name} 
-                            className="w-20 h-20 object-cover rounded" 
-                          />
-                          <div>
-                            <h4 className="font-medium">{product.name}</h4>
-                            <p className="text-sm text-gray-600">{product.brand || product.category}</p>
+                          {brand}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {filteredProducts.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-semibold mb-4">Products ({filteredProducts.length})</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4">
+                      {filteredProducts.map((product: any) => (
+                        <div
+                          key={product.id || product.PK}
+                          onClick={() => {
+                            navigate(getProductUrl(product));
+                            setShowSearch(false);
+                            setSearchQuery('');
+                          }}
+                          className="p-3 bg-beige-50 rounded-lg cursor-pointer hover:shadow-lg transition"
+                        >
+                          <div className="relative w-full h-72 rounded overflow-hidden bg-gray-100">
+                            <img 
+                              src={product.images?.[0] || product.image || '/product-1.jpg'} 
+                              alt={product.name} 
+                              className="absolute inset-0 w-full h-full object-contain object-center p-1" 
+                            />
+                          </div>
+                          <div className="mt-2">
+                            <h4 className="font-medium text-sm line-clamp-2">{product.name}</h4>
+                            <p className="text-xs text-gray-500">ID: {product.id || product.PK}</p>
+                            <p className="text-xs text-gray-600 truncate">{product.brand || product.category}</p>
                             <p className="text-gold font-semibold mt-1">${product.basePrice || product.price}</p>
                           </div>
                         </div>
@@ -308,8 +417,12 @@ export default function Navigation() {
                   </div>
                 )}
                 
-                {(!searchResults.items || searchResults.items.length === 0) && (
+                {!isSearchLoading && filteredProducts.length === 0 && filteredBrands.length === 0 && (
                   <p className="text-center text-gray-500 py-8">No results found for "{searchQuery}"</p>
+                )}
+
+                {isSearchLoading && (
+                  <p className="text-center text-gray-500 py-8">Searching...</p>
                 )}
               </div>
             )}

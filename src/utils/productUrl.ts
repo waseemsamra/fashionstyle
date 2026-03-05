@@ -7,7 +7,13 @@ export const slugifyProductName = (name: unknown) =>
     .replace(/-+/g, '-');
 
 export const getProductUrl = (product: { id?: unknown; name?: unknown }) => {
-  const id = String(product?.id ?? '').trim();
+  const candidateId =
+    (product as any)?.id ??
+    (product as any)?.productId ??
+    (product as any)?.PK ??
+    (product as any)?.pk;
+
+  const id = String(candidateId ?? '').trim();
   const slug = slugifyProductName(product?.name);
 
   if (!id) return '/product';
