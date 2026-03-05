@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import AdminLayout from '@/components/AdminLayout';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { Users as UsersIcon, Edit, Trash2, UserPlus, X } from 'lucide-react';
 
 export default function Users() {

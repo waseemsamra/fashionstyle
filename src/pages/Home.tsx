@@ -1,11 +1,11 @@
-import Hero from '@/sections/Hero';
-import Features from '@/sections/Features';
-import Categories from '@/sections/Categories';
-import FeaturedProducts from '@/sections/FeaturedProducts';
-import NewArrivals from '@/sections/NewArrivals';
-import About from '@/sections/About';
-import Testimonials from '@/sections/Testimonials';
-import Newsletter from '@/sections/Newsletter';
+import Hero from '@/components/sections/Hero';
+import Features from '@/components/sections/Features';
+import Categories from '@/components/sections/Categories';
+import FeaturedProducts from '@/components/sections/FeaturedProducts';
+import NewArrivals from '@/components/sections/NewArrivals';
+import About from '@/components/sections/About';
+import Testimonials from '@/components/sections/Testimonials';
+import Newsletter from '@/components/sections/Newsletter';
 
 export default function Home() {
   return (

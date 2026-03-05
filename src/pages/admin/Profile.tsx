@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import AdminLayout from '@/components/AdminLayout';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { getCurrentUser, updatePassword } from 'aws-amplify/auth';
 import { User, Lock, Mail, Calendar } from 'lucide-react';
 

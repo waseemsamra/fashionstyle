@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, signOut, updatePassword } from 'aws-amplify/auth';
 import { User, Package, Heart, Wallet, CreditCard, LogOut, Lock, X, Trash2, MapPin, Edit } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 
 export default function UserDashboard() {
   const navigate = useNavigate();

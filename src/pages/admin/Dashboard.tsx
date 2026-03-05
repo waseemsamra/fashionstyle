@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signOut, getCurrentUser } from 'aws-amplify/auth';
 import { checkAdminAccess } from '@/utils/auth';
+import { api } from '@/services/api';
 import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
 
 export default function Dashboard() {
@@ -82,6 +83,43 @@ export default function Dashboard() {
 
   const ensureArray = (value: any): string[] => Array.isArray(value) ? value : [];
 
+  const toNamedList = (raw: any, fallback: any[] = []) => {
+    if (!Array.isArray(raw) || raw.length === 0) return fallback;
+
+    return raw.map((item: any, index: number) => {
+      if (typeof item === 'string') {
+        return { id: index + 1, name: item };
+      }
+
+      if (item && typeof item === 'object') {
+        const name = item.name ?? item.label ?? item.value ?? item.title ?? item.code;
+        return {
+          id: Number(item.id ?? index + 1),
+          ...item,
+          name: String(name ?? `Option ${index + 1}`),
+        };
+      }
+
+      return { id: index + 1, name: String(item) };
+    });
+  };
+
+  const toSizeList = (raw: any, fallback: any[] = []) => {
+    const parsed = toNamedList(raw, fallback);
+    return parsed.map((size: any) => ({
+      ...size,
+      code: size.code ?? size.value ?? String(size.name ?? '').slice(0, 2).toUpperCase(),
+    }));
+  };
+
+  const toColorList = (raw: any, fallback: any[] = []) => {
+    const parsed = toNamedList(raw, fallback);
+    return parsed.map((color: any) => ({
+      ...color,
+      code: color.code ?? color.hex ?? '#000000',
+    }));
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -99,6 +137,72 @@ export default function Dashboard() {
     };
     checkAuth();
   }, [navigate]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadDashboardSettings = async () => {
+      try {
+        const data = await api.getFilters();
+        if (!mounted || !data) return;
+
+        setCategories((prev) =>
+          toNamedList(data.categories ?? data.categoryOptions ?? data.category, prev).map((item: any) => ({
+            ...item,
+            description: item.description ?? item.desc ?? '',
+            products: item.products ?? 0,
+          }))
+        );
+
+        setBrands((prev) =>
+          toNamedList(data.brands ?? data.brandOptions ?? data.brand, prev).map((item: any) => ({
+            ...item,
+            description: item.description ?? item.desc ?? '',
+            products: item.products ?? 0,
+          }))
+        );
+
+        setGenders((prev) =>
+          toNamedList(data.genders ?? data.genderOptions ?? data.gender, prev).map((item: any) => ({
+            ...item,
+            description: item.description ?? item.desc ?? '',
+          }))
+        );
+
+        setOccasions((prev) =>
+          toNamedList(data.occasions ?? data.occasionOptions ?? data.occasion, prev).map((item: any) => ({
+            ...item,
+            description: item.description ?? item.desc ?? '',
+          }))
+        );
+
+        setPatterns((prev) =>
+          toNamedList(data.patterns ?? data.patternOptions ?? data.pattern, prev).map((item: any) => ({
+            ...item,
+            description: item.description ?? item.desc ?? '',
+          }))
+        );
+
+        setMaterials((prev) =>
+          toNamedList(data.materials ?? data.materialOptions ?? data.material, prev).map((item: any) => ({
+            ...item,
+            description: item.description ?? item.desc ?? '',
+          }))
+        );
+
+        setSizes((prev) => toSizeList(data.sizes ?? data.sizeOptions ?? data.size, prev));
+        setColors((prev) => toColorList(data.colors ?? data.colorOptions ?? data.color, prev));
+      } catch (error) {
+        console.error('Failed to load dashboard settings filters:', error);
+      }
+    };
+
+    loadDashboardSettings();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleLogout = async () => {
     try {
