@@ -208,6 +208,8 @@ export default function Checkout() {
                       />
                       <div className="flex-1">
                         <h3 className="font-medium text-sm">{item.name}</h3>
+                        {item.selectedSize && <p className="text-xs text-gray-500">Size: {item.selectedSize}</p>}
+                        {item.selectedColor && <p className="text-xs text-gray-500">Colour: {item.selectedColor}</p>}
                         <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
                         <p className="font-semibold text-sm">${item.price * item.quantity}</p>
                       </div>

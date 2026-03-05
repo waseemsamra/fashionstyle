@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-import { Star, ShoppingCart, ArrowLeft } from 'lucide-react';
+import { Star, ShoppingCart, ArrowLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductIdFromSlug } from '@/utils/productUrl';
@@ -13,6 +13,11 @@ export default function ProductDetail() {
   const { addToCart } = useCart();
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [sizeGuideUnit, setSizeGuideUnit] = useState<'inch' | 'cm'>('cm');
+  const [sizeGuideTab, setSizeGuideTab] = useState<'size' | 'measuring' | 'how-to-measure'>('size');
   const productId = getProductIdFromSlug(slug);
 
   const normalizeId = (value: unknown) =>
@@ -111,7 +116,15 @@ export default function ProductDetail() {
   }
 
   const handleAddToCart = () => {
-    addToCart(product);
+    if (product.sizes?.length && !selectedSize) {
+      toast.error('Please select a size');
+      return;
+    }
+    if (product.colors?.length && !selectedColor) {
+      toast.error('Please select a color');
+      return;
+    }
+    addToCart({ ...product, selectedSize, selectedColor });
     toast.success('Added to cart!');
   };
 
@@ -120,9 +133,8 @@ export default function ProductDetail() {
   const detailGroups = [
     { label: 'Occasions', values: asList(product.occasions) },
     { label: 'Patterns', values: asList(product.patterns) },
-    { label: 'Sizes', values: asList(product.sizes) },
+    { label: 'Genders', values: asList(product.genders) },
     { label: 'Cloth Materials', values: asList(product.materials) },
-    { label: 'Colours', values: asList(product.colors) },
   ].filter((group) => group.values.length > 0);
 
   return (
@@ -201,6 +213,49 @@ export default function ProductDetail() {
               </p>
             </div>
 
+            <div className="space-y-4">
+              {product.sizes && product.sizes.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium">Size</label>
+                    <button 
+                      onClick={() => setShowSizeGuide(true)}
+                      className="text-xs text-gold hover:underline font-medium"
+                    >
+                      Size Guide
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map((size: string) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`px-4 py-2 border rounded ${selectedSize === size ? 'bg-gold text-white' : 'bg-white'}`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {product.colors && product.colors.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Color</label>
+                  <div className="flex flex-wrap gap-2">
+                    {product.colors.map((color: string) => (
+                      <button
+                        key={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`px-4 py-2 border rounded ${selectedColor === color ? 'bg-gold text-white' : 'bg-white'}`}
+                      >
+                        {color}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {detailGroups.length > 0 && (
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">Product Details</h3>
@@ -243,6 +298,153 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {showSizeGuide && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex justify-end items-end md:items-stretch">
+          <div className="bg-white w-full md:w-96 h-screen md:h-auto overflow-y-auto slide-in-right md:rounded-l-lg">
+            <div className="sticky top-0 bg-white border-b">
+              <div className="p-6 border-b flex items-center justify-between">
+                <h2 className="text-xl font-bold">Size Guide</h2>
+                <button onClick={() => setShowSizeGuide(false)} className="p-1 hover:bg-gray-100 rounded">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              <div className="flex border-b">
+                <button
+                  onClick={() => setSizeGuideTab('size')}
+                  className={`flex-1 py-3 px-4 text-center font-medium border-b-2 transition ${
+                    sizeGuideTab === 'size' ? 'border-gold text-gold' : 'border-transparent text-gray-600'
+                  }`}
+                >
+                  Size Guide
+                </button>
+                <button
+                  onClick={() => setSizeGuideTab('measuring')}
+                  className={`flex-1 py-3 px-4 text-center font-medium border-b-2 transition ${
+                    sizeGuideTab === 'measuring' ? 'border-gold text-gold' : 'border-transparent text-gray-600'
+                  }`}
+                >
+                  Measuring Guide
+                </button>
+                <button
+                  onClick={() => setSizeGuideTab('how-to-measure')}
+                  className={`flex-1 py-3 px-4 text-center font-medium border-b-2 transition ${
+                    sizeGuideTab === 'how-to-measure' ? 'border-gold text-gold' : 'border-transparent text-gray-600'
+                  }`}
+                >
+                  How To Measure
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {sizeGuideTab === 'size' && (
+                <>
+                  {/* Unit Toggle */}
+                  <div className="flex items-center gap-4 justify-center">
+                    <button
+                      onClick={() => setSizeGuideUnit('cm')}
+                      className={`px-4 py-2 rounded ${sizeGuideUnit === 'cm' ? 'bg-gold text-white' : 'bg-gray-200'}`}
+                    >
+                      cm
+                    </button>
+                    <button
+                      onClick={() => setSizeGuideUnit('inch')}
+                      className={`px-4 py-2 rounded ${sizeGuideUnit === 'inch' ? 'bg-gold text-white' : 'bg-gray-200'}`}
+                    >
+                      inch
+                    </button>
+                  </div>
+
+                  {/* Size Chart */}
+                  <div className="overflow-x-auto">
+                    <h3 className="font-semibold text-lg mb-3">Size Chart for Women</h3>
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">Size</th>
+                          <th className="text-left p-2">UK</th>
+                          <th className="text-left p-2">Bust</th>
+                          <th className="text-left p-2">Waist</th>
+                          <th className="text-left p-2">Hip</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { size: 'XS', uk: 6, bust: 32, waist: 26, hip: 36 },
+                          { size: 'S', uk: 8, bust: 34, waist: 28, hip: 38 },
+                          { size: 'M', uk: 10, bust: 36, waist: 30, hip: 40 },
+                          { size: 'L', uk: 12, bust: 38, waist: 32, hip: 42 },
+                          { size: 'XL', uk: 14, bust: 40, waist: 34, hip: 44 },
+                          { size: 'XXL', uk: 16, bust: 42, waist: 36, hip: 46 },
+                          { size: '3XL', uk: 18, bust: 44, waist: 38, hip: 48 },
+                          { size: '4XL', uk: 20, bust: 46, waist: 40, hip: 50 },
+                          { size: '5XL', uk: 22, bust: 48, waist: 42, hip: 52 },
+                          { size: '6XL', uk: 24, bust: 50, waist: 44, hip: 54 },
+                        ].map((row) => (
+                          <tr key={row.size} className="border-b">
+                            <td className="p-2 font-medium">{row.size}</td>
+                            <td className="p-2">{row.uk}</td>
+                            <td className="p-2">{sizeGuideUnit === 'cm' ? Math.round(row.bust * 2.54) : row.bust}</td>
+                            <td className="p-2">{sizeGuideUnit === 'cm' ? Math.round(row.waist * 2.54) : row.waist}</td>
+                            <td className="p-2">{sizeGuideUnit === 'cm' ? Math.round(row.hip * 2.54) : row.hip}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Info */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-600">
+                    <p className="font-medium text-blue-900 mb-2">About Size Guide</p>
+                    <p>
+                      This is a standard size guide for basic body measurements. Length will vary according to style. 
+                      If you are unsure of your size, please contact our customer care.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {sizeGuideTab === 'measuring' && (
+                <div className="space-y-4">
+                  <img 
+                    src="https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/measuring-guide.jpg"
+                    alt="How to measure" 
+                    className="w-full rounded-lg"
+                  />
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-600">
+                    <p className="font-medium text-blue-900 mb-2">How to Measure</p>
+                    <p>
+                      Use this guide to understand where each measurement is taken. Measure straight across your body while wearing the clothing that fits you well. 
+                      For accurate sizing, wear minimal clothing when measuring.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {sizeGuideTab === 'how-to-measure' && (
+                <div className="space-y-4">
+                  <img 
+                    src="https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/measuring-guide.jpg"
+                    alt="How to measure" 
+                    className="w-full rounded-lg"
+                  />
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-600">
+                    <p className="font-medium text-blue-900 mb-2">Measuring Instructions</p>
+                    <ul className="list-disc list-inside space-y-2">
+                      <li>Wear minimal, fitted clothing when measuring</li>
+                      <li>Measure straight across, not diagonally</li>
+                      <li>Keep the measuring tape snug but not tight</li>
+                      <li>Write down all measurements for reference</li>
+                      <li>Compare with our size chart above</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

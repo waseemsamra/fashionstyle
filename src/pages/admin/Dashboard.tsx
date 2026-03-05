@@ -833,221 +833,189 @@ export default function Dashboard() {
 
       {showEditModal && editingProduct && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">{products.find(p => p.id === editingProduct.id) ? 'Edit Product' : 'Add Product'}</h2>
               <button onClick={() => setShowEditModal(false)}>
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Product Name</label>
-                <input
-                  type="text"
-                  value={editingProduct.name}
-                  onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
-                  className="w-full p-3 border rounded-lg"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Category</label>
-                <select
-                  value={editingProduct.category}
-                  onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
-                  className="w-full p-3 border rounded-lg"
-                >
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.name}>{category.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Brand</label>
-                <select
-                  value={editingProduct.brand}
-                  onChange={(e) => setEditingProduct({...editingProduct, brand: e.target.value})}
-                  className="w-full p-3 border rounded-lg"
-                >
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.name}>{brand.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Gender</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {genders.map((gender) => (
-                    <label key={gender.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={ensureArray(editingProduct.genders).includes(gender.name)}
-                        onChange={(e) => {
-                          const current = ensureArray(editingProduct.genders);
-                          setEditingProduct({
-                            ...editingProduct,
-                            genders: e.target.checked
-                              ? [...current, gender.name]
-                              : current.filter((x: string) => x !== gender.name),
-                          });
-                        }}
-                      />
-                      {gender.name}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-6">
+              <div className="col-span-2 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Price ($)</label>
+                  <label className="block text-sm font-medium mb-2">Product Name</label>
                   <input
-                    type="number"
-                    value={editingProduct.price}
-                    onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})}
+                    type="text"
+                    value={editingProduct.name}
+                    onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
                     className="w-full p-3 border rounded-lg"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Stock</label>
-                  <input
-                    type="number"
-                    value={editingProduct.stock}
-                    onChange={(e) => setEditingProduct({...editingProduct, stock: Number(e.target.value)})}
+                  <label className="block text-sm font-medium mb-2">Category</label>
+                  <select
+                    value={editingProduct.category}
+                    onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
                     className="w-full p-3 border rounded-lg"
-                  />
+                  >
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.name}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Brand</label>
+                  <select
+                    value={editingProduct.brand}
+                    onChange={(e) => setEditingProduct({...editingProduct, brand: e.target.value})}
+                    className="w-full p-3 border rounded-lg"
+                  >
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.name}>{brand.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Price ($)</label>
+                    <input
+                      type="number"
+                      value={editingProduct.price}
+                      onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})}
+                      className="w-full p-3 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Stock</label>
+                    <input
+                      type="number"
+                      value={editingProduct.stock}
+                      onChange={(e) => setEditingProduct({...editingProduct, stock: Number(e.target.value)})}
+                      className="w-full p-3 border rounded-lg"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Occasions</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {occasions.map((occ) => (
-                    <label key={occ.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={ensureArray(editingProduct.occasions).includes(occ.name)}
-                        onChange={(e) => {
-                          const current = ensureArray(editingProduct.occasions);
-                          setEditingProduct({
-                            ...editingProduct,
-                            occasions: e.target.checked
-                              ? [...current, occ.name]
-                              : current.filter((x: string) => x !== occ.name),
-                          });
-                        }}
-                      />
-                      {occ.name}
-                    </label>
-                  ))}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Gender</label>
+                  <select
+                    multiple
+                    value={editingProduct.genders || []}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setEditingProduct({...editingProduct, genders: selected});
+                    }}
+                    className="w-full p-3 border rounded-lg"
+                    size={Math.min(genders.length, 5)}
+                  >
+                    {genders.map((gender) => (
+                      <option key={gender.id} value={gender.name}>{gender.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Occasions</label>
+                  <select
+                    multiple
+                    value={editingProduct.occasions || []}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setEditingProduct({...editingProduct, occasions: selected});
+                    }}
+                    className="w-full p-3 border rounded-lg"
+                    size={Math.min(occasions.length, 5)}
+                  >
+                    {occasions.map((occ) => (
+                      <option key={occ.id} value={occ.name}>{occ.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Patterns</label>
+                  <select
+                    multiple
+                    value={editingProduct.patterns || []}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setEditingProduct({...editingProduct, patterns: selected});
+                    }}
+                    className="w-full p-3 border rounded-lg"
+                    size={Math.min(patterns.length, 5)}
+                  >
+                    {patterns.map((pat) => (
+                      <option key={pat.id} value={pat.name}>{pat.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Sizes</label>
+                  <select
+                    multiple
+                    value={editingProduct.sizes || []}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setEditingProduct({...editingProduct, sizes: selected});
+                    }}
+                    className="w-full p-3 border rounded-lg"
+                    size={Math.min(sizes.length, 5)}
+                  >
+                    {sizes.map((size) => (
+                      <option key={size.id} value={size.code}>{size.code}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Cloth Materials</label>
+                  <select
+                    multiple
+                    value={editingProduct.materials || []}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setEditingProduct({...editingProduct, materials: selected});
+                    }}
+                    className="w-full p-3 border rounded-lg"
+                    size={Math.min(materials.length, 5)}
+                  >
+                    {materials.map((mat) => (
+                      <option key={mat.id} value={mat.name}>{mat.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Colours</label>
+                  <select
+                    multiple
+                    value={editingProduct.colors || []}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setEditingProduct({...editingProduct, colors: selected});
+                    }}
+                    className="w-full p-3 border rounded-lg"
+                    size={Math.min(colors.length, 5)}
+                  >
+                    {colors.map((color) => (
+                      <option key={color.id} value={color.name}>{color.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Patterns</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {patterns.map((pat) => (
-                    <label key={pat.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={ensureArray(editingProduct.patterns).includes(pat.name)}
-                        onChange={(e) => {
-                          const current = ensureArray(editingProduct.patterns);
-                          setEditingProduct({
-                            ...editingProduct,
-                            patterns: e.target.checked
-                              ? [...current, pat.name]
-                              : current.filter((x: string) => x !== pat.name),
-                          });
-                        }}
-                      />
-                      {pat.name}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Sizes</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {sizes.map((size) => (
-                    <label key={size.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={ensureArray(editingProduct.sizes).includes(size.code)}
-                        onChange={(e) => {
-                          const current = ensureArray(editingProduct.sizes);
-                          setEditingProduct({
-                            ...editingProduct,
-                            sizes: e.target.checked
-                              ? [...current, size.code]
-                              : current.filter((x: string) => x !== size.code),
-                          });
-                        }}
-                      />
-                      {size.code}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Cloth Materials</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {materials.map((mat) => (
-                    <label key={mat.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={ensureArray(editingProduct.materials).includes(mat.name)}
-                        onChange={(e) => {
-                          const current = ensureArray(editingProduct.materials);
-                          setEditingProduct({
-                            ...editingProduct,
-                            materials: e.target.checked
-                              ? [...current, mat.name]
-                              : current.filter((x: string) => x !== mat.name),
-                          });
-                        }}
-                      />
-                      {mat.name}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Colours</label>
-                <div className="grid grid-cols-4 gap-2">
-                  {colors.map((color) => (
-                    <label key={color.id} className="flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={ensureArray(editingProduct.colors).includes(color.name)}
-                        onChange={(e) => {
-                          const current = ensureArray(editingProduct.colors);
-                          setEditingProduct({
-                            ...editingProduct,
-                            colors: e.target.checked
-                              ? [...current, color.name]
-                              : current.filter((x: string) => x !== color.name),
-                          });
-                        }}
-                      />
-                      {color.name}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <button onClick={handleSave} className="flex-1 py-3 bg-gold text-white rounded-lg hover:bg-gold/90">
-                  Save Changes
-                </button>
-                <button onClick={() => setShowEditModal(false)} className="flex-1 py-3 bg-gray-200 rounded-lg hover:bg-gray-300">
-                  Cancel
-                </button>
-              </div>
+            <div className="flex gap-4 pt-4">
+              <button onClick={handleSave} className="flex-1 py-3 bg-gold text-white rounded-lg hover:bg-gold/90">
+                Save Changes
+              </button>
+              <button onClick={() => setShowEditModal(false)} className="flex-1 py-3 bg-gray-200 rounded-lg hover:bg-gray-300">
+                Cancel
+              </button>
             </div>
           </div>
         </div>

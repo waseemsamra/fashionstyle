@@ -100,6 +100,8 @@ export default function OrderConfirmation() {
                     />
                     <div className="flex-1">
                       <h4 className="font-medium">{item.name}</h4>
+                      {item.selectedSize && <p className="text-sm text-gray-500">Size: {item.selectedSize}</p>}
+                      {item.selectedColor && <p className="text-sm text-gray-500">Colour: {item.selectedColor}</p>}
                       <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
                       <p className="font-semibold">${item.price * item.quantity}</p>
                     </div>
