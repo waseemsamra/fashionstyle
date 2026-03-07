@@ -55,13 +55,41 @@ export default function Shop() {
   );
 
   // Use React Query with caching
-  const { data: productsData } = useAllProducts();
+  const { data: productsData, isLoading, error } = useAllProducts();
 
   useEffect(() => {
+    console.log('Shop: productsData changed:', productsData?.length);
     if (productsData && Array.isArray(productsData)) {
       setAllProducts(productsData);
     }
   }, [productsData]);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    console.error('Shop error:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">😕</div>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">Failed to Load Products</h3>
+          <p className="text-gray-500 mb-6">Please try refreshing the page</p>
+          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+        </div>
+      </div>
+    );
+  }
 
   const filteredProducts = allProducts.filter((product) => {
     const productPrice = Number(product.price ?? 0);

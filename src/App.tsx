@@ -29,11 +29,12 @@ const AdminOrders = lazy(() => import('@/pages/admin/Orders'));
 function Layout() {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
-  const isDashboardRoute = location.pathname === '/dashboard';
+  // Show navigation on dashboard now
+  const isAuthOnlyRoute = location.pathname === '/login' || location.pathname === '/admin/login';
 
   return (
     <div className="min-h-screen bg-beige-100">
-      {!isAdminRoute && !isDashboardRoute && <Navigation />}
+      {!isAdminRoute && !isAuthOnlyRoute && <Navigation />}
       <main>
         <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-900" /></div>}>
           <Routes>
@@ -58,7 +59,7 @@ function Layout() {
           </Routes>
         </Suspense>
       </main>
-      {!isAdminRoute && !isDashboardRoute && <Footer />}
+      {!isAdminRoute && !isAuthOnlyRoute && <Footer />}
       <Toaster position="bottom-right" richColors />
     </div>
   );

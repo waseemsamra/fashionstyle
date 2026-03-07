@@ -15,7 +15,19 @@ export default function FeaturedProducts() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.listProducts().then(data => setProducts(data.items?.slice(0, 4) || []));
+    const loadProducts = async () => {
+      try {
+        console.log('Loading featured products...');
+        const data = await api.listProducts();
+        console.log('Featured products loaded:', data);
+        const items = data.items || data;
+        setProducts(Array.isArray(items) ? items.slice(0, 4) : []);
+      } catch (error) {
+        console.error('Failed to load featured products:', error);
+        setProducts([]);
+      }
+    };
+    loadProducts();
   }, []);
 
   useEffect(() => {

@@ -40,21 +40,31 @@ export const useAllProducts = () => {
   return useQuery({
     queryKey: ['all-products'],
     queryFn: async () => {
-      const allItems: any[] = [];
-      let nextToken: string | undefined;
+      console.log('useAllProducts: Fetching products...');
+      try {
+        const allItems: any[] = [];
+        let nextToken: string | undefined;
 
-      do {
-        const data = await api.listProducts(nextToken ? { nextToken } : {});
-        if (Array.isArray(data?.items)) {
-          allItems.push(...data.items);
-        }
-        nextToken = data?.nextToken;
-      } while (nextToken);
+        do {
+          const data = await api.listProducts(nextToken ? { nextToken } : {});
+          console.log('useAllProducts: Received data:', data);
+          if (Array.isArray(data?.items)) {
+            allItems.push(...data.items);
+          }
+          nextToken = data?.nextToken;
+        } while (nextToken);
 
-      return allItems;
+        console.log('useAllProducts: Total items:', allItems.length);
+        return allItems;
+      } catch (error) {
+        console.error('useAllProducts: Failed to load products:', error);
+        throw error;
+      }
     },
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 20 * 60 * 1000, // 20 minutes
+    retry: 2,
+    retryDelay: 1000,
   });
 };
 
