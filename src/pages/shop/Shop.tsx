@@ -4,8 +4,9 @@ import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, X, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
-import { api } from '@/services/api';
+import { useAllProducts } from '@/hooks/useProducts';
 import { getProductUrl } from '@/utils/productUrl';
+import LazyImage from '@/components/ui/LazyImage';
 
 export default function Shop() {
   const navigate = useNavigate();
@@ -53,44 +54,14 @@ export default function Shop() {
     (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
   );
 
+  // Use React Query with caching
+  const { data: productsData } = useAllProducts();
+
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchAllProducts = async () => {
-      try {
-        const allItems: any[] = [];
-        let nextToken: string | undefined;
-
-        do {
-          const data = await api.listProducts(
-            nextToken ? { nextToken } : {}
-          );
-
-          if (Array.isArray(data?.items)) {
-            allItems.push(...data.items);
-          }
-
-          nextToken =
-            data?.nextToken ||
-            data?.lastEvaluatedKey ||
-            data?.LastEvaluatedKey ||
-            data?.paginationToken;
-        } while (nextToken);
-
-        if (isMounted) {
-          setAllProducts(allItems);
-        }
-      } catch (error) {
-        console.error('Failed to load products:', error);
-      }
-    };
-
-    fetchAllProducts();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    if (productsData && Array.isArray(productsData)) {
+      setAllProducts(productsData);
+    }
+  }, [productsData]);
 
   const filteredProducts = allProducts.filter((product) => {
     const productPrice = Number(product.price ?? 0);
@@ -304,22 +275,43 @@ export default function Shop() {
           {/* Products Grid */}
           <div className="flex-1">
             <p className="text-gray-600 mb-6">
-              Showing {filteredProducts.length} of {allProducts.length} products
+              {filteredProducts.length > 0 
+                ? `Showing ${filteredProducts.length} of ${allProducts.length} products`
+                : 'No products found'}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">🛍️</div>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No Products Found</h3>
+                <p className="text-gray-500 mb-6">
+                  {allProducts.length === 0 
+                    ? "We're currently loading our collection. Please refresh the page."
+                    : "Try adjusting your filters to see more results."}
+                </p>
+                {allProducts.length > 0 && (
+                  <Button onClick={resetFilters} variant="outline">
+                    Reset Filters
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
                   className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition"
                 >
-                  <div 
+                  <div
                     className="relative aspect-[3/4] overflow-hidden cursor-pointer"
                     onClick={() => navigate(getProductUrl(product))}
                   >
-                    <img
+                    <LazyImage
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      productName={product.name}
+                      productId={product.id}
+                      className="w-full h-full"
                     />
                     <div className="absolute top-3 left-3 flex flex-col gap-2">
                       {product.isNew && (
@@ -379,13 +371,6 @@ export default function Shop() {
                 </div>
               ))}
             </div>
-            {filteredProducts.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">No products found matching your filters.</p>
-                <Button onClick={resetFilters} className="mt-4">
-                  Clear Filters
-                </Button>
-              </div>
             )}
           </div>
         </div>

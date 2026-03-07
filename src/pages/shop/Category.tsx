@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { getProductUrl } from '@/utils/productUrl';
+import { getProductImage, handleImageError } from '@/utils/productImage';
 
 export default function Category() {
   const { name } = useParams();
@@ -65,9 +66,10 @@ export default function Category() {
                   onClick={() => navigate(getProductUrl(product))}
                 >
                   <img
-                    src={product.image}
+                    src={getProductImage(product)}
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    onError={(e) => handleImageError(e, product.name)}
                   />
                   <div className="absolute top-3 left-3 flex flex-col gap-2">
                     {product.isNew && (

@@ -1,50 +1,121 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL;
+// Use proxy during development, direct URL in production
+const API_URL = import.meta.env.VITE_API_URL || 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+const USE_PROXY = import.meta.env.DEV;
 
+// In-memory cache for products
+let productsCache: any = null;
+let productsCacheTime: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Create axios instance with CORS handling
+const apiClient = axios.create({
+  baseURL: USE_PROXY ? '/api' : API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000, // 10 second timeout
+});
+
+// Add JWT token to requests
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('jwt_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Handle CORS errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.code === 'ERR_NETWORK' || error.message?.includes('CORS')) {
+      console.warn('CORS error detected. The API Gateway may need CORS configuration.');
+    }
+    return Promise.reject(error);
+  }
+);
+
+// API service methods
 export const api = {
+  // Get filters (if endpoint exists)
   getFilters: async () => {
-    const response = await axios.get(`${API_URL}/filters`);
+    const response = await apiClient.get('/filters');
     return response.data;
   },
 
-  listProducts: async (params = {}) => {
-    const response = await axios.get(`${API_URL}/products`, { params });
-    return response.data;
+  // List products with caching
+  listProducts: async (params: { category?: string; brand?: string; nextToken?: string } = {}) => {
+    // Only use cache for requests without pagination
+    if (!params.nextToken && !params.category && !params.brand) {
+      const now = Date.now();
+      if (productsCache && (now - productsCacheTime) < CACHE_DURATION) {
+        return productsCache;
+      }
+    }
+
+    const response = await apiClient.get('/products', { params });
+    const data = response.data;
+
+    // Cache the response
+    if (!params.nextToken && !params.category && !params.brand) {
+      productsCache = data;
+      productsCacheTime = Date.now();
+    }
+
+    return data;
   },
 
+  // Get single product
   getProduct: async (id: string) => {
-    const response = await axios.get(`${API_URL}/products/${id}`);
+    const products = await api.listProducts();
+    return products.find((p: any) => p.id === id) || null;
+  },
+
+  // Search products
+  searchProducts: async (params: { q: string; page?: number }) => {
+    const response = await apiClient.get('/search', { params });
     return response.data;
   },
 
-  searchProducts: async (params: any) => {
-    const response = await axios.get(`${API_URL}/search`, { params });
-    return response.data;
-  },
-
+  // Get user profile
   getUserProfile: async (userId: string) => {
-    const response = await axios.get(`${API_URL}/users/${userId}/profile`);
+    const response = await apiClient.get(`/users/${userId}`);
     return response.data;
   },
 
+  // Update user profile
   updateUserProfile: async (userId: string, profile: any) => {
-    const response = await axios.put(`${API_URL}/users/${userId}/profile`, profile);
+    const response = await apiClient.put(`/users/${userId}/profile`, profile);
     return response.data;
   },
 
+  // Create order
   createOrder: async (userId: string, orderData: any) => {
-    const response = await axios.post(`${API_URL}/users/${userId}/orders`, orderData);
+    const response = await apiClient.post(`/users/${userId}/orders`, orderData);
     return response.data;
   },
 
+  // Get user orders
   getUserOrders: async (userId: string) => {
-    const response = await axios.get(`${API_URL}/users/${userId}/orders`);
-    return response.data;
+    const response = await apiClient.get(`/users/${userId}/orders`);
+    return response.data.orders || [];
   },
 
+  // Get single order
   getOrder: async (userId: string, orderId: string) => {
-    const response = await axios.get(`${API_URL}/users/${userId}/orders/${orderId}`);
+    const response = await apiClient.get(`/users/${userId}/orders/${orderId}`);
     return response.data;
   }
 };
+
+// Export both apiClient and api for compatibility
+export { apiClient, API_URL };
+export default apiClient;

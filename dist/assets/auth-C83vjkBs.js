@@ -1,0 +1,1 @@
+import{f as s}from"./vendor-aws-BiQAwMAJ.js";const n=async()=>{try{return((await s({forceRefresh:!0})).tokens?.accessToken?.payload["cognito:groups"]||[]).includes("Admins")}catch{return!1}};export{n as c};

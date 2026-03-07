@@ -19,10 +19,12 @@ const Checkout = lazy(() => import('@/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@/pages/checkout/OrderConfirmation'));
 const Login = lazy(() => import('@/pages/user/Login'));
 const UserDashboard = lazy(() => import('@/pages/user/UserDashboard'));
+const VirtualTryOnPage = lazy(() => import('@/pages/VirtualTryOnPage'));
 const AdminLogin = lazy(() => import('@/pages/admin/AdminLogin'));
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
 const Users = lazy(() => import('@/pages/admin/Users'));
 const Profile = lazy(() => import('@/pages/admin/Profile'));
+const AdminOrders = lazy(() => import('@/pages/admin/Orders'));
 
 function Layout() {
   const location = useLocation();
@@ -47,9 +49,11 @@ function Layout() {
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<UserDashboard />} />
+            <Route path="/try-on" element={<VirtualTryOnPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<Dashboard />} />
             <Route path="/admin/users" element={<Users />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/profile" element={<Profile />} />
           </Routes>
         </Suspense>

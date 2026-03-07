@@ -1,0 +1,406 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Orders API - Add to existing API Gateway
+
+Parameters:
+  RestApiId:
+    Type: String
+    Description: Existing API Gateway REST API ID
+    Default: 8ur8l436ff
+
+  TableName:
+    Type: String
+    Description: DynamoDB table name
+    Default: fashionstore-prod
+
+  Environment:
+    Type: String
+    Default: prod
+
+Resources:
+  OrdersFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub fashionstore-${Environment}-orders-v2
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt OrdersRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TableName
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+
+          const TABLE_NAME = process.env.TABLE_NAME;
+
+          exports.handler = async (event) => {
+            const headers = {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': 'Content-Type',
+              'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+            };
+
+            if (event.httpMethod === 'OPTIONS') {
+              return { statusCode: 200, headers, body: '' };
+            }
+
+            try {
+              const userId = event.pathParameters?.userId;
+              const orderId = event.pathParameters?.orderId;
+              const method = event.httpMethod;
+
+              // GET /users/{userId}/orders - Get all orders for a user
+              if (method === 'GET' && !orderId) {
+                const params = {
+                  TableName: TABLE_NAME,
+                  KeyConditionExpression: 'PK = :pk AND begins_with(SK, :skPrefix)',
+                  ExpressionAttributeValues: {
+                    ':pk': `USER#${userId}`,
+                    ':skPrefix': 'ORDER#'
+                  }
+                };
+
+                const result = await dynamodb.query(params).promise();
+                
+                const orders = result.Items.map(item => ({
+                  orderId: item.orderId,
+                  date: item.date,
+                  items: item.items,
+                  totalPrice: item.totalPrice,
+                  paymentMethod: item.paymentMethod,
+                  status: item.status,
+                  fullName: item.fullName,
+                  email: item.email,
+                  phone: item.phone,
+                  address: item.address,
+                  city: item.city,
+                  postalCode: item.postalCode,
+                  itemCount: item.itemCount,
+                  createdAt: item.createdAt
+                }));
+
+                return {
+                  statusCode: 200,
+                  headers,
+                  body: JSON.stringify({ items: orders })
+                };
+              }
+
+              // GET /users/{userId}/orders/{orderId} - Get a specific order
+              if (method === 'GET' && orderId) {
+                const result = await dynamodb.get({
+                  TableName: TABLE_NAME,
+                  Key: { 
+                    PK: `USER#${userId}`, 
+                    SK: `ORDER#${orderId}` 
+                  }
+                }).promise();
+
+                if (!result.Item) {
+                  return {
+                    statusCode: 404,
+                    headers,
+                    body: JSON.stringify({ error: 'Order not found' })
+                  };
+                }
+
+                return {
+                  statusCode: 200,
+                  headers,
+                  body: JSON.stringify(result.Item)
+                };
+              }
+
+              // POST /users/{userId}/orders - Create a new order
+              if (method === 'POST') {
+                const orderData = JSON.parse(event.body);
+                const orderId = orderData.orderId || `ORD-${Date.now().toString().slice(-8)}`;
+                const timestamp = new Date().toISOString();
+
+                const item = {
+                  PK: `USER#${userId}`,
+                  SK: `ORDER#${orderId}`,
+                  orderId,
+                  date: orderData.date || timestamp,
+                  items: orderData.items,
+                  totalPrice: orderData.totalPrice,
+                  paymentMethod: orderData.paymentMethod,
+                  status: orderData.status || 'Processing',
+                  fullName: orderData.fullName,
+                  email: orderData.email,
+                  phone: orderData.phone,
+                  address: orderData.address,
+                  city: orderData.city,
+                  postalCode: orderData.postalCode,
+                  itemCount: orderData.itemCount || orderData.items?.length || 0,
+                  createdAt: timestamp,
+                  updatedAt: timestamp
+                };
+
+                await dynamodb.put({
+                  TableName: TABLE_NAME,
+                  Item: item
+                }).promise();
+
+                return {
+                  statusCode: 201,
+                  headers,
+                  body: JSON.stringify({ 
+                    message: 'Order created successfully',
+                    orderId,
+                    order: item 
+                  })
+                };
+              }
+
+              return {
+                statusCode: 405,
+                headers,
+                body: JSON.stringify({ error: 'Method not allowed' })
+              };
+            } catch (error) {
+              console.error('Error:', error);
+              return {
+                statusCode: 500,
+                headers,
+                body: JSON.stringify({ error: error.message })
+              };
+            }
+          };
+
+  OrdersRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TableName}
+
+  OrdersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApiId
+      ParentId: !GetAtt RestApiRootId.RootResourceId
+      PathPart: orders
+
+  OrdersGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref OrdersResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrdersFunction.Arn}/invocations
+
+  OrdersPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref OrdersResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrdersFunction.Arn}/invocations
+
+  OrdersOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref OrdersResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # Get existing Users resource from API Gateway
+  UsersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApiId
+      ParentId: !GetAtt RestApiRootId.RootResourceId
+      PathPart: users
+
+  # Get existing UserId resource ({userId})
+  UserIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApiId
+      ParentId: !Ref UsersResource
+      PathPart: '{userId}'
+
+  # Create Orders resource under /users/{userId}/orders
+  UserOrdersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApiId
+      ParentId: !Ref UserIdResource
+      PathPart: orders
+
+  UserOrdersGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref UserOrdersResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrdersFunction.Arn}/invocations
+
+  UserOrdersPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref UserOrdersResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrdersFunction.Arn}/invocations
+
+  UserOrdersOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref UserOrdersResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref OrdersFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApiId}/*/*
+
+  RestApiRootId:
+    Type: Custom::GetRootResourceId
+    Properties:
+      ServiceToken: !GetAtt GetRootResourceFunction.Arn
+      RestApiId: !Ref RestApiId
+
+  GetRootResourceFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.9
+      Handler: index.handler
+      Role: !GetAtt GetRootResourceRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+
+          def handler(event, context):
+            if event['RequestType'] == 'Delete':
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+              return
+
+            try:
+              api_client = boto3.client('apigateway')
+              response = api_client.get_resources(
+                restApiId=event['ResourceProperties']['RestApiId'],
+                limit=500
+              )
+              root = [r for r in response['items'] if r['path'] == '/'][0]
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, {
+                'RootResourceId': root['id']
+              })
+            except Exception as e:
+              cfnresponse.send(event, context, cfnresponse.FAILED, {'Error': str(e)})
+
+  GetRootResourceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ApiGatewayAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: apigateway:GET
+                Resource: '*'
+
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - OrdersGetMethod
+      - OrdersPostMethod
+      - OrdersOptionsMethod
+      - UserOrdersGetMethod
+      - UserOrdersPostMethod
+      - UserOrdersOptionsMethod
+    Properties:
+      RestApiId: !Ref RestApiId
+      StageName: !Ref Environment
+
+Outputs:
+  OrdersFunctionArn:
+    Value: !GetAtt OrdersFunction.Arn
+
+  OrdersEndpoint:
+    Value: !Sub https://${RestApiId}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/orders

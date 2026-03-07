@@ -4,15 +4,15 @@ import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { Star, ShoppingCart, ArrowLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { api } from '@/services/api';
+import { useProduct } from '@/hooks/useProducts';
 import { getProductIdFromSlug } from '@/utils/productUrl';
+import LazyImage from '@/components/ui/LazyImage';
+import VirtualTryOn from '@/components/features/VirtualTryOn';
 
 export default function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const [product, setProduct] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [showSizeGuide, setShowSizeGuide] = useState(false);
@@ -20,91 +20,35 @@ export default function ProductDetail() {
   const [sizeGuideTab, setSizeGuideTab] = useState<'size' | 'measuring' | 'how-to-measure'>('size');
   const productId = getProductIdFromSlug(slug);
 
-  const normalizeId = (value: unknown) =>
-    String(value ?? '')
-      .replace(/^PRODUCT#/i, '')
-      .trim();
-  
+  // Use React Query with caching
+  const { data: product, isLoading, error } = useProduct(productId);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const findFromList = async (requestedId: string) => {
-      const listData = await api.listProducts();
-      const listItems = Array.isArray(listData?.items) ? listData.items : [];
-      return (
-        listItems.find((p: any) => {
-          const id = normalizeId(p?.id);
-          const pk = normalizeId(p?.PK);
-          return id === requestedId || pk === requestedId;
-        }) || null
-      );
-    };
-
-    const fetchProduct = async () => {
-      const requestedId = normalizeId(productId);
-
-      try {
-        setLoading(true);
-        let directProduct: any = null;
-
-        try {
-          const data = await api.getProduct(requestedId);
-          directProduct = data?.item || data?.product || data;
-        } catch (error) {
-          // Some environments currently return 500 for /products/:id.
-          // We'll fallback to list endpoint below.
-          console.warn('Direct product endpoint failed, using list fallback.', error);
-        }
-
-        if (directProduct?.id || directProduct?.PK) {
-          if (isMounted) {
-            setProduct(directProduct);
-          }
-          return;
-        }
-
-        const match = await findFromList(requestedId);
-
-        if (isMounted) {
-          setProduct(match || null);
-        }
-      } catch (error) {
-        console.error('Failed to load product details:', error);
-        if (isMounted) {
-          setProduct(null);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    if (productId) {
-      fetchProduct();
-    } else {
-      setProduct(null);
-      setLoading(false);
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [productId]);
-
-  if (loading) {
+  // Show minimal loading state without spinner
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading product...</p>
+      <div className="min-h-screen bg-white">
+        <div className="container-custom py-8">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Image placeholder */}
+            <div className="aspect-[3/4] bg-beige-100 rounded-lg" />
+            {/* Content placeholder */}
+            <div className="space-y-4 py-8">
+              <div className="h-8 bg-beige-100 rounded w-3/4" />
+              <div className="h-6 bg-beige-100 rounded w-1/4" />
+              <div className="h-20 bg-beige-100 rounded" />
+              <div className="h-12 bg-beige-100 rounded w-1/3" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (!product) {
+  if (error || !product) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -151,10 +95,12 @@ export default function ProductDetail() {
 
         <div className="grid md:grid-cols-2 gap-8 bg-white rounded-lg shadow-lg p-8">
           <div>
-            <img 
-              src={product.image} 
+            <LazyImage
+              src={product.image}
               alt={product.name}
-              className="w-full h-auto rounded-lg"
+              productName={product.name}
+              productId={product.id}
+              className="w-full rounded-lg"
             />
           </div>
 
@@ -287,14 +233,21 @@ export default function ProductDetail() {
               </ul>
             </div>
 
-            <Button 
-              onClick={handleAddToCart}
-              className="w-full"
-              size="lg"
-            >
-              <ShoppingCart className="mr-2 h-5 w-5" />
-              Add to Cart
-            </Button>
+            <div className="space-y-3">
+              <VirtualTryOn 
+                productImage={product.image} 
+                productName={product.name} 
+              />
+              
+              <Button
+                onClick={handleAddToCart}
+                className="w-full"
+                size="lg"
+              >
+                <ShoppingCart className="mr-2 h-5 w-5" />
+                Add to Cart
+              </Button>
+            </div>
           </div>
         </div>
       </div>

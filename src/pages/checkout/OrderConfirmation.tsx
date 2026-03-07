@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { useCart } from '@/hooks/useCart';
@@ -16,7 +16,9 @@ export default function OrderConfirmation() {
   const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [orderNumber, setOrderNumber] = useState('');
+  const [saveAttempted, setSaveAttempted] = useState(false);
   const orderData = location.state;
+  const hasSavedRef = useRef(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -36,14 +38,17 @@ export default function OrderConfirmation() {
   }, [navigate]);
 
   useEffect(() => {
-    if (orderData && isAuthenticated && user && !isSavingOrder) {
+    // Only save once and only when we have all required data
+    if (orderData && isAuthenticated && user && !hasSavedRef.current && !saveAttempted) {
+      setSaveAttempted(true);
+      hasSavedRef.current = true;
       saveOrder();
     }
-  }, [orderData, isAuthenticated, user, isSavingOrder]);
+  }, [orderData, isAuthenticated, user]);
 
   const saveOrder = async () => {
     if (!orderData || !user) return;
-    
+
     setIsSavingOrder(true);
     try {
       const orderId = `ORD-${Date.now().toString().slice(-8)}`;

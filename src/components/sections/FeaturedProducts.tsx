@@ -5,6 +5,7 @@ import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
+import { getProductImage, handleImageError } from '@/utils/productImage';
 
 export default function FeaturedProducts() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -77,9 +78,10 @@ export default function FeaturedProducts() {
               {/* Image Container */}
               <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                 <img
-                  src={product.image}
+                  src={getProductImage(product)}
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={(e) => handleImageError(e, product.name)}
                 />
                 
                 {/* Badges */}

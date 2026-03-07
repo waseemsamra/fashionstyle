@@ -1,16 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signIn, signUp, confirmSignUp, signInWithRedirect } from 'aws-amplify/auth';
-import { User, Lock, Mail, Phone, Facebook } from 'lucide-react';
+import { signOut, signInWithRedirect, confirmSignUp, signUp, fetchAuthSession } from 'aws-amplify/auth';
+import { authService } from '@/services/auth';
+import { User, Lock, Mail, Facebook } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
-  const [signUpMethod, setSignUpMethod] = useState<'email' | 'phone'>('email');
   const [needsVerification, setNeedsVerification] = useState(false);
-  const [credentials, setCredentials] = useState({ email: '', phone: '', password: '', confirmPassword: '', code: '' });
+  const [credentials, setCredentials] = useState({ email: '', password: '', confirmPassword: '', code: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
+
+  // Check for OAuth callback
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      const hash = window.location.hash;
+      console.log('Checking OAuth callback, hash:', hash);
+      
+      if (hash && (hash.includes('id_token') || hash.includes('access_token'))) {
+        try {
+          const session = await fetchAuthSession();
+          if (session.tokens) {
+            const accessToken = session.tokens.accessToken.toString();
+            const email = session.tokens.idToken?.payload?.email as string || '';
+            
+            console.log('OAuth success, storing token and email:', email);
+            localStorage.setItem('jwt_token', accessToken);
+            localStorage.setItem('user_email', email);
+            window.location.hash = '';
+            
+            // Always redirect to dashboard after successful OAuth login
+            console.log('Redirecting to dashboard from OAuth callback');
+            navigate('/dashboard', { replace: true });
+            return;
+          }
+        } catch (err: any) {
+          console.error('OAuth callback error:', err);
+          setError('Authentication failed: ' + err.message);
+        }
+      } else if (hash) {
+        console.log('Hash present but no tokens:', hash.substring(0, 100));
+      }
+    };
+    handleAuthCallback();
+  }, [navigate]);
+
+  // Clear existing session on mount
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        await signOut();
+        authService.signOut();
+      } catch (err) {
+        // Ignore errors
+      }
+    };
+    checkExistingSession();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,26 +76,206 @@ export default function Login() {
           setLoading(false);
           return;
         }
-        const username = signUpMethod === 'email' ? credentials.email : credentials.phone;
-        await signUp({
-          username,
-          password: credentials.password,
-          options: {
-            userAttributes: signUpMethod === 'email' 
-              ? { email: credentials.email }
-              : { phone_number: credentials.phone }
+
+        // Try backend signup first
+        try {
+          console.log('Attempting backend signup...');
+          const response = await authService.signup(credentials.email, credentials.password);
+          console.log('Backend signup response:', response);
+          
+          if (response.message) {
+            setError('Account created! Please verify your email.');
+            setNeedsVerification(true);
+            setLoading(false);
+            return;
           }
-        });
-        setNeedsVerification(true);
-        setError('Verification code sent! Check your ' + (signUpMethod === 'email' ? 'email' : 'phone'));
+        } catch (backendErr: any) {
+          console.log('Backend signup failed:', backendErr.message);
+
+          // Check for specific errors
+          if (backendErr.response?.data?.error?.includes('already') ||
+              backendErr.message?.includes('already')) {
+            setError('User already exists. Redirecting to login...');
+            setTimeout(() => {
+              setIsSignUp(false);
+              setCredentials({ ...credentials, password: '', confirmPassword: '' });
+            }, 1500);
+            setLoading(false);
+            return;
+          }
+
+          // Fallback to Cognito signup
+          console.log('Using Cognito signup as fallback');
+        }
+
+        // Fallback to Cognito signup
+        try {
+          console.log('Signing up with Cognito...');
+          
+          // Validate email format first
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(credentials.email)) {
+            setError('Please enter a valid email address.');
+            setLoading(false);
+            return;
+          }
+          
+          // Validate password strength (Cognito requirements)
+          if (credentials.password.length < 8) {
+            setError('Password must be at least 8 characters long.');
+            setLoading(false);
+            return;
+          }
+          
+          const result = await signUp({
+            username: credentials.email,
+            password: credentials.password,
+            options: {
+              userAttributes: {
+                email: credentials.email
+              },
+              autoSignIn: true
+            }
+          });
+          
+          console.log('Cognito signup result:', result);
+          setNeedsVerification(true);
+          setError('Verification code sent! Check your email (and spam folder).');
+          setLoading(false);
+        } catch (cognitoErr: any) {
+          console.error('Cognito signup error:', cognitoErr);
+          console.error('Error details:', JSON.stringify(cognitoErr, null, 2));
+          
+          if (cognitoErr.name === 'UsernameExistsException') {
+            setError('User already exists. Redirecting to login...');
+            // Wait 2 seconds then switch to login form
+            setTimeout(() => {
+              setIsSignUp(false);
+              setCredentials({ ...credentials, password: '', confirmPassword: '' });
+              setError('Please login with your existing account.');
+            }, 2000);
+            setLoading(false);
+            return;
+          } else if (cognitoErr.name === 'InvalidParameterException') {
+            // Get more specific error message
+            const msg = cognitoErr.message || '';
+            if (msg.includes('email')) {
+              setError('Invalid email format. Please use a valid email address.');
+            } else if (msg.includes('password') || msg.includes('Password')) {
+              setError('Password must be at least 8 characters with uppercase, lowercase, and numbers.');
+            } else {
+              setError('Invalid parameters. Please check your input.');
+            }
+          } else if (cognitoErr.name === 'InvalidPasswordException') {
+            setError('Password must be at least 8 characters with uppercase, lowercase, and numbers.');
+          } else if (cognitoErr.code === 'InvalidParameterException') {
+            setError('Invalid email or password format.');
+          } else {
+            setError('Signup failed: ' + (cognitoErr.message || 'Please try again'));
+          }
+          setLoading(false);
+        }
+        return;
+
       } else {
-        const result = await signIn({ username: credentials.email, password: credentials.password });
-        if (result.isSignedIn) {
-          navigate('/dashboard');
+        // Try backend signin first
+        try {
+          console.log('Attempting backend signin...');
+          const response = await authService.signin(credentials.email, credentials.password);
+          console.log('Backend signin response:', response);
+          
+          if (response.accessToken) {
+            console.log('Backend signin successful, redirecting to dashboard...');
+            // Always redirect to dashboard after successful signin
+            navigate('/dashboard', { replace: true });
+            return;
+          }
+        } catch (backendErr: any) {
+          console.log('Backend signin failed:', backendErr.message);
+          console.log('Error response:', backendErr.response?.data);
+          console.log('Error status:', backendErr.response?.status);
+
+          // Handle 401 Unauthorized - user doesn't exist or wrong password
+          if (backendErr.response?.status === 401) {
+            const errorMsg = backendErr.response?.data?.message || backendErr.response?.data?.error || 'Invalid credentials';
+            
+            // Check if it's a "user not found" error
+            if (errorMsg.includes('not found') || errorMsg.includes('does not exist') || errorMsg.includes('Invalid')) {
+              setError('Invalid email or password. If you don\'t have an account, please sign up first.');
+              setIsSignUp(true); // Switch to signup form
+              setLoading(false);
+              return;
+            }
+            
+            setError(errorMsg);
+            setLoading(false);
+            return;
+          }
+
+          // Check if password reset is required
+          if (backendErr.response?.data?.code === 'PasswordResetRequiredException' ||
+              backendErr.message?.includes('Password reset')) {
+            setError('Password reset required. Please use "Forgot Password" to reset.');
+            setShowResetPassword(true);
+            setResetEmail(credentials.email);
+            setLoading(false);
+            return;
+          }
+
+          // Check if user doesn't exist
+          if (backendErr.response?.data?.code === 'UserNotFoundException' ||
+              backendErr.message?.includes('User does not exist')) {
+            setError('User does not exist. Please sign up first.');
+            setIsSignUp(true);
+            setLoading(false);
+            return;
+          }
+
+          // For CORS errors or network issues
+          if (backendErr.code === 'ERR_NETWORK' || backendErr.message?.includes('CORS')) {
+            console.log('Network/CORS error, checking for existing token...');
+            const token = localStorage.getItem('jwt_token');
+            if (token) {
+              console.log('Using existing token, redirecting to dashboard');
+              navigate('/dashboard', { replace: true });
+              return;
+            }
+          }
+
+          console.log('Using Cognito signin as fallback');
+        }
+
+        // Fallback to Cognito signin via OAuth
+        console.log('Initiating Cognito OAuth redirect...');
+        try {
+          await signInWithRedirect({
+            provider: {
+              custom: import.meta.env.VITE_OAUTH_DOMAIN || ''
+            }
+          });
+        } catch (oauthErr: any) {
+          console.error('OAuth redirect failed:', oauthErr);
+          setError('Login failed. Please try again or sign up if you don\'t have an account.');
+          setLoading(false);
         }
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed');
+      console.error('Auth error:', err);
+      let errorMsg = err.message || 'Authentication failed. Please check your credentials.';
+      
+      // Simplify Cognito error messages
+      if (errorMsg.includes('NotAuthorizedException')) {
+        errorMsg = 'Incorrect username or password.';
+      } else if (errorMsg.includes('UserNotConfirmedException')) {
+        errorMsg = 'Please verify your email first.';
+        setNeedsVerification(true);
+      } else if (errorMsg.includes('PasswordResetRequired')) {
+        errorMsg = 'Password reset required. Please use "Forgot Password".';
+        setShowResetPassword(true);
+        setResetEmail(credentials.email);
+      }
+      
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -55,13 +287,91 @@ export default function Login() {
     setError('');
 
     try {
-      const username = signUpMethod === 'email' ? credentials.email : credentials.phone;
-      await confirmSignUp({ username, confirmationCode: credentials.code });
+      await confirmSignUp({
+        username: credentials.email,
+        confirmationCode: credentials.code
+      });
       setError('Account verified! Please sign in.');
       setIsSignUp(false);
       setNeedsVerification(false);
     } catch (err: any) {
       setError(err.message || 'Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Try backend first
+      const response = await authService.forgotPassword(resetEmail);
+      if (response.message) {
+        setError('Reset code sent! Check your email.');
+        setCodeSent(true);
+      }
+    } catch (err: any) {
+      console.log('Backend forgot password failed:', err.message);
+      
+      // Fallback to Cognito
+      try {
+        const { resetPassword } = await import('aws-amplify/auth');
+        await resetPassword({ username: resetEmail });
+        setError('Reset code sent! Check your email.');
+        setCodeSent(true);
+      } catch (cognitoErr: any) {
+        setError(cognitoErr.message || 'Failed to send reset code');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      // Try backend first
+      const response = await authService.confirmPassword(resetEmail, resetCode, newPassword);
+      if (response.message) {
+        setError('Password reset successful! Please login.');
+        setTimeout(() => {
+          setShowResetPassword(false);
+          setResetEmail('');
+          setResetCode('');
+          setNewPassword('');
+          setCodeSent(false);
+          setIsSignUp(false);
+        }, 2000);
+      }
+    } catch (err: any) {
+      console.log('Backend confirm password failed:', err.message);
+      
+      // Fallback to Cognito
+      try {
+        const { confirmResetPassword } = await import('aws-amplify/auth');
+        await confirmResetPassword({
+          username: resetEmail,
+          confirmationCode: resetCode,
+          newPassword
+        });
+        setError('Password reset successful! Please login.');
+        setTimeout(() => {
+          setShowResetPassword(false);
+          setResetEmail('');
+          setResetCode('');
+          setNewPassword('');
+          setCodeSent(false);
+          setIsSignUp(false);
+        }, 2000);
+      } catch (cognitoErr: any) {
+        setError(cognitoErr.message || 'Failed to reset password');
+      }
     } finally {
       setLoading(false);
     }
@@ -115,65 +425,26 @@ export default function Login() {
           <>
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <div className={`${error.includes('sent') || error.includes('verified') ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'} border px-4 py-3 rounded-lg text-sm`}>
+                <div className={`${error.includes('sent') || error.includes('verified') || error.includes('successful') ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'} border px-4 py-3 rounded-lg text-sm`}>
                   {error}
                 </div>
               )}
 
-              {isSignUp && (
-                <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
-                  <button
-                    type="button"
-                    onClick={() => setSignUpMethod('email')}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium ${signUpMethod === 'email' ? 'bg-white shadow' : ''}`}
-                  >
-                    Email
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSignUpMethod('phone')}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium ${signUpMethod === 'phone' ? 'bg-white shadow' : ''}`}
-                  >
-                    Phone
-                  </button>
+              <div>
+                <label className="block text-sm font-medium mb-2">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={credentials.email}
+                    onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
+                    placeholder="you@example.com"
+                    required
+                    disabled={loading}
+                  />
                 </div>
-              )}
-              
-              {(!isSignUp || signUpMethod === 'email') && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="email"
-                      value={credentials.email}
-                      onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                      placeholder="you@example.com"
-                      required
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {isSignUp && signUpMethod === 'phone' && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">Phone Number</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="tel"
-                      value={credentials.phone}
-                      onChange={(e) => setCredentials({ ...credentials, phone: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                      placeholder="+92 300 1234567"
-                      required
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-              )}
+              </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Password</label>
@@ -187,8 +458,14 @@ export default function Login() {
                     placeholder="Enter password"
                     required
                     disabled={loading}
+                    minLength={8}
                   />
                 </div>
+                {isSignUp && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Must be 8+ characters with uppercase, lowercase, and numbers
+                  </p>
+                )}
               </div>
 
               {isSignUp && (
@@ -212,6 +489,18 @@ export default function Login() {
               <button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white py-3 rounded-lg font-medium" disabled={loading}>
                 {loading ? 'Please wait...' : isSignUp ? 'Sign Up' : 'Sign In'}
               </button>
+
+              {!isSignUp && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(true)}
+                    className="text-sm text-gold hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
             </form>
 
             <div className="mt-6">
@@ -241,6 +530,82 @@ export default function Login() {
           </>
         )}
       </div>
+
+      {/* Reset Password Modal */}
+      {showResetPassword && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Reset Password</h2>
+              <button onClick={() => { setShowResetPassword(false); setResetEmail(''); setResetCode(''); setNewPassword(''); }} className="text-gray-500 hover:text-gray-700">
+                ✕
+              </button>
+            </div>
+
+            {!codeSent ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
+                    placeholder="your@email.com"
+                    required
+                    disabled={loading || codeSent}
+                  />
+                </div>
+                <button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white py-3 rounded-lg font-medium" disabled={loading}>
+                  {loading ? 'Sending...' : 'Send Reset Code'}
+                </button>
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => setCodeSent(true)}
+                    className="text-sm text-gray-600 hover:text-gold"
+                  >
+                    Already have a reset code? Click here
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleConfirmReset} className="space-y-4">
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm mb-4">
+                  ✓ Reset code sent to {resetEmail}. Check your email!
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Reset Code</label>
+                  <input
+                    type="text"
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
+                    placeholder="Enter code from email"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">New Password</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
+                    placeholder="New password"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+                <button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white py-3 rounded-lg font-medium" disabled={loading}>
+                  {loading ? 'Resetting...' : 'Reset Password'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

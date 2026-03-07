@@ -1,0 +1,435 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Fashion Store Serverless Infrastructure
+
+Parameters:
+  Environment:
+    Type: String
+    Default: prod
+    AllowedValues:
+      - dev
+      - prod
+    Description: Environment name
+
+Resources:
+  # ============================================
+  # DynamoDB Tables
+  # ============================================
+  
+  ProductsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub fashionstore-products-${Environment}
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FashionStore
+
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub fashionstore-orders-${Environment}
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: userId-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FashionStore
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub fashionstore-users-${Environment}
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: email-index
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FashionStore
+
+  # ============================================
+  # IAM Role for Lambda
+  # ============================================
+  
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub fashionstore-lambda-role-${Environment}
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource:
+                  - !GetAtt ProductsTable.Arn
+                  - !GetAtt OrdersTable.Arn
+                  - !GetAtt UsersTable.Arn
+                  - !Sub "${OrdersTable.Arn}/index/*"
+                  - !Sub "${UsersTable.Arn}/index/*"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FashionStore
+
+  # ============================================
+  # Lambda Functions
+  # ============================================
+  
+  ProductsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub fashionstore-prod-get-products-${Environment}
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: 256
+      Timeout: 30
+      Environment:
+        Variables:
+          PRODUCTS_TABLE: !Ref ProductsTable
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            console.log("Products Lambda");
+            return {
+              statusCode: 200,
+              headers: { 'Access-Control-Allow-Origin': '*' },
+              body: JSON.stringify({ message: "Products API" })
+            };
+          };
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FashionStore
+
+  OrdersLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub fashionstore-prod-get-user-orders-${Environment}
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: 256
+      Timeout: 10
+      Environment:
+        Variables:
+          ORDERS_TABLE: !Ref OrdersTable
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            console.log("Orders Lambda");
+            return {
+              statusCode: 200,
+              headers: { 'Access-Control-Allow-Origin': '*' },
+              body: JSON.stringify({ message: "Orders API" })
+            };
+          };
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FashionStore
+
+  UsersLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub fashionstore-prod-get-users-${Environment}
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      MemorySize: 256
+      Timeout: 10
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref UsersTable
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            console.log("Users Lambda");
+            return {
+              statusCode: 200,
+              headers: { 'Access-Control-Allow-Origin': '*' },
+              body: JSON.stringify({ message: "Users API" })
+            };
+          };
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FashionStore
+
+  # ============================================
+  # API Gateway
+  # ============================================
+  
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub fashionstore-api-${Environment}
+      Description: Fashion Store API
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FashionStore
+
+  # Products Resources
+  ProductsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: products
+
+  ProductsIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !Ref ProductsResource
+      PathPart: "{id}"
+
+  # Users Resources
+  UsersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: users
+
+  UsersIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !Ref UsersResource
+      PathPart: "{userId}"
+
+  UsersIdOrdersResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !Ref UsersIdResource
+      PathPart: orders
+
+  # ============================================
+  # API Methods
+  # ============================================
+  
+  # GET /products
+  ProductsGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref ProductsResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsLambda.Arn}/invocations
+
+  # GET /products/{id}
+  ProductsIdGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref ProductsIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ProductsLambda.Arn}/invocations
+
+  # GET /users
+  UsersGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UsersResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambda.Arn}/invocations
+
+  # GET /users/{userId}
+  UsersIdGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UsersIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambda.Arn}/invocations
+
+  # GET /users/{userId}/orders
+  UsersIdOrdersGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UsersIdOrdersResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrdersLambda.Arn}/invocations
+
+  # POST /users/{userId}/orders
+  UsersIdOrdersPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UsersIdOrdersResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${OrdersLambda.Arn}/invocations
+
+  # ============================================
+  # API Deployment
+  # ============================================
+  
+  ApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - ProductsGetMethod
+      - ProductsIdGetMethod
+      - UsersGetMethod
+      - UsersIdGetMethod
+      - UsersIdOrdersGetMethod
+      - UsersIdOrdersPostMethod
+    Properties:
+      RestApiId: !Ref ApiGateway
+      StageName: !Ref Environment
+      StageDescription:
+        Variables:
+          Environment: !Ref Environment
+        MethodSettings:
+          - DataTraceEnabled: false
+            LoggingLevel: ERROR
+            MetricsEnabled: true
+            ResourcePath: "/*"
+            HttpMethod: "*"
+
+  # ============================================
+  # Lambda Permissions for API Gateway
+  # ============================================
+  
+  ProductsLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ProductsLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*/*
+
+  OrdersLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref OrdersLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*/*
+
+  UsersLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UsersLambda
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*/*
+
+Outputs:
+  ApiUrl:
+    Description: API Gateway URL
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+
+  ProductsTableName:
+    Description: Products DynamoDB Table
+    Value: !Ref ProductsTable
+
+  OrdersTableName:
+    Description: Orders DynamoDB Table
+    Value: !Ref OrdersTable
+
+  UsersTableName:
+    Description: Users DynamoDB Table
+    Value: !Ref UsersTable
+
+  ProductsLambdaArn:
+    Description: Products Lambda ARN
+    Value: !GetAtt ProductsLambda.Arn
+
+  OrdersLambdaArn:
+    Description: Orders Lambda ARN
+    Value: !GetAtt OrdersLambda.Arn
+
+  UsersLambdaArn:
+    Description: Users Lambda ARN
+    Value: !GetAtt UsersLambda.Arn

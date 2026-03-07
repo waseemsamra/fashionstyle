@@ -128,6 +128,7 @@ export default function Navigation() {
     { name: 'Shop', href: '/shop' },
     { name: 'Brands', href: '/brands' },
     { name: 'Collection', href: '/#featured' },
+    { name: 'Virtual Try-On', href: '/try-on' },
     { name: 'New Arrivals', href: '/#new-arrivals' },
     { name: 'About', href: '/#about' },
   ];

@@ -61,12 +61,33 @@ export default function UserDashboard() {
 
   const loadUser = async () => {
     try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      await loadProfile(currentUser.userId);
+      // First check if we have a JWT token in localStorage
+      const token = localStorage.getItem('jwt_token');
+      const email = localStorage.getItem('user_email');
+      
+      if (!token || !email) {
+        console.log('No token or email found, redirecting to login');
+        navigate('/login', { state: { from: '/dashboard' } });
+        return;
+      }
+      
+      console.log('User authenticated with token, email:', email);
+      
+      // Try to get Cognito user if available
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+        await loadProfile(currentUser.userId);
+      } catch (cognitoErr) {
+        console.log('Cognito user not available, using email from localStorage');
+        // Create a pseudo-user object from localStorage data
+        setUser({ userId: email.split('@')[0], username: email });
+      }
+      
       setLoading(false);
-    } catch {
-      navigate('/');
+    } catch (err) {
+      console.log('Authentication check failed, redirecting to login');
+      navigate('/login', { state: { from: '/dashboard' } });
     }
   };
 
@@ -85,8 +106,12 @@ export default function UserDashboard() {
     if (!user) return;
     setOrdersLoading(true);
     try {
+      console.log('Loading orders for user:', user.userId);
       const data = await api.getUserOrders(user.userId);
+      console.log('API response:', data);
+      
       if (data.items && Array.isArray(data.items)) {
+        console.log('Found orders:', data.items.length);
         const formattedOrders = data.items.map((order: any) => ({
           id: order.orderId || order.id,
           date: new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -96,6 +121,7 @@ export default function UserDashboard() {
         }));
         setOrders(formattedOrders);
       } else if (Array.isArray(data)) {
+        console.log('Found orders (array):', data.length);
         const formattedOrders = data.map((order: any) => ({
           id: order.orderId || order.id,
           date: new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
@@ -104,9 +130,13 @@ export default function UserDashboard() {
           status: order.status || 'Processing'
         }));
         setOrders(formattedOrders);
+      } else {
+        console.log('No orders found, response:', data);
+        setOrders([]);
       }
-    } catch (err) {
-      console.log('No orders found for user');
+    } catch (err: any) {
+      console.error('Error loading orders:', err);
+      console.log('Error details:', err.response?.data || err.message);
       setOrders([]);
     } finally {
       setOrdersLoading(false);

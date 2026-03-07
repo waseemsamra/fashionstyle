@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { id: 'products', label: 'Products', icon: Package, path: '/admin/dashboard' },
-    { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/dashboard' },
+    { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
     { id: 'customers', label: 'Customers', icon: UsersIcon, path: '/admin/dashboard' },
     { id: 'users', label: 'Users', icon: UsersIcon, path: '/admin/users' },
     { id: 'brands', label: 'Brands', icon: Tag, path: '/admin/dashboard' },
