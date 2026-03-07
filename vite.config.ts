@@ -8,8 +8,11 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 export default defineConfig({
   base: '/',
   plugins: [
-    inspectAttr(), 
-    react(),
+    inspectAttr(),
+    react({
+      // Fix for React 19 with Vite
+      jsxRuntime: 'automatic',
+    }),
     viteStaticCopy({
       targets: [
         {
@@ -23,6 +26,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom'],
   },
   server: {
     port: 3001,
@@ -45,6 +52,8 @@ export default defineConfig({
   build: {
     // Raise the warning threshold to 600 kB (from default 500 kB)
     chunkSizeWarningLimit: 600,
+    target: 'esnext',
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: (id) => {
