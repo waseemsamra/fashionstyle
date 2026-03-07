@@ -51,14 +51,14 @@ export default defineConfig({
   },
   build: {
     // Raise the warning threshold to 600 kB (from default 500 kB)
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 800,
     target: 'esnext',
     minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // React core
-          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+          // React core - MUST be first and separate
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/scheduler/')) {
             return 'vendor-react';
           }
           // React Router
@@ -69,45 +69,45 @@ export default defineConfig({
           if (id.includes('node_modules/aws-amplify') || id.includes('node_modules/@aws-amplify')) {
             return 'vendor-aws';
           }
-          // Recharts + dependencies
-          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-') || id.includes('node_modules/victory-')) {
-            return 'vendor-charts';
-          }
-          // Radix UI primitives
-          if (id.includes('node_modules/@radix-ui')) {
-            return 'vendor-radix';
-          }
-          // TanStack Query
+          // TanStack Query - needs React
           if (id.includes('node_modules/@tanstack')) {
             return 'vendor-query';
           }
-          // Form libraries
-          if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/@hookform') || id.includes('node_modules/zod')) {
+          // Radix UI primitives - needs React
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'vendor-radix';
+          }
+          // Form libraries - needs React
+          if (id.includes('node_modules/react-hook-form') || id.includes('node_modules/@hookform')) {
             return 'vendor-forms';
           }
-          // Date / calendar utilities
-          if (id.includes('node_modules/date-fns') || id.includes('node_modules/react-day-picker')) {
-            return 'vendor-date';
-          }
-          // UI utilities & misc small libs
+          // UI libraries that need React
           if (
-            id.includes('node_modules/lucide-react') ||
-            id.includes('node_modules/clsx') ||
-            id.includes('node_modules/class-variance-authority') ||
-            id.includes('node_modules/tailwind-merge') ||
             id.includes('node_modules/sonner') ||
             id.includes('node_modules/next-themes') ||
             id.includes('node_modules/cmdk') ||
             id.includes('node_modules/vaul') ||
-            id.includes('node_modules/embla-carousel') ||
-            id.includes('node_modules/input-otp') ||
-            id.includes('node_modules/react-resizable-panels')
+            id.includes('node_modules/embla-carousel-react') ||
+            id.includes('node_modules/react-resizable-panels') ||
+            id.includes('node_modules/react-day-picker')
           ) {
-            return 'vendor-ui-utils';
+            return 'vendor-react-ui';
           }
-          // Everything else in node_modules goes into a generic vendor chunk
+          // Recharts + dependencies
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
+            return 'vendor-charts';
+          }
+          // Date utilities (no React dependency)
+          if (id.includes('node_modules/date-fns')) {
+            return 'vendor-date';
+          }
+          // Icons
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-icons';
+          }
+          // Everything else in node_modules
           if (id.includes('node_modules')) {
-            return 'vendor-misc';
+            return 'vendor-lib';
           }
         },
       },
