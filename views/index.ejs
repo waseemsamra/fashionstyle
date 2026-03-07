@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion Store - OAuth Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        p { color: #666; margin-bottom: 30px; }
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn:hover { background: #5568d3; }
+        .btn-logout { background: #e53e3e; }
+        .btn-logout:hover { background: #c53030; }
+        .user-info {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .user-info p {
+            margin: 10px 0;
+            color: #333;
+        }
+        .user-info strong { color: #667eea; }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .status.success { background: #c6f6d5; color: #22543d; }
+        .status.error { background: #fed7d7; color: #742a2a; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <% if (typeof isAuthenticated !== 'undefined' && isAuthenticated) { %>
+            <!-- Logged In View -->
+            <div class="status success">
+                ✅ Logged in successfully
+            </div>
+            
+            <h1>Welcome Back!</h1>
+            <p>You are successfully authenticated</p>
+            
+            <% const user = userInfo || user || {}; %>
+            <div class="user-info">
+                <p><strong>Email:</strong> <%= user.email || 'N/A' %></p>
+                <p><strong>Name:</strong> <%= user.name || user.email || 'N/A' %></p>
+                <p><strong>User ID:</strong> <%= user.sub || 'N/A' %></p>
+                <% if (user.email_verified) { %>
+                    <p><strong>Email Verified:</strong> ✅ Yes</p>
+                <% } else if (user.email_verified === false) { %>
+                    <p><strong>Email Verified:</strong> ❌ No</p>
+                <% } %>
+            </div>
+            
+            <a href="/auth/logout" class="btn btn-logout">Logout</a>
+            <a href="/auth/refresh" class="btn" style="margin-top: 10px; background: #ed8936;">Refresh Token</a>
+            <a href="/api/profile" class="btn" style="margin-top: 10px; background: #48bb78;">View API Profile</a>
+            
+        <% } else { %>
+            <!-- Logged Out View -->
+            <h1>Fashion Store</h1>
+            <p>Sign in with your AWS Cognito account</p>
+            
+            <a href="/auth/login" class="btn">Sign In</a>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                <p style="font-size: 12px; color: #a0aec0;">
+                    Protected by AWS Cognito OAuth
+                </p>
+            </div>
+        <% } %>
+    </div>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion Store - Cognito Authentication</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .login-box, .welcome-box {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin: 10px 5px;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+        }
+        
+        .btn-logout {
+            background: #e53e3e;
+        }
+        
+        .btn-logout:hover {
+            background: #c53030;
+        }
+        
+        .btn-refresh {
+            background: #ed8936;
+        }
+        
+        .btn-refresh:hover {
+            background: #dd6b20;
+        }
+        
+        .user-info-card {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .user-info-card h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .info-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #4a5568;
+            width: 150px;
+            flex-shrink: 0;
+        }
+        
+        .info-value {
+            color: #2d3748;
+            word-break: break-word;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-verified {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status-not-verified {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .json-preview {
+            background: #2d3748;
+            color: #48bb78;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 15px;
+            text-align: left;
+        }
+        
+        .actions {
+            margin-top: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛍️ Fashion Store</h1>
+        <p class="subtitle">Amazon Cognito Authentication Demo</p>
+        
+        <% 
+            // Handle different variable names from middleware
+            const user = userInfo || user || {};
+            const authenticated = typeof isAuthenticated !== 'undefined' ? isAuthenticated : (user && user.email);
+        %>
+        
+        <% if (authenticated) { %>
+            <!-- Logged In View -->
+            <div class="welcome-box">
+                <h2 style="color: #2d3748; margin-bottom: 10px;">
+                    ✅ Welcome, <%= user.email || user.username || 'User' %>!
+                </h2>
+                <p style="color: #666; margin-bottom: 20px;">
+                    You have successfully authenticated with AWS Cognito
+                </p>
+            </div>
+            
+            <div class="user-info-card">
+                <h3>📋 User Information</h3>
+                
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value"><%= user.email || 'N/A' %></span>
+                </div>
+                
+                <% if (user.name || user['cognito:username']) { %>
+                <div class="info-row">
+                    <span class="info-label">Name/Username:</span>
+                    <span class="info-value"><%= user.name || user['cognito:username'] || 'N/A' %></span>
+                </div>
+                <% } %>
+                
+                <div class="info-row">
+                    <span class="info-label">User ID (sub):</span>
+                    <span class="info-value" style="font-family: monospace; font-size: 12px;"><%= user.sub || 'N/A' %></span>
+                </div>
+                
+                <div class="info-row">
+                    <span class="info-label">Email Verified:</span>
+                    <span class="info-value">
+                        <% if (user.email_verified === true) { %>
+                            <span class="status-badge status-verified">✅ Verified</span>
+                        <% } else if (user.email_verified === false) { %>
+                            <span class="status-badge status-not-verified">❌ Not Verified</span>
+                        <% } else { %>
+                            N/A
+                        <% } %>
+                    </span>
+                </div>
+                
+                <% if (user.phone_number) { %>
+                <div class="info-row">
+                    <span class="info-label">Phone:</span>
+                    <span class="info-value"><%= user.phone_number %></span>
+                </div>
+                <% } %>
+                
+                <div class="info-row">
+                    <span class="info-label">User Pool:</span>
+                    <span class="info-value" style="font-family: monospace; font-size: 12px;">us-east-1_MjEc3MXcK</span>
+                </div>
+            </div>
+            
+            <% if (typeof JSON !== 'undefined') { %>
+            <details style="margin-top: 20px; cursor: pointer;">
+                <summary style="color: #667eea; font-weight: 600; margin-bottom: 10px;">
+                    📄 View Full User Object (JSON)
+                </summary>
+                <div class="json-preview">
+<%= JSON.stringify(user, null, 2) %>
+                </div>
+            </details>
+            <% } %>
+            
+            <div class="actions">
+                <a href="/auth/refresh" class="btn btn-refresh">🔄 Refresh Token</a>
+                <a href="/auth/logout" class="btn btn-logout">🚪 Logout</a>
+            </div>
+            
+        <% } else { %>
+            <!-- Logged Out View -->
+            <div class="login-box">
+                <div style="font-size: 64px; margin-bottom: 20px;">🔐</div>
+                <p style="color: #666; margin-bottom: 30px; font-size: 16px;">
+                    Please sign in with your AWS Cognito account to continue
+                </p>
+                <a href="/login" class="btn">🚀 Login with Cognito</a>
+                <a href="/auth/login" class="btn btn-refresh">Alternative Login</a>
+            </div>
+        <% } %>
+        
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center;">
+            <p style="font-size: 12px; color: #a0aec0;">
+                Powered by AWS Cognito OAuth 2.0 • Node.js • Express
+            </p>
+        </div>
+    </div>
+</body>
+</html>
