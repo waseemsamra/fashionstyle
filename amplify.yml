@@ -15,3 +15,12 @@ frontend:
     paths:
       - .npm/**/*
       - node_modules/**/*
+  rewrites:
+    - source: '/<*>.html'
+      target: '/index.html'
+    - source: '/**'
+      target: '/index.html'
+    - source: '/assets/<*>.css'
+      target: '/assets/*.css'
+    - source: '/assets/<*>.js'
+      target: '/assets/*.js'
