@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signOut, signInWithRedirect, confirmSignUp, signUp, fetchAuthSession } from 'aws-amplify/auth';
+import { signOut, signIn, signUp, fetchAuthSession, confirmSignUp } from 'aws-amplify/auth';
 import { authService } from '@/services/auth';
-import { User, Lock, Mail, Facebook } from 'lucide-react';
+import { User, Lock, Mail } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -245,18 +245,29 @@ export default function Login() {
           console.log('Using Cognito signin as fallback');
         }
 
-        // Fallback to Cognito signin via OAuth
-        console.log('Initiating Cognito OAuth redirect...');
+        // Fallback to direct Cognito signin (works better on Amplify)
+        console.log('Signing in with Cognito directly...');
         try {
-          await signInWithRedirect({
-            provider: {
-              custom: import.meta.env.VITE_OAUTH_DOMAIN || ''
-            }
+          const result = await signIn({
+            username: credentials.email,
+            password: credentials.password
           });
-        } catch (oauthErr: any) {
-          console.error('OAuth redirect failed:', oauthErr);
-          setError('Login failed. Please try again or sign up if you don\'t have an account.');
-          setLoading(false);
+          
+          console.log('Cognito signin result:', result);
+          
+          if (result.isSignedIn) {
+            // Get the session tokens
+            const session = await fetchAuthSession();
+            if (session.tokens) {
+              localStorage.setItem('jwt_token', session.tokens.accessToken.toString());
+              localStorage.setItem('user_email', session.tokens.idToken?.payload?.email as string || credentials.email);
+            }
+            console.log('Cognito signin successful, redirecting to dashboard');
+            navigate('/dashboard', { replace: true });
+          }
+        } catch (cognitoErr: any) {
+          console.error('Cognito signin failed:', cognitoErr);
+          throw cognitoErr; // Re-throw to be caught by outer catch
         }
       }
     } catch (err: any) {
@@ -377,14 +388,6 @@ export default function Login() {
     }
   };
 
-  const handleFacebookLogin = async () => {
-    try {
-      await signInWithRedirect({ provider: 'Facebook' });
-    } catch (err: any) {
-      setError(err.message || 'Facebook login failed');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-beige-100 to-beige-200 flex items-center justify-center px-4 py-20">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
@@ -502,25 +505,6 @@ export default function Login() {
                 </div>
               )}
             </form>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
-                </div>
-              </div>
-
-              <button
-                onClick={handleFacebookLogin}
-                className="mt-4 w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium"
-              >
-                <Facebook className="w-5 h-5" />
-                Facebook
-              </button>
-            </div>
 
             <div className="mt-6 text-center">
               <button onClick={() => setIsSignUp(!isSignUp)} className="text-gold hover:underline text-sm">
