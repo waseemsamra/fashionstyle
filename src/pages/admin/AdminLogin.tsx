@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signIn } from 'aws-amplify/auth';
+import { signIn, signOut } from 'aws-amplify/auth';
 import { Button } from '@/components/ui/button';
 import { Lock, User, KeyRound } from 'lucide-react';
 
@@ -16,6 +16,22 @@ export default function AdminLogin() {
     setError('');
 
     try {
+      // First, sign out any existing user
+      console.log('🚪 Signing out existing user...');
+      try {
+        await signOut();
+        console.log('✅ Signed out successfully');
+      } catch (signOutErr) {
+        console.log('No existing session to clear');
+      }
+
+      // Clear localStorage
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('refreshToken');
+
+      // Now sign in with admin credentials
+      console.log('🔐 Signing in admin user...');
       const result = await signIn({
         username: credentials.username,
         password: credentials.password
@@ -23,6 +39,10 @@ export default function AdminLogin() {
 
       if (result.isSignedIn) {
         console.log('✅ Admin login successful');
+        
+        // Store user info
+        localStorage.setItem('user_email', credentials.username);
+        
         navigate('/admin/dashboard');
       } else {
         setError(`Login step: ${result.nextStep?.signInStep || 'Unknown'}`);
@@ -33,7 +53,10 @@ export default function AdminLogin() {
       
       // Check for SRP error
       if (err.message?.includes('USER_SRP_AUTH')) {
-        setError('SRP authentication not enabled for admin client. Please enable USER_SRP_AUTH in Cognito console for this user pool client.');
+        setError('SRP authentication not enabled. Please enable USER_SRP_AUTH in Cognito console.');
+      } else if (err.message?.includes('UserAlreadyAuthenticated')) {
+        setError('Already logged in. Redirecting to dashboard...');
+        setTimeout(() => navigate('/admin/dashboard'), 2000);
       } else {
         setError(err.message || 'Invalid credentials');
       }

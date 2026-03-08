@@ -123,15 +123,41 @@ export default function Dashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log('🔐 Admin dashboard: Checking authentication...');
+        
+        // First check if user is logged in
         await getCurrentUser();
+        
+        // Check admin access
         const isAdmin = await checkAdminAccess();
+        console.log('🔐 Admin access result:', isAdmin);
+        
         if (!isAdmin) {
-          alert('Access denied. Admin privileges required.');
+          const email = localStorage.getItem('user_email');
+          console.error('❌ Access denied. Email:', email);
+          console.log('💡 Tip: Add your email to adminEmails list in src/utils/auth.ts');
+          
+          // Show helpful message
+          alert(`Access denied. Admin privileges required.
+
+Your email: ${email || 'Not found'}
+
+To grant access, add your email to:
+src/utils/auth.ts
+
+const adminEmails = [
+  'waseemsamra@gmail.com',
+  'your-email@example.com'  // Add your email here
+];`);
+          
           navigate('/admin/login');
           return;
         }
+        
+        console.log('✅ Admin access granted');
         setLoading(false);
-      } catch {
+      } catch (err) {
+        console.error('❌ Admin auth check failed:', err);
         navigate('/admin/login');
       }
     };
