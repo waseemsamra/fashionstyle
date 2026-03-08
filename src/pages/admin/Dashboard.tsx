@@ -5,7 +5,9 @@ import { checkAdminAccess } from '@/utils/auth';
 import { api } from '@/services/api';
 import { userService } from '@/services/user';
 import { createProduct, updateProduct, deleteProduct } from '@/services/productService';
+import { getAllBrands } from '@/services/brandService';
 import ImageUpload from '@/components/ui/ImageUpload';
+import SearchableSelect from '@/components/ui/SearchableSelect';
 import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
 
 export default function Dashboard() {
@@ -139,24 +141,38 @@ export default function Dashboard() {
           })));
         }
 
-        // Load brands from products
-        console.log('🏷️ Loading brands...');
-        const brandMap = new Map();
-        products.forEach((p: any) => {
-          if (p.brand && !brandMap.has(p.brand)) {
-            brandMap.set(p.brand, {
-              id: brandMap.size + 1,
-              name: p.brand,
-              description: `${p.brand} products`,
-              products: 1
-            });
-          } else if (p.brand) {
-            const existing = brandMap.get(p.brand);
-            existing.products = (existing.products || 0) + 1;
-          }
-        });
-        setBrands(Array.from(brandMap.values()));
-        console.log('✅ Found', brandMap.size, 'brands');
+        // Load brands from API
+        console.log('🏷️ Loading brands from API...');
+        const brandsFromAPI = await getAllBrands();
+        if (brandsFromAPI.length > 0) {
+          console.log('✅ Found', brandsFromAPI.length, 'brands from API');
+          setBrands(brandsFromAPI.map((b: any) => ({
+            id: b.id,
+            name: b.name,
+            description: b.description || '',
+            products: b.products || 0,
+            image: b.image || ''
+          })));
+        } else {
+          console.log('⚠️ No brands from API, using extracted brands');
+          // Fallback: Extract from products
+          const brandMap = new Map();
+          products.forEach((p: any) => {
+            if (p.brand && !brandMap.has(p.brand)) {
+              brandMap.set(p.brand, {
+                id: brandMap.size + 1,
+                name: p.brand,
+                description: `${p.brand} products`,
+                products: 1
+              });
+            } else if (p.brand) {
+              const existing = brandMap.get(p.brand);
+              existing.products = (existing.products || 0) + 1;
+            }
+          });
+          setBrands(Array.from(brandMap.values()));
+        }
+        console.log('✅ Found', brands.length, 'brands');
 
         // Load categories from products
         console.log('📂 Loading categories...');
@@ -1049,15 +1065,25 @@ const adminEmails = [
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Brand</label>
-                  <select
-                    value={editingProduct.brand}
-                    onChange={(e) => setEditingProduct({...editingProduct, brand: e.target.value})}
-                    className="w-full p-3 border rounded-lg"
-                  >
-                    {brands.map((brand) => (
-                      <option key={brand.id} value={brand.name}>{brand.name}</option>
-                    ))}
-                  </select>
+                  <SearchableSelect
+                    options={brands.map(b => ({ id: b.id, name: b.name, description: b.description }))}
+                    value={editingProduct.brand || ''}
+                    onChange={(value) => setEditingProduct({...editingProduct, brand: value})}
+                    placeholder="Select or search brand..."
+                    allowCreate={true}
+                    onCreateNew={(newBrandName) => {
+                      // Add new brand to list
+                      const newBrand = {
+                        id: Date.now(),
+                        name: newBrandName,
+                        description: `${newBrandName} products`,
+                        products: 0
+                      };
+                      setBrands([...brands, newBrand]);
+                      setEditingProduct({...editingProduct, brand: newBrandName});
+                      console.log('➕ Created new brand:', newBrandName);
+                    }}
+                  />
                 </div>
 
                 {/* Image Upload */}
