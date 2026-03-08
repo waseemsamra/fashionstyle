@@ -1,12 +1,10 @@
 import axios from 'axios';
 
-// Force correct API URL for production
+// ALWAYS use the correct API URL - no proxy in production
 const API_URL = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
-const USE_PROXY = import.meta.env.DEV;
 
 // Log the API URL being used (for debugging)
 console.log('🔧 API Client initialized with URL:', API_URL);
-console.log('🔧 Using proxy:', USE_PROXY);
 
 // In-memory cache for products
 let productsCache: any = null;
@@ -15,7 +13,7 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 // Create axios instance with CORS handling
 const apiClient = axios.create({
-  baseURL: USE_PROXY ? '/api' : API_URL,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
