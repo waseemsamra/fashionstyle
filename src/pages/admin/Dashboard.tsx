@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { signOut, getCurrentUser } from 'aws-amplify/auth';
 import { checkAdminAccess } from '@/utils/auth';
 import { api } from '@/services/api';
+import { userService } from '@/services/user';
 import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
 
 export default function Dashboard() {
@@ -67,19 +68,10 @@ export default function Dashboard() {
     { id: 3, name: 'Bridal Wear', description: 'Wedding ensembles', products: 45 },
     { id: 4, name: 'Accessories', description: 'Complete your look', products: 56 },
   ]);
-  const [brands, setBrands] = useState([
-    { id: 1, name: 'Al Karam', description: 'Premium Pakistani fashion', products: 45 },
-    { id: 2, name: 'Gul Ahmed', description: 'Traditional & modern wear', products: 67 },
-    { id: 3, name: 'Maria B', description: 'Luxury bridal collection', products: 32 },
-    { id: 4, name: 'Khaadi', description: 'Contemporary fashion', products: 89 },
-  ]);
-  const [products, setProducts] = useState([
-    { id: 1, name: 'Embroidered Lawn Suit', category: 'Casual Wear', price: 89, stock: 45, brand: 'Al Karam', image: '/product-1.jpg', occasions: ['Casual'], patterns: ['Embroidered'], sizes: ['S', 'M', 'L'], materials: ['Lawn', 'Cotton'], colors: ['Blue', 'White'], genders: ['Women'] },
-    { id: 2, name: 'Chiffon Formal Dress', category: 'Formal Wear', price: 149, stock: 32, brand: 'Gul Ahmed', image: '/product-2.jpg', occasions: ['Party'], patterns: ['Printed'], sizes: ['S', 'M', 'L', 'XL'], materials: ['Chiffon'], colors: ['White', 'Beige'], genders: ['Women'] },
-    { id: 3, name: 'Silk Lehenga Set', category: 'Bridal Wear', price: 299, stock: 18, brand: 'Maria B', image: '/product-3.jpg', occasions: ['Wedding'], patterns: ['Embroidered'], sizes: ['S', 'M', 'L'], materials: ['Silk'], colors: ['Gold', 'Red'], genders: ['Women'] },
-    { id: 4, name: 'Cotton Kurti', category: 'Casual Wear', price: 59, stock: 67, brand: 'Khaadi', image: '/product-4.jpg', occasions: ['Casual'], patterns: ['Plain'], sizes: ['S', 'M', 'L', 'XL'], materials: ['Cotton'], colors: ['Green', 'Black'], genders: ['Women'] },
-    { id: 5, name: 'Bridal Sharara', category: 'Bridal Wear', price: 499, stock: 12, brand: 'Asim Jofa', image: '/product-5.jpg', occasions: ['Wedding'], patterns: ['Embroidered'], sizes: ['S', 'M', 'L'], materials: ['Silk', 'Chiffon'], colors: ['Red', 'Gold'], genders: ['Women'] },
-  ]);
+  const [brands, setBrands] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
 
   const ensureArray = (value: any): string[] => Array.isArray(value) ? value : [];
 
@@ -119,6 +111,107 @@ export default function Dashboard() {
       code: color.code ?? color.hex ?? '#000000',
     }));
   };
+
+  // Load all dashboard data from API
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        console.log('📊 Loading dashboard data from API...');
+        
+        // Load products
+        console.log('📦 Loading products...');
+        const productsData = await api.listProducts();
+        const products = productsData.items || productsData;
+        if (Array.isArray(products)) {
+          console.log('✅ Found', products.length, 'products');
+          setProducts(products.map((p: any) => ({
+            ...p,
+            category: p.category || 'Uncategorized',
+            stock: p.stock || 0,
+            occasions: ensureArray(p.occasions),
+            patterns: ensureArray(p.patterns),
+            sizes: ensureArray(p.sizes),
+            materials: ensureArray(p.materials),
+            colors: ensureArray(p.colors),
+            genders: ensureArray(p.genders),
+          })));
+        }
+
+        // Load brands from products
+        console.log('🏷️ Loading brands...');
+        const brandMap = new Map();
+        products.forEach((p: any) => {
+          if (p.brand && !brandMap.has(p.brand)) {
+            brandMap.set(p.brand, {
+              id: brandMap.size + 1,
+              name: p.brand,
+              description: `${p.brand} products`,
+              products: 1
+            });
+          } else if (p.brand) {
+            const existing = brandMap.get(p.brand);
+            existing.products = (existing.products || 0) + 1;
+          }
+        });
+        setBrands(Array.from(brandMap.values()));
+        console.log('✅ Found', brandMap.size, 'brands');
+
+        // Load categories from products
+        console.log('📂 Loading categories...');
+        const categoryMap = new Map();
+        products.forEach((p: any) => {
+          if (p.category && !categoryMap.has(p.category)) {
+            categoryMap.set(p.category, {
+              id: categoryMap.size + 1,
+              name: p.category,
+              description: `${p.category} collection`,
+              products: 1
+            });
+          } else if (p.category) {
+            const existing = categoryMap.get(p.category);
+            existing.products = (existing.products || 0) + 1;
+          }
+        });
+        setCategories(Array.from(categoryMap.values()));
+        console.log('✅ Found', categoryMap.size, 'categories');
+
+        // Load orders from all users
+        console.log('📋 Loading orders...');
+        try {
+          // Get users first
+          const usersResponse = await userService.getUserByEmail('');
+          const allUsers = Array.isArray(usersResponse) ? usersResponse : (usersResponse.users || []);
+          setUsers(allUsers);
+          console.log('✅ Found', allUsers.length, 'users');
+
+          // Load orders for each user
+          const allOrders: any[] = [];
+          for (const user of allUsers) {
+            try {
+              const userOrders = await api.getUserOrders(user.userId || user.id);
+              if (Array.isArray(userOrders)) {
+                allOrders.push(...userOrders);
+              }
+            } catch (err) {
+              console.log('No orders for user:', user.userId);
+            }
+          }
+          setOrders(allOrders);
+          console.log('✅ Found', allOrders.length, 'orders');
+        } catch (err) {
+          console.log('⚠️ Could not load users/orders:', err);
+          setUsers([]);
+          setOrders([]);
+        }
+
+        console.log('🎉 Dashboard data loaded successfully!');
+      } catch (err) {
+        console.error('❌ Failed to load dashboard data:', err);
+      }
+    };
+    
+    loadDashboardData();
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
