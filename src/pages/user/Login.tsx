@@ -145,9 +145,7 @@ export default function Login() {
             options: {
               userAttributes: {
                 email: credentials.email,
-                email_verified: 'false',
-                name: credentials.email.split('@')[0], // Add name attribute
-                'name.formatted': credentials.email.split('@')[0] // Required by your schema
+                name: credentials.email.split('@')[0] // Just email and name
               },
               autoSignIn: true
             }
