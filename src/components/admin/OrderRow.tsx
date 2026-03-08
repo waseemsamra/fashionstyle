@@ -51,14 +51,20 @@ export default function OrderRow({ order, onStatusChange, showActions = false }:
   const [isUpdating, setIsUpdating] = useState(false);
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (e) {
+      return 'Invalid Date';
+    }
   };
 
   const handleStatusChange = async (newStatus: string) => {
@@ -100,7 +106,9 @@ export default function OrderRow({ order, onStatusChange, showActions = false }:
           <StatusBadge status={order.status} />
         </td>
         <td className="p-4">
-          <div className="font-medium">${order.total?.toFixed(2) || '0.00'}</div>
+          <div className="font-medium">
+            ${((order as any).total || (order as any).totalPrice || 0).toFixed(2)}
+          </div>
           <div className="text-sm text-gray-500">{order.items?.length || 0} items</div>
         </td>
         <td className="p-4">

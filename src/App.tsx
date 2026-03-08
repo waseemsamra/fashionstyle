@@ -19,6 +19,7 @@ const Checkout = lazy(() => import('@/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@/pages/checkout/OrderConfirmation'));
 const Login = lazy(() => import('@/pages/user/Login'));
 const UserDashboard = lazy(() => import('@/pages/user/UserDashboard'));
+const OrderDetails = lazy(() => import('@/pages/user/OrderDetails'));
 const VirtualTryOnPage = lazy(() => import('@/pages/VirtualTryOnPage'));
 const AdminLogin = lazy(() => import('@/pages/admin/AdminLogin'));
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
@@ -50,6 +51,7 @@ function Layout() {
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/login" element={<Login />} />
             <Route path="/dashboard" element={<UserDashboard />} />
+            <Route path="/dashboard/orders/:orderId" element={<OrderDetails />} />
             <Route path="/try-on" element={<VirtualTryOnPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<Dashboard />} />
