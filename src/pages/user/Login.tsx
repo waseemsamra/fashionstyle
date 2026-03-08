@@ -111,7 +111,9 @@ export default function Login() {
         // Fallback to Cognito signup
         try {
           console.log('Signing up with Cognito...');
-          
+          console.log('Email:', credentials.email);
+          console.log('Password length:', credentials.password.length);
+
           // Validate email format first
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(credentials.email)) {
@@ -119,20 +121,33 @@ export default function Login() {
             setLoading(false);
             return;
           }
+
+          // Validate password meets Cognito requirements
+          const password = credentials.password;
+          const hasUppercase = /[A-Z]/.test(password);
+          const hasLowercase = /[a-z]/.test(password);
+          const hasNumbers = /[0-9]/.test(password);
           
-          // Validate password strength (Cognito requirements)
-          if (credentials.password.length < 8) {
+          if (password.length < 8) {
             setError('Password must be at least 8 characters long.');
             setLoading(false);
             return;
           }
-          
+          if (!hasUppercase || !hasLowercase || !hasNumbers) {
+            setError('Password must contain uppercase, lowercase, and numbers.');
+            setLoading(false);
+            return;
+          }
+
           const result = await signUp({
             username: credentials.email,
-            password: credentials.password,
+            password: password,
             options: {
               userAttributes: {
-                email: credentials.email
+                email: credentials.email,
+                email_verified: 'false',
+                name: credentials.email.split('@')[0], // Add name attribute
+                'name.formatted': credentials.email.split('@')[0] // Required by your schema
               },
               autoSignIn: true
             }
@@ -145,14 +160,14 @@ export default function Login() {
         } catch (cognitoErr: any) {
           console.error('Cognito signup error:', cognitoErr);
           console.error('Error details:', JSON.stringify(cognitoErr, null, 2));
+          console.error('Error name:', cognitoErr.name);
+          console.error('Error message:', cognitoErr.message);
           
           if (cognitoErr.name === 'UsernameExistsException') {
             setError('User already exists. Redirecting to login...');
-            // Wait 2 seconds then switch to login form
             setTimeout(() => {
               setIsSignUp(false);
               setCredentials({ ...credentials, password: '', confirmPassword: '' });
-              setError('Please login with your existing account.');
             }, 2000);
             setLoading(false);
             return;
@@ -164,12 +179,14 @@ export default function Login() {
             } else if (msg.includes('password') || msg.includes('Password')) {
               setError('Password must be at least 8 characters with uppercase, lowercase, and numbers.');
             } else {
-              setError('Invalid parameters. Please check your input.');
+              setError('Invalid parameters. Please check: 1) Valid email, 2) Password 8+ chars with uppercase, lowercase & numbers');
             }
           } else if (cognitoErr.name === 'InvalidPasswordException') {
             setError('Password must be at least 8 characters with uppercase, lowercase, and numbers.');
+          } else if (cognitoErr.name === 'NotAuthorizedException') {
+            setError('Not authorized to perform this action.');
           } else if (cognitoErr.code === 'InvalidParameterException') {
-            setError('Invalid email or password format.');
+            setError('Invalid parameters. Please check your email and password format.');
           } else {
             setError('Signup failed: ' + (cognitoErr.message || 'Please try again'));
           }
