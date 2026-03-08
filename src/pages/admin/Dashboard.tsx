@@ -4,6 +4,7 @@ import { signOut, getCurrentUser } from 'aws-amplify/auth';
 import { checkAdminAccess } from '@/utils/auth';
 import { api } from '@/services/api';
 import { userService } from '@/services/user';
+import ImageUpload from '@/components/ui/ImageUpload';
 import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
 
 export default function Dashboard() {
@@ -993,6 +994,14 @@ const adminEmails = [
                     ))}
                   </select>
                 </div>
+
+                {/* Image Upload */}
+                <ImageUpload
+                  currentImage={editingProduct.image}
+                  onImageChange={(imageUrl) => setEditingProduct({...editingProduct, image: imageUrl})}
+                  folder="products"
+                  label="Product Image"
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
