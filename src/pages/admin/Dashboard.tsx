@@ -179,12 +179,12 @@ export default function Dashboard() {
         console.log('📋 Loading orders...');
         try {
           // Get users first
-          const usersResponse = await userService.getUserByEmail('');
+          const usersResponse: any = await userService.getUserByEmail('');
           const allUsers = Array.isArray(usersResponse) ? usersResponse : (usersResponse.users || []);
           setUsers(allUsers);
           console.log('✅ Found', allUsers.length, 'users');
 
-          // Load orders for each user
+          // Load orders for each user - use orders state
           const allOrders: any[] = [];
           for (const user of allUsers) {
             try {
@@ -200,11 +200,10 @@ export default function Dashboard() {
           console.log('✅ Found', allOrders.length, 'orders');
         } catch (err) {
           console.log('⚠️ Could not load users/orders:', err);
-          setUsers([]);
-          setOrders([]);
         }
 
         console.log('🎉 Dashboard data loaded successfully!');
+        console.log('📊 Summary - Products:', products.length, 'Brands:', brands.length, 'Categories:', categories.length, 'Users:', users.length, 'Orders:', orders.length);
       } catch (err) {
         console.error('❌ Failed to load dashboard data:', err);
       }
