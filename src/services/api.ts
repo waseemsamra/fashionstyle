@@ -1,8 +1,12 @@
 import axios from 'axios';
 
-// Use proxy during development, direct URL in production
-const API_URL = import.meta.env.VITE_API_URL || 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+// Force correct API URL for production
+const API_URL = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
 const USE_PROXY = import.meta.env.DEV;
+
+// Log the API URL being used (for debugging)
+console.log('🔧 API Client initialized with URL:', API_URL);
+console.log('🔧 Using proxy:', USE_PROXY);
 
 // In-memory cache for products
 let productsCache: any = null;
