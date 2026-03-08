@@ -20,16 +20,23 @@ export default function AdminLogin() {
         username: credentials.username,
         password: credentials.password
       });
-      
+
       if (result.isSignedIn) {
+        console.log('✅ Admin login successful');
         navigate('/admin/dashboard');
       } else {
         setError(`Login step: ${result.nextStep?.signInStep || 'Unknown'}`);
         setLoading(false);
       }
     } catch (err: any) {
-      console.error('Login error:', err);
-      setError(err.message || 'Invalid credentials');
+      console.error('Admin login error:', err);
+      
+      // Check for SRP error
+      if (err.message?.includes('USER_SRP_AUTH')) {
+        setError('SRP authentication not enabled for admin client. Please enable USER_SRP_AUTH in Cognito console for this user pool client.');
+      } else {
+        setError(err.message || 'Invalid credentials');
+      }
       setLoading(false);
     }
   };
