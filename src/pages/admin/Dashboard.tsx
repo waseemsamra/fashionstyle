@@ -336,6 +336,7 @@ const adminEmails = [
     setEditingProduct({
       ...product,
       image: product.image || '', // Ensure image field exists
+      images: product.images || [], // Multiple images array
       sku: product.sku || '',
       description: product.description || '',
       genders: ensureArray(product.genders),
@@ -355,6 +356,7 @@ const adminEmails = [
     setEditingProduct({
       id: Date.now(),
       image: '', // Start with no image
+      images: [], // Start with empty images array
       name: '',
       sku: '',
       description: '',
@@ -999,9 +1001,13 @@ const adminEmails = [
                 {/* Image Upload */}
                 <ImageUpload
                   currentImage={editingProduct.image}
+                  currentImages={editingProduct.images || []}
                   onImageChange={(imageUrl) => setEditingProduct({...editingProduct, image: imageUrl})}
+                  onImagesChange={(imageUrls) => setEditingProduct({...editingProduct, images: imageUrls})}
+                  multiple={true}
+                  maxImages={5}
                   folder="products"
-                  label="Product Image"
+                  label="Product Images"
                 />
 
                 <div className="grid grid-cols-2 gap-4">
