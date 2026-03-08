@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signIn, signOut } from 'aws-amplify/auth';
+import { signIn, signOut, fetchAuthSession } from 'aws-amplify/auth';
 import { Button } from '@/components/ui/button';
 import { Lock, User, KeyRound } from 'lucide-react';
 
@@ -16,6 +16,8 @@ export default function AdminLogin() {
     setError('');
 
     try {
+      console.log('🔐 Admin login attempt for:', credentials.username);
+
       // First, sign out any existing user
       console.log('🚪 Signing out existing user...');
       try {
@@ -30,35 +32,52 @@ export default function AdminLogin() {
       localStorage.removeItem('user_email');
       localStorage.removeItem('refreshToken');
 
-      // Now sign in with admin credentials
-      console.log('🔐 Signing in admin user...');
+      // Sign in with admin credentials
+      console.log('🔐 Signing in...');
       const result = await signIn({
         username: credentials.username,
         password: credentials.password
       });
 
+      console.log('📋 SignIn result:', result);
+
       if (result.isSignedIn) {
         console.log('✅ Admin login successful');
         
-        // Store user info
-        localStorage.setItem('user_email', credentials.username);
+        // Get session tokens
+        try {
+          const session = await fetchAuthSession();
+          if (session.tokens) {
+            localStorage.setItem('jwt_token', session.tokens.accessToken.toString());
+            localStorage.setItem('user_email', credentials.username);
+            console.log('✅ Tokens stored in localStorage');
+          }
+        } catch (tokenErr) {
+          console.log('⚠️ Could not fetch tokens, storing email only');
+          localStorage.setItem('user_email', credentials.username);
+        }
         
         navigate('/admin/dashboard');
       } else {
+        console.log('⚠️ Login not complete, next step:', result.nextStep);
         setError(`Login step: ${result.nextStep?.signInStep || 'Unknown'}`);
         setLoading(false);
       }
     } catch (err: any) {
-      console.error('Admin login error:', err);
+      console.error('❌ Admin login error:', err);
+      console.error('❌ Error name:', err.name);
+      console.error('❌ Error message:', err.message);
       
-      // Check for SRP error
+      // Check for specific errors
       if (err.message?.includes('USER_SRP_AUTH')) {
         setError('SRP authentication not enabled. Please enable USER_SRP_AUTH in Cognito console.');
       } else if (err.message?.includes('UserAlreadyAuthenticated')) {
         setError('Already logged in. Redirecting to dashboard...');
         setTimeout(() => navigate('/admin/dashboard'), 2000);
+      } else if (err.message?.includes('incorrect') || err.message?.includes('Invalid')) {
+        setError('Invalid username or password');
       } else {
-        setError(err.message || 'Invalid credentials');
+        setError(err.message || 'Login failed');
       }
       setLoading(false);
     }
