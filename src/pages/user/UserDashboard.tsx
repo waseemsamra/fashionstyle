@@ -61,27 +61,27 @@ export default function UserDashboard() {
 
   const loadUser = async () => {
     try {
-      // First check if we have a JWT token in localStorage
+      // Check localStorage first (where login stores auth)
       const token = localStorage.getItem('jwt_token');
       const email = localStorage.getItem('user_email');
       
-      if (!token || !email) {
-        console.log('No token or email found, redirecting to login');
-        navigate('/login', { state: { from: '/dashboard' } });
+      if (token && email) {
+        // User is logged in via our login flow
+        console.log('User authenticated via localStorage:', email);
+        setUser({ userId: email.split('@')[0], username: email, email });
+        setLoading(false);
         return;
       }
       
-      console.log('User authenticated with token, email:', email);
-      
-      // Try to get Cognito user if available
+      // Try Cognito auth as fallback
       try {
         const currentUser = await getCurrentUser();
         setUser(currentUser);
         await loadProfile(currentUser.userId);
       } catch (cognitoErr) {
-        console.log('Cognito user not available, using email from localStorage');
-        // Create a pseudo-user object from localStorage data
-        setUser({ userId: email.split('@')[0], username: email });
+        console.log('Cognito user not available, redirecting to login');
+        navigate('/login', { state: { from: '/dashboard' } });
+        return;
       }
       
       setLoading(false);

@@ -26,8 +26,24 @@ export default function Checkout() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        await getCurrentUser();
-        setIsAuthenticated(true);
+        // Check localStorage first (where login stores auth)
+        const token = localStorage.getItem('jwt_token');
+        const email = localStorage.getItem('user_email');
+        
+        if (token && email) {
+          // User is logged in via our login flow
+          setIsAuthenticated(true);
+          
+          // Pre-fill form with user data
+          setFormData(prev => ({
+            ...prev,
+            email: email
+          }));
+        } else {
+          // Try Amplify auth as fallback
+          await getCurrentUser();
+          setIsAuthenticated(true);
+        }
       } catch {
         // User not logged in, redirect to login
         navigate('/login', { state: { from: '/checkout' } });
