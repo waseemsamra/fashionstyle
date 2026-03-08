@@ -63,6 +63,32 @@ export default function Navigation() {
     checkAuth();
   }, []);
 
+  const handleLogout = () => {
+    console.log('🚪 Navigation: Logging out...');
+    
+    // Clear all localStorage data
+    localStorage.removeItem('jwt_token');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('refreshToken');
+    
+    // Clear Amplify data
+    const keysToRemove = Object.keys(localStorage).filter(key =>
+      key.startsWith('CognitoIdentityServiceProvider') ||
+      key.startsWith('aws-amplify') ||
+      key.includes('amplify')
+    );
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    console.log('✅ Navigation: Cleared localStorage');
+    
+    // Set logged out state
+    setIsLoggedIn(false);
+    
+    // Navigate to home and force reload
+    navigate('/');
+    window.location.reload();
+  };
+
   useEffect(() => {
     if (!showSearch || allProducts.length > 0) return;
 
@@ -203,16 +229,46 @@ export default function Navigation() {
               <Search className="w-5 h-5" />
             </button>
             
-            <button
-              onClick={() => navigate(isLoggedIn ? '/dashboard' : '/login')}
-              className={`hidden md:block p-2 rounded-full transition-all duration-300 hover:bg-black/5 ${
-                isScrolled ? 'text-black' : 'text-white'
-              }`}
-              aria-label="Account"
-              title={isLoggedIn ? 'My Dashboard' : 'Login'}
-            >
-              <User className="w-5 h-5" />
-            </button>
+            {/* User Account */}
+            {isLoggedIn ? (
+              <div className="relative group">
+                <button
+                  className={`hidden md:block p-2 rounded-full transition-all duration-300 hover:bg-black/5 ${
+                    isScrolled ? 'text-black' : 'text-white'
+                  }`}
+                  aria-label="Account"
+                  title="My Account"
+                >
+                  <User className="w-5 h-5" />
+                </button>
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/login')}
+                className={`hidden md:block p-2 rounded-full transition-all duration-300 hover:bg-black/5 ${
+                  isScrolled ? 'text-black' : 'text-white'
+                }`}
+                aria-label="Account"
+                title="Login"
+              >
+                <User className="w-5 h-5" />
+              </button>
+            )}
 
             {/* Cart */}
             <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>

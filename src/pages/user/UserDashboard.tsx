@@ -160,8 +160,42 @@ export default function UserDashboard() {
   };
 
   const handleLogout = async () => {
-    await signOut();
-    navigate('/');
+    console.log('🚪 Logging out...');
+    
+    try {
+      // Clear all localStorage data
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('refreshToken');
+      
+      // Clear any Amplify/Cognito data
+      const keysToRemove = Object.keys(localStorage).filter(key =>
+        key.startsWith('CognitoIdentityServiceProvider') ||
+        key.startsWith('aws-amplify') ||
+        key.includes('amplify')
+      );
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      console.log('✅ Cleared localStorage');
+      
+      // Try to sign out from Amplify
+      try {
+        await signOut();
+        console.log('✅ Signed out from Amplify');
+      } catch (e) {
+        console.log('Amplify sign out completed or not needed');
+      }
+      
+      // Navigate to home and force reload
+      navigate('/');
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force logout even on error
+      navigate('/');
+      window.location.reload();
+    }
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
