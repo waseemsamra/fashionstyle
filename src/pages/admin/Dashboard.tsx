@@ -4,6 +4,7 @@ import { signOut, getCurrentUser } from 'aws-amplify/auth';
 import { checkAdminAccess } from '@/utils/auth';
 import { api } from '@/services/api';
 import { userService } from '@/services/user';
+import { createProduct, updateProduct, deleteProduct } from '@/services/productService';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
 
@@ -333,10 +334,14 @@ const adminEmails = [
   };
 
   const handleEdit = (product: any) => {
+    console.log('📝 Editing product:', product);
+    console.log('📸 Product image:', product.image);
+    console.log('📸 Product images array:', product.images);
+    
     setEditingProduct({
       ...product,
       image: product.image || '', // Ensure image field exists
-      images: product.images || [], // Multiple images array
+      images: product.images || product.image ? [product.image] : [], // Support both single and multiple images
       sku: product.sku || '',
       description: product.description || '',
       genders: ensureArray(product.genders),
@@ -374,18 +379,75 @@ const adminEmails = [
     setShowEditModal(true);
   };
 
-  const handleSave = () => {
-    if (products.find(p => p.id === editingProduct.id)) {
-      setProducts(products.map(p => p.id === editingProduct.id ? editingProduct : p));
-    } else {
-      setProducts([...products, editingProduct]);
+  const handleSave = async () => {
+    try {
+      console.log('💾 Saving product...');
+      console.log('📝 Product data:', editingProduct);
+      
+      // Prepare product data for API
+      const productData = {
+        id: editingProduct.id.toString(),
+        name: editingProduct.name,
+        description: editingProduct.description || '',
+        price: Number(editingProduct.price),
+        category: editingProduct.category || '',
+        brand: editingProduct.brand || '',
+        image: editingProduct.image || '',
+        images: editingProduct.images || [],
+        stock: Number(editingProduct.stock || 0),
+        sku: editingProduct.sku || '',
+        sizes: editingProduct.sizes || [],
+        colors: editingProduct.colors || [],
+        materials: editingProduct.materials || [],
+        patterns: editingProduct.patterns || [],
+        occasions: editingProduct.occasions || [],
+        genders: editingProduct.genders || [],
+      };
+      
+      // Check if updating or creating
+      const isUpdate = products.find(p => p.id === editingProduct.id);
+      
+      if (isUpdate) {
+        console.log('🔄 Updating existing product...');
+        await updateProduct(productData);
+        console.log('✅ Product updated successfully');
+        
+        // Update local state
+        setProducts(products.map(p => p.id === editingProduct.id ? { ...editingProduct, ...productData } : p));
+      } else {
+        console.log('➕ Creating new product...');
+        const newProduct = await createProduct(productData);
+        console.log('✅ Product created successfully');
+        
+        // Update local state
+        setProducts([...products, { ...editingProduct, ...newProduct }]);
+      }
+      
+      setShowEditModal(false);
+      alert(`Product ${isUpdate ? 'updated' : 'created'} successfully!`);
+    } catch (error: any) {
+      console.error('❌ Failed to save product:', error);
+      alert('Failed to save product: ' + (error.response?.data?.message || error.message));
     }
-    setShowEditModal(false);
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm('Delete this product?')) {
-      setProducts(products.filter(p => p.id !== id));
+      try {
+        console.log('🗑️ Deleting product:', id);
+        const success = await deleteProduct(id.toString());
+        
+        if (success) {
+          setProducts(products.filter(p => p.id !== id));
+          console.log('✅ Product deleted');
+          alert('Product deleted successfully!');
+        } else {
+          alert('Failed to delete product');
+        }
+      } catch (error: any) {
+        console.error('❌ Failed to delete product:', error);
+        alert('Failed to delete product: ' + (error.response?.data?.message || error.message));
+      }
     }
   };
 
