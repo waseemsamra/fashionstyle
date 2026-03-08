@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser } from 'aws-amplify/auth';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CreditCard, Truck, MapPin } from 'lucide-react';
@@ -25,31 +24,48 @@ export default function Checkout() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      try {
-        // Check localStorage first (where login stores auth)
-        const token = localStorage.getItem('jwt_token');
-        const email = localStorage.getItem('user_email');
-        
-        if (token && email) {
-          // User is logged in via our login flow
-          setIsAuthenticated(true);
+      console.log('🔍 Checkout: Checking authentication...');
+      
+      // Try multiple times with delay (in case login just completed)
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          // Check localStorage first (where login stores auth)
+          const token = localStorage.getItem('jwt_token');
+          const email = localStorage.getItem('user_email');
           
-          // Pre-fill form with user data
-          setFormData(prev => ({
-            ...prev,
-            email: email
-          }));
-        } else {
-          // Try Amplify auth as fallback
-          await getCurrentUser();
-          setIsAuthenticated(true);
+          console.log('🔍 Checkout: Attempt', attempt + 1);
+          console.log('🔍 Checkout: Token exists:', !!token);
+          console.log('🔍 Checkout: Email exists:', !!email);
+          
+          if (token && email) {
+            // User is logged in via our login flow
+            console.log('✅ Checkout: User authenticated via localStorage:', email);
+            setIsAuthenticated(true);
+            
+            // Pre-fill form with user data
+            setFormData(prev => ({
+              ...prev,
+              email: email
+            }));
+            
+            setIsLoading(false);
+            return; // Success - exit function
+          }
+        } catch (err) {
+          console.log('❌ Checkout: Auth check failed:', err);
         }
-      } catch {
-        // User not logged in, redirect to login
-        navigate('/login', { state: { from: '/checkout' } });
-      } finally {
-        setIsLoading(false);
+        
+        // Wait before next attempt
+        if (attempt < 4) {
+          console.log('⏳ Checkout: Waiting before retry...');
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
       }
+      
+      // All attempts failed - redirect to login
+      console.log('❌ Checkout: Not authenticated, redirecting to login');
+      setIsLoading(false);
+      navigate('/login', { state: { from: '/checkout' } });
     };
 
     checkAuth();
