@@ -108,8 +108,18 @@ export default function Navigation() {
 
   const checkAuth = async () => {
     try {
-      await getCurrentUser();
-      setIsLoggedIn(true);
+      // Check localStorage first (where our login stores auth)
+      const token = localStorage.getItem('jwt_token');
+      const email = localStorage.getItem('user_email');
+      
+      if (token && email) {
+        // User is logged in via our login flow
+        setIsLoggedIn(true);
+      } else {
+        // Try Cognito auth as fallback
+        await getCurrentUser();
+        setIsLoggedIn(true);
+      }
     } catch {
       setIsLoggedIn(false);
     }
