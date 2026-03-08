@@ -335,6 +335,7 @@ const adminEmails = [
   const handleEdit = (product: any) => {
     setEditingProduct({
       ...product,
+      image: product.image || '', // Ensure image field exists
       sku: product.sku || '',
       description: product.description || '',
       genders: ensureArray(product.genders),
@@ -353,6 +354,7 @@ const adminEmails = [
 
     setEditingProduct({
       id: Date.now(),
+      image: '', // Start with no image
       name: '',
       sku: '',
       description: '',
@@ -360,7 +362,6 @@ const adminEmails = [
       brand: defaultBrand,
       price: 0,
       stock: 0,
-      image: '/product-1.jpg',
       genders: [],
       occasions: [],
       patterns: [],
