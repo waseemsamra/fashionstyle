@@ -24,48 +24,37 @@ export default function Checkout() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('🔍 Checkout: Checking authentication...');
+      console.log('🔐 Checkout: Checking authentication...');
       
-      // Try multiple times with delay (in case login just completed)
-      for (let attempt = 0; attempt < 5; attempt++) {
-        try {
-          // Check localStorage first (where login stores auth)
-          const token = localStorage.getItem('jwt_token');
-          const email = localStorage.getItem('user_email');
-          
-          console.log('🔍 Checkout: Attempt', attempt + 1);
-          console.log('🔍 Checkout: Token exists:', !!token);
-          console.log('🔍 Checkout: Email exists:', !!email);
-          
-          if (token && email) {
-            // User is logged in via our login flow
-            console.log('✅ Checkout: User authenticated via localStorage:', email);
-            setIsAuthenticated(true);
-            
-            // Pre-fill form with user data
-            setFormData(prev => ({
-              ...prev,
-              email: email
-            }));
-            
-            setIsLoading(false);
-            return; // Success - exit function
-          }
-        } catch (err) {
-          console.log('❌ Checkout: Auth check failed:', err);
-        }
+      // Check if user is logged in
+      const token = localStorage.getItem('jwt_token');
+      const email = localStorage.getItem('user_email');
+      
+      console.log('🔐 Checkout: Token exists:', !!token);
+      console.log('🔐 Checkout: Email exists:', !!email);
+      
+      if (token && email) {
+        // User is logged in
+        console.log('✅ Checkout: User authenticated:', email);
+        setIsAuthenticated(true);
         
-        // Wait before next attempt
-        if (attempt < 4) {
-          console.log('⏳ Checkout: Waiting before retry...');
-          await new Promise(resolve => setTimeout(resolve, 300));
-        }
+        // Pre-fill email for logged-in users
+        setFormData(prev => ({
+          ...prev,
+          email: email
+        }));
+      } else {
+        // Not logged in - redirect to login with return URL
+        console.log('❌ Checkout: Not authenticated, redirecting to login');
+        navigate('/login', { 
+          state: { 
+            from: '/checkout',
+            message: 'Please login to complete your order'
+          } 
+        });
       }
       
-      // All attempts failed - redirect to login
-      console.log('❌ Checkout: Not authenticated, redirecting to login');
       setIsLoading(false);
-      navigate('/login', { state: { from: '/checkout' } });
     };
 
     checkAuth();
@@ -99,7 +88,20 @@ export default function Checkout() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const orderData = { ...formData, items, totalPrice, paymentMethod };
+    
+    // Create order with guest flag
+    const orderData = { 
+      ...formData, 
+      items, 
+      totalPrice, 
+      paymentMethod,
+      isGuest: !isAuthenticated, // Mark as guest order
+      createdAt: new Date().toISOString()
+    };
+    
+    console.log('🛒 Guest checkout:', orderData);
+    
+    // Navigate to confirmation with order data
     navigate('/order-confirmation', { state: orderData });
   };
 

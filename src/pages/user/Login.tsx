@@ -200,9 +200,13 @@ export default function Login() {
           console.log('Backend signin response:', response);
           
           if (response.accessToken) {
-            console.log('Backend signin successful, redirecting to dashboard...');
-            // Always redirect to dashboard after successful signin
-            navigate('/dashboard', { replace: true });
+            console.log('Backend signin successful, redirecting...');
+            
+            // Redirect to checkout if coming from there, otherwise dashboard
+            const from = (location as any).state?.from || '/dashboard';
+            console.log('Redirecting to:', from);
+            
+            navigate(from, { replace: true });
             return;
           }
         } catch (backendErr: any) {
@@ -277,8 +281,11 @@ export default function Login() {
               localStorage.setItem('jwt_token', session.tokens.accessToken.toString());
               localStorage.setItem('user_email', session.tokens.idToken?.payload?.email as string || credentials.email);
             }
-            console.log('Cognito signin successful, redirecting to dashboard');
-            navigate('/dashboard', { replace: true });
+            
+            // Redirect to checkout if coming from there, otherwise dashboard
+            const from = (location as any).state?.from || '/dashboard';
+            console.log('Cognito signin successful, redirecting to:', from);
+            navigate(from, { replace: true });
           }
         } catch (cognitoErr: any) {
           console.error('Cognito signin failed:', cognitoErr);

@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getCurrentUser } from 'aws-amplify/auth';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Package, Truck, MapPin, CreditCard } from 'lucide-react';
@@ -21,55 +20,76 @@ export default function OrderConfirmation() {
   const hasSavedRef = useRef(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check localStorage first (where login stores auth)
-        const token = localStorage.getItem('jwt_token');
-        const email = localStorage.getItem('user_email');
-        
-        if (token && email) {
-          // User is logged in via our login flow
-          setUser({ userId: email.split('@')[0], username: email, email });
-          setIsAuthenticated(true);
-        } else {
-          // Try Amplify auth as fallback
-          const currentUser = await getCurrentUser();
-          setUser(currentUser);
-          setIsAuthenticated(true);
-        }
-      } catch {
-        // User not logged in, redirect to login
-        navigate('/login', { state: { from: '/checkout' } });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
+    // Require user to be logged in for order confirmation
+    const token = localStorage.getItem('jwt_token');
+    const email = localStorage.getItem('user_email');
+    
+    if (token && email) {
+      setUser({ userId: email.split('@')[0], username: email, email });
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    } else {
+      // Not logged in - redirect to login
+      console.log('❌ OrderConfirmation: Not authenticated, redirecting to login');
+      navigate('/login', { 
+        state: { 
+          from: '/order-confirmation',
+          message: 'Please login to view your order confirmation'
+        } 
+      });
+    }
   }, [navigate]);
 
   useEffect(() => {
     // Only save once and only when we have all required data
     if (orderData && isAuthenticated && user && !hasSavedRef.current && !saveAttempted) {
+      console.log('💾 OrderConfirmation: Saving order...');
+      console.log('💾 OrderConfirmation: Order data:', orderData);
+      console.log('💾 OrderConfirmation: Items:', orderData.items?.length);
+      console.log('💾 OrderConfirmation: Total:', orderData.totalPrice);
+      
       setSaveAttempted(true);
       hasSavedRef.current = true;
       saveOrder();
+    } else if (!orderData) {
+      console.log('❌ OrderConfirmation: No order data received!');
+    } else if (!isAuthenticated) {
+      console.log('❌ OrderConfirmation: Not authenticated yet');
+    } else if (!user) {
+      console.log('❌ OrderConfirmation: No user data');
     }
-  }, [orderData, isAuthenticated, user]);
+  }, [orderData, isAuthenticated, user, saveAttempted]);
 
   const saveOrder = async () => {
-    if (!orderData || !user) return;
+    if (!orderData || !user) {
+      console.log('❌ saveOrder: Missing orderData or user');
+      return;
+    }
+
+    console.log('💾 saveOrder: Starting...');
+    console.log('💾 saveOrder: Is Guest:', user.isGuest);
+    console.log('💾 saveOrder: Items:', orderData.items);
+    console.log('💾 saveOrder: Total Price:', orderData.totalPrice);
+    console.log('💾 saveOrder: Payment Method:', orderData.paymentMethod);
 
     setIsSavingOrder(true);
     try {
       const orderId = `ORD-${Date.now().toString().slice(-8)}`;
+      
+      // Calculate total from items if totalPrice is 0 or missing
+      const calculatedTotal = orderData.totalPrice || orderData.items.reduce(
+        (sum: number, item: any) => sum + (item.price || 0) * (item.quantity || 1),
+        0
+      );
+      
       const orderPayload = {
         orderId,
         date: new Date().toISOString(),
         items: orderData.items,
-        totalPrice: orderData.totalPrice,
-        paymentMethod: orderData.paymentMethod,
-        status: 'Processing',
+        totalPrice: calculatedTotal,
+        paymentMethod: orderData.paymentMethod || 'cod',
+        status: 'pending',
+        isGuest: user.isGuest || false,
         fullName: orderData.fullName,
         email: orderData.email,
         phone: orderData.phone,
@@ -79,11 +99,18 @@ export default function OrderConfirmation() {
         itemCount: orderData.items.length
       };
 
+      console.log('💾 saveOrder: Sending payload:', orderPayload);
+
+      // Always use real user ID (no guest orders)
       await api.createOrder(user.userId, orderPayload);
+      console.log('✅ saveOrder: Success! Order ID:', orderId);
+      console.log('💾 saveOrder: Linked to user:', user.userId);
       setOrderNumber(orderId);
       clearCart();
+      toast.success('Order placed successfully! You can track it in your dashboard.');
     } catch (error: any) {
-      console.error('Failed to save order:', error);
+      console.error('❌ saveOrder: Failed:', error);
+      console.error('❌ saveOrder: Error details:', error.response?.data || error.message);
       toast.error('Order created locally but failed to sync. Please contact support.');
       setOrderNumber(`ORD-${Date.now().toString().slice(-8)}`);
       clearCart();
