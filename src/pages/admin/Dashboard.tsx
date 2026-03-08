@@ -5,7 +5,7 @@ import { checkAdminAccess } from '@/utils/auth';
 import { api } from '@/services/api';
 import { userService } from '@/services/user';
 import { createProduct, updateProduct, deleteProduct } from '@/services/productService';
-import { getAllBrands } from '@/services/brandService';
+import { getAllBrands, createBrand } from '@/services/brandService';
 import ImageUpload from '@/components/ui/ImageUpload';
 import SearchableSelect from '@/components/ui/SearchableSelect';
 import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
@@ -116,12 +116,63 @@ export default function Dashboard() {
     }));
   };
 
+  // Migrate hardcoded brands to DynamoDB
+  const migrateHardcodedBrands = async () => {
+    const hardcodedBrands = [
+      { name: 'Al Karam', description: 'Premium Pakistani fashion' },
+      { name: 'Gul Ahmed', description: 'Traditional & modern wear' },
+      { name: 'Maria B', description: 'Luxury bridal collection' },
+      { name: 'Khaadi', description: 'Contemporary fashion' },
+      { name: 'Sana Safinaz', description: 'Designer wear' },
+      { name: 'Nishat Linen', description: 'Quality fabrics' },
+      { name: 'Bonanza', description: 'Mens fashion' },
+      { name: 'Outfitters', description: 'Youth fashion' },
+      { name: 'Levi\'s', description: 'Denim & casual wear' },
+      { name: 'Nike', description: 'Sportswear' },
+    ];
+
+    try {
+      console.log('🚀 Migrating hardcoded brands to DynamoDB...');
+      
+      for (const brand of hardcodedBrands) {
+        try {
+          await createBrand({
+            id: Date.now().toString(),
+            name: brand.name,
+            description: brand.description,
+            products: 0
+          });
+          console.log('✅ Migrated:', brand.name);
+        } catch (err) {
+          console.log('⚠️ Brand exists or failed:', brand.name);
+        }
+      }
+      
+      console.log('✅ Brand migration complete');
+      
+      // Reload brands after migration
+      const migratedBrands = await getAllBrands();
+      if (migratedBrands.length > 0) {
+        setBrands(migratedBrands.map((b: any) => ({
+          id: b.id,
+          name: b.name,
+          description: b.description || '',
+          products: b.products || 0,
+          image: b.image || ''
+        })));
+        console.log('✅ Loaded', migratedBrands.length, 'brands from DynamoDB');
+      }
+    } catch (err) {
+      console.error('❌ Migration failed:', err);
+    }
+  };
+
   // Load all dashboard data from API
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         console.log('📊 Loading dashboard data from API...');
-        
+
         // Load products
         console.log('📦 Loading products...');
         const productsData = await api.listProducts();
@@ -154,23 +205,8 @@ export default function Dashboard() {
             image: b.image || ''
           })));
         } else {
-          console.log('⚠️ No brands from API, using extracted brands');
-          // Fallback: Extract from products
-          const brandMap = new Map();
-          products.forEach((p: any) => {
-            if (p.brand && !brandMap.has(p.brand)) {
-              brandMap.set(p.brand, {
-                id: brandMap.size + 1,
-                name: p.brand,
-                description: `${p.brand} products`,
-                products: 1
-              });
-            } else if (p.brand) {
-              const existing = brandMap.get(p.brand);
-              existing.products = (existing.products || 0) + 1;
-            }
-          });
-          setBrands(Array.from(brandMap.values()));
+          console.log('⚠️ No brands from API, migrating hardcoded brands...');
+          await migrateHardcodedBrands();
         }
         console.log('✅ Found', brands.length, 'brands');
 
@@ -727,10 +763,24 @@ const adminEmails = [
           {activeTab === 'brands' && (
             <div className="bg-white rounded-lg shadow">
               <div className="p-6 border-b flex justify-between items-center">
-                <h3 className="text-xl font-bold">Brands Management</h3>
-                <button onClick={handleAddBrand} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
-                  Add Brand
-                </button>
+                <div>
+                  <h3 className="text-xl font-bold">Brands Management</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {brands.length} brands loaded from DynamoDB
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={migrateHardcodedBrands}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+                    title="Upload all hardcoded brands to DynamoDB"
+                  >
+                    🚀 Migrate Brands
+                  </button>
+                  <button onClick={handleAddBrand} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
+                    Add Brand
+                  </button>
+                </div>
               </div>
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
@@ -742,23 +792,33 @@ const adminEmails = [
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {brands.map((brand) => (
-                    <tr key={brand.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 font-medium">{brand.name}</td>
-                      <td className="px-6 py-4 text-gray-600">{brand.description}</td>
-                      <td className="px-6 py-4">{brand.products}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button onClick={() => handleEditBrand(brand)} className="p-2 text-blue-600 hover:bg-blue-50 rounded">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDeleteBrand(brand.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                  {brands.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                        <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                        <p>No brands yet</p>
+                        <p className="text-sm mt-2">Click "Migrate Brands" to upload all brands to DynamoDB</p>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    brands.map((brand) => (
+                      <tr key={brand.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 font-medium">{brand.name}</td>
+                        <td className="px-6 py-4 text-gray-600">{brand.description}</td>
+                        <td className="px-6 py-4">{brand.products}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button onClick={() => handleEditBrand(brand)} className="p-2 text-blue-600 hover:bg-blue-50 rounded">
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDeleteBrand(brand.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
