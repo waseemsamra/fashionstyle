@@ -129,6 +129,58 @@ export default function Dashboard() {
       { name: 'Outfitters', description: 'Youth fashion' },
       { name: 'Levi\'s', description: 'Denim & casual wear' },
       { name: 'Nike', description: 'Sportswear' },
+      { name: 'Adidas', description: 'Sportswear & athletic wear' },
+      { name: 'H&M', description: 'Fast fashion' },
+      { name: 'Zara', description: 'Contemporary fashion' },
+      { name: 'Uniqlo', description: 'Casual wear' },
+      { name: 'Gap', description: 'American casual wear' },
+      { name: 'Ralph Lauren', description: 'Luxury fashion' },
+      { name: 'Hugo Boss', description: 'Premium menswear' },
+      { name: 'Calvin Klein', description: 'Designer fashion' },
+      { name: 'Tommy Hilfiger', description: 'American designer wear' },
+      { name: 'Lacoste', description: 'Sporty elegance' },
+      { name: 'Puma', description: 'Athletic wear' },
+      { name: 'Reebok', description: 'Fitness & athletic wear' },
+      { name: 'Under Armour', description: 'Performance wear' },
+      { name: 'The North Face', description: 'Outdoor apparel' },
+      { name: 'Columbia', description: 'Outdoor clothing' },
+      { name: 'Patagonia', description: 'Sustainable outdoor wear' },
+      { name: 'Timberland', description: 'Outdoor footwear & clothing' },
+      { name: 'Carhartt', description: 'Workwear' },
+      { name: 'Diesel', description: 'Denim & lifestyle' },
+      { name: 'Armani', description: 'Luxury Italian fashion' },
+      { name: 'Versace', description: 'Italian luxury fashion' },
+      { name: 'Gucci', description: 'Italian luxury goods' },
+      { name: 'Prada', description: 'Luxury fashion house' },
+      { name: 'Louis Vuitton', description: 'French luxury fashion' },
+      { name: 'Chanel', description: 'French luxury fashion' },
+      { name: 'Dior', description: 'French luxury goods' },
+      { name: 'Burberry', description: 'British luxury fashion' },
+      { name: 'Fendi', description: 'Italian luxury fashion' },
+      { name: 'Balenciaga', description: 'Luxury fashion house' },
+      { name: 'Givenchy', description: 'French luxury fashion' },
+      { name: 'Saint Laurent', description: 'French luxury fashion' },
+      { name: 'Valentino', description: 'Italian luxury fashion' },
+      { name: 'Dolce & Gabbana', description: 'Italian luxury fashion' },
+      { name: 'Alexander McQueen', description: 'British luxury fashion' },
+      { name: 'Off-White', description: 'Luxury streetwear' },
+      { name: 'Supreme', description: 'Streetwear' },
+      { name: 'Stone Island', description: 'Italian sportswear' },
+      { name: 'Moncler', description: 'Luxury outerwear' },
+      { name: 'Canada Goose', description: 'Luxury outerwear' },
+      { name: 'Elan', description: 'Pakistani designer wear' },
+      { name: 'Asim Jofa', description: 'Pakistani bridal wear' },
+      { name: 'Faraz Manan', description: 'Pakistani formal wear' },
+      { name: 'Sapphire', description: 'Pakistani high street fashion' },
+      { name: 'BeechTree', description: 'Pakistani fashion' },
+      { name: 'Ideas', description: 'Pakistani fabrics' },
+      { name: 'Charizma', description: 'Pakistani designer wear' },
+      { name: 'Imrozia', description: 'Pakistani designer wear' },
+      { name: 'Zeen', description: 'Pakistani fashion' },
+      { name: 'Generation', description: 'Pakistani contemporary fashion' },
+      { name: 'Khaadi Kids', description: 'Children fashion' },
+      { name: 'Minnie Minors', description: 'Kids fashion' },
+      { name: 'Hopscotch', description: 'Kids clothing' },
     ];
 
     try {
@@ -137,7 +189,7 @@ export default function Dashboard() {
       for (const brand of hardcodedBrands) {
         try {
           await createBrand({
-            id: Date.now().toString(),
+            id: `brand-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: brand.name,
             description: brand.description,
             products: 0
@@ -164,6 +216,64 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error('❌ Migration failed:', err);
+    }
+  };
+
+  // Migrate ALL brands from products (500+)
+  const migrateAllBrandsFromProducts = async () => {
+    try {
+      console.log('🚀 Starting complete brand migration from products...');
+      
+      // Extract all unique brands from products
+      const brandSet = new Set<string>();
+      products.forEach(p => {
+        if (p.brand) brandSet.add(p.brand.trim());
+      });
+      
+      console.log('📊 Found', brandSet.size, 'unique brands in products');
+      
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const brandName of brandSet) {
+        try {
+          await createBrand({
+            id: `brand-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: brandName,
+            description: `${brandName} products`,
+            products: 0
+          });
+          console.log(`✅ Migrated: ${brandName} (${successCount + 1}/${brandSet.size})`);
+          successCount++;
+        } catch (err: any) {
+          console.log('⚠️ Brand exists or failed:', brandName);
+          failCount++;
+        }
+        
+        // Small delay
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      
+      console.log('✅ Complete migration finished!');
+      console.log('✅ Success:', successCount);
+      console.log('❌ Failed:', failCount);
+      
+      alert(`Migration Complete!\n✅ Success: ${successCount}\n❌ Failed: ${failCount}`);
+      
+      // Reload brands
+      const migratedBrands = await getAllBrands();
+      if (migratedBrands.length > 0) {
+        setBrands(migratedBrands.map((b: any) => ({
+          id: b.id,
+          name: b.name,
+          description: b.description || '',
+          products: b.products || 0,
+          image: b.image || ''
+        })));
+      }
+    } catch (err: any) {
+      console.error('❌ Complete migration failed:', err);
+      alert('Migration failed: ' + (err.message || 'Unknown error'));
     }
   };
 
@@ -771,11 +881,18 @@ const adminEmails = [
                 </div>
                 <div className="flex gap-2">
                   <button
+                    onClick={migrateAllBrandsFromProducts}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 text-sm font-medium shadow-lg"
+                    title="Extract and upload all 500+ brands from products to DynamoDB"
+                  >
+                    🚀 Migrate All 500+ Brands
+                  </button>
+                  <button
                     onClick={migrateHardcodedBrands}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-                    title="Upload all hardcoded brands to DynamoDB"
+                    title="Upload 60 hardcoded brands to DynamoDB"
                   >
-                    🚀 Migrate Brands
+                    📦 Migrate 60 Brands
                   </button>
                   <button onClick={handleAddBrand} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
                     Add Brand
@@ -796,8 +913,8 @@ const adminEmails = [
                     <tr>
                       <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
                         <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <p>No brands yet</p>
-                        <p className="text-sm mt-2">Click "Migrate Brands" to upload all brands to DynamoDB</p>
+                        <p className="text-lg font-medium">No brands in DynamoDB yet</p>
+                        <p className="text-sm mt-2">Click "🚀 Migrate All 500+ Brands" to upload all brands from your products</p>
                       </td>
                     </tr>
                   ) : (
