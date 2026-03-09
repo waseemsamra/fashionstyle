@@ -80,6 +80,14 @@ function App() {
             error.message?.includes('already') ||
             error.message?.includes('session') ||
             error.message?.includes('signed in')) {
+          
+          // DON'T clear tokens on admin routes!
+          const isAdminRoute = window.location.pathname.includes('/admin');
+          if (isAdminRoute) {
+            console.log('🛡️ Admin route - preserving admin tokens');
+            return; // Don't clear admin tokens!
+          }
+          
           // Clear any corrupted authentication data from localStorage
           try {
             // Clear Amplify-specific localStorage keys
