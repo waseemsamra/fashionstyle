@@ -68,7 +68,7 @@ export default function Brands() {
         <div className="animate-scroll flex gap-8 whitespace-nowrap">
           {[...brands, ...brands].map((brand, index) => (
             <div
-              key={index}
+              key={`${brand.id}-${index}`}  // ✅ Added unique key
               className="inline-flex items-center justify-center px-6 py-3 bg-beige-50 rounded-lg min-w-[200px]"
             >
               <span className="font-medium text-gray-700">{brand.name}</span>
