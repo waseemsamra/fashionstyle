@@ -304,9 +304,16 @@ export default function Dashboard() {
         // Load brands from API
         console.log('🏷️ Loading brands from API...');
         const brandsFromAPI = await getAllBrands();
-        if (brandsFromAPI.length > 0) {
-          console.log('✅ Found', brandsFromAPI.length, 'brands from API');
-          setBrands(brandsFromAPI.map((b: any) => ({
+        console.log('📊 Brands response:', brandsFromAPI);
+        
+        // Handle both array and object responses
+        const brandsArray = Array.isArray(brandsFromAPI) 
+          ? brandsFromAPI 
+          : (brandsFromAPI as any).brands || (brandsFromAPI as any).items || [];
+        
+        if (brandsArray.length > 0) {
+          console.log('✅ Found', brandsArray.length, 'brands from API');
+          setBrands(brandsArray.map((b: any) => ({
             id: b.id,
             name: b.name,
             description: b.description || '',
