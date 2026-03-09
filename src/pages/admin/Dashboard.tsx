@@ -1243,7 +1243,7 @@ export default function Dashboard() {
                 <div>
                   <label className="block text-sm font-medium mb-2">Brand</label>
                   <SearchableSelect
-                    options={brands.map(b => ({ id: b.id, name: b.name, description: b.description }))}
+                    options={brands.map(b => ({ id: b.name, name: b.name, description: b.description || '' }))}
                     value={editingProduct.brand || ''}
                     onChange={(value) => setEditingProduct({...editingProduct, brand: value})}
                     placeholder="Select or search brand..."
@@ -1251,7 +1251,7 @@ export default function Dashboard() {
                     onCreateNew={(newBrandName) => {
                       // Add new brand to list
                       const newBrand = {
-                        id: Date.now(),
+                        id: newBrandName,
                         name: newBrandName,
                         description: `${newBrandName} products`,
                         products: 0
