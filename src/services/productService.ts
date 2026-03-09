@@ -64,16 +64,27 @@ export const updateProduct = async (product: Product): Promise<Product> => {
     
     const url = `${API_URL}/products/${product.id}`;
     console.log('🌐 PUT URL:', url);
+    console.log('🔑 Token exists:', !!token);
+    
+    // Prepare headers
+    const headers: any = {
+      'Content-Type': 'application/json'
+    };
+    
+    // Only add Authorization if token exists
+    if (token) {
+      // Make sure token doesn't have extra quotes or formatting
+      const cleanToken = token.replace(/^["']|["']$/g, '');
+      headers['Authorization'] = `Bearer ${cleanToken}`;
+      console.log('🔑 Authorization header:', `Bearer ${cleanToken.substring(0, 20)}...`);
+    }
     
     // Use correct endpoint: PUT /products/{id}
     const response = await axios.put(
       url,
       product,
       {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
-        }
+        headers
       }
     );
     
