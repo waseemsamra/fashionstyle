@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signOut, getCurrentUser } from 'aws-amplify/auth';
-import { checkAdminAccess } from '@/utils/auth';
+import { signOut } from 'aws-amplify/auth';
 import { api } from '@/services/api';
 import { userService } from '@/services/user';
 import { createProduct, updateProduct, deleteProduct } from '@/services/productService';
@@ -380,37 +379,21 @@ export default function Dashboard() {
     const checkAuth = async () => {
       try {
         console.log('🔐 Admin dashboard: Checking authentication...');
-        
-        // First check if user is logged in
-        await getCurrentUser();
-        
-        // Check admin access
-        const isAdmin = await checkAdminAccess();
-        console.log('🔐 Admin access result:', isAdmin);
-        
-        if (!isAdmin) {
-          const email = localStorage.getItem('user_email');
-          console.error('❌ Access denied. Email:', email);
-          console.log('💡 Tip: Add your email to adminEmails list in src/utils/auth.ts');
-          
-          // Show helpful message
-          alert(`Access denied. Admin privileges required.
 
-Your email: ${email || 'Not found'}
+        // Check for backend JWT token (not Cognito!)
+        const token = localStorage.getItem('accessToken') || localStorage.getItem('jwt_token');
+        const email = localStorage.getItem('user_email');
 
-To grant access, add your email to:
-src/utils/auth.ts
+        console.log('📋 Token check:', token ? 'Found ✅' : 'Not found ❌');
+        console.log('📋 Email:', email);
 
-const adminEmails = [
-  'waseemsamra@gmail.com',
-  'your-email@example.com'  // Add your email here
-];`);
-          
+        if (!token) {
+          console.error('❌ No token found - redirecting to login');
           navigate('/admin/login');
           return;
         }
-        
-        console.log('✅ Admin access granted');
+
+        console.log('✅ Admin authenticated with backend JWT token');
         setLoading(false);
       } catch (err) {
         console.error('❌ Admin auth check failed:', err);
