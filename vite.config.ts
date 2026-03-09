@@ -32,7 +32,7 @@ export default defineConfig({
     include: ['react', 'react-dom', 'react-router-dom'],
   },
   server: {
-    port: 3001,
+    port: 5173,  // Changed to default Vite port
     proxy: {
       '/api': {
         target: 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod',
