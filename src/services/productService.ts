@@ -57,12 +57,17 @@ export const updateProduct = async (product: Product): Promise<Product> => {
   try {
     console.log('📦 Updating product:', product.id, product.name);
     console.log('📸 Images:', product.images);
+    console.log('💲 Price being sent:', product.price);
+    console.log('📝 Full product data:', product);
     
     const token = localStorage.getItem('jwt_token');
     
+    const url = `${API_URL}/products/${product.id}`;
+    console.log('🌐 PUT URL:', url);
+    
     // Use correct endpoint: PUT /products/{id}
     const response = await axios.put(
-      `${API_URL}/products/${product.id}`,
+      url,
       product,
       {
         headers: {
@@ -72,11 +77,13 @@ export const updateProduct = async (product: Product): Promise<Product> => {
       }
     );
     
-    console.log('✅ Product updated:', response.data);
+    console.log('✅ API Response:', response.data);
+    console.log('✅ Price in response:', response.data.price);
     return response.data;
   } catch (error: any) {
     console.error('❌ Failed to update product:', error);
-    console.error('❌ Error details:', error.response?.data || error.message);
+    console.error('❌ Error response:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
     throw error;
   }
 };
