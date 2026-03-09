@@ -30,28 +30,20 @@ export const createProduct = async (product: Product): Promise<Product> => {
     
     const token = localStorage.getItem('jwt_token');
     
-    // Try admin endpoint first, fallback to regular endpoint
-    try {
-      const response = await axios.post(
-        `${API_URL}/admin/products`,
-        product,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` })
-          }
+    // Use correct endpoint: POST /products
+    const response = await axios.post(
+      `${API_URL}/products`,
+      product,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
         }
-      );
-      
-      console.log('✅ Product created:', response.data);
-      return response.data;
-    } catch (adminErr: any) {
-      console.log('Admin endpoint not available, using fallback...');
-      
-      // Fallback: Just return the product data
-      console.log('⚠️ Product saved locally (admin API not available)');
-      return { ...product, id: product.id || Date.now().toString() };
-    }
+      }
+    );
+    
+    console.log('✅ Product created:', response.data);
+    return response.data;
   } catch (error: any) {
     console.error('❌ Failed to create product:', error);
     throw error;
@@ -68,28 +60,20 @@ export const updateProduct = async (product: Product): Promise<Product> => {
     
     const token = localStorage.getItem('jwt_token');
     
-    // Try admin endpoint first, fallback to regular endpoint
-    try {
-      const response = await axios.put(
-        `${API_URL}/admin/products/${product.id}`,
-        product,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` })
-          }
+    // Use correct endpoint: PUT /products/{id}
+    const response = await axios.put(
+      `${API_URL}/products/${product.id}`,
+      product,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
         }
-      );
-      
-      console.log('✅ Product updated:', response.data);
-      return response.data;
-    } catch (adminErr: any) {
-      console.log('Admin endpoint not available, using fallback...');
-      
-      // Fallback: Just return success with product data
-      console.log('⚠️ Product update simulated (admin API not available)');
-      return product;
-    }
+      }
+    );
+    
+    console.log('✅ Product updated:', response.data);
+    return response.data;
   } catch (error: any) {
     console.error('❌ Failed to update product:', error);
     console.error('❌ Error details:', error.response?.data || error.message);
@@ -106,22 +90,18 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
     
     const token = localStorage.getItem('jwt_token');
     
-    try {
-      await axios.delete(
-        `${API_URL}/admin/products/${productId}`,
-        {
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` })
-          }
+    // Use correct endpoint: DELETE /products/{id}
+    await axios.delete(
+      `${API_URL}/products/${productId}`,
+      {
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` })
         }
-      );
-      
-      console.log('✅ Product deleted');
-      return true;
-    } catch (adminErr: any) {
-      console.log('Admin endpoint not available');
-      return false;
-    }
+      }
+    );
+    
+    console.log('✅ Product deleted');
+    return true;
   } catch (error: any) {
     console.error('❌ Failed to delete product:', error);
     return false;

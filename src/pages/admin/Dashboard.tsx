@@ -560,16 +560,35 @@ export default function Dashboard() {
 
       if (isUpdate) {
         console.log('🔄 Updating existing product...');
+        console.log('📝 Old product:', products.find(p => p.id === editingProduct.id));
+        console.log('📝 New data:', productData);
+        
+        let apiSuccess = false;
         try {
           await updateProduct(productData);
           console.log('✅ Product updated via API');
+          apiSuccess = true;
         } catch (apiErr) {
-          console.log('⚠️ API not available, saving locally only');
+          console.log('⚠️ API not available (CORS or endpoint missing), saving locally only');
           // Fallback: Just update local state
         }
 
-        // Update local state
-        setProducts(products.map(p => p.id === editingProduct.id ? { ...p, ...productData } : p));
+        // Update local state - merge old product with new data
+        const updatedProducts = products.map(p => {
+          if (p.id === editingProduct.id) {
+            const updated = { ...p, ...productData };
+            console.log('✅ Product updated in list:', updated);
+            return updated;
+          }
+          return p;
+        });
+        
+        setProducts(updatedProducts);
+        console.log('✅ Products list updated, total:', updatedProducts.length);
+        if (!apiSuccess) {
+          console.log('⚠️ Note: Changes saved locally only. Refresh will reset them.');
+          console.log('💡 To persist changes, create backend endpoint: PUT /admin/products/{id}');
+        }
       } else {
         console.log('➕ Creating new product...');
         try {
@@ -1240,6 +1259,19 @@ export default function Dashboard() {
                     ))}
                   </select>
                 </div>
+
+                {/* Image Upload - Moved Before Brand */}
+                <ImageUpload
+                  currentImage={editingProduct.image}
+                  currentImages={editingProduct.images || []}
+                  onImageChange={(imageUrl) => setEditingProduct({...editingProduct, image: imageUrl})}
+                  onImagesChange={(imageUrls) => setEditingProduct({...editingProduct, images: imageUrls})}
+                  multiple={true}
+                  maxImages={5}
+                  folder="products"
+                  label="Product Images"
+                />
+
                 <div>
                   <label className="block text-sm font-medium mb-2">Brand</label>
                   <SearchableSelect
@@ -1263,26 +1295,20 @@ export default function Dashboard() {
                   />
                 </div>
 
-                {/* Image Upload */}
-                <ImageUpload
-                  currentImage={editingProduct.image}
-                  currentImages={editingProduct.images || []}
-                  onImageChange={(imageUrl) => setEditingProduct({...editingProduct, image: imageUrl})}
-                  onImagesChange={(imageUrls) => setEditingProduct({...editingProduct, images: imageUrls})}
-                  multiple={true}
-                  maxImages={5}
-                  folder="products"
-                  label="Product Images"
-                />
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-2">Price ($)</label>
                     <input
                       type="number"
                       value={editingProduct.price}
-                      onChange={(e) => setEditingProduct({...editingProduct, price: Number(e.target.value)})}
+                      onChange={(e) => {
+                        const newPrice = Number(e.target.value);
+                        console.log('💲 Price changed:', newPrice);
+                        setEditingProduct({...editingProduct, price: newPrice});
+                      }}
                       className="w-full p-3 border rounded-lg"
+                      step="0.01"
+                      min="0"
                     />
                   </div>
                   <div>
@@ -1290,8 +1316,14 @@ export default function Dashboard() {
                     <input
                       type="number"
                       value={editingProduct.stock}
-                      onChange={(e) => setEditingProduct({...editingProduct, stock: Number(e.target.value)})}
+                      onChange={(e) => {
+                        const newStock = Number(e.target.value);
+                        console.log('📦 Stock changed:', newStock);
+                        setEditingProduct({...editingProduct, stock: newStock});
+                      }}
                       className="w-full p-3 border rounded-lg"
+                      step="1"
+                      min="0"
                     />
                   </div>
                 </div>
