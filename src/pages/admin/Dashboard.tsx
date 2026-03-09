@@ -321,8 +321,7 @@ export default function Dashboard() {
             image: b.image || ''
           })));
         } else {
-          console.log('⚠️ No brands from API, migrating hardcoded brands...');
-          await migrateHardcodedBrands();
+          console.log('⚠️ No brands in DynamoDB - add brands via admin panel');
         }
         console.log('✅ Found', brands.length, 'brands');
 
