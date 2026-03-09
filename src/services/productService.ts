@@ -66,25 +66,15 @@ export const updateProduct = async (product: Product): Promise<Product> => {
     console.log('🌐 PUT URL:', url);
     console.log('🔑 Token exists:', !!token);
     
-    // Prepare headers
-    const headers: any = {
-      'Content-Type': 'application/json'
-    };
-    
-    // Only add Authorization if token exists
-    if (token) {
-      // Make sure token doesn't have extra quotes or formatting
-      const cleanToken = token.replace(/^["']|["']$/g, '');
-      headers['Authorization'] = `Bearer ${cleanToken}`;
-      console.log('🔑 Authorization header:', `Bearer ${cleanToken.substring(0, 20)}...`);
-    }
-    
-    // Use correct endpoint: PUT /products/{id}
+    // Try WITHOUT Authorization header first (public API)
     const response = await axios.put(
       url,
       product,
       {
-        headers
+        headers: {
+          'Content-Type': 'application/json'
+          // No Authorization header - test if API is public
+        }
       }
     );
     
@@ -95,6 +85,30 @@ export const updateProduct = async (product: Product): Promise<Product> => {
     console.error('❌ Failed to update product:', error);
     console.error('❌ Error response:', error.response?.data);
     console.error('❌ Error status:', error.response?.status);
+    
+    // If 403, try with Authorization header
+    if (error.response?.status === 403) {
+      console.log('🔑 403 detected, trying with Authorization header...');
+      const token = localStorage.getItem('jwt_token');
+      if (token) {
+        const cleanToken = token.replace(/^["']|["']$/g, '');
+        
+        const retryResponse = await axios.put(
+          `${API_URL}/products/${product.id}`,
+          product,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${cleanToken}`
+            }
+          }
+        );
+        
+        console.log('✅ Retry successful:', retryResponse.data);
+        return retryResponse.data;
+      }
+    }
+    
     throw error;
   }
 };
