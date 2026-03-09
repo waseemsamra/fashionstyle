@@ -1,15 +1,35 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { Users as UsersIcon, Edit, Trash2, UserPlus, X } from 'lucide-react';
+import { Users as UsersIcon, Edit, Trash2, UserPlus, X, RefreshCw } from 'lucide-react';
+import { api } from '@/services/api';
 
 export default function Users() {
-  const [users, setUsers] = useState([
-    { id: 1, email: 'waseemsamra@gmail.com', name: 'Waseem Samra', role: 'Admin', status: 'Active', created: '2024-01-15' },
-    { id: 2, email: 'customer1@example.com', name: 'Sarah Ahmed', role: 'Customer', status: 'Active', created: '2024-02-20' },
-    { id: 3, email: 'customer2@example.com', name: 'Ali Khan', role: 'Customer', status: 'Active', created: '2024-03-10' },
-  ]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await api.getUsers();
+      console.log('Loaded users:', data);
+      setUsers(data.users || []);
+    } catch (err: any) {
+      console.error('Failed to load users:', err);
+      setError('Failed to load users. Make sure the API is deployed.');
+      // Fallback to empty array
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = (user: any) => {
     setEditingUser(user);
@@ -21,18 +41,43 @@ export default function Users() {
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (users.find(u => u.id === editingUser.id)) {
-      setUsers(users.map(u => u.id === editingUser.id ? editingUser : u));
-    } else {
-      setUsers([...users, editingUser]);
+  const handleSave = async () => {
+    try {
+      if (editingUser.userId) {
+        // Update existing user
+        await api.updateUser(editingUser.userId, {
+          name: editingUser.name,
+          email: editingUser.email,
+          role: editingUser.role?.toLowerCase(),
+          status: editingUser.status?.toLowerCase()
+        });
+        setUsers(users.map(u => u.userId === editingUser.userId ? editingUser : u));
+      } else {
+        // Create new user
+        const result = await api.createUser({
+          email: editingUser.email,
+          name: editingUser.name,
+          role: editingUser.role?.toLowerCase() || 'customer',
+          status: editingUser.status?.toLowerCase() || 'active'
+        });
+        setUsers([...users, { ...result.user, userId: result.user.userId }]);
+      }
+      setShowModal(false);
+    } catch (err: any) {
+      console.error('Failed to save user:', err);
+      alert('Failed to save user: ' + (err.response?.data?.error || err.message));
     }
-    setShowModal(false);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Delete this user?')) {
-      setUsers(users.filter(u => u.id !== id));
+  const handleDelete = async (userId: string) => {
+    if (confirm('Delete this user? This action cannot be undone.')) {
+      try {
+        await api.deleteUser(userId);
+        setUsers(users.filter(u => u.userId !== userId));
+      } catch (err: any) {
+        console.error('Failed to delete user:', err);
+        alert('Failed to delete user: ' + (err.response?.data?.error || err.message));
+      }
     }
   };
 
@@ -45,44 +90,66 @@ export default function Users() {
             <UsersIcon className="w-6 h-6" />
             <h3 className="text-xl font-bold">Users Management</h3>
           </div>
-          <button onClick={handleAdd} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90 flex items-center gap-2">
-            <UserPlus className="w-4 h-4" />
-            Add User
-          </button>
+          <div className="flex gap-2">
+            <button onClick={loadUsers} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <button onClick={handleAdd} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90 flex items-center gap-2">
+              <UserPlus className="w-4 h-4" />
+              Add User
+            </button>
+          </div>
         </div>
+        
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading users...</p>
+          </div>
+        ) : error ? (
+          <div className="p-6">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+            <p className="mt-4 text-gray-600 text-sm">
+              Note: The users API needs to be deployed. Run the deployment script to add the /users endpoint.
+            </p>
+          </div>
+        ) : users.length === 0 ? (
+          <div className="p-8 text-center">
+            <UsersIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-600">No users found</p>
+            <p className="text-sm text-gray-500 mt-2">Users will appear here after they sign up</p>
+          </div>
+        ) : (
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="px-6 py-4 text-left text-sm font-semibold">Name</th>
               <th className="px-6 py-4 text-left text-sm font-semibold">Email</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold">Role</th>
-              <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+              <th className="px-6 py-4 text-left text-sm font-semibold">Contact</th>
               <th className="px-6 py-4 text-left text-sm font-semibold">Created</th>
               <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {users.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium">{user.name}</td>
+              <tr key={user.userId || user.id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 font-medium">
+                  {(user.firstName || user.lastName) ? `${user.firstName} ${user.lastName}`.trim() : 'N/A'}
+                </td>
                 <td className="px-6 py-4">{user.email}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${user.role === 'Admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                    {user.role}
-                  </span>
+                <td className="px-6 py-4">{user.contact || 'N/A'}</td>
+                <td className="px-6 py-4 text-gray-600">
+                  {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </td>
-                <td className="px-6 py-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${user.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {user.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-gray-600">{user.created}</td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
                     <button onClick={() => handleEdit(user)} className="p-2 text-blue-600 hover:bg-blue-50 rounded">
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(user.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
+                    <button onClick={() => handleDelete(user.userId || user.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -91,13 +158,14 @@ export default function Users() {
             ))}
           </tbody>
         </table>
+        )}
       </div>
 
       {showModal && editingUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-lg">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">{editingUser.id > 1000 ? 'Add User' : 'Edit User'}</h2>
+              <h2 className="text-2xl font-bold">{editingUser.userId ? 'Edit User' : 'Add User'}</h2>
               <button onClick={() => setShowModal(false)}>
                 <X className="w-6 h-6" />
               </button>
@@ -107,45 +175,47 @@ export default function Users() {
                 <label className="block text-sm font-medium mb-2">Name</label>
                 <input
                   type="text"
-                  value={editingUser.name}
+                  value={editingUser.name || editingUser.firstName + ' ' + editingUser.lastName || ''}
                   onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
                   className="w-full p-3 border rounded-lg"
+                  placeholder="John Doe"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Email</label>
                 <input
                   type="email"
-                  value={editingUser.email}
+                  value={editingUser.email || ''}
                   onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
                   className="w-full p-3 border rounded-lg"
+                  placeholder="john@example.com"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Role</label>
                 <select
-                  value={editingUser.role}
+                  value={editingUser.role || 'customer'}
                   onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
                   className="w-full p-3 border rounded-lg"
                 >
-                  <option>Customer</option>
-                  <option>Admin</option>
+                  <option value="customer">Customer</option>
+                  <option value="admin">Admin</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">Status</label>
                 <select
-                  value={editingUser.status}
+                  value={editingUser.status || 'active'}
                   onChange={(e) => setEditingUser({...editingUser, status: e.target.value})}
                   className="w-full p-3 border rounded-lg"
                 >
-                  <option>Active</option>
-                  <option>Inactive</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
                 </select>
               </div>
               <div className="flex gap-4 pt-4">
                 <button onClick={handleSave} className="flex-1 py-3 bg-gold text-white rounded-lg hover:bg-gold/90">
-                  Save
+                  {editingUser.userId ? 'Update' : 'Create'}
                 </button>
                 <button onClick={() => setShowModal(false)} className="flex-1 py-3 bg-gray-200 rounded-lg hover:bg-gray-300">
                   Cancel

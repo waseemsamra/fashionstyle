@@ -16,15 +16,42 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        await getCurrentUser();
-        const isAdmin = await checkAdminAccess();
-        if (!isAdmin) {
-          alert('Access denied. Admin privileges required.');
-          navigate('/admin/login');
+        // First check for JWT token in localStorage (primary auth method)
+        const jwtToken = localStorage.getItem('jwt_token');
+        const userEmail = localStorage.getItem('user_email');
+        
+        console.log('🔍 Admin auth check - JWT token:', !!jwtToken, 'Email:', userEmail);
+
+        if (jwtToken && userEmail) {
+          // User is authenticated via JWT (backend login)
+          const isAdmin = await checkAdminAccess();
+          console.log('✅ JWT auth - Admin check result:', isAdmin);
+          
+          if (!isAdmin) {
+            alert('Access denied. Admin privileges required.');
+            navigate('/admin/login');
+            return;
+          }
+          setLoading(false);
           return;
         }
-        setLoading(false);
-      } catch {
+
+        // Fallback: Try Cognito auth (for backward compatibility)
+        try {
+          await getCurrentUser();
+          const isAdmin = await checkAdminAccess();
+          if (!isAdmin) {
+            alert('Access denied. Admin privileges required.');
+            navigate('/admin/login');
+            return;
+          }
+          setLoading(false);
+        } catch (cognitoErr) {
+          console.log('⚠️ Cognito auth failed, no valid session');
+          navigate('/admin/login');
+        }
+      } catch (err) {
+        console.error('❌ Auth check failed:', err);
         navigate('/admin/login');
       }
     };
@@ -33,10 +60,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      // Clear JWT token and localStorage
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('refreshToken');
+      
+      // Try to sign out from Amplify (if used)
+      try {
+        await signOut();
+      } catch (e) {
+        // Ignore Amplify sign out errors
+      }
+      
+      console.log('✅ Admin logged out');
       navigate('/admin/login');
     } catch (error) {
       console.error('Logout error:', error);
+      // Force logout even on error
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('user_email');
+      navigate('/admin/login');
     }
   };
 

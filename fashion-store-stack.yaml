@@ -120,6 +120,18 @@ Resources:
                   - !GetAtt UsersTable.Arn
                   - !Sub "${OrdersTable.Arn}/index/*"
                   - !Sub "${UsersTable.Arn}/index/*"
+        - PolicyName: CognitoAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cognito-idp:ListUsers
+                  - cognito-idp:AdminGetUser
+                  - cognito-idp:AdminCreateUser
+                  - cognito-idp:AdminDeleteUser
+                  - cognito-idp:AdminUpdateUserAttributes
+                Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/us-east-1_MjEc3MXcK
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -194,19 +206,267 @@ Resources:
       Handler: index.handler
       Role: !GetAtt LambdaExecutionRole.Arn
       MemorySize: 256
-      Timeout: 10
+      Timeout: 30
       Environment:
         Variables:
-          USERS_TABLE: !Ref UsersTable
+          USERS_TABLE: !Sub fashionstore-prod
+          USER_POOL_ID: !Sub us-east-1_MjEc3MXcK
+          JWT_SECRET: !Sub fashionstore-secret-key-${Environment}
       Code:
         ZipFile: |
+          const AWS = require('aws-sdk');
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+          const cognito = new AWS.CognitoIdentityServiceProvider();
+
+          const TABLE_NAME = process.env.USERS_TABLE;
+          const USER_POOL_ID = process.env.USER_POOL_ID;
+          const JWT_SECRET = process.env.JWT_SECRET || 'fashionstore-secret-key';
+
+          const jwt = require('jsonwebtoken');
+
+          const verifyToken = (token) => {
+            try {
+              return jwt.verify(token.replace('Bearer ', ''), JWT_SECRET);
+            } catch (err) {
+              return null;
+            }
+          };
+
+          const isAdmin = (decoded) => {
+            return decoded && (decoded.role === 'admin' || decoded.email === 'admin@fashionstore.com');
+          };
+
+          const headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+            'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS'
+          };
+
           exports.handler = async (event) => {
-            console.log("Users Lambda");
-            return {
-              statusCode: 200,
-              headers: { 'Access-Control-Allow-Origin': '*' },
-              body: JSON.stringify({ message: "Users API" })
-            };
+            if (event.httpMethod === 'OPTIONS') {
+              return { statusCode: 200, headers, body: '' };
+            }
+
+            try {
+              const userId = event.pathParameters?.userId;
+              const method = event.httpMethod;
+              const token = event.headers?.Authorization || event.headers?.authorization;
+
+              const decoded = verifyToken(token);
+              if (!decoded || !isAdmin(decoded)) {
+                return {
+                  statusCode: 401,
+                  headers,
+                  body: JSON.stringify({ error: 'Unauthorized', message: 'Admin access required' })
+                };
+              }
+
+              // GET /users - List all users from Cognito
+              if (method === 'GET' && !userId) {
+                const queryParams = new URLSearchParams(event.rawQueryString);
+                const email = queryParams.get('email');
+
+                let users = [];
+
+                if (email) {
+                  const cognitoParams = {
+                    UserPoolId: USER_POOL_ID,
+                    Filter: `email = "${email}"`
+                  };
+                  const cognitoResult = await cognito.listUsers(cognitoParams).promise();
+                  users = cognitoResult.Users.map(user => {
+                    const emailAttr = user.Attributes.find(a => a.Name === 'email');
+                    return {
+                      userId: user.Username,
+                      email: emailAttr ? emailAttr.Value : '',
+                      enabled: user.Enabled,
+                      status: user.UserStatus,
+                      createdAt: user.UserCreateDate
+                    };
+                  });
+                } else {
+                  const cognitoParams = {
+                    UserPoolId: USER_POOL_ID,
+                    Limit: 60
+                  };
+                  const cognitoResult = await cognito.listUsers(cognitoParams).promise();
+                  
+                  const profilePromises = cognitoResult.Users.map(async (user) => {
+                    const emailAttr = user.Attributes.find(a => a.Name === 'email');
+                    const email = emailAttr ? emailAttr.Value : '';
+                    const userId = user.Username;
+
+                    try {
+                      const profileResult = await dynamodb.get({
+                        TableName: TABLE_NAME,
+                        Key: { PK: `USER#${userId}`, SK: 'PROFILE' }
+                      }).promise();
+                      const profile = profileResult.Item?.profile || {};
+                      return {
+                        userId,
+                        email,
+                        firstName: profile.firstName || '',
+                        lastName: profile.lastName || '',
+                        contact: profile.contact || '',
+                        role: profile.role || 'customer',
+                        status: profile.status || user.UserStatus,
+                        enabled: user.Enabled,
+                        createdAt: user.UserCreateDate || profile.createdAt
+                      };
+                    } catch (e) {
+                      return {
+                        userId,
+                        email,
+                        firstName: '',
+                        lastName: '',
+                        contact: '',
+                        role: 'customer',
+                        status: user.UserStatus,
+                        enabled: user.Enabled,
+                        createdAt: user.UserCreateDate
+                      };
+                    }
+                  });
+                  users = await Promise.all(profilePromises);
+                }
+
+                return {
+                  statusCode: 200,
+                  headers,
+                  body: JSON.stringify({ users, total: users.length })
+                };
+              }
+
+              // GET /users/{userId} - Get single user
+              if (method === 'GET' && userId) {
+                const cognitoResult = await cognito.adminGetUser({
+                  UserPoolId: USER_POOL_ID,
+                  Username: userId
+                }).promise();
+
+                const profileResult = await dynamodb.get({
+                  TableName: TABLE_NAME,
+                  Key: { PK: `USER#${userId}`, SK: 'PROFILE' }
+                }).promise();
+
+                const profile = profileResult.Item?.profile || {};
+
+                return {
+                  statusCode: 200,
+                  headers,
+                  body: JSON.stringify({
+                    user: {
+                      userId,
+                      email: cognitoResult.UserAttributes.find(a => a.Name === 'email')?.Value || '',
+                      firstName: profile.firstName || '',
+                      lastName: profile.lastName || '',
+                      contact: profile.contact || '',
+                      role: profile.role || 'customer',
+                      status: profile.status || cognitoResult.UserStatus,
+                      enabled: cognitoResult.Enabled,
+                      createdAt: cognitoResult.UserCreateDate
+                    }
+                  })
+                };
+              }
+
+              // POST /users - Create new user
+              if (method === 'POST') {
+                const body = JSON.parse(event.body);
+                const cognitoResult = await cognito.adminCreateUser({
+                  UserPoolId: USER_POOL_ID,
+                  Username: body.email,
+                  UserAttributes: [
+                    { Name: 'email', Value: body.email },
+                    { Name: 'email_verified', Value: 'true' }
+                  ],
+                  MessageAction: 'SUPPRESS'
+                }).promise();
+
+                const userId = body.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+                const timestamp = new Date().toISOString();
+
+                await dynamodb.put({
+                  TableName: TABLE_NAME,
+                  Item: {
+                    PK: `USER#${userId}`,
+                    SK: 'PROFILE',
+                    profile: {
+                      email: body.email,
+                      firstName: body.name?.split(' ')[0] || '',
+                      lastName: body.name?.split(' ')[1] || '',
+                      contact: body.contact || '',
+                      role: body.role || 'customer',
+                      status: body.status || 'active'
+                    },
+                    createdAt: timestamp,
+                    updatedAt: timestamp
+                  }
+                }).promise();
+
+                return {
+                  statusCode: 201,
+                  headers,
+                  body: JSON.stringify({
+                    message: 'User created successfully',
+                    user: { userId, email: body.email, name: body.name, role: body.role, status: body.status }
+                  })
+                };
+              }
+
+              // PUT /users/{userId} - Update user
+              if (method === 'PUT' && userId) {
+                const body = JSON.parse(event.body);
+                const updateExpression = [];
+                const expressionAttributeValues = {};
+
+                if (body.email) { updateExpression.push('profile.email = :email'); expressionAttributeValues[':email'] = body.email; }
+                if (body.firstName) { updateExpression.push('profile.firstName = :firstName'); expressionAttributeValues[':firstName'] = body.firstName; }
+                if (body.lastName) { updateExpression.push('profile.lastName = :lastName'); expressionAttributeValues[':lastName'] = body.lastName; }
+                if (body.name) {
+                  const parts = body.name.split(' ');
+                  updateExpression.push('profile.firstName = :firstName, profile.lastName = :lastName');
+                  expressionAttributeValues[':firstName'] = parts[0] || '';
+                  expressionAttributeValues[':lastName'] = parts[1] || '';
+                }
+                if (body.contact) { updateExpression.push('profile.contact = :contact'); expressionAttributeValues[':contact'] = body.contact; }
+                if (body.role) { updateExpression.push('profile.role = :role'); expressionAttributeValues[':role'] = body.role; }
+                if (body.status) { updateExpression.push('profile.status = :status'); expressionAttributeValues[':status'] = body.status; }
+
+                if (updateExpression.length > 0) {
+                  updateExpression.push('updatedAt = :updatedAt');
+                  expressionAttributeValues[':updatedAt'] = new Date().toISOString();
+                  await dynamodb.update({
+                    TableName: TABLE_NAME,
+                    Key: { PK: `USER#${userId}`, SK: 'PROFILE' },
+                    UpdateExpression: `SET ${updateExpression.join(', ')}`,
+                    ExpressionAttributeValues: expressionAttributeValues
+                  }).promise();
+                }
+
+                return {
+                  statusCode: 200,
+                  headers,
+                  body: JSON.stringify({ message: 'User updated successfully', userId })
+                };
+              }
+
+              // DELETE /users/{userId} - Delete user
+              if (method === 'DELETE' && userId) {
+                await cognito.adminDeleteUser({ UserPoolId: USER_POOL_ID, Username: userId }).promise();
+                await dynamodb.delete({ TableName: TABLE_NAME, Key: { PK: `USER#${userId}`, SK: 'PROFILE' } }).promise();
+                return {
+                  statusCode: 200,
+                  headers,
+                  body: JSON.stringify({ message: 'User deleted successfully', userId })
+                };
+              }
+
+              return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+            } catch (error) {
+              console.error('Error:', error);
+              return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+            }
           };
       Tags:
         - Key: Environment
@@ -312,6 +572,44 @@ Resources:
         IntegrationHttpMethod: POST
         Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambda.Arn}/invocations
 
+  # OPTIONS /users (CORS)
+  UsersOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UsersResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # POST /users - Create user
+  UsersPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UsersResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambda.Arn}/invocations
+
   # GET /users/{userId}
   UsersIdGetMethod:
     Type: AWS::ApiGateway::Method
@@ -319,6 +617,57 @@ Resources:
       RestApiId: !Ref ApiGateway
       ResourceId: !Ref UsersIdResource
       HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambda.Arn}/invocations
+
+  # OPTIONS /users/{userId} (CORS)
+  UsersIdOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UsersIdResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # PUT /users/{userId} - Update user
+  UsersIdPutMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UsersIdResource
+      HttpMethod: PUT
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersLambda.Arn}/invocations
+
+  # DELETE /users/{userId} - Delete user
+  UsersIdDeleteMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref UsersIdResource
+      HttpMethod: DELETE
       AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
@@ -361,7 +710,12 @@ Resources:
       - ProductsGetMethod
       - ProductsIdGetMethod
       - UsersGetMethod
+      - UsersOptionsMethod
+      - UsersPostMethod
       - UsersIdGetMethod
+      - UsersIdOptionsMethod
+      - UsersIdPutMethod
+      - UsersIdDeleteMethod
       - UsersIdOrdersGetMethod
       - UsersIdOrdersPostMethod
     Properties:

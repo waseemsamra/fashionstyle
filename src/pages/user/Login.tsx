@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signOut, signIn, signUp, fetchAuthSession, confirmSignUp } from 'aws-amplify/auth';
 import { authService } from '@/services/auth';
+import { api } from '@/services/api';
 import { User, Lock, Mail } from 'lucide-react';
 
 export default function Login() {
@@ -29,12 +30,23 @@ export default function Login() {
           if (session.tokens) {
             const accessToken = session.tokens.accessToken.toString();
             const email = session.tokens.idToken?.payload?.email as string || '';
-            
+
             console.log('OAuth success, storing token and email:', email);
             localStorage.setItem('jwt_token', accessToken);
             localStorage.setItem('user_email', email);
             window.location.hash = '';
-            
+
+            // Auto-create profile for OAuth users
+            if (email) {
+              try {
+                const userId = email.split('@')[0];
+                await api.createUserProfile(userId, email);
+                console.log('✅ OAuth user profile created for:', email);
+              } catch (profileErr: any) {
+                console.log('Profile creation skipped:', profileErr.message);
+              }
+            }
+
             // Always redirect to dashboard after successful OAuth login
             console.log('Redirecting to dashboard from OAuth callback');
             navigate('/dashboard', { replace: true });
@@ -82,8 +94,10 @@ export default function Login() {
           console.log('Attempting backend signup...');
           const response = await authService.signup(credentials.email, credentials.password);
           console.log('Backend signup response:', response);
-          
+
           if (response.message) {
+            // Backend signup successful - profile should be created on backend
+            console.log('✅ Backend signup successful, profile will be created on verification');
             setError('Account created! Please verify your email.');
             setNeedsVerification(true);
             setLoading(false);
@@ -198,14 +212,24 @@ export default function Login() {
           console.log('Attempting backend signin...');
           const response = await authService.signin(credentials.email, credentials.password);
           console.log('Backend signin response:', response);
-          
+
           if (response.accessToken) {
             console.log('Backend signin successful, redirecting...');
-            
+
+            // Auto-create profile if it doesn't exist
+            try {
+              const userId = credentials.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+              console.log('Creating profile for userId:', userId);
+              await api.createUserProfile(userId, credentials.email);
+              console.log('✅ User profile created/updated for:', credentials.email);
+            } catch (profileErr: any) {
+              console.log('Profile creation skipped or failed:', profileErr.message);
+            }
+
             // Redirect to checkout if coming from there, otherwise dashboard
             const from = (location as any).state?.from || '/dashboard';
             console.log('Redirecting to:', from);
-            
+
             navigate(from, { replace: true });
             return;
           }
@@ -271,17 +295,28 @@ export default function Login() {
             username: credentials.email,
             password: credentials.password
           });
-          
+
           console.log('Cognito signin result:', result);
-          
+
           if (result.isSignedIn) {
             // Get the session tokens
             const session = await fetchAuthSession();
             if (session.tokens) {
+              const email = session.tokens.idToken?.payload?.email as string || credentials.email;
               localStorage.setItem('jwt_token', session.tokens.accessToken.toString());
-              localStorage.setItem('user_email', session.tokens.idToken?.payload?.email as string || credentials.email);
+              localStorage.setItem('user_email', email);
+
+              // Auto-create profile if it doesn't exist
+              try {
+                const userId = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+                console.log('Creating profile for userId:', userId);
+                await api.createUserProfile(userId, email);
+                console.log('✅ User profile created/updated for:', email);
+              } catch (profileErr: any) {
+                console.log('Profile creation skipped or failed:', profileErr.message);
+              }
             }
-            
+
             // Redirect to checkout if coming from there, otherwise dashboard
             const from = (location as any).state?.from || '/dashboard';
             console.log('Cognito signin successful, redirecting to:', from);
@@ -324,6 +359,19 @@ export default function Login() {
         username: credentials.email,
         confirmationCode: credentials.code
       });
+
+      // Auto-create user profile in DynamoDB after successful verification
+      try {
+        const userId = credentials.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+        console.log('Creating profile for userId:', userId, 'email:', credentials.email);
+        await api.createUserProfile(userId, credentials.email);
+        console.log('✅ User profile created successfully for:', credentials.email);
+      } catch (profileErr: any) {
+        console.log('⚠️ Profile creation failed, but signup succeeded:', profileErr.message);
+        console.log('Profile will be created on first login');
+        // Don't fail the verification if profile creation fails
+      }
+
       setError('Account verified! Please sign in.');
       setIsSignUp(false);
       setNeedsVerification(false);

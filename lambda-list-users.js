@@ -7,7 +7,7 @@ exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET,PUT,OPTIONS'
+    'Access-Control-Allow-Methods': 'GET,OPTIONS'
   };
 
   if (event.httpMethod === 'OPTIONS') {
@@ -15,11 +15,10 @@ exports.handler = async (event) => {
   }
 
   try {
-    const userId = event.pathParameters?.userId;
     const method = event.httpMethod;
 
-    // GET /users - List all users (no userId in path)
-    if (method === 'GET' && !userId) {
+    // GET /users - List all users
+    if (method === 'GET') {
       const params = {
         TableName: TABLE_NAME,
         KeyConditionExpression: 'begins_with(PK, :pkPrefix)',
@@ -47,41 +46,6 @@ exports.handler = async (event) => {
         statusCode: 200,
         headers,
         body: JSON.stringify({ users, total: users.length })
-      };
-    }
-
-    // GET /users/{userId} - Get single user profile
-    if (method === 'GET' && userId) {
-      const result = await dynamodb.get({
-        TableName: TABLE_NAME,
-        Key: { PK: `USER#${userId}`, SK: 'PROFILE' }
-      }).promise();
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ profile: result.Item?.profile || {} })
-      };
-    }
-
-    // PUT /users/{userId}/profile - Update user profile
-    if (method === 'PUT') {
-      const profile = JSON.parse(event.body);
-
-      await dynamodb.put({
-        TableName: TABLE_NAME,
-        Item: {
-          PK: `USER#${userId}`,
-          SK: 'PROFILE',
-          profile,
-          updatedAt: new Date().toISOString()
-        }
-      }).promise();
-
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({ message: 'Profile updated', profile })
       };
     }
 

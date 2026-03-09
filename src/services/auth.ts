@@ -10,6 +10,25 @@ export const authService = {
         password,
         name: name || email.split('@')[0]
       });
+      
+      // If signup successful, try to create user profile
+      if (response.data && (response.data.message || response.data.success)) {
+        console.log('✅ Backend signup successful, creating profile...');
+        try {
+          const userId = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+          await apiClient.put(`/users/${userId}/profile`, {
+            email,
+            firstName: name?.split(' ')[0] || '',
+            lastName: name?.split(' ')[1] || '',
+            role: 'customer',
+            status: 'active'
+          });
+          console.log('✅ User profile created for:', email);
+        } catch (profileErr) {
+          console.log('⚠️ Profile creation will happen on first login:', email);
+        }
+      }
+      
       return response.data;
     } catch (error: any) {
       // If CORS fails, throw error with helpful message
@@ -34,6 +53,19 @@ export const authService = {
         localStorage.setItem('user_email', email);
         if (response.data.refreshToken) {
           localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
+        
+        // Try to create/update user profile (idempotent operation)
+        try {
+          const userId = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+          await apiClient.put(`/users/${userId}/profile`, {
+            email,
+            role: 'customer',
+            status: 'active'
+          });
+          console.log('✅ User profile ensured for:', email);
+        } catch (profileErr: any) {
+          console.log('⚠️ Profile update skipped:', profileErr.message);
         }
       }
 

@@ -27,6 +27,10 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Add Content-Type header for all requests
+    if (!config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json';
+    }
     return config;
   },
   (error) => {
@@ -99,6 +103,20 @@ export const api = {
     return response.data;
   },
 
+  // Create user profile (auto-created on signup)
+  createUserProfile: async (userId: string, email: string) => {
+    const defaultProfile = {
+      firstName: '',
+      lastName: '',
+      dob: '',
+      contact: '',
+      whatsapp: '',
+      email: email
+    };
+    const response = await apiClient.put(`/users/${userId}/profile`, defaultProfile);
+    return response.data;
+  },
+
   // Create order
   createOrder: async (userId: string, orderData: any) => {
     const response = await apiClient.post(`/users/${userId}/orders`, orderData);
@@ -114,6 +132,36 @@ export const api = {
   // Get single order
   getOrder: async (userId: string, orderId: string) => {
     const response = await apiClient.get(`/users/${userId}/orders/${orderId}`);
+    return response.data;
+  },
+
+  // List all users (admin)
+  getUsers: async () => {
+    const response = await apiClient.get('/users');
+    return response.data;
+  },
+
+  // Get single user (admin)
+  getUser: async (userId: string) => {
+    const response = await apiClient.get(`/users/${userId}`);
+    return response.data;
+  },
+
+  // Create user (admin)
+  createUser: async (userData: { email: string; name: string; role?: string; status?: string }) => {
+    const response = await apiClient.post('/users', userData);
+    return response.data;
+  },
+
+  // Update user (admin)
+  updateUser: async (userId: string, userData: any) => {
+    const response = await apiClient.put(`/users/${userId}`, userData);
+    return response.data;
+  },
+
+  // Delete user (admin)
+  deleteUser: async (userId: string) => {
+    const response = await apiClient.delete(`/users/${userId}`);
     return response.data;
   }
 };
