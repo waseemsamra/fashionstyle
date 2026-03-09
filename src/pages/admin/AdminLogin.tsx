@@ -17,10 +17,15 @@ export default function AdminLogin() {
     try {
       console.log('🔐 Admin login attempt for:', credentials.username);
 
-      // Use backend API directly (same as your authProvider)
-      console.log('📡 Calling backend API...');
+      // Use proxy for local development, direct URL for production
+      const isLocalhost = window.location.hostname === 'localhost';
+      const apiUrl = isLocalhost 
+        ? '/api/auth/signin'  // Use Vite proxy
+        : 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/auth/signin';
+
+      console.log('📡 Calling API:', apiUrl);
       const response = await fetch(
-        'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/auth/signin',
+        apiUrl,
         {
           method: 'POST',
           headers: { 
