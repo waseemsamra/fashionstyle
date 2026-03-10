@@ -348,7 +348,7 @@ export default function Navigation() {
                             ${totalPrice.toFixed(2)}
                           </span>
                         </div>
-                        <Button 
+                        <Button
                           onClick={() => {
                             setIsCartOpen(false);
                             navigate('/checkout');
@@ -358,7 +358,10 @@ export default function Navigation() {
                           Proceed to Checkout
                         </Button>
                         <button
-                          onClick={() => setIsCartOpen(false)}
+                          onClick={() => {
+                            setIsCartOpen(false);
+                            navigate('/products');
+                          }}
                           className="w-full text-center text-sm text-gray-500 hover:text-black transition-colors"
                         >
                           Continue Shopping
