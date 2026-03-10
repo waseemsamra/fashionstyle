@@ -163,6 +163,17 @@ export const api = {
   deleteUser: async (userId: string) => {
     const response = await apiClient.delete(`/users/${userId}`);
     return response.data;
+  },
+
+  // Get all orders (admin)
+  getAllOrders: async () => {
+    const token = localStorage.getItem('jwt_token');
+    const response = await apiClient.get('/admin/orders', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    return response.data;
   }
 };
 
