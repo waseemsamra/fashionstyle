@@ -17,23 +17,20 @@ export default function AdminLogin() {
     try {
       console.log('🔐 Admin login attempt for:', credentials.username);
 
-      // Use proxy for local development, direct URL for production
-      const isLocalhost = window.location.hostname === 'localhost';
-      const apiUrl = isLocalhost 
-        ? '/api/auth/signin'  // Use Vite proxy
-        : 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/auth/signin';
+      // Always use direct API Gateway URL
+      const apiUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/auth/signin';
 
       console.log('📡 Calling API:', apiUrl);
       const response = await fetch(
         apiUrl,
         {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
-            email: credentials.username, 
-            password: credentials.password 
+          body: JSON.stringify({
+            email: credentials.username,
+            password: credentials.password
           })
         }
       );
@@ -65,7 +62,7 @@ export default function AdminLogin() {
 
     } catch (error: any) {
       console.error('❌ Login error:', error);
-      setError(error.message || 'Incorrect username or password');
+      setError(error.message || 'Login failed. Please check your credentials and ensure the backend API is deployed.');
     } finally {
       setLoading(false);
     }
