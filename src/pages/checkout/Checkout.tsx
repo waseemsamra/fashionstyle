@@ -148,14 +148,34 @@ export default function Checkout() {
       // Store order info - use correct property paths
       localStorage.setItem('lastOrder', JSON.stringify({
         orderId: result.orderId,
-        email: result.email || email  // Use result.email or fallback to form email
+        email: result.email || email,  // Use result.email or fallback to form email
+        items: orderData.items,  // Pass items for display
+        totalPrice: result.total || orderData.totalPrice,
+        fullName: orderData.fullName,
+        address: orderData.address,
+        city: orderData.city,
+        postalCode: orderData.postalCode,
+        phone: orderData.phone,
+        paymentMethod: orderData.paymentMethod
       }));
 
-      // Navigate to confirmation
+      // Navigate to confirmation with full order data
       navigate(`/order-confirmation/${result.orderId}`, {
         state: {
           email: result.email || email,  // Use result.email or fallback
-          isGuest: !isAuthenticated
+          isGuest: !isAuthenticated,
+          orderData: {  // Pass full order data for display
+            orderId: result.orderId,
+            email: result.email || email,
+            items: orderData.items,
+            totalPrice: result.total || orderData.totalPrice,
+            fullName: orderData.fullName,
+            address: orderData.address,
+            city: orderData.city,
+            postalCode: orderData.postalCode,
+            phone: orderData.phone,
+            paymentMethod: orderData.paymentMethod
+          }
         }
       });
 
