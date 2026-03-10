@@ -97,12 +97,21 @@ export default function Users() {
   const handleDelete = async (userId: string) => {
     if (confirm('Delete this user? This action cannot be undone.')) {
       try {
-        await api.deleteUser(userId);
+        console.log('🗑️ Deleting user:', userId);
+        const token = localStorage.getItem('jwt_token');
+        console.log('Token:', token ? 'Present' : 'Missing');
+        
+        const response = await api.deleteUser(userId);
+        console.log('✅ Delete response:', response);
+        
         setUsers(users.filter(u => u.userId !== userId));
         loadUsers(); // Reload to get fresh data
       } catch (err: any) {
-        console.error('Failed to delete user:', err);
-        alert('Failed to delete user: ' + (err.response?.data?.error || err.message));
+        console.error('❌ Delete failed:', err);
+        console.error('Response:', err.response);
+        console.error('Status:', err.response?.status);
+        console.error('Data:', err.response?.data);
+        alert('Failed to delete user: ' + (err.response?.data?.error || err.message || 'Unknown error'));
       }
     }
   };
