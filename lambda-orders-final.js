@@ -1,7 +1,9 @@
 const AWS = require('aws-sdk');
 const dynamodb = new AWS.DynamoDB.DocumentClient();
+const ses = new AWS.SES({ apiVersion: '2010-12-01' });
 
 const ORDERS_TABLE = process.env.ORDERS_TABLE || 'fashionstore-orders-prod';
+const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL || 'waseemsamra@gmail.com';
 
 exports.handler = async (event) => {
   const headers = {
@@ -49,12 +51,22 @@ exports.handler = async (event) => {
         Item: item
       }).promise();
 
+      // Send order confirmation email via SES
+      try {
+        await sendOrderConfirmationEmail(item);
+        console.log('✅ Order confirmation email sent to:', item.email);
+      } catch (emailError) {
+        console.error('❌ Failed to send email:', emailError);
+        // Don't fail the order if email fails
+      }
+
       return {
         statusCode: 201,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: 'Order created successfully',
           orderId,
+          email: item.email,
           total: orderData.totalPrice
         })
       };
@@ -139,3 +151,115 @@ exports.handler = async (event) => {
     };
   }
 };
+
+// Send order confirmation email via SES
+async function sendOrderConfirmationEmail(order) {
+  const emailParams = {
+    Source: SES_FROM_EMAIL,
+    Destination: {
+      ToAddresses: [order.email]
+    },
+    Message: {
+      Subject: {
+        Data: `Order Confirmation - ${order.orderId}`,
+        Charset: 'UTF-8'
+      },
+      Body: {
+        Html: {
+          Data: `
+            <html>
+              <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <h1 style="color: #D4AF37;">Thank You for Your Order!</h1>
+                  
+                  <p>Dear ${order.fullName},</p>
+                  
+                  <p>Your order has been received and is being processed.</p>
+                  
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h2 style="color: #D4AF37;">Order Details</h2>
+                    <p><strong>Order Number:</strong> ${order.orderId}</p>
+                    <p><strong>Order Date:</strong> ${new Date(order.date).toLocaleDateString()}</p>
+                    <p><strong>Total Amount:</strong> $${order.totalPrice.toFixed(2)}</p>
+                    <p><strong>Payment Method:</strong> ${order.paymentMethod}</p>
+                    <p><strong>Status:</strong> ${order.status}</p>
+                  </div>
+                  
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h2 style="color: #D4AF37;">Shipping Information</h2>
+                    <p>${order.fullName}</p>
+                    <p>${order.address}</p>
+                    <p>${order.city}, ${order.postalCode}</p>
+                    <p>${order.phone}</p>
+                  </div>
+                  
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h2 style="color: #D4AF37;">Items Ordered</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                      ${order.items.map((item, index) => `
+                        <tr style="border-bottom: 1px solid #ddd;">
+                          <td style="padding: 10px 0;">${item.name || `Item ${index + 1}`}</td>
+                          <td style="padding: 10px 0; text-align: center;">${item.quantity}</td>
+                          <td style="padding: 10px 0; text-align: right;">$${(item.price * item.quantity).toFixed(2)}</td>
+                        </tr>
+                      `).join('')}
+                    </table>
+                  </div>
+                  
+                  <p style="margin-top: 30px;">You can track your order status by visiting your account dashboard.</p>
+                  
+                  <p>Thank you for shopping with us!</p>
+                  
+                  <p style="margin-top: 30px; color: #666; font-size: 14px;">
+                    If you have any questions, please contact our customer support team.
+                  </p>
+                </div>
+              </body>
+            </html>
+          `,
+          Charset: 'UTF-8'
+        },
+        Text: {
+          Data: `
+Thank You for Your Order!
+
+Dear ${order.fullName},
+
+Your order has been received and is being processed.
+
+Order Details:
+- Order Number: ${order.orderId}
+- Order Date: ${new Date(order.date).toLocaleDateString()}
+- Total Amount: $${order.totalPrice.toFixed(2)}
+- Payment Method: ${order.paymentMethod}
+- Status: ${order.status}
+
+Shipping Information:
+${order.fullName}
+${order.address}
+${order.city}, ${order.postalCode}
+${order.phone}
+
+Items Ordered:
+${order.items.map((item, index) => `${item.name || `Item ${index + 1}`} - Qty: ${item.quantity} - $${(item.price * item.quantity).toFixed(2)}`).join('\n')}
+
+You can track your order status by visiting your account dashboard.
+
+Thank you for shopping with us!
+
+If you have any questions, please contact our customer support team.
+          `,
+          Charset: 'UTF-8'
+        }
+      }
+    }
+  };
+
+  try {
+    await ses.sendEmail(emailParams).promise();
+    console.log('✅ Order confirmation email sent to:', order.email);
+  } catch (error) {
+    console.error('❌ Failed to send order confirmation email:', error);
+    throw error;
+  }
+}
