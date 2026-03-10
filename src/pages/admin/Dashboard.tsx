@@ -359,6 +359,10 @@ export default function Dashboard() {
             const allOrders = ordersResponse.orders || ordersResponse.items || [];
             setOrders(allOrders);
             console.log('✅ Found', allOrders.length, 'orders');
+            
+            // Log summary with actual data
+            console.log('🎉 Dashboard data loaded successfully!');
+            console.log('📊 Summary - Products:', products.length, 'Brands:', brands.length, 'Categories:', categories.length, 'Users:', allUsers.length, 'Orders:', allOrders.length);
           } catch (ordersErr) {
             console.log('⚠️ Could not load orders:', ordersErr);
             setOrders([]);
@@ -366,9 +370,6 @@ export default function Dashboard() {
         } catch (err) {
           console.log('⚠️ Could not load users/orders:', err);
         }
-
-        console.log('🎉 Dashboard data loaded successfully!');
-        console.log('📊 Summary - Products:', products.length, 'Brands:', brands.length, 'Categories:', categories.length, 'Users:', users.length, 'Orders:', orders.length);
       } catch (err) {
         console.error('❌ Failed to load dashboard data:', err);
       }
