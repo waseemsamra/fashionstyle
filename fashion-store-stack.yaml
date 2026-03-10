@@ -393,9 +393,14 @@ Resources:
                     SK: 'PROFILE',
                     profile: {
                       email: body.email,
-                      firstName: body.name?.split(' ')[0] || '',
-                      lastName: body.name?.split(' ')[1] || '',
-                      contact: body.contact || '',
+                      firstName: body.firstName || body.name?.split(' ')[0] || '',
+                      lastName: body.lastName || body.name?.split(' ')[1] || '',
+                      name: body.name || '',
+                      contact: body.contact || body.phone || '',
+                      phone: body.phone || body.contact || '',
+                      address: body.address || '',
+                      city: body.city || '',
+                      postalCode: body.postalCode || '',
                       role: body.role || 'customer',
                       status: body.status || 'active'
                     },
@@ -409,7 +414,15 @@ Resources:
                   headers,
                   body: JSON.stringify({
                     message: 'User created successfully',
-                    user: { userId, email: body.email, name: body.name, role: body.role, status: body.status }
+                    user: { 
+                      userId, 
+                      email: body.email, 
+                      name: body.name, 
+                      firstName: body.firstName,
+                      lastName: body.lastName,
+                      role: body.role, 
+                      status: body.status 
+                    }
                   })
                 };
               }
@@ -420,18 +433,51 @@ Resources:
                 const updateExpression = [];
                 const expressionAttributeValues = {};
 
-                if (body.email) { updateExpression.push('profile.email = :email'); expressionAttributeValues[':email'] = body.email; }
-                if (body.firstName) { updateExpression.push('profile.firstName = :firstName'); expressionAttributeValues[':firstName'] = body.firstName; }
-                if (body.lastName) { updateExpression.push('profile.lastName = :lastName'); expressionAttributeValues[':lastName'] = body.lastName; }
-                if (body.name) {
-                  const parts = body.name.split(' ');
-                  updateExpression.push('profile.firstName = :firstName, profile.lastName = :lastName');
-                  expressionAttributeValues[':firstName'] = parts[0] || '';
-                  expressionAttributeValues[':lastName'] = parts[1] || '';
+                // Build update expression for all fields
+                if (body.email) { 
+                  updateExpression.push('profile.email = :email'); 
+                  expressionAttributeValues[':email'] = body.email; 
                 }
-                if (body.contact) { updateExpression.push('profile.contact = :contact'); expressionAttributeValues[':contact'] = body.contact; }
-                if (body.role) { updateExpression.push('profile.role = :role'); expressionAttributeValues[':role'] = body.role; }
-                if (body.status) { updateExpression.push('profile.status = :status'); expressionAttributeValues[':status'] = body.status; }
+                if (body.firstName !== undefined) { 
+                  updateExpression.push('profile.firstName = :firstName'); 
+                  expressionAttributeValues[':firstName'] = body.firstName || ''; 
+                }
+                if (body.lastName !== undefined) { 
+                  updateExpression.push('profile.lastName = :lastName'); 
+                  expressionAttributeValues[':lastName'] = body.lastName || ''; 
+                }
+                if (body.name !== undefined) { 
+                  updateExpression.push('profile.name = :name'); 
+                  expressionAttributeValues[':name'] = body.name || ''; 
+                }
+                if (body.contact !== undefined) { 
+                  updateExpression.push('profile.contact = :contact'); 
+                  expressionAttributeValues[':contact'] = body.contact || ''; 
+                }
+                if (body.phone !== undefined) { 
+                  updateExpression.push('profile.phone = :phone'); 
+                  expressionAttributeValues[':phone'] = body.phone || ''; 
+                }
+                if (body.address !== undefined) { 
+                  updateExpression.push('profile.address = :address'); 
+                  expressionAttributeValues[':address'] = body.address || ''; 
+                }
+                if (body.city !== undefined) { 
+                  updateExpression.push('profile.city = :city'); 
+                  expressionAttributeValues[':city'] = body.city || ''; 
+                }
+                if (body.postalCode !== undefined) { 
+                  updateExpression.push('profile.postalCode = :postalCode'); 
+                  expressionAttributeValues[':postalCode'] = body.postalCode || ''; 
+                }
+                if (body.role !== undefined) { 
+                  updateExpression.push('profile.role = :role'); 
+                  expressionAttributeValues[':role'] = body.role || 'customer'; 
+                }
+                if (body.status !== undefined) { 
+                  updateExpression.push('profile.status = :status'); 
+                  expressionAttributeValues[':status'] = body.status || 'active'; 
+                }
 
                 if (updateExpression.length > 0) {
                   updateExpression.push('updatedAt = :updatedAt');
@@ -440,14 +486,19 @@ Resources:
                     TableName: TABLE_NAME,
                     Key: { PK: `USER#${userId}`, SK: 'PROFILE' },
                     UpdateExpression: `SET ${updateExpression.join(', ')}`,
-                    ExpressionAttributeValues: expressionAttributeValues
+                    ExpressionAttributeValues: expressionAttributeValues,
+                    ReturnValues: 'ALL_NEW'
                   }).promise();
                 }
 
                 return {
                   statusCode: 200,
                   headers,
-                  body: JSON.stringify({ message: 'User updated successfully', userId })
+                  body: JSON.stringify({ 
+                    message: 'User updated successfully', 
+                    userId,
+                    profile: body
+                  })
                 };
               }
 
