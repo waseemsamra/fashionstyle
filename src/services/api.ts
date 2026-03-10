@@ -167,9 +167,30 @@ export const api = {
 
   // Get all orders (admin)
   getAllOrders: async () => {
-    // apiClient interceptor will add JWT token if present
-    const response = await apiClient.get('/admin/orders');
-    return response.data;
+    const token = localStorage.getItem('jwt_token');
+    
+    try {
+      const response = await fetch(`${API_URL}/admin/orders`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('✅ Orders fetched:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Fetch error:', error);
+      throw error;
+    }
   }
 };
 
