@@ -145,16 +145,16 @@ export default function Checkout() {
       // Clear cart
       localStorage.removeItem('cart');
 
-      // Store order info
+      // Store order info - use correct property paths
       localStorage.setItem('lastOrder', JSON.stringify({
         orderId: result.orderId,
-        email: result.order.email
+        email: result.email || email  // Use result.email or fallback to form email
       }));
 
       // Navigate to confirmation
       navigate(`/order-confirmation/${result.orderId}`, {
         state: {
-          email: result.order.email,
+          email: result.email || email,  // Use result.email or fallback
           isGuest: !isAuthenticated
         }
       });
