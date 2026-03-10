@@ -39,9 +39,30 @@ export const ordersService = {
     paymentMethod?: string;
     paymentStatus?: string;
   }> => {
-    // userId should be the Cognito sub (unique ID)
-    const response = await apiClient.post(`/users/${userId}/orders`, orderData);
-    return response.data;
+    try {
+      console.log('📦 Creating order for userId:', userId);
+      console.log('📦 Order data:', orderData);
+      
+      const token = localStorage.getItem('jwt_token');
+      console.log('📦 Token present:', !!token);
+      
+      // userId should be the Cognito sub (unique ID) or email-based ID
+      const response = await apiClient.post(`/users/${userId}/orders`, orderData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('✅ Order created:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Order creation failed:', error);
+      console.error('❌ Response:', error.response?.data);
+      console.error('❌ Status:', error.response?.status);
+      console.error('❌ Headers:', error.response?.headers);
+      throw error;
+    }
   },
 
   // Get all orders for a user

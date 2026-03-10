@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Package, Truck, MapPin, CreditCard } from 'lucide-react';
-import { api } from '@/services/api';
 import { toast } from 'sonner';
 
 export default function OrderConfirmation() {
@@ -67,21 +66,20 @@ export default function OrderConfirmation() {
     }
 
     console.log('💾 saveOrder: Starting...');
-    console.log('💾 saveOrder: Is Guest:', user.isGuest);
-    console.log('💾 saveOrder: Items:', orderData.items);
-    console.log('💾 saveOrder: Total Price:', orderData.totalPrice);
-    console.log('💾 saveOrder: Payment Method:', orderData.paymentMethod);
+    console.log('💾 saveOrder: User Email:', user.email);
+    console.log('💾 saveOrder: LocalStorage Email:', localStorage.getItem('user_email'));
+    console.log('💾 saveOrder: LocalStorage Token:', localStorage.getItem('jwt_token') ? 'Present' : 'Missing');
 
     setIsSavingOrder(true);
     try {
       const orderId = `ORD-${Date.now().toString().slice(-8)}`;
-      
+
       // Calculate total from items if totalPrice is 0 or missing
       const calculatedTotal = orderData.totalPrice || orderData.items.reduce(
         (sum: number, item: any) => sum + (item.price || 0) * (item.quantity || 1),
         0
       );
-      
+
       const orderPayload = {
         orderId,
         date: new Date().toISOString(),
@@ -89,7 +87,6 @@ export default function OrderConfirmation() {
         totalPrice: calculatedTotal,
         paymentMethod: orderData.paymentMethod || 'cod',
         status: 'pending',
-        isGuest: user.isGuest || false,
         fullName: orderData.fullName,
         email: orderData.email,
         phone: orderData.phone,
@@ -101,17 +98,50 @@ export default function OrderConfirmation() {
 
       console.log('💾 saveOrder: Sending payload:', orderPayload);
 
-      // Always use real user ID (no guest orders)
-      await api.createOrder(user.userId, orderPayload);
+      // ✅ CORRECT: Get email from localStorage and generate userId
+      const storedEmail = localStorage.getItem('user_email');
+      const token = localStorage.getItem('jwt_token');
+      
+      if (!storedEmail || !token) {
+        console.error('❌ No token or email found in localStorage');
+        throw new Error('Authentication required');
+      }
+
+      // Generate userId from email (remove special chars)
+      const userId = storedEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+      console.log('💾 saveOrder: Generated userId:', userId, 'from email:', storedEmail);
+
+      // Create order using fetch (correct pattern)
+      const response = await fetch(
+        `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(orderPayload)
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Order creation failed:', errorData);
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Order created:', data);
+      
       console.log('✅ saveOrder: Success! Order ID:', orderId);
-      console.log('💾 saveOrder: Linked to user:', user.userId);
+      console.log('💾 saveOrder: Linked to user:', userId);
       setOrderNumber(orderId);
       clearCart();
       toast.success('Order placed successfully! You can track it in your dashboard.');
     } catch (error: any) {
       console.error('❌ saveOrder: Failed:', error);
-      console.error('❌ saveOrder: Error details:', error.response?.data || error.message);
-      toast.error('Order created locally but failed to sync. Please contact support.');
+      console.error('❌ saveOrder: Error details:', error.message);
+      toast.error('Order failed: ' + error.message);
       setOrderNumber(`ORD-${Date.now().toString().slice(-8)}`);
       clearCart();
     } finally {

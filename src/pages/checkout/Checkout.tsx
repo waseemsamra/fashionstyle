@@ -86,23 +86,81 @@ export default function Checkout() {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log('🛒 Checkout: Creating order...');
     
-    // Create order with guest flag
-    const orderData = { 
-      ...formData, 
-      items, 
-      totalPrice, 
+    // Get auth data
+    const token = localStorage.getItem('jwt_token');
+    const storedEmail = localStorage.getItem('user_email');
+    
+    // Use stored email or form email
+    const email = storedEmail || formData.email;
+    
+    // Generate userId from email (CRITICAL: must match backend format)
+    const userId = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+    console.log('🛒 Generated userId:', userId, 'from email:', email);
+    
+    const orderData = {
+      items,
+      totalPrice,
       paymentMethod,
-      isGuest: !isAuthenticated, // Mark as guest order
-      createdAt: new Date().toISOString()
+      fullName: formData.fullName,
+      firstName: formData.fullName.split(' ')[0],
+      lastName: formData.fullName.split(' ')[1] || '',
+      phone: formData.phone,
+      address: formData.address,
+      city: formData.city,
+      postalCode: formData.postalCode,
+      status: 'Processing'
     };
-    
-    console.log('🛒 Guest checkout:', orderData);
-    
-    // Navigate to confirmation with order data
-    navigate('/order-confirmation', { state: orderData });
+
+    try {
+      console.log('🛒 Creating order with userId:', userId);
+      
+      const response = await fetch(
+        `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(orderData)
+        }
+      );
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('❌ Order failed:', result);
+        throw new Error(result.error || 'Order failed');
+      }
+      
+      console.log('✅ Order created:', result);
+      
+      // Clear cart
+      localStorage.removeItem('cart');
+      
+      // Store order info
+      localStorage.setItem('lastOrder', JSON.stringify({
+        orderId: result.orderId,
+        email: result.order.email
+      }));
+      
+      // Navigate to confirmation
+      navigate(`/order-confirmation/${result.orderId}`, {
+        state: {
+          email: result.order.email,
+          isGuest: !isAuthenticated
+        }
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Order failed:', error);
+      alert(`Order failed: ${error.message}`);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
