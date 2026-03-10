@@ -62,10 +62,12 @@ export default function AdminOrders() {
     setIsRefreshing(true);
     try {
       console.log('📋 Admin Orders: Fetching all orders...');
+      console.log('📋 Admin Orders: JWT token present:', !!localStorage.getItem('jwt_token'));
+      console.log('📋 Admin Orders: Admin email:', localStorage.getItem('user_email'));
       
       // Use the admin orders API endpoint
       const response = await api.getAllOrders();
-      console.log('📋 Admin Orders: Response:', response);
+      console.log('📋 Admin Orders: Raw response:', response);
       
       if (response && response.orders) {
         const ordersList = response.orders.map((order: Order) => ({
@@ -76,14 +78,21 @@ export default function AdminOrders() {
         setOrders(ordersList);
         setAllOrders(ordersList);
         console.log(`📋 Admin Orders: Loaded ${ordersList.length} orders`);
+        
+        if (ordersList.length === 0) {
+          toast.info('No orders found');
+        }
       } else {
         setOrders([]);
         setAllOrders([]);
-        console.log('📋 Admin Orders: No orders found');
+        console.log('📋 Admin Orders: No orders in response');
+        toast.info('No orders found');
       }
     } catch (err: any) {
       console.error('❌ Admin Orders: Failed to load orders:', err);
-      toast.error('Failed to load orders');
+      console.error('❌ Admin Orders: Error response:', err.response?.data);
+      console.error('❌ Admin Orders: Error status:', err.response?.status);
+      toast.error(`Failed to load orders: ${err.message}`);
       setOrders([]);
       setAllOrders([]);
     } finally {

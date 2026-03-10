@@ -167,12 +167,8 @@ export const api = {
 
   // Get all orders (admin)
   getAllOrders: async () => {
-    const token = localStorage.getItem('jwt_token');
-    const response = await apiClient.get('/admin/orders', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    // apiClient interceptor will add JWT token if present
+    const response = await apiClient.get('/admin/orders');
     return response.data;
   }
 };
