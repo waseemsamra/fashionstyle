@@ -2,14 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Package, Truck, MapPin, CreditCard } from 'lucide-react';
-import { toast } from 'sonner';
 
 export default function OrderConfirmation() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const orderData = location.state?.orderData || location.state;
 
   useEffect(() => {
@@ -18,7 +16,6 @@ export default function OrderConfirmation() {
     const email = localStorage.getItem('user_email');
 
     if (token && email) {
-      setUser({ userId: email.split('@')[0], username: email, email });
       setIsAuthenticated(true);
       setIsLoading(false);
     } else {
@@ -35,15 +32,8 @@ export default function OrderConfirmation() {
 
   useEffect(() => {
     // Order is already saved by Checkout, just display it
-    // No need to save again
     console.log('✅ OrderConfirmation: Order already saved by Checkout, just displaying');
   }, []);
-
-  // saveOrder is no longer needed - Checkout already saves the order
-  // This function is kept for backward compatibility but does nothing
-  const saveOrder = () => {
-    console.log('✅ Order already saved by Checkout');
-  };
 
   if (isLoading) {
     return (
