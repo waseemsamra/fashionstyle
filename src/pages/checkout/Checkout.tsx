@@ -142,8 +142,9 @@ export default function Checkout() {
 
       console.log('✅ Order created:', result);
 
-      // Clear cart
+      // Clear cart - both localStorage and React state
       localStorage.removeItem('cart');
+      clearCart();  // ✅ Clear cart state in useCart hook
 
       // Store order info - use correct property paths
       localStorage.setItem('lastOrder', JSON.stringify({
