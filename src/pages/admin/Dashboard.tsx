@@ -344,7 +344,7 @@ export default function Dashboard() {
         setCategories(Array.from(categoryMap.values()));
         console.log('✅ Found', categoryMap.size, 'categories');
 
-        // Load orders from all users
+        // Load orders using admin orders endpoint
         console.log('📋 Loading orders...');
         try {
           // Get users first
@@ -353,20 +353,16 @@ export default function Dashboard() {
           setUsers(allUsers);
           console.log('✅ Found', allUsers.length, 'users');
 
-          // Load orders for each user - use orders state
-          const allOrders: any[] = [];
-          for (const user of allUsers) {
-            try {
-              const userOrders = await api.getUserOrders(user.userId || user.id);
-              if (Array.isArray(userOrders)) {
-                allOrders.push(...userOrders);
-              }
-            } catch (err) {
-              console.log('No orders for user:', user.userId);
-            }
+          // Load ALL orders using admin endpoint
+          try {
+            const ordersResponse: any = await api.getAllOrders();
+            const allOrders = ordersResponse.orders || ordersResponse.items || [];
+            setOrders(allOrders);
+            console.log('✅ Found', allOrders.length, 'orders');
+          } catch (ordersErr) {
+            console.log('⚠️ Could not load orders:', ordersErr);
+            setOrders([]);
           }
-          setOrders(allOrders);
-          console.log('✅ Found', allOrders.length, 'orders');
         } catch (err) {
           console.log('⚠️ Could not load users/orders:', err);
         }
