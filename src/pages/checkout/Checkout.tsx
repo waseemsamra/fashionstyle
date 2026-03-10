@@ -6,7 +6,7 @@ import { ArrowLeft, CreditCard, Truck, MapPin } from 'lucide-react';
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { items, totalPrice } = useCart();
+  const { items, totalPrice, clearCart } = useCart();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState('card');
