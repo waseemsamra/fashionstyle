@@ -360,7 +360,7 @@ export default function Navigation() {
                         <button
                           onClick={() => {
                             setIsCartOpen(false);
-                            navigate('/products');
+                            navigate('/shop');
                           }}
                           className="w-full text-center text-sm text-gray-500 hover:text-black transition-colors"
                         >
