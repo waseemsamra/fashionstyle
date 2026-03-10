@@ -101,12 +101,13 @@ export default function Checkout() {
     // Generate userId from email (CRITICAL: must match backend format)
     const userId = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
     console.log('🛒 Generated userId:', userId, 'from email:', email);
-    
+
     const orderData = {
       items,
       totalPrice,
       paymentMethod,
       fullName: formData.fullName,
+      email: email,  // ✅ CRITICAL: Include email in order data
       firstName: formData.fullName.split(' ')[0],
       lastName: formData.fullName.split(' ')[1] || '',
       phone: formData.phone,
@@ -118,7 +119,8 @@ export default function Checkout() {
 
     try {
       console.log('🛒 Creating order with userId:', userId);
-      
+      console.log('🛒 Order data:', orderData);
+
       const response = await fetch(
         `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders`,
         {
@@ -130,25 +132,25 @@ export default function Checkout() {
           body: JSON.stringify(orderData)
         }
       );
-      
+
       const result = await response.json();
-      
+
       if (!response.ok) {
         console.error('❌ Order failed:', result);
         throw new Error(result.error || 'Order failed');
       }
-      
+
       console.log('✅ Order created:', result);
-      
+
       // Clear cart
       localStorage.removeItem('cart');
-      
+
       // Store order info
       localStorage.setItem('lastOrder', JSON.stringify({
         orderId: result.orderId,
         email: result.order.email
       }));
-      
+
       // Navigate to confirmation
       navigate(`/order-confirmation/${result.orderId}`, {
         state: {
@@ -156,7 +158,7 @@ export default function Checkout() {
           isGuest: !isAuthenticated
         }
       });
-      
+
     } catch (error: any) {
       console.error('❌ Order failed:', error);
       alert(`Order failed: ${error.message}`);
