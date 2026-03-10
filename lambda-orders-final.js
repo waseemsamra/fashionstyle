@@ -106,11 +106,59 @@ exports.handler = async (event) => {
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: 'Orders function is working',
           userId,
           orders,
           totalOrders: orders.length
+        })
+      };
+    }
+
+    // GET /admin/orders - Get ALL orders (admin only)
+    if (method === 'GET' && !userId && event.path.includes('/admin/orders')) {
+      console.log('📋 Fetching all orders for admin');
+      
+      // Scan all orders from DynamoDB
+      const params = {
+        TableName: ORDERS_TABLE,
+        FilterExpression: 'begins_with(SK, :skPrefix)',
+        ExpressionAttributeValues: {
+          ':skPrefix': 'ORDER#'
+        }
+      };
+      
+      const result = await dynamodb.scan(params).promise();
+      
+      const orders = result.Items.map(item => ({
+        orderId: item.orderId,
+        userId: item.userId,
+        date: item.date,
+        items: item.items,
+        totalPrice: item.totalPrice,
+        paymentMethod: item.paymentMethod,
+        status: item.status,
+        fullName: item.fullName,
+        email: item.email,
+        phone: item.phone,
+        address: item.address,
+        city: item.city,
+        postalCode: item.postalCode,
+        itemCount: item.itemCount,
+        createdAt: item.createdAt
+      }));
+      
+      // Sort by date (newest first)
+      orders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      
+      console.log(`✅ Found ${orders.length} orders`);
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          orders,
+          total: orders.length
         })
       };
     }

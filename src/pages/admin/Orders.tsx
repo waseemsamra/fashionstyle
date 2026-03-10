@@ -61,48 +61,31 @@ export default function AdminOrders() {
   const loadAllOrders = async () => {
     setIsRefreshing(true);
     try {
-      const testUserIds = [
-        'waseem_samra',
-        'admin-waseem-1772765682',
-        'test'
-      ];
-
-      const allUserOrders: Order[] = [];
-
-      for (const userId of testUserIds) {
-        try {
-          const response = await api.getUserOrders(userId);
-          
-          if (response && Array.isArray(response)) {
-            const ordersWithId = response.map(order => ({
-              ...order,
-              orderId: order.orderId || order.id,
-              total: order.totalPrice || order.total || 0,
-              status: order.status || 'pending'
-            }));
-            allUserOrders.push(...ordersWithId);
-          }
-        } catch (err) {
-          console.log(`No orders for user ${userId}:`, err);
-        }
-      }
-
-      const uniqueOrders = allUserOrders.filter(
-        (order, index, self) =>
-          index === self.findIndex(o => o.orderId === order.orderId)
-      );
-
-      const sortedOrders = uniqueOrders.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      );
-
-      setAllOrders(sortedOrders);
-      setOrders(sortedOrders);
+      console.log('📋 Admin Orders: Fetching all orders...');
       
-      toast.success(`Loaded ${sortedOrders.length} orders`);
-    } catch (error) {
-      console.error('Failed to load orders:', error);
+      // Use the admin orders API endpoint
+      const response = await api.getAllOrders();
+      console.log('📋 Admin Orders: Response:', response);
+      
+      if (response && response.orders) {
+        const ordersList = response.orders.map((order: Order) => ({
+          ...order,
+          total: order.totalPrice || order.total || 0
+        }));
+        
+        setOrders(ordersList);
+        setAllOrders(ordersList);
+        console.log(`📋 Admin Orders: Loaded ${ordersList.length} orders`);
+      } else {
+        setOrders([]);
+        setAllOrders([]);
+        console.log('📋 Admin Orders: No orders found');
+      }
+    } catch (err: any) {
+      console.error('❌ Admin Orders: Failed to load orders:', err);
       toast.error('Failed to load orders');
+      setOrders([]);
+      setAllOrders([]);
     } finally {
       setIsRefreshing(false);
     }
