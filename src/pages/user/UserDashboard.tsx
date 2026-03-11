@@ -367,44 +367,56 @@ export default function UserDashboard() {
                     <p className="text-gray-600">No orders yet</p>
                   </div>
                 ) : (
-                  <div className="divide-y">
-                    {orders.map(order => (
-                      <div
-                        key={order.orderId || order.id}
-                        className="p-6 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => navigate(`/dashboard/orders/${order.orderId || order.id}`)}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-bold">{order.orderId || order.id}</p>
-                            <p className="text-sm text-gray-600">
-                              {new Date(order.date).toLocaleDateString()} • {order.items?.length || order.itemCount || 0} items
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold">
-                              ${(order.totalPrice || order.total || 0).toFixed(2)}
-                            </p>
-                            <span className={`text-xs px-3 py-1 rounded-full ${
-                              order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                              order.status === 'on-delivery' || order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>
-                              {order.status || 'pending'}
-                            </span>
-                            <button 
-                              className="block mt-2 text-sm text-gold hover:underline"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/dashboard/orders/${order.orderId || order.id}`);
-                              }}
-                            >
-                              View Details →
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-sm font-semibold">Order ID</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold">Items</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold">Total</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {orders.map((order) => (
+                          <tr key={order.orderId || order.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 font-medium">{order.orderId || order.id}</td>
+                            <td className="px-6 py-4 text-gray-600">
+                              {new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </td>
+                            <td className="px-6 py-4 text-gray-600">{order.items?.length || order.itemCount || 0} items</td>
+                            <td className="px-6 py-4 font-semibold">${(order.totalPrice || order.total || 0).toFixed(2)}</td>
+                            <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                                order.status === 'Out for Delivery' ? 'bg-purple-100 text-purple-700' :
+                                order.status === 'Shipped' ? 'bg-indigo-100 text-indigo-700' :
+                                order.status === 'Ready for Delivery' ? 'bg-blue-100 text-blue-700' :
+                                order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                                'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {order.status === 'Out for Delivery' ? '📦 Out for Delivery' :
+                                 order.status === 'Delivered' ? '✅ Delivered' :
+                                 order.status === 'Shipped' ? '🚚 Shipped' :
+                                 order.status === 'Ready for Delivery' ? '🔵 Ready' :
+                                 order.status === 'Cancelled' ? '❌ Cancelled' :
+                                 '🟡 Processing'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() => navigate(`/dashboard/orders/${order.orderId || order.id}`)}
+                                className="text-gold hover:underline text-sm font-medium"
+                              >
+                                View Details →
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
