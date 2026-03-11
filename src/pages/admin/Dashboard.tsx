@@ -5,8 +5,7 @@ import { api } from '@/services/api';
 import { userService } from '@/services/user';
 import { createProduct, updateProduct, deleteProduct } from '@/services/productService';
 import { getAllBrands, createBrand } from '@/services/brandService';
-import ImageUpload from '@/components/ui/ImageUpload';
-import SearchableSelect from '@/components/ui/SearchableSelect';
+import ProductForm from '@/components/admin/ProductForm';
 import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
 
 export default function Dashboard() {
@@ -607,81 +606,71 @@ export default function Dashboard() {
     }
   };
 
-  const handleSave = async () => {
+  // Handler for the ProductForm component
+  const handleSaveFromForm = async (formData: any) => {
     try {
-      console.log('💾 Saving product...');
-      console.log('📝 Product data:', editingProduct);
+      console.log('💾 Saving product from form...', formData);
 
       // Prepare product data for API
       const productData = {
-        id: editingProduct.id.toString(),
-        name: editingProduct.name,
-        description: editingProduct.description || '',
-        price: Number(editingProduct.price),
-        category: editingProduct.category || '',
-        brand: editingProduct.brand || '',
-        image: editingProduct.image || '',
-        images: editingProduct.images || [],
-        stock: Number(editingProduct.stock || 0),
-        sku: editingProduct.sku || '',
-        sizes: editingProduct.sizes || [],
-        colors: editingProduct.colors || [],
-        materials: editingProduct.materials || [],
-        patterns: editingProduct.patterns || [],
-        occasions: editingProduct.occasions || [],
-        genders: editingProduct.genders || [],
+        id: editingProduct?.id?.toString() || Date.now().toString(),
+        name: formData.name,
+        description: formData.description || '',
+        price: Number(formData.price),
+        category: formData.category || '',
+        brand: formData.brand || '',
+        image: formData.image || '',
+        images: formData.images || [],
+        stock: Number(formData.stock || 0),
+        sku: formData.sku || '',
+        sizes: formData.sizes || [],
+        colors: formData.colors || [],
+        materials: formData.materials || [],
+        patterns: formData.patterns || [],
+        occasions: formData.occasions || [],
+        genders: formData.genders || [],
       };
 
       // Check if updating or creating
-      const isUpdate = products.find(p => p.id === editingProduct.id);
+      const isUpdate = editingProduct?.id && products.find(p => p.id === editingProduct.id);
 
       if (isUpdate) {
         console.log('🔄 Updating existing product...');
-        console.log('📝 Old product:', products.find(p => p.id === editingProduct.id));
-        console.log('📝 New data:', productData);
-        
+
         let apiSuccess = false;
         try {
           await updateProduct(productData);
           console.log('✅ Product updated via API');
           apiSuccess = true;
         } catch (apiErr) {
-          console.log('⚠️ API not available (CORS or endpoint missing), saving locally only');
-          // Fallback: Just update local state
+          console.log('⚠️ API not available, saving locally only');
         }
 
-        // Update local state - merge old product with new data
+        // Update local state
         const updatedProducts = products.map(p => {
           if (p.id === editingProduct.id) {
-            const updated = { ...p, ...productData };
-            console.log('✅ Product updated in list:', updated);
-            return updated;
+            return { ...p, ...productData };
           }
           return p;
         });
-        
+
         setProducts(updatedProducts);
-        console.log('✅ Products list updated, total:', updatedProducts.length);
         if (!apiSuccess) {
-          console.log('⚠️ Note: Changes saved locally only. Refresh will reset them.');
-          console.log('💡 To persist changes, create backend endpoint: PUT /admin/products/{id}');
+          console.log('⚠️ Note: Changes saved locally only.');
         }
       } else {
         console.log('➕ Creating new product...');
         try {
           const newProduct = await createProduct(productData);
           console.log('✅ Product created via API');
-          // Update local state
-          setProducts([...products, { ...editingProduct, ...newProduct }]);
+          setProducts([...products, { ...productData, ...newProduct }]);
         } catch (apiErr) {
           console.log('⚠️ API not available, saving locally only');
-          // Fallback: Just add to local state with new ID
           const newProduct = { ...productData, id: Date.now() };
           setProducts([...products, newProduct]);
         }
       }
 
-      setShowEditModal(false);
       alert(`Product ${isUpdate ? 'updated' : 'created'} successfully!`);
     } catch (error: any) {
       console.error('❌ Failed to save product:', error);
@@ -1453,230 +1442,21 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {showEditModal && editingProduct && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">{products.find(p => p.id === editingProduct.id) ? 'Edit Product' : 'Add Product'}</h2>
-              <button onClick={() => setShowEditModal(false)}>
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-6">
-              <div className="col-span-2 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Product Name</label>
-                  <input
-                    type="text"
-                    value={editingProduct.name}
-                    onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
-                    className="w-full p-3 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Category</label>
-                  <select
-                    value={editingProduct.category}
-                    onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
-                    className="w-full p-3 border rounded-lg"
-                  >
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.name}>{category.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Image Upload - Moved Before Brand */}
-                <ImageUpload
-                  currentImage={editingProduct.image}
-                  currentImages={editingProduct.images || []}
-                  onImageChange={(imageUrl) => setEditingProduct({...editingProduct, image: imageUrl})}
-                  onImagesChange={(imageUrls) => setEditingProduct({...editingProduct, images: imageUrls})}
-                  multiple={true}
-                  maxImages={5}
-                  folder="products"
-                  label="Product Images"
-                />
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Brand</label>
-                  <SearchableSelect
-                    options={brands.map(b => ({ id: b.name, name: b.name, description: b.description || '' }))}
-                    value={editingProduct.brand || ''}
-                    onChange={(value) => setEditingProduct({...editingProduct, brand: value})}
-                    placeholder="Select or search brand..."
-                    allowCreate={true}
-                    onCreateNew={(newBrandName) => {
-                      // Add new brand to list
-                      const newBrand = {
-                        id: newBrandName,
-                        name: newBrandName,
-                        description: `${newBrandName} products`,
-                        products: 0
-                      };
-                      setBrands([...brands, newBrand]);
-                      setEditingProduct({...editingProduct, brand: newBrandName});
-                      console.log('➕ Created new brand:', newBrandName);
-                    }}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Price ($)</label>
-                    <input
-                      type="number"
-                      value={editingProduct.price}
-                      onChange={(e) => {
-                        const newPrice = Number(e.target.value);
-                        console.log('💲 Price changed:', newPrice);
-                        setEditingProduct({...editingProduct, price: newPrice});
-                      }}
-                      className="w-full p-3 border rounded-lg"
-                      step="0.01"
-                      min="0"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Stock</label>
-                    <input
-                      type="number"
-                      value={editingProduct.stock}
-                      onChange={(e) => {
-                        const newStock = Number(e.target.value);
-                        console.log('📦 Stock changed:', newStock);
-                        setEditingProduct({...editingProduct, stock: newStock});
-                      }}
-                      className="w-full p-3 border rounded-lg"
-                      step="1"
-                      min="0"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Gender</label>
-                  <select
-                    multiple
-                    value={editingProduct.genders || []}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setEditingProduct({...editingProduct, genders: selected});
-                    }}
-                    className="w-full p-3 border rounded-lg"
-                    size={Math.min(genders.length, 5)}
-                  >
-                    {genders.map((gender) => (
-                      <option key={gender.id} value={gender.name}>{gender.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Occasions</label>
-                  <select
-                    multiple
-                    value={editingProduct.occasions || []}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setEditingProduct({...editingProduct, occasions: selected});
-                    }}
-                    className="w-full p-3 border rounded-lg"
-                    size={Math.min(occasions.length, 5)}
-                  >
-                    {occasions.map((occ) => (
-                      <option key={occ.id} value={occ.name}>{occ.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Patterns</label>
-                  <select
-                    multiple
-                    value={editingProduct.patterns || []}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setEditingProduct({...editingProduct, patterns: selected});
-                    }}
-                    className="w-full p-3 border rounded-lg"
-                    size={Math.min(patterns.length, 5)}
-                  >
-                    {patterns.map((pat) => (
-                      <option key={pat.id} value={pat.name}>{pat.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Sizes</label>
-                  <select
-                    multiple
-                    value={editingProduct.sizes || []}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setEditingProduct({...editingProduct, sizes: selected});
-                    }}
-                    className="w-full p-3 border rounded-lg"
-                    size={Math.min(sizes.length, 5)}
-                  >
-                    {sizes.map((size) => (
-                      <option key={size.id} value={size.code}>{size.code}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Cloth Materials</label>
-                  <select
-                    multiple
-                    value={editingProduct.materials || []}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setEditingProduct({...editingProduct, materials: selected});
-                    }}
-                    className="w-full p-3 border rounded-lg"
-                    size={Math.min(materials.length, 5)}
-                  >
-                    {materials.map((mat) => (
-                      <option key={mat.id} value={mat.name}>{mat.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">Colours</label>
-                  <select
-                    multiple
-                    value={editingProduct.colors || []}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
-                      setEditingProduct({...editingProduct, colors: selected});
-                    }}
-                    className="w-full p-3 border rounded-lg"
-                    size={Math.min(colors.length, 5)}
-                  >
-                    {colors.map((color) => (
-                      <option key={color.id} value={color.name}>{color.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-4">
-              <button onClick={handleSave} className="flex-1 py-3 bg-gold text-white rounded-lg hover:bg-gold/90">
-                Save Changes
-              </button>
-              <button onClick={() => setShowEditModal(false)} className="flex-1 py-3 bg-gray-200 rounded-lg hover:bg-gray-300">
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Product Form Modal - Using new professional ProductForm component */}
+      <ProductForm
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
+        onSubmit={handleSaveFromForm}
+        initialData={editingProduct}
+        brands={brands}
+        categories={categories}
+        sizes={sizes}
+        colors={colors}
+        materials={materials}
+        patterns={patterns}
+        occasions={occasions}
+        genders={genders}
+      />
 
       {showBrandModal && editingBrand && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
