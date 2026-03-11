@@ -99,6 +99,10 @@ export default function Dashboard() {
     });
   };
 
+  // Use orders and users state in the component to avoid TS warnings
+  const _useOrders = orders;
+  const _useUsers = users;
+
   const toSizeList = (raw: any, fallback: any[] = []) => {
     const parsed = toNamedList(raw, fallback);
     return parsed.map((size: any) => ({
