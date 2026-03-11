@@ -127,27 +127,54 @@ export default function UserDashboard() {
       // Handle different response formats
       let data = response;
       
+      console.log('📦 Raw API response:', response);
+      console.log('📦 Response type:', typeof response, 'Is array?', Array.isArray(response));
+
       // If response has orders property, use that
       if (response && typeof response === 'object' && response.orders) {
         data = response.orders;
-        console.log('Using response.orders:', data);
+        console.log('✅ Using response.orders:', data);
       }
 
       if (data && Array.isArray(data)) {
-        console.log('Found orders:', data.length);
-        const formattedOrders = data.map((order: any) => ({
-          id: order.orderId || order.id,
-          date: new Date(order.date || order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          items: order.itemCount || order.items?.length || 0,
-          total: order.totalPrice || 0,
-          status: order.status || 'Processing'
-        }));
+        console.log('✅ Found orders:', data.length);
+        console.log('📋 First order:', data[0]);
+        
+        const formattedOrders = data.map((order: any) => {
+          const formatted = {
+            id: order.orderId || order.id,
+            date: new Date(order.date || order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            items: order.itemCount || order.items?.length || 0,
+            total: order.totalPrice || 0,
+            status: order.status || 'Processing',
+            orderId: order.orderId || order.id // Ensure orderId is set
+          };
+          console.log('📝 Formatted order:', formatted);
+          return formatted;
+        });
+        
+        console.log('📦 Setting orders state:', formattedOrders.length, 'orders');
         setOrders(formattedOrders);
+        console.log('✅ Orders state updated');
       } else if (data && typeof data === 'object' && data.message) {
-        console.log('API returned message:', data.message);
-        setOrders([]);
+        console.log('ℹ️ API returned message:', data.message);
+        console.log('📦 Orders in response:', data.orders?.length || 0);
+        if (data.orders && Array.isArray(data.orders)) {
+          console.log('✅ Using data.orders from message response');
+          const formattedOrders = data.orders.map((order: any) => ({
+            id: order.orderId || order.id,
+            date: new Date(order.date || order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            items: order.itemCount || order.items?.length || 0,
+            total: order.totalPrice || 0,
+            status: order.status || 'Processing',
+            orderId: order.orderId || order.id
+          }));
+          setOrders(formattedOrders);
+        } else {
+          setOrders([]);
+        }
       } else {
-        console.log('No orders found');
+        console.log('⚠️ No orders found, response:', data);
         setOrders([]);
       }
     } catch (error: any) {
