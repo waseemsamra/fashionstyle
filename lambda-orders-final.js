@@ -8,11 +8,13 @@ const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL || 'waseemsamra@gmail.com';
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS'
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Amz-Security-Token,X-Amz-User-Agent',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Credentials': true
   };
 
   if (event.httpMethod === 'OPTIONS') {
+    console.log('✅ CORS preflight request for:', event.path);
     return { statusCode: 200, headers, body: '' };
   }
 

@@ -108,36 +108,46 @@ export default function UserDashboard() {
     setOrdersLoading(true);
     try {
       console.log('Loading orders for user:', user.userId);
-      const data = await api.getUserOrders(user.userId);
-      console.log('API response:', data);
+      console.log('User email:', user.email);
+      console.log('Full user object:', user);
       
-      if (data.items && Array.isArray(data.items)) {
-        console.log('Found orders:', data.items.length);
-        const formattedOrders = data.items.map((order: any) => ({
-          id: order.orderId || order.id,
-          date: new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-          items: order.itemCount || order.items?.length || 0,
-          total: order.totalPrice || 0,
-          status: order.status || 'Processing'
-        }));
-        setOrders(formattedOrders);
-      } else if (Array.isArray(data)) {
-        console.log('Found orders (array):', data.length);
+      const response = await api.getUserOrders(user.userId);
+      console.log('API response:', response);
+      console.log('Response type:', typeof response);
+      console.log('Is array?', Array.isArray(response));
+
+      // Handle different response formats
+      let data = response;
+      
+      // If response has orders property, use that
+      if (response && typeof response === 'object' && response.orders) {
+        data = response.orders;
+        console.log('Using response.orders:', data);
+      }
+
+      if (data && Array.isArray(data)) {
+        console.log('Found orders:', data.length);
         const formattedOrders = data.map((order: any) => ({
           id: order.orderId || order.id,
-          date: new Date(order.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          date: new Date(order.date || order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           items: order.itemCount || order.items?.length || 0,
           total: order.totalPrice || 0,
           status: order.status || 'Processing'
         }));
         setOrders(formattedOrders);
+      } else if (data && typeof data === 'object' && data.message) {
+        console.log('API returned message:', data.message);
+        setOrders([]);
       } else {
-        console.log('No orders found, response:', data);
+        console.log('No orders found');
         setOrders([]);
       }
-    } catch (err: any) {
-      console.error('Error loading orders:', err);
-      console.log('Error details:', err.response?.data || err.message);
+    } catch (error: any) {
+      console.error('Error loading orders:', error);
+      console.error('Error status:', error.response?.status);
+      console.error('Error data:', error.response?.data);
+      console.error('Error config:', error.config);
+      setError('Failed to load orders: ' + (error.response?.data?.message || error.message));
       setOrders([]);
     } finally {
       setOrdersLoading(false);
