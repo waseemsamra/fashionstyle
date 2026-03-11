@@ -36,11 +36,17 @@ export default function OrderDetails() {
         return;
       }
 
-      const userId = email.split('@')[0];
+      // Use short userId format for backward compatibility
+      const userId = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+      console.log('🔍 Loading order details for userId:', userId);
+      console.log('🔍 Looking for orderId:', orderId);
+      
       const orders = await api.getUserOrders(userId);
-      
+      console.log('📦 Total orders found:', orders.length);
+
       const foundOrder = orders.find((o: any) => o.orderId === orderId || o.id === orderId);
-      
+      console.log('📦 Found order:', foundOrder);
+
       if (foundOrder) {
         setOrder(foundOrder);
       } else {
@@ -113,6 +119,9 @@ export default function OrderDetails() {
       </div>
     );
   }
+
+  // Ensure order has required fields
+  const orderItems = order.items || [];
 
   return (
     <div className="min-h-screen bg-beige-100 py-12">
@@ -187,29 +196,43 @@ export default function OrderDetails() {
         {/* Order Items */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Order Items</CardTitle>
+            <CardTitle>Order Items ({orderItems.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {order.items?.map((item: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-beige-50 rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <Package className="w-6 h-6 text-gray-400" />
+            {orderItems.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No items in this order</p>
+            ) : (
+              <div className="space-y-3">
+                {orderItems.map((item: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-beige-50 rounded-lg">
+                    <div className="flex items-center gap-4">
+                      {item.image ? (
+                        <img 
+                          src={item.image} 
+                          alt={item.name || 'Product'} 
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <Package className="w-6 h-6 text-gray-400" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-semibold">{item.name || `Item ${index + 1}`}</p>
+                        {item.selectedSize && <p className="text-sm text-gray-500">Size: {item.selectedSize}</p>}
+                        {item.selectedColor && <p className="text-sm text-gray-500">Color: {item.selectedColor}</p>}
+                        <p className="text-sm text-gray-600">
+                          Quantity: {item.quantity || 1} × ${(item.price || 0).toFixed(2)}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold">{item.name || 'Product'}</p>
-                      <p className="text-sm text-gray-600">
-                        Quantity: {item.quantity || 1} × ${(item.price || 0).toFixed(2)}
-                      </p>
-                    </div>
+                    <p className="font-bold text-lg">
+                      ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                    </p>
                   </div>
-                  <p className="font-bold text-lg">
-                    ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
