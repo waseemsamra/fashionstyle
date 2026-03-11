@@ -779,9 +779,9 @@ export default function Dashboard() {
 
   const stats = [
     { label: 'Total Revenue', value: '$45,231', change: '+20.1%', icon: DollarSign, color: 'bg-green-500' },
-    { label: 'Orders', value: '356', change: '+12.5%', icon: ShoppingCart, color: 'bg-blue-500' },
-    { label: 'Products', value: '1,234', change: '+5.2%', icon: Package, color: 'bg-purple-500' },
-    { label: 'Customers', value: '8,549', change: '+18.3%', icon: UsersIcon, color: 'bg-orange-500' },
+    { label: 'Orders', value: orders.length.toString(), change: '+12.5%', icon: ShoppingCart, color: 'bg-blue-500' },
+    { label: 'Products', value: products.length.toString(), change: '+5.2%', icon: Package, color: 'bg-purple-500' },
+    { label: 'Users', value: users.length.toString(), change: '+18.3%', icon: UsersIcon, color: 'bg-orange-500' },
   ];
 
   if (loading) {
