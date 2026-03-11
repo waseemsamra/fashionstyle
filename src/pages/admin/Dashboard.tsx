@@ -14,6 +14,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [activeOrder, setActiveOrder] = useState<string | null>(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showBrandModal, setShowBrandModal] = useState(false);
@@ -540,7 +542,8 @@ export default function Dashboard() {
   // Order action handlers
   const handleViewOrderDetails = (order: any) => {
     console.log('📋 Viewing order details:', order);
-    alert(`Order Details:\n\nOrder ID: ${order.orderId}\nCustomer: ${order.fullName}\nEmail: ${order.email}\nTotal: $${order.totalPrice?.toFixed(2)}\nStatus: ${order.status}\nDate: ${new Date(order.createdAt).toLocaleDateString()}`);
+    setSelectedOrder(order);
+    setShowOrderModal(true);
   };
 
   const handleUpdateOrderStatus = async (order: any, newStatus: string) => {
@@ -1918,6 +1921,138 @@ export default function Dashboard() {
                 <button onClick={handleSaveGender} className="flex-1 py-3 bg-gold text-white rounded-lg">Save</button>
                 <button onClick={() => setShowGenderModal(false)} className="flex-1 py-3 bg-gray-200 rounded-lg">Cancel</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order Details Modal */}
+      {showOrderModal && selectedOrder && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-gold to-yellow-600 p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Order Details</h2>
+                  <p className="text-yellow-100 mt-1">{selectedOrder.orderId}</p>
+                </div>
+                <button 
+                  onClick={() => setShowOrderModal(false)}
+                  className="bg-white/20 hover:bg-white/30 rounded-full p-2 transition-colors"
+                >
+                  <X className="w-6 h-6 text-white" />
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Status Badge */}
+              <div className="flex items-center justify-between">
+                <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  selectedOrder.status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                  selectedOrder.status === 'Out for Delivery' ? 'bg-purple-100 text-purple-700' :
+                  selectedOrder.status === 'Shipped' ? 'bg-indigo-100 text-indigo-700' :
+                  selectedOrder.status === 'Ready for Delivery' ? 'bg-blue-100 text-blue-700' :
+                  selectedOrder.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                  'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {selectedOrder.status === 'Out for Delivery' ? '📦 Out for Delivery' :
+                   selectedOrder.status === 'Delivered' ? '✅ Delivered' :
+                   selectedOrder.status === 'Shipped' ? '🚚 Shipped' :
+                   selectedOrder.status === 'Ready for Delivery' ? '🔵 Ready for Delivery' :
+                   selectedOrder.status === 'Cancelled' ? '❌ Cancelled' :
+                   '🟡 Processing'}
+                </span>
+                <span className="text-sm text-gray-500">
+                  {new Date(selectedOrder.createdAt).toLocaleDateString('en-US', { 
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit'
+                  })}
+                </span>
+              </div>
+
+              {/* Customer Info */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  👤 Customer Information
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-500">Full Name</p>
+                    <p className="font-medium text-gray-900">{selectedOrder.fullName}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Email</p>
+                    <p className="font-medium text-gray-900">{selectedOrder.email}</p>
+                  </div>
+                  {selectedOrder.phone && (
+                    <div>
+                      <p className="text-xs text-gray-500">Phone</p>
+                      <p className="font-medium text-gray-900">{selectedOrder.phone}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Shipping Address */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  📍 Shipping Address
+                </h3>
+                <div className="space-y-1 text-gray-900">
+                  <p className="font-medium">{selectedOrder.address}</p>
+                  <p>{selectedOrder.city}, {selectedOrder.postalCode}</p>
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                  📦 Order Items ({selectedOrder.items?.length || selectedOrder.itemCount || 0})
+                </h3>
+                <div className="space-y-3">
+                  {(selectedOrder.items || []).map((item: any, index: number) => (
+                    <div key={index} className="flex items-center gap-4 bg-white rounded-lg p-3">
+                      {item.image && (
+                        <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg" />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{item.name}</p>
+                        <p className="text-sm text-gray-500">Qty: {item.quantity} × ${item.price?.toFixed(2)}</p>
+                      </div>
+                      <p className="font-semibold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment & Total */}
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    💳 Payment Method
+                  </h3>
+                  <span className="text-sm font-medium text-gray-900 capitalize">{selectedOrder.paymentMethod}</span>
+                </div>
+                <div className="border-t border-gray-200 pt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-semibold text-gray-700">Total Amount</span>
+                    <span className="text-2xl font-bold text-gold">${selectedOrder.totalPrice?.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 px-6 py-4 rounded-b-2xl flex justify-end gap-3">
+              <button 
+                onClick={() => setShowOrderModal(false)}
+                className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
