@@ -13,6 +13,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [activeOrder, setActiveOrder] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [showBrandModal, setShowBrandModal] = useState(false);
