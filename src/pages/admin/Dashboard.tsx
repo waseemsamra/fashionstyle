@@ -413,7 +413,15 @@ export default function Dashboard() {
 
     const loadDashboardSettings = async () => {
       try {
-        const data = await api.getFilters();
+        // Optional: Load filters (may not exist)
+        let data;
+        try {
+          data = await api.getFilters();
+        } catch (filterErr) {
+          console.log('⚠️ Filters endpoint not available - using defaults');
+          data = null;
+        }
+        
         if (!mounted || !data) return;
 
         setCategories((prev) =>
