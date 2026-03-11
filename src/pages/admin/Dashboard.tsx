@@ -575,6 +575,35 @@ export default function Dashboard() {
     }
   };
 
+  const handleDeleteOrder = async (order: any) => {
+    if (confirm(`Are you sure you want to delete order ${order.orderId}?`)) {
+      try {
+        console.log('🗑️ Deleting order:', order.orderId);
+        
+        // Delete from DynamoDB via API
+        const userId = order.userId || order.PK?.replace('USER#', '');
+        const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders/${order.orderId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+          }
+        });
+        
+        if (response.ok) {
+          // Update local state
+          setOrders(orders.filter(o => o.orderId !== order.orderId));
+          console.log('✅ Order deleted successfully');
+          alert(`Order ${order.orderId} deleted successfully`);
+        } else {
+          throw new Error('Failed to delete order');
+        }
+      } catch (error) {
+        console.error('❌ Failed to delete order:', error);
+        alert('Failed to delete order. Please try again.');
+      }
+    }
+  };
+
   const handleSave = async () => {
     try {
       console.log('💾 Saving product...');
@@ -1004,7 +1033,6 @@ export default function Dashboard() {
                               >
                                 ✅ Delivered
                               </button>
-                              <div className="border-t my-1"></div>
                               <button 
                                 onClick={() => {
                                   handleUpdateOrderStatus(order, 'Cancelled');
@@ -1015,6 +1043,16 @@ export default function Dashboard() {
                                 }`}
                               >
                                 ❌ Cancelled
+                              </button>
+                              <div className="border-t my-1"></div>
+                              <button 
+                                onClick={() => {
+                                  handleDeleteOrder(order);
+                                  setActiveOrder(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
+                              >
+                                🗑️ Delete Order
                               </button>
                             </div>
                           )}
