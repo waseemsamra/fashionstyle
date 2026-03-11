@@ -537,12 +537,32 @@ export default function Dashboard() {
   const handleUpdateOrderStatus = async (order: any, newStatus: string) => {
     try {
       console.log('🔄 Updating order status:', order.orderId, 'to', newStatus);
-      // Update local state
-      setOrders(orders.map(o => o.orderId === order.orderId ? { ...o, status: newStatus } : o));
-      alert(`Order ${order.orderId} status updated to: ${newStatus}`);
+      
+      // Update in DynamoDB via API
+      const userId = order.userId || order.PK?.replace('USER#', '');
+      const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders/${order.orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          updatedAt: new Date().toISOString()
+        })
+      });
+      
+      if (response.ok) {
+        // Update local state
+        setOrders(orders.map(o => o.orderId === order.orderId ? { ...o, status: newStatus, updatedAt: new Date().toISOString() } : o));
+        console.log('✅ Order status updated successfully');
+        alert(`Order ${order.orderId} status updated to: ${newStatus}`);
+      } else {
+        throw new Error('Failed to update order status');
+      }
     } catch (error) {
       console.error('❌ Failed to update order status:', error);
-      alert('Failed to update order status');
+      alert('Failed to update order status. Please try again.');
     }
   };
 
@@ -550,12 +570,27 @@ export default function Dashboard() {
     if (confirm(`Are you sure you want to delete order ${order.orderId}?`)) {
       try {
         console.log('🗑️ Deleting order:', order.orderId);
-        // Update local state
-        setOrders(orders.filter(o => o.orderId !== order.orderId));
-        alert(`Order ${order.orderId} deleted successfully`);
+        
+        // Delete from DynamoDB via API
+        const userId = order.userId || order.PK?.replace('USER#', '');
+        const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders/${order.orderId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+          }
+        });
+        
+        if (response.ok) {
+          // Update local state
+          setOrders(orders.filter(o => o.orderId !== order.orderId));
+          console.log('✅ Order deleted successfully');
+          alert(`Order ${order.orderId} deleted successfully`);
+        } else {
+          throw new Error('Failed to delete order');
+        }
       } catch (error) {
         console.error('❌ Failed to delete order:', error);
-        alert('Failed to delete order');
+        alert('Failed to delete order. Please try again.');
       }
     }
   };
