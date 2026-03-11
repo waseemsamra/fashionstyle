@@ -575,35 +575,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleDeleteOrder = async (order: any) => {
-    if (confirm(`Are you sure you want to delete order ${order.orderId}?`)) {
-      try {
-        console.log('🗑️ Deleting order:', order.orderId);
-        
-        // Delete from DynamoDB via API
-        const userId = order.userId || order.PK?.replace('USER#', '');
-        const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders/${order.orderId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
-          }
-        });
-        
-        if (response.ok) {
-          // Update local state
-          setOrders(orders.filter(o => o.orderId !== order.orderId));
-          console.log('✅ Order deleted successfully');
-          alert(`Order ${order.orderId} deleted successfully`);
-        } else {
-          throw new Error('Failed to delete order');
-        }
-      } catch (error) {
-        console.error('❌ Failed to delete order:', error);
-        alert('Failed to delete order. Please try again.');
-      }
-    }
-  };
-
   const handleSave = async () => {
     try {
       console.log('💾 Saving product...');
@@ -945,8 +916,11 @@ export default function Dashboard() {
                       <td className="px-6 py-4 font-semibold">${order.totalPrice?.toFixed(2)}</td>
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                          order.status === 'shipped' || order.status === 'Ready for Delivery' ? 'bg-blue-100 text-blue-700' :
+                          order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                          order.status === 'Out for Delivery' ? 'bg-purple-100 text-purple-700' :
+                          order.status === 'Shipped' ? 'bg-indigo-100 text-indigo-700' :
+                          order.status === 'Ready for Delivery' ? 'bg-blue-100 text-blue-700' :
+                          order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
                           'bg-yellow-100 text-yellow-700'
                         }`}>
                           {order.status || 'Processing'}
@@ -964,7 +938,7 @@ export default function Dashboard() {
                             ⚙️ Actions ▼
                           </button>
                           {activeOrder === order.orderId && (
-                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-10">
+                            <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border z-10">
                               <button 
                                 onClick={() => {
                                   handleViewOrderDetails(order);
@@ -999,6 +973,28 @@ export default function Dashboard() {
                               </button>
                               <button 
                                 onClick={() => {
+                                  handleUpdateOrderStatus(order, 'Shipped');
+                                  setActiveOrder(null);
+                                }}
+                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                  order.status === 'Shipped' ? 'bg-indigo-50 text-indigo-700' : ''
+                                }`}
+                              >
+                                🚚 Shipped
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  handleUpdateOrderStatus(order, 'Out for Delivery');
+                                  setActiveOrder(null);
+                                }}
+                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                  order.status === 'Out for Delivery' ? 'bg-purple-50 text-purple-700' : ''
+                                }`}
+                              >
+                                📦 Out for Delivery
+                              </button>
+                              <button 
+                                onClick={() => {
                                   handleUpdateOrderStatus(order, 'Delivered');
                                   setActiveOrder(null);
                                 }}
@@ -1006,17 +1002,19 @@ export default function Dashboard() {
                                   order.status === 'Delivered' ? 'bg-green-50 text-green-700' : ''
                                 }`}
                               >
-                                🟢 Delivered
+                                ✅ Delivered
                               </button>
                               <div className="border-t my-1"></div>
                               <button 
                                 onClick={() => {
-                                  handleDeleteOrder(order);
+                                  handleUpdateOrderStatus(order, 'Cancelled');
                                   setActiveOrder(null);
                                 }}
-                                className="w-full px-4 py-2 text-left text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                  order.status === 'Cancelled' ? 'bg-red-50 text-red-700' : ''
+                                }`}
                               >
-                                🗑️ Delete Order
+                                ❌ Cancelled
                               </button>
                             </div>
                           )}
