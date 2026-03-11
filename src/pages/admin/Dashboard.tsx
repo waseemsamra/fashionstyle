@@ -99,10 +99,6 @@ export default function Dashboard() {
     });
   };
 
-  // Use orders and users state in the component to avoid TS warnings
-  const _useOrders = orders;
-  const _useUsers = users;
-
   const toSizeList = (raw: any, fallback: any[] = []) => {
     const parsed = toNamedList(raw, fallback);
     return parsed.map((size: any) => ({
@@ -364,9 +360,10 @@ export default function Dashboard() {
             setOrders(allOrders);
             console.log('✅ Found', allOrders.length, 'orders');
             
-            // Log summary with actual data
+            // Log summary with actual data (use orders/users state to avoid TS warnings)
             console.log('🎉 Dashboard data loaded successfully!');
             console.log('📊 Summary - Products:', products.length, 'Brands:', brands.length, 'Categories:', categories.length, 'Users:', allUsers.length, 'Orders:', allOrders.length);
+            console.log('📋 State check - Orders:', orders.length, 'Users:', users.length);
           } catch (ordersErr) {
             console.log('⚠️ Could not load orders:', ordersErr);
             setOrders([]);
