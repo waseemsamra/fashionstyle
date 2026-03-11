@@ -947,50 +947,70 @@ export default function Dashboard() {
                         {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="relative group">
-                          <button className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs">
+                        <div className="relative">
+                          <button 
+                            onClick={() => setActiveOrder(activeOrder === order.orderId ? null : order.orderId)}
+                            className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
+                          >
                             ⚙️ Actions ▼
                           </button>
-                          <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-10 hidden group-hover:block">
-                            <button 
-                              onClick={() => handleViewOrderDetails(order)}
-                              className="w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2"
-                            >
-                              📋 View Details
-                            </button>
-                            <div className="border-t my-1"></div>
-                            <button 
-                              onClick={() => handleUpdateOrderStatus(order, 'Processing')}
-                              className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                                order.status === 'Processing' ? 'bg-yellow-50 text-yellow-700' : ''
-                              }`}
-                            >
-                              🟡 Processing
-                            </button>
-                            <button 
-                              onClick={() => handleUpdateOrderStatus(order, 'Ready for Delivery')}
-                              className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                                order.status === 'Ready for Delivery' ? 'bg-blue-50 text-blue-700' : ''
-                              }`}
-                            >
-                              🔵 Ready for Delivery
-                            </button>
-                            <button 
-                              onClick={() => handleUpdateOrderStatus(order, 'Delivered')}
-                              className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                                order.status === 'Delivered' ? 'bg-green-50 text-green-700' : ''
-                              }`}
-                            >
-                              🟢 Delivered
-                            </button>
-                            <div className="border-t my-1"></div>
-                            <button 
-                              onClick={() => handleDeleteOrder(order)}
-                              className="w-full px-4 py-2 text-left text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
-                            >
-                              🗑️ Delete Order
-                            </button>
-                          </div>
+                          {activeOrder === order.orderId && (
+                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border z-10">
+                              <button 
+                                onClick={() => {
+                                  handleViewOrderDetails(order);
+                                  setActiveOrder(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2"
+                              >
+                                📋 View Details
+                              </button>
+                              <div className="border-t my-1"></div>
+                              <button 
+                                onClick={() => {
+                                  handleUpdateOrderStatus(order, 'Processing');
+                                  setActiveOrder(null);
+                                }}
+                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                  order.status === 'Processing' ? 'bg-yellow-50 text-yellow-700' : ''
+                                }`}
+                              >
+                                🟡 Processing
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  handleUpdateOrderStatus(order, 'Ready for Delivery');
+                                  setActiveOrder(null);
+                                }}
+                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                  order.status === 'Ready for Delivery' ? 'bg-blue-50 text-blue-700' : ''
+                                }`}
+                              >
+                                🔵 Ready for Delivery
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  handleUpdateOrderStatus(order, 'Delivered');
+                                  setActiveOrder(null);
+                                }}
+                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                  order.status === 'Delivered' ? 'bg-green-50 text-green-700' : ''
+                                }`}
+                              >
+                                🟢 Delivered
+                              </button>
+                              <div className="border-t my-1"></div>
+                              <button 
+                                onClick={() => {
+                                  handleDeleteOrder(order);
+                                  setActiveOrder(null);
+                                }}
+                                className="w-full px-4 py-2 text-left text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
+                              >
+                                🗑️ Delete Order
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </td>
                     </tr>
