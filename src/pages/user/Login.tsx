@@ -218,7 +218,7 @@ export default function Login() {
 
             // Auto-create profile if it doesn't exist
             try {
-              const userId = credentials.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+              const userId = credentials.email.replace(/[^a-zA-Z0-9]/g, '-');
               console.log('Creating profile for userId:', userId);
               await api.createUserProfile(userId, credentials.email);
               console.log('✅ User profile created/updated for:', credentials.email);
@@ -318,7 +318,7 @@ export default function Login() {
 
               // Auto-create profile if it doesn't exist
               try {
-                const userId = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+                const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
                 console.log('Creating profile for userId:', userId);
                 await api.createUserProfile(userId, email);
                 console.log('✅ User profile created/updated for:', email);
@@ -372,7 +372,7 @@ export default function Login() {
 
       // Auto-create user profile in DynamoDB after successful verification
       try {
-        const userId = credentials.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+        const userId = credentials.email.replace(/[^a-zA-Z0-9]/g, '-');
         console.log('Creating profile for userId:', userId, 'email:', credentials.email);
         await api.createUserProfile(userId, credentials.email);
         console.log('✅ User profile created successfully for:', credentials.email);

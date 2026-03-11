@@ -68,7 +68,8 @@ export default function UserDashboard() {
       if (token && email) {
         // User is logged in via our login flow
         console.log('User authenticated via localStorage:', email);
-        setUser({ userId: email.split('@')[0], username: email, email });
+        const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
+        setUser({ userId: userId, username: email, email });
         setLoading(false);
         return;
       }

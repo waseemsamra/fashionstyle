@@ -41,7 +41,7 @@ export default function Checkout() {
       console.log('🛒 Checkout: Starting guest checkout process...');
 
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      const userId = formData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+      const userId = formData.email.replace(/[^a-zA-Z0-9]/g, '-');
 
       // Step 1: Check if user already exists
       console.log('🔍 Checking if user exists:', formData.email);

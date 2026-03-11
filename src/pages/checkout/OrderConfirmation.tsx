@@ -1,39 +1,37 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Package, Truck, MapPin, CreditCard } from 'lucide-react';
+import { CheckCircle, Package, Truck, MapPin, CreditCard, Home } from 'lucide-react';
 
 export default function OrderConfirmation() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { orderId } = useParams();
+  const [orderData, setOrderData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const orderData = location.state?.orderData || location.state;
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
-    // Require user to be logged in for order confirmation
-    const token = localStorage.getItem('jwt_token');
-    const email = localStorage.getItem('user_email');
-
-    if (token && email) {
-      setIsAuthenticated(true);
+    // Get order data from state or localStorage
+    const stateData = location.state?.orderData || location.state;
+    const storedOrder = localStorage.getItem('lastOrder');
+    
+    if (stateData) {
+      setOrderData(stateData);
+      setIsGuest(location.state?.isGuest || false);
+      setIsLoading(false);
+    } else if (storedOrder) {
+      // Load from localStorage if state is missing (page refresh)
+      const parsed = JSON.parse(storedOrder);
+      setOrderData(parsed);
+      setIsGuest(parsed.isGuest || false);
       setIsLoading(false);
     } else {
-      // Not logged in - redirect to login
-      console.log('❌ OrderConfirmation: Not authenticated, redirecting to login');
-      navigate('/login', {
-        state: {
-          from: '/order-confirmation',
-          message: 'Please login to view your order confirmation'
-        }
-      });
+      // No order data, redirect to home
+      console.log('❌ No order data found, redirecting to home');
+      navigate('/');
     }
-  }, [navigate]);
-
-  useEffect(() => {
-    // Order is already saved by Checkout, just display it
-    console.log('✅ OrderConfirmation: Order already saved by Checkout, just displaying');
-  }, []);
+  }, [navigate, location]);
 
   if (isLoading) {
     return (
@@ -46,16 +44,11 @@ export default function OrderConfirmation() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!orderData) {
     return null; // Redirect happens in useEffect
   }
 
-  if (!orderData) {
-    navigate('/');
-    return null;
-  }
-
-  const finalOrderNumber = orderData?.orderId || `ORD-${Date.now().toString().slice(-8)}`;
+  const finalOrderNumber = orderData?.orderId || orderId || `ORD-${Date.now().toString().slice(-8)}`;
   const estimatedDelivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -172,11 +165,39 @@ export default function OrderConfirmation() {
             </div>
           </div>
 
+          {/* Guest User Message */}
+          {isGuest && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+                <div className="text-left flex-1">
+                  <p className="font-medium text-green-900">Account Created Successfully!</p>
+                  <p className="text-sm text-green-700 mt-1">
+                    We've sent your login credentials to <strong>{orderData.email}</strong>. 
+                    You can use them to track your orders and enjoy faster checkout next time.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-4 justify-center">
-            <Button onClick={() => navigate('/')} variant="outline">
-              Continue Shopping
+            <Button 
+              onClick={() => {
+                // Clear order data and go home
+                localStorage.removeItem('lastOrder');
+                navigate('/', { replace: true });
+              }} 
+              variant="outline"
+              className="min-w-[150px]"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Back to Home
             </Button>
-            <Button onClick={() => window.print()} className="bg-black hover:bg-gray-800">
+            <Button 
+              onClick={() => window.print()} 
+              className="bg-black hover:bg-gray-800 min-w-[150px]"
+            >
               Print Receipt
             </Button>
           </div>
