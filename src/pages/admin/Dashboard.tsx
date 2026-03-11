@@ -509,8 +509,8 @@ export default function Dashboard() {
 
     setEditingProduct({
       id: Date.now(),
-      image: '', // Start with no image
-      images: [], // Start with empty images array
+      image: '',
+      images: [],
       name: '',
       sku: '',
       description: '',
@@ -526,6 +526,38 @@ export default function Dashboard() {
       colors: [],
     });
     setShowEditModal(true);
+  };
+
+  // Order action handlers
+  const handleViewOrderDetails = (order: any) => {
+    console.log('📋 Viewing order details:', order);
+    alert(`Order Details:\n\nOrder ID: ${order.orderId}\nCustomer: ${order.fullName}\nEmail: ${order.email}\nTotal: $${order.totalPrice?.toFixed(2)}\nStatus: ${order.status}\nDate: ${new Date(order.createdAt).toLocaleDateString()}`);
+  };
+
+  const handleUpdateOrderStatus = async (order: any, newStatus: string) => {
+    try {
+      console.log('🔄 Updating order status:', order.orderId, 'to', newStatus);
+      // Update local state
+      setOrders(orders.map(o => o.orderId === order.orderId ? { ...o, status: newStatus } : o));
+      alert(`Order ${order.orderId} status updated to: ${newStatus}`);
+    } catch (error) {
+      console.error('❌ Failed to update order status:', error);
+      alert('Failed to update order status');
+    }
+  };
+
+  const handleDeleteOrder = async (order: any) => {
+    if (confirm(`Are you sure you want to delete order ${order.orderId}?`)) {
+      try {
+        console.log('🗑️ Deleting order:', order.orderId);
+        // Update local state
+        setOrders(orders.filter(o => o.orderId !== order.orderId));
+        alert(`Order ${order.orderId} deleted successfully`);
+      } catch (error) {
+        console.error('❌ Failed to delete order:', error);
+        alert('Failed to delete order');
+      }
+    }
   };
 
   const handleSave = async () => {
@@ -857,6 +889,7 @@ export default function Dashboard() {
                     <th className="px-6 py-4 text-left text-sm font-semibold">Total</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -869,7 +902,7 @@ export default function Dashboard() {
                       <td className="px-6 py-4">
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                          order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                          order.status === 'shipped' || order.status === 'Ready for Delivery' ? 'bg-blue-100 text-blue-700' :
                           'bg-yellow-100 text-yellow-700'
                         }`}>
                           {order.status || 'Processing'}
@@ -877,6 +910,51 @@ export default function Dashboard() {
                       </td>
                       <td className="px-6 py-4 text-gray-600">
                         {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleViewOrderDetails(order)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                            title="View Details"
+                          >
+                            📋 Details
+                          </button>
+                          <button 
+                            onClick={() => handleUpdateOrderStatus(order, 'Processing')}
+                            className={`px-3 py-1 rounded text-xs text-white ${
+                              order.status === 'Processing' ? 'bg-yellow-600' : 'bg-yellow-500 hover:bg-yellow-600'
+                            }`}
+                            title="Set Processing"
+                          >
+                            Processing
+                          </button>
+                          <button 
+                            onClick={() => handleUpdateOrderStatus(order, 'Ready for Delivery')}
+                            className={`px-3 py-1 rounded text-xs text-white ${
+                              order.status === 'Ready for Delivery' ? 'bg-blue-600' : 'bg-blue-500 hover:bg-blue-600'
+                            }`}
+                            title="Set Ready for Delivery"
+                          >
+                            Ready
+                          </button>
+                          <button 
+                            onClick={() => handleUpdateOrderStatus(order, 'Delivered')}
+                            className={`px-3 py-1 rounded text-xs text-white ${
+                              order.status === 'Delivered' ? 'bg-green-600' : 'bg-green-500 hover:bg-green-600'
+                            }`}
+                            title="Set Delivered"
+                          >
+                            Delivered
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteOrder(order)}
+                            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                            title="Delete Order"
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
