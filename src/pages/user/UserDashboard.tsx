@@ -64,12 +64,20 @@ export default function UserDashboard() {
       // Check localStorage first (where login stores auth)
       const token = localStorage.getItem('jwt_token');
       const email = localStorage.getItem('user_email');
-      
+
       if (token && email) {
         // User is logged in via our login flow
         console.log('User authenticated via localStorage:', email);
-        const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
-        setUser({ userId: userId, username: email, email });
+        
+        // Try both userId formats to maintain backward compatibility
+        const userIdFull = email.replace(/[^a-zA-Z0-9]/g, '-'); // waseem-samra-gmail-com
+        const userIdShort = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-'); // waseem-samra
+        
+        console.log('Trying userId (full):', userIdFull);
+        console.log('Trying userId (short):', userIdShort);
+        
+        // Use short format for backward compatibility with existing orders
+        setUser({ userId: userIdShort, username: email, email });
         setLoading(false);
         return;
       }
