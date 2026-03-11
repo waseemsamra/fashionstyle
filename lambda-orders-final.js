@@ -115,6 +115,94 @@ exports.handler = async (event) => {
       };
     }
 
+    // PUT /users/{userId}/orders/{orderId} - Update order status
+    if (method === 'PUT' && orderId) {
+      const body = JSON.parse(event.body);
+      const timestamp = new Date().toISOString();
+
+      // Get existing order
+      const existingOrder = await dynamodb.get({
+        TableName: ORDERS_TABLE,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: `ORDER#${orderId}`
+        }
+      }).promise();
+
+      if (!existingOrder.Item) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({ error: 'Order not found' })
+        };
+      }
+
+      // Update order status
+      const updateExpression = [];
+      const expressionAttributeValues = {};
+
+      if (body.status) {
+        updateExpression.push('status = :status');
+        expressionAttributeValues[':status'] = body.status;
+      }
+
+      updateExpression.push('updatedAt = :updatedAt');
+      expressionAttributeValues[':updatedAt'] = timestamp;
+
+      await dynamodb.update({
+        TableName: ORDERS_TABLE,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: `ORDER#${orderId}`
+        },
+        UpdateExpression: `SET ${updateExpression.join(', ')}`,
+        ExpressionAttributeValues: expressionAttributeValues
+      }).promise();
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          message: 'Order updated successfully',
+          orderId,
+          status: body.status
+        })
+      };
+    }
+
+    // OPTIONS /users/{userId}/orders/{orderId} - CORS preflight
+    if (method === 'OPTIONS' && orderId) {
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+          'Access-Control-Allow-Methods': 'GET,PUT,DELETE,OPTIONS'
+        },
+        body: ''
+      };
+    }
+
+    // DELETE /users/{userId}/orders/{orderId} - Delete order
+    if (method === 'DELETE' && orderId) {
+      await dynamodb.delete({
+        TableName: ORDERS_TABLE,
+        Key: {
+          PK: `USER#${userId}`,
+          SK: `ORDER#${orderId}`
+        }
+      }).promise();
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          message: 'Order deleted successfully',
+          orderId
+        })
+      };
+    }
+
     // GET /admin/orders - Get ALL orders (admin only)
     if (method === 'GET' && !userId && event.path.includes('/admin/orders')) {
       console.log('📋 Fetching all orders for admin');
