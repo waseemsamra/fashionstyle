@@ -226,11 +226,21 @@ export default function Login() {
               console.log('Profile creation skipped or failed:', profileErr.message);
             }
 
-            // Redirect to checkout if coming from there, otherwise dashboard
-            const from = (location as any).state?.from || '/dashboard';
-            console.log('Redirecting to:', from);
-
-            navigate(from, { replace: true });
+            // Check if there's checkout data to restore
+            const checkoutData = localStorage.getItem('checkout_data');
+            const from = (location as any).state?.from;
+            
+            if (checkoutData && from === '/checkout') {
+              console.log('🛒 Restoring checkout data after login');
+              // Redirect to checkout to complete the order
+              navigate('/checkout', { replace: true });
+            } else {
+              // Redirect to checkout if coming from there, otherwise dashboard
+              const redirectUrl = from || '/dashboard';
+              console.log('Redirecting to:', redirectUrl);
+              navigate(redirectUrl, { replace: true });
+            }
+            
             return;
           }
         } catch (backendErr: any) {

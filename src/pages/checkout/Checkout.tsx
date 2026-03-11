@@ -1,79 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard, Truck, MapPin } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, CreditCard, Truck, MapPin, User, Mail, Phone } from 'lucide-react';
+import { apiClient } from '@/services/api';
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, totalPrice, clearCart } = useCart();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     address: '',
     city: '',
     postalCode: '',
-    cardNumber: '',
-    cardExpiry: '',
-    cardCvv: '',
   });
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      console.log('🔐 Checkout: Checking authentication...');
-      
-      // Check if user is logged in
-      const token = localStorage.getItem('jwt_token');
-      const email = localStorage.getItem('user_email');
-      
-      console.log('🔐 Checkout: Token exists:', !!token);
-      console.log('🔐 Checkout: Email exists:', !!email);
-      
-      if (token && email) {
-        // User is logged in
-        console.log('✅ Checkout: User authenticated:', email);
-        setIsAuthenticated(true);
-        
-        // Pre-fill email for logged-in users
-        setFormData(prev => ({
-          ...prev,
-          email: email
-        }));
-      } else {
-        // Not logged in - redirect to login with return URL
-        console.log('❌ Checkout: Not authenticated, redirecting to login');
-        navigate('/login', { 
-          state: { 
-            from: '/checkout',
-            message: 'Please login to complete your order'
-          } 
-        });
-      }
-      
-      setIsLoading(false);
-    };
-
-    checkAuth();
-  }, [navigate]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-beige-100">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null; // Redirect happens in useEffect
-  }
 
   if (items.length === 0) {
     return (
@@ -88,86 +35,142 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log('🛒 Checkout: Creating order...');
-    
-    // Get auth data
-    const token = localStorage.getItem('jwt_token');
-    const storedEmail = localStorage.getItem('user_email');
-    
-    // Use stored email or form email
-    const email = storedEmail || formData.email;
-    
-    // Generate userId from email (CRITICAL: must match backend format)
-    const userId = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
-    console.log('🛒 Generated userId:', userId, 'from email:', email);
-
-    const orderData = {
-      items,
-      totalPrice,
-      paymentMethod,
-      fullName: formData.fullName,
-      email: email,  // ✅ CRITICAL: Include email in order data
-      firstName: formData.fullName.split(' ')[0],
-      lastName: formData.fullName.split(' ')[1] || '',
-      phone: formData.phone,
-      address: formData.address,
-      city: formData.city,
-      postalCode: formData.postalCode,
-      status: 'Processing'
-    };
+    setIsLoading(true);
 
     try {
-      console.log('🛒 Creating order with userId:', userId);
-      console.log('🛒 Order data:', orderData);
+      console.log('🛒 Checkout: Starting guest checkout process...');
 
-      const response = await fetch(
-        `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders`,
+      const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      const userId = formData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-');
+
+      // Step 1: Check if user already exists
+      console.log('🔍 Checking if user exists:', formData.email);
+      let existingUser = null;
+      try {
+        const userResponse = await apiClient.get(`/users/${userId}`);
+        existingUser = userResponse.data;
+        console.log('✅ User found:', existingUser);
+      } catch (err: any) {
+        if (err.response?.status === 404) {
+          console.log('ℹ️ User does not exist, will create guest account');
+        } else {
+          throw err;
+        }
+      }
+
+      // If user exists, redirect to login
+      if (existingUser) {
+        console.log('⚠️ User already registered, redirecting to login');
+        
+        // Store checkout data for after login
+        localStorage.setItem('checkout_data', JSON.stringify({
+          formData,
+          paymentMethod,
+          items,
+          totalPrice
+        }));
+
+        navigate('/login', {
+          state: {
+            from: '/checkout',
+            message: 'You already have an account. Please login to complete your order.',
+            email: formData.email
+          }
+        });
+        return;
+      }
+
+      // Step 2: Create guest user account
+      console.log('📝 Creating guest user account...');
+      const guestUserData = {
+        email: formData.email,
+        name: fullName,
+        role: 'customer',
+        status: 'active',
+        isGuest: true
+      };
+
+      try {
+        await apiClient.post('/users', guestUserData);
+        console.log('✅ Guest user created:', formData.email);
+      } catch (err: any) {
+        console.log('⚠️ User may already exist, continuing with order...');
+      }
+
+      // Step 3: Create user profile
+      console.log('📝 Creating user profile...');
+      try {
+        await apiClient.put(`/users/${userId}/profile`, {
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          role: 'customer',
+          status: 'active',
+          isGuest: true
+        });
+        console.log('✅ User profile created');
+      } catch (err: any) {
+        console.log('⚠️ Profile creation may have succeeded, continuing...');
+      }
+
+      // Step 4: Create order (welcome email sent automatically by Lambda)
+      console.log('🛒 Creating order...');
+      const orderData = {
+        items,
+        totalPrice,
+        paymentMethod,
+        fullName: fullName,
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        address: formData.address,
+        city: formData.city,
+        postalCode: formData.postalCode,
+        status: 'Processing',
+        isGuestOrder: true
+      };
+
+      const orderResponse = await apiClient.post(
+        `/users/${userId}/orders`,
+        orderData,
         {
-          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(orderData)
+          }
         }
       );
 
-      const result = await response.json();
+      const result = orderResponse.data;
+      console.log('✅ Order created:', result.orderId);
 
-      if (!response.ok) {
-        console.error('❌ Order failed:', result);
-        throw new Error(result.error || 'Order failed');
-      }
-
-      console.log('✅ Order created:', result);
-
-      // Clear cart - both localStorage and React state
+      // Step 7: Clear cart and store order info
       localStorage.removeItem('cart');
-      clearCart();  // ✅ Clear cart state in useCart hook
+      clearCart();
 
-      // Store order info - use correct property paths
       localStorage.setItem('lastOrder', JSON.stringify({
         orderId: result.orderId,
-        email: result.email || email,  // Use result.email or fallback to form email
-        items: orderData.items,  // Pass items for display
+        email: formData.email,
+        items: orderData.items,
         totalPrice: result.total || orderData.totalPrice,
         fullName: orderData.fullName,
         address: orderData.address,
         city: orderData.city,
         postalCode: orderData.postalCode,
         phone: orderData.phone,
-        paymentMethod: orderData.paymentMethod
+        paymentMethod: orderData.paymentMethod,
+        isGuest: true
       }));
 
-      // Navigate to confirmation with full order data
+      // Step 8: Navigate to confirmation
       navigate(`/order-confirmation/${result.orderId}`, {
         state: {
-          email: result.email || email,  // Use result.email or fallback
-          isGuest: !isAuthenticated,
-          orderData: {  // Pass full order data for display
+          email: formData.email,
+          isGuest: true,
+          orderData: {
             orderId: result.orderId,
-            email: result.email || email,
+            email: formData.email,
             items: orderData.items,
             totalPrice: result.total || orderData.totalPrice,
             fullName: orderData.fullName,
@@ -181,8 +184,9 @@ export default function Checkout() {
       });
 
     } catch (error: any) {
-      console.error('❌ Order failed:', error);
-      alert(`Order failed: ${error.message}`);
+      console.error('❌ Checkout failed:', error);
+      alert(`Order failed: ${error.response?.data?.message || error.message}`);
+      setIsLoading(false);
     }
   };
 
@@ -195,75 +199,133 @@ export default function Checkout() {
       <div className="container mx-auto px-4 max-w-6xl">
         <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          Back to Shopping
         </Button>
 
-        <h1 className="text-3xl font-bold mb-8">Checkout</h1>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Guest Checkout</h1>
+          <p className="text-gray-600">
+            Fill in your details to complete your order. We'll create a guest account for you and send login credentials to your email.
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
+              {/* Personal Information */}
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center gap-2 mb-4">
+                  <User className="w-5 h-5 text-gold" />
+                  <h2 className="text-xl font-semibold">Personal Information</h2>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      name="firstName"
+                      placeholder="John"
+                      required
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      placeholder="Doe"
+                      required
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        placeholder="john@example.com"
+                        required
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full pl-10"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      We'll send your login credentials to this email
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        placeholder="+1 (555) 123-4567"
+                        required
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="w-full pl-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Delivery Address */}
               <div className="bg-white p-6 rounded-lg shadow">
                 <div className="flex items-center gap-2 mb-4">
                   <MapPin className="w-5 h-5 text-gold" />
                   <h2 className="text-xl font-semibold">Delivery Address</h2>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    name="fullName"
-                    placeholder="Full Name"
-                    required
-                    value={formData.fullName}
-                    onChange={handleChange}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                  />
-                  <input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                  />
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="Phone Number"
-                    required
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                  />
-                  <input
-                    type="text"
-                    name="address"
-                    placeholder="Street Address"
-                    required
-                    value={formData.address}
-                    onChange={handleChange}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                  />
-                  <input
-                    type="text"
-                    name="city"
-                    placeholder="City"
-                    required
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                  />
-                  <input
-                    type="text"
-                    name="postalCode"
-                    placeholder="Postal Code"
-                    required
-                    value={formData.postalCode}
-                    onChange={handleChange}
-                    className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                  />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Street Address</Label>
+                    <Input
+                      id="address"
+                      name="address"
+                      placeholder="123 Main Street, Apt 4B"
+                      required
+                      value={formData.address}
+                      onChange={handleChange}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        name="city"
+                        placeholder="New York"
+                        required
+                        value={formData.city}
+                        onChange={handleChange}
+                        className="w-full"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="postalCode">Postal Code</Label>
+                      <Input
+                        id="postalCode"
+                        name="postalCode"
+                        placeholder="10001"
+                        required
+                        value={formData.postalCode}
+                        onChange={handleChange}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -303,43 +365,6 @@ export default function Checkout() {
                     <span className="font-medium">Cash on Delivery</span>
                   </label>
                 </div>
-
-                {paymentMethod === 'card' && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <input
-                      type="text"
-                      name="cardNumber"
-                      placeholder="Card Number"
-                      required
-                      value={formData.cardNumber}
-                      onChange={handleChange}
-                      maxLength={16}
-                      className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        name="cardExpiry"
-                        placeholder="MM/YY"
-                        required
-                        value={formData.cardExpiry}
-                        onChange={handleChange}
-                        maxLength={5}
-                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                      />
-                      <input
-                        type="text"
-                        name="cardCvv"
-                        placeholder="CVV"
-                        required
-                        value={formData.cardCvv}
-                        onChange={handleChange}
-                        maxLength={3}
-                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-gold outline-none"
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -379,9 +404,26 @@ export default function Checkout() {
                     <span>${totalPrice.toFixed(2)}</span>
                   </div>
                 </div>
-                <Button type="submit" className="w-full mt-6 bg-black hover:bg-gray-800">
-                  Place Order
+
+                {/* Guest Checkout Info */}
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs text-blue-800">
+                    <Mail className="inline h-3 w-3 mr-1" />
+                    A guest account will be created with your email. Login credentials will be sent after order placement.
+                  </p>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full mt-4 bg-black hover:bg-gray-800"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Processing...' : 'Place Order'}
                 </Button>
+
+                <p className="text-xs text-center text-gray-500 mt-3">
+                  By placing this order, you agree to our Terms of Service and Privacy Policy
+                </p>
               </div>
             </div>
           </div>
