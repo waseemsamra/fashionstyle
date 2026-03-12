@@ -414,16 +414,26 @@ export default function Dashboard() {
 
     const loadDashboardSettings = async () => {
       try {
-        // Optional: Load filters (may not exist)
+        // Optional: Load filters (may not exist) - with timeout
         let data;
         try {
-          data = await api.getFilters();
+          // Use Promise.race to timeout after 2 seconds
+          data = await Promise.race([
+            api.getFilters(),
+            new Promise(resolve => setTimeout(() => resolve(null), 2000))
+          ]);
         } catch (filterErr) {
           console.log('⚠️ Filters endpoint not available - using defaults');
           data = null;
         }
+
+        if (!mounted) return;
         
-        if (!mounted || !data) return;
+        // Use defaults if filters failed
+        if (!data) {
+          console.log('⚠️ Using default filter values');
+          return;
+        }
 
         setCategories((prev) =>
           toNamedList(data.categories ?? data.categoryOptions ?? data.category, prev).map((item: any) => ({

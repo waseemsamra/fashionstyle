@@ -54,11 +54,20 @@ export const api = {
   // Get filters (if endpoint exists)
   getFilters: async () => {
     try {
-      const response = await apiClient.get('/filters');
+      const response = await apiClient.get('/filters', { timeout: 3000 });
       return response.data;
     } catch (error) {
-      console.log('⚠️ Filters endpoint not available - using defaults');
-      return { categories: [], brands: [], genders: [], occasions: [], patterns: [], materials: [], colors: [], sizes: [] };
+      // Silently fail - filters are optional
+      return { 
+        categories: [], 
+        brands: [], 
+        genders: [], 
+        occasions: [], 
+        patterns: [], 
+        materials: [], 
+        colors: [], 
+        sizes: [] 
+      };
     }
   },
 
