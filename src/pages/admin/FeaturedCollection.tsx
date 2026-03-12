@@ -65,35 +65,51 @@ export default function FeaturedCollection() {
         return;
       }
       
+      let successCount = 0;
+      let failCount = 0;
+      
+      // Update each product individually using PUT endpoint
       const updatePromises = allProducts.map(async (product: any) => {
         const isFeatured = featuredIds.includes(product.id);
+        
+        // Only update if status changed
         if (product.isFeatured !== isFeatured) {
-          // Use fetch with proper headers for authentication
-          const response = await fetch(
-            `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/${product.id}`,
-            {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                ...product,
-                isFeatured
-              })
+          try {
+            const response = await fetch(
+              `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/${product.id}`,
+              {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                  ...product,
+                  isFeatured
+                })
+              }
+            );
+            
+            if (response.ok) {
+              successCount++;
+              console.log(`✅ Updated product ${product.id} to isFeatured: ${isFeatured}`);
+            } else {
+              failCount++;
+              const errorText = await response.text();
+              console.error(`❌ Failed to update product ${product.id}:`, response.status, errorText);
             }
-          );
-          
-          if (!response.ok) {
-            throw new Error(`Failed to update product ${product.id}`);
+          } catch (err: any) {
+            failCount++;
+            console.error(`❌ Error updating product ${product.id}:`, err.message);
           }
         }
       });
 
       await Promise.all(updatePromises);
       
-      alert(`Successfully saved ${featuredIds.length} featured products!`);
-      console.log('✅ Featured collection updated:', featuredIds.length, 'products');
+      const message = `Save complete! ✅ Success: ${successCount}${failCount > 0 ? `, ❌ Failed: ${failCount}` : ''}`;
+      alert(message);
+      console.log('✅ Featured collection updated:', featuredIds.length, 'products selected');
     } catch (error: any) {
       console.error('Failed to save featured collection:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));
