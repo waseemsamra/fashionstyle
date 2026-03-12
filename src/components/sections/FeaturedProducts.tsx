@@ -21,10 +21,28 @@ export default function FeaturedProducts() {
       try {
         console.log('Loading featured products...');
         const data = await api.listProducts();
-        console.log('Featured products loaded:', data?.length || 0);
-        setProducts(data || []);
+        console.log('Featured products API response:', data);
+        
+        // Handle different response formats
+        let productsArray = [];
+        if (Array.isArray(data)) {
+          productsArray = data;
+        } else if (data && typeof data === 'object') {
+          // Check for common API response structures
+          if (data.items && Array.isArray(data.items)) {
+            productsArray = data.items;
+          } else if (data.products && Array.isArray(data.products)) {
+            productsArray = data.products;
+          } else if (data.data && Array.isArray(data.data)) {
+            productsArray = data.data;
+          }
+        }
+        
+        console.log('Featured products loaded:', productsArray.length);
+        setProducts(productsArray);
       } catch (error) {
         console.error('Failed to load featured products:', error);
+        setProducts([]);
       }
     };
 
@@ -91,26 +109,27 @@ export default function FeaturedProducts() {
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product: any, index) => (
-            <div
-              key={product.id}
-              className={`group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-              }`}
-              style={{
-                transitionDelay: isVisible ? `${index * 80 + 200}ms` : '0ms',
-              }}
-            >
-              {/* Image Container */}
-              <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
-                <img
-                  src={getProductImage(product)}
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  onError={(e) => handleImageError(e, product.name)}
-                />
-                
-                {/* Badges */}
+          {Array.isArray(products) && products.length > 0 ? (
+            products.map((product: any, index) => (
+              <div
+                key={product.id}
+                className={`group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2 ${
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+                }`}
+                style={{
+                  transitionDelay: isVisible ? `${index * 80 + 200}ms` : '0ms',
+                }}
+              >
+                {/* Image Container */}
+                <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
+                  <img
+                    src={getProductImage(product)}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onError={(e) => handleImageError(e, product.name)}
+                  />
+                  
+                  {/* Badges */}
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
                   {product.isNew && (
                     <span className="px-3 py-1 bg-black text-white text-xs font-medium rounded-full">
@@ -156,9 +175,9 @@ export default function FeaturedProducts() {
                     Add to Cart
                   </button>
                 </div>
-              </div>
+                </div>
 
-              {/* Product Info */}
+                {/* Product Info */}
               <div className="p-4">
                 <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
                   {product.category}
@@ -196,7 +215,12 @@ export default function FeaturedProducts() {
                 </div>
               </div>
             </div>
-          ))}
+          ))
+        ) : (
+          <div className="col-span-full text-center py-12">
+            <p className="text-gray-500 text-lg">No products available at the moment.</p>
+          </div>
+        )}
         </div>
 
         {/* View All Button */}
