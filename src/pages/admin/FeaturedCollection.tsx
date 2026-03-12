@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, Check, ArrowLeft, Save, Grid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { api, apiClient } from '@/services/api';
+import { api } from '@/services/api';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 const MAX_FEATURED = 20;
@@ -56,14 +56,37 @@ export default function FeaturedCollection() {
     try {
       setSaving(true);
       
+      // Get JWT token for authentication
+      const token = localStorage.getItem('jwt_token');
+      
+      if (!token) {
+        alert('Please login as admin first');
+        navigate('/admin/login');
+        return;
+      }
+      
       const updatePromises = allProducts.map(async (product: any) => {
         const isFeatured = featuredIds.includes(product.id);
         if (product.isFeatured !== isFeatured) {
-          // Use apiClient directly to update product
-          await apiClient.put(`/products/${product.id}`, {
-            ...product,
-            isFeatured
-          });
+          // Use fetch with proper headers for authentication
+          const response = await fetch(
+            `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/${product.id}`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                ...product,
+                isFeatured
+              })
+            }
+          );
+          
+          if (!response.ok) {
+            throw new Error(`Failed to update product ${product.id}`);
+          }
         }
       });
 
@@ -73,7 +96,7 @@ export default function FeaturedCollection() {
       console.log('✅ Featured collection updated:', featuredIds.length, 'products');
     } catch (error: any) {
       console.error('Failed to save featured collection:', error);
-      alert('Failed to save: ' + (error.response?.data?.message || error.message || 'Unknown error'));
+      alert('Failed to save: ' + (error.message || 'Unknown error'));
     } finally {
       setSaving(false);
     }

@@ -2,7 +2,7 @@ import { type ReactNode, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { signOut, getCurrentUser } from 'aws-amplify/auth';
 import { checkAdminAccess } from '@/utils/auth';
-import { Package, ShoppingCart, Users as UsersIcon, LogOut, LayoutDashboard, Settings, Tag, UserCircle, Star } from 'lucide-react';
+import { Package, ShoppingCart, Users as UsersIcon, LogOut, LayoutDashboard, Settings, Tag, UserCircle, Star, FolderOpen, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -12,6 +12,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(['cms']); // CMS expanded by default
+
+  const toggleMenu = (menuId: string) => {
+    setExpandedMenus(prev => 
+      prev.includes(menuId) 
+        ? prev.filter(id => id !== menuId) 
+        : [...prev, menuId]
+    );
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -85,7 +94,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
-    { id: 'featured', label: 'Featured Collection', icon: Star, path: '/admin/featured' },
+    { 
+      id: 'cms', 
+      label: 'CMS', 
+      icon: FolderOpen, 
+      subItems: [
+        { id: 'featured', label: 'Featured Collection', icon: Star, path: '/admin/featured' }
+      ]
+    },
     { id: 'products', label: 'Products', icon: Package, path: '/admin/dashboard' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
     { id: 'customers', label: 'Customers', icon: UsersIcon, path: '/admin/dashboard' },
@@ -111,16 +127,56 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
         <nav className="p-4">
           {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 ${
-                location.pathname === item.path ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </button>
+            <div key={item.id}>
+              {item.subItems ? (
+                // Menu with sub-items
+                <div>
+                  <button
+                    onClick={() => toggleMenu(item.id)}
+                    className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg mb-2 ${
+                      location.pathname.startsWith('/admin/' + item.id) ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className="w-5 h-5" />
+                      {item.label}
+                    </div>
+                    {expandedMenus.includes(item.id) ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
+                  </button>
+                  {expandedMenus.includes(item.id) && (
+                    <div className="ml-8 mt-1 space-y-1">
+                      {item.subItems.map((subItem: any) => (
+                        <button
+                          key={subItem.id}
+                          onClick={() => navigate(subItem.path)}
+                          className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm ${
+                            location.pathname === subItem.path ? 'bg-gold text-white' : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          <subItem.icon className="w-4 h-4" />
+                          {subItem.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Regular menu item
+                <button
+                  onClick={() => navigate(item.path)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 ${
+                    location.pathname === item.path ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <item.icon className="w-5 h-5" />
+                  {item.label}
+                </button>
+              )}
+            </div>
           ))}
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 mt-4">
             <LogOut className="w-5 h-5" />

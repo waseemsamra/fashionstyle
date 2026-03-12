@@ -53,8 +53,13 @@ apiClient.interceptors.response.use(
 export const api = {
   // Get filters (if endpoint exists)
   getFilters: async () => {
-    const response = await apiClient.get('/filters');
-    return response.data;
+    try {
+      const response = await apiClient.get('/filters');
+      return response.data;
+    } catch (error) {
+      console.log('⚠️ Filters endpoint not available - using defaults');
+      return { categories: [], brands: [], genders: [], occasions: [], patterns: [], materials: [], colors: [], sizes: [] };
+    }
   },
 
   // List products with caching
