@@ -17,7 +17,6 @@ export default function FeaturedProducts() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
   const { addToCart, setIsCartOpen } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
@@ -105,7 +104,6 @@ export default function FeaturedProducts() {
     setIsDragging(true);
     setIsAutoPlaying(false);
     setStartX(e.pageX - carouselRef.current?.offsetLeft!);
-    setScrollLeft(currentSlide);
   };
 
   const handleMouseLeave = () => {
@@ -135,7 +133,6 @@ export default function FeaturedProducts() {
     setIsDragging(true);
     setIsAutoPlaying(false);
     setStartX(e.touches[0].pageX - carouselRef.current?.offsetLeft!);
-    setScrollLeft(currentSlide);
   };
 
   const handleTouchEnd = () => {
