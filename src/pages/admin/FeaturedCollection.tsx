@@ -65,59 +65,43 @@ export default function FeaturedCollection() {
         return;
       }
       
-      let successCount = 0;
-      let failCount = 0;
-      
       console.log('📝 Starting save with', featuredIds.length, 'featured products');
       console.log('⭐ Featured IDs:', featuredIds);
       
-      // Update each product individually using PUT endpoint
-      const updatePromises = allProducts.map(async (product: any) => {
-        const isFeatured = featuredIds.includes(product.id);
-        
-        // Only update if status changed
-        if (product.isFeatured !== isFeatured) {
-          try {
-            // Try different ID formats
-            const productId = product.PK?.replace('PRODUCT#', '') || product.id || product.productId;
-            
-            console.log(`🔄 Updating product ${product.id} (PK: ${product.PK}) to isFeatured: ${isFeatured}`);
-            
-            const response = await fetch(
-              `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/${productId}`,
-              {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                  ...product,
-                  isFeatured
-                })
-              }
-            );
-            
-            if (response.ok) {
-              successCount++;
-              console.log(`✅ Updated product ${product.id} to isFeatured: ${isFeatured}`);
-            } else {
-              failCount++;
-              const errorText = await response.text();
-              console.error(`❌ Failed to update product ${product.id}:`, response.status, errorText);
-            }
-          } catch (err: any) {
-            failCount++;
-            console.error(`❌ Error updating product ${product.id}:`, err.message);
-          }
-        }
-      });
-
-      await Promise.all(updatePromises);
+      // Separate products into featured and notFeatured
+      const featured = featuredIds;
+      const notFeatured = allProducts
+        .filter((p: any) => !featuredIds.includes(p.id))
+        .map((p: any) => p.id);
       
-      const message = `Save complete! ✅ Success: ${successCount}${failCount > 0 ? `, ❌ Failed: ${failCount}` : ''}`;
-      alert(message);
-      console.log('✅ Featured collection updated:', featuredIds.length, 'products selected');
+      console.log('✅ Featured:', featured);
+      console.log('❌ Not Featured:', notFeatured);
+      
+      // Send batch update request
+      const response = await fetch(
+        'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/batch-featured',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            featured,
+            notFeatured
+          })
+        }
+      );
+      
+      if (response.ok) {
+        const result = await response.json();
+        alert(`✅ Successfully saved ${featured.length} featured products!`);
+        console.log('✅ Featured collection updated:', result);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Save failed:', response.status, errorText);
+        alert(`❌ Failed to save: ${response.status}`);
+      }
     } catch (error: any) {
       console.error('Failed to save featured collection:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));
