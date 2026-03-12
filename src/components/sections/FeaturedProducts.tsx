@@ -79,6 +79,28 @@ export default function FeaturedProducts() {
 
   const handleToggleWishlist = (product: any, e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Check if user is logged in
+    const token = localStorage.getItem('jwt_token');
+    const email = localStorage.getItem('user_email');
+    
+    if (!token || !email) {
+      // User not logged in - show login prompt
+      toast.error('Please login to add items to wishlist', {
+        description: 'Create an account to save your favorite products',
+        action: {
+          label: 'Login',
+          onClick: () => navigate('/login', { 
+            state: { 
+              from: location.pathname,
+              message: 'Login to save items to your wishlist' 
+            } 
+          }),
+        },
+      });
+      return;
+    }
+    
     const inWishlist = isInWishlist(product.id);
     
     if (inWishlist) {
@@ -87,6 +109,9 @@ export default function FeaturedProducts() {
     } else {
       addToWishlist(product);
       toast.success(`Added ${product.name} to wishlist`);
+      
+      // TODO: Save to backend wishlist API
+      // await api.post(`/users/${userId}/wishlist/items`, { productId: product.id });
     }
   };
 
