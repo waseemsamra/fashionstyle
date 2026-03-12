@@ -94,7 +94,8 @@ export default function FeaturedProducts() {
   const scrollRight = () => {
     setCurrentSlide(prev => {
       const next = prev + 1;
-      return next >= totalSlides ? 0 : next;
+      const maxSlide = products.length > 0 ? Math.ceil(products.length / 4) - 1 : 0;
+      return next > maxSlide ? 0 : next;
     });
     setIsAutoPlaying(false);
   };
@@ -272,7 +273,10 @@ export default function FeaturedProducts() {
 
           {/* Right Arrow */}
           {products.length > 4 && (
-            <button onClick={scrollRight} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6" disabled={currentSlide >= totalSlides - 1}>
+            <button 
+              onClick={scrollRight} 
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6"
+            >
               <ChevronRight className="w-6 h-6" />
             </button>
           )}
