@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, Eye } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
@@ -12,6 +13,7 @@ export default function FeaturedProducts() {
   const [isVisible, setIsVisible] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const { addToCart, setIsCartOpen } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,14 +21,13 @@ export default function FeaturedProducts() {
       try {
         console.log('Loading featured products...');
         const data = await api.listProducts();
-        console.log('Featured products loaded:', data);
-        const items = data.items || data;
-        setProducts(Array.isArray(items) ? items.slice(0, 4) : []);
+        console.log('Featured products loaded:', data?.length || 0);
+        setProducts(data || []);
       } catch (error) {
         console.error('Failed to load featured products:', error);
-        setProducts([]);
       }
     };
+
     loadProducts();
   }, []);
 
@@ -56,6 +57,19 @@ export default function FeaturedProducts() {
         onClick: () => setIsCartOpen(true),
       },
     });
+  };
+
+  const handleToggleWishlist = (product: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const inWishlist = isInWishlist(product.id);
+    
+    if (inWishlist) {
+      removeFromWishlist(product.id);
+      toast.success(`Removed ${product.name} from wishlist`);
+    } else {
+      addToWishlist(product);
+      toast.success(`Added ${product.name} to wishlist`);
+    }
   };
 
   return (
@@ -112,13 +126,18 @@ export default function FeaturedProducts() {
 
                 {/* Quick Actions */}
                 <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-                  <button 
-                    className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white transition-colors duration-300"
+                  <button
+                    onClick={(e) => handleToggleWishlist(product, e)}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${
+                      isInWishlist(product.id)
+                        ? 'bg-gold text-white'
+                        : 'bg-white text-gray-700 hover:bg-gold hover:text-white'
+                    }`}
                     aria-label="Add to wishlist"
                   >
-                    <Heart className="w-4 h-4" />
+                    <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
                   </button>
-                  <button 
+                  <button
                     onClick={() => navigate(getProductUrl(product))}
                     className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white transition-colors duration-300"
                     aria-label="Quick view"

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { Product } from '@/types';
 
 interface WishlistContextType {
@@ -7,12 +7,33 @@ interface WishlistContextType {
   removeFromWishlist: (productId: number) => void;
   isInWishlist: (productId: number) => boolean;
   totalItems: number;
+  loadWishlist: () => Promise<void>;
 }
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
+const WISHLIST_STORAGE_KEY = 'wishlist_items';
+
 export function WishlistProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Product[]>([]);
+
+  // Load wishlist from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(WISHLIST_STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setItems(Array.isArray(parsed) ? parsed : []);
+      } catch (e) {
+        console.error('Failed to parse wishlist:', e);
+      }
+    }
+  }, []);
+
+  // Save to localStorage whenever items change
+  const saveToStorage = useCallback((newItems: Product[]) => {
+    localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(newItems));
+  }, []);
 
   const addToWishlist = useCallback((product: Product) => {
     setItems((prevItems) => {
@@ -20,13 +41,19 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       if (existingItem) {
         return prevItems;
       }
-      return [...prevItems, product];
+      const newItems = [...prevItems, product];
+      saveToStorage(newItems);
+      return newItems;
     });
-  }, []);
+  }, [saveToStorage]);
 
   const removeFromWishlist = useCallback((productId: number) => {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== productId));
-  }, []);
+    setItems((prevItems) => {
+      const newItems = prevItems.filter((item) => item.id !== productId);
+      saveToStorage(newItems);
+      return newItems;
+    });
+  }, [saveToStorage]);
 
   const isInWishlist = useCallback(
     (productId: number) => {
@@ -37,6 +64,18 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   const totalItems = items.length;
 
+  // Load wishlist from backend (for future implementation)
+  const loadWishlist = useCallback(async () => {
+    try {
+      // TODO: Implement backend API call
+      // const response = await api.get('/wishlist');
+      // setItems(response.data);
+      console.log('Wishlist loaded from storage:', items.length, 'items');
+    } catch (error) {
+      console.error('Failed to load wishlist:', error);
+    }
+  }, [items.length]);
+
   return (
     <WishlistContext.Provider
       value={{
@@ -45,6 +84,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         removeFromWishlist,
         isInWishlist,
         totalItems,
+        loadWishlist,
       }}
     >
       {children}
