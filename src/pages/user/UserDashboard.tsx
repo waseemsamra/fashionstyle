@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, signOut, updatePassword } from 'aws-amplify/auth';
-import { User, Package, Heart, Wallet, CreditCard, LogOut, Lock, X, Trash2, MapPin, Edit } from 'lucide-react';
+import { User, Package, Heart, Wallet, CreditCard, LogOut, Lock, X, Trash2, MapPin, Edit, ShoppingCart } from 'lucide-react';
 import { api } from '../../services/api';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useCart } from '@/hooks/useCart';
+import { toast } from 'sonner';
 
 export default function UserDashboard() {
   const navigate = useNavigate();
+  const { items: wishlistItems, removeFromWishlist } = useWishlist();
+  const { addToCart } = useCart();
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
@@ -28,11 +33,6 @@ export default function UserDashboard() {
 
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
-
-  const [wishlist] = useState([
-    { id: 1, name: 'Embroidered Lawn Suit', price: 89, image: '/product-1.jpg', brand: 'Al Karam' },
-    { id: 2, name: 'Silk Lehenga Set', price: 299, image: '/product-3.jpg', brand: 'Maria B' },
-  ]);
 
   const [wallet] = useState({ balance: 150, transactions: [
     { id: 1, type: 'Credit', amount: 200, date: '2024-03-01', desc: 'Added funds' },
@@ -472,20 +472,67 @@ export default function UserDashboard() {
               <div className="bg-white rounded-lg shadow">
                 <div className="p-6 border-b">
                   <h2 className="text-2xl font-bold">My Wishlist</h2>
+                  <p className="text-gray-600 text-sm mt-1">{wishlistItems.length} items saved</p>
                 </div>
-                <div className="grid grid-cols-2 gap-6 p-6">
-                  {wishlist.map(item => (
-                    <div key={item.id} className="border rounded-lg p-4">
-                      <img src={item.image} alt={item.name} className="w-full h-48 object-contain rounded-lg mb-3" />
-                      <h3 className="font-bold">{item.name}</h3>
-                      <p className="text-sm text-gray-600">{item.brand}</p>
-                      <p className="text-lg font-bold text-gold mt-2">${item.price}</p>
-                      <button className="w-full mt-3 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
-                        Add to Cart
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                {wishlistItems.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Heart className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-xl font-bold mb-2">Your wishlist is empty</h3>
+                    <p className="text-gray-600 mb-6">Save your favorite products to view them here</p>
+                    <button 
+                      onClick={() => navigate('/')}
+                      className="px-6 py-3 bg-gold text-white rounded-lg hover:bg-gold/90"
+                    >
+                      Browse Products
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                    {wishlistItems.map((item: any) => (
+                      <div key={item.id} className="border rounded-lg p-4 hover:shadow-lg transition-shadow">
+                        <div className="relative">
+                          <img 
+                            src={item.image || '/placeholder.png'} 
+                            alt={item.name} 
+                            className="w-full h-48 object-cover rounded-lg mb-3" 
+                          />
+                          <button
+                            onClick={() => {
+                              removeFromWishlist(item.id);
+                              toast.success(`Removed ${item.name} from wishlist`);
+                            }}
+                            className="absolute top-2 right-2 p-2 bg-white rounded-full shadow hover:bg-red-500 hover:text-white transition-colors"
+                            title="Remove from wishlist"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <h3 className="font-bold text-lg">{item.name}</h3>
+                        {item.brand && <p className="text-sm text-gray-600">{item.brand}</p>}
+                        {item.category && <p className="text-xs text-gray-500 mt-1">{item.category}</p>}
+                        <p className="text-xl font-bold text-gold mt-2">${item.price}</p>
+                        <div className="flex gap-2 mt-3">
+                          <button 
+                            onClick={() => {
+                              addToCart(item);
+                              toast.success(`Added ${item.name} to cart`);
+                            }}
+                            className="flex-1 py-2 bg-black text-white rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                            Add to Cart
+                          </button>
+                          <button 
+                            onClick={() => navigate(`/product/${item.id}`)}
+                            className="px-4 py-2 border border-gold text-gold rounded-lg hover:bg-gold hover:text-white transition-colors"
+                          >
+                            View
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
