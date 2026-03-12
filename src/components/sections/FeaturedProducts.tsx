@@ -38,8 +38,14 @@ export default function FeaturedProducts() {
           }
         }
         
-        console.log('Featured products loaded:', productsArray.length);
-        setProducts(productsArray);
+        // Filter to show only featured products (max 20)
+        const featuredProducts = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
+        
+        // If no featured products, show first 4 products as fallback
+        const displayProducts = featuredProducts.length > 0 ? featuredProducts : productsArray.slice(0, 4);
+        
+        console.log('Featured products loaded:', displayProducts.length);
+        setProducts(displayProducts);
       } catch (error) {
         console.error('Failed to load featured products:', error);
         setProducts([]);
