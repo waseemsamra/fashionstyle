@@ -68,6 +68,9 @@ export default function FeaturedCollection() {
       let successCount = 0;
       let failCount = 0;
       
+      console.log('📝 Starting save with', featuredIds.length, 'featured products');
+      console.log('⭐ Featured IDs:', featuredIds);
+      
       // Update each product individually using PUT endpoint
       const updatePromises = allProducts.map(async (product: any) => {
         const isFeatured = featuredIds.includes(product.id);
@@ -75,8 +78,13 @@ export default function FeaturedCollection() {
         // Only update if status changed
         if (product.isFeatured !== isFeatured) {
           try {
+            // Try different ID formats
+            const productId = product.PK?.replace('PRODUCT#', '') || product.id || product.productId;
+            
+            console.log(`🔄 Updating product ${product.id} (PK: ${product.PK}) to isFeatured: ${isFeatured}`);
+            
             const response = await fetch(
-              `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/${product.id}`,
+              `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/${productId}`,
               {
                 method: 'PUT',
                 headers: {
