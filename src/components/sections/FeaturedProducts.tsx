@@ -15,9 +15,14 @@ export default function FeaturedProducts() {
   const [products, setProducts] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
   const { addToCart, setIsCartOpen } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
+
+  const totalSlides = products.length > 0 ? Math.ceil(products.length / 4) : 1;
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -53,10 +58,16 @@ export default function FeaturedProducts() {
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;
     const interval = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % Math.ceil(products.length / 4));
+      setCurrentSlide(prev => {
+        const next = prev + 1;
+        if (next >= totalSlides) {
+          return 0; // Loop back to start
+        }
+        return next;
+      });
     }, 4000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, products.length]);
+  }, [isAutoPlaying, products.length, totalSlides]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -74,13 +85,74 @@ export default function FeaturedProducts() {
   }, []);
 
   const scrollLeft = () => {
-    setCurrentSlide(prev => Math.max(0, prev - 1));
+    setCurrentSlide(prev => {
+      const next = prev - 1;
+      return next < 0 ? totalSlides - 1 : next;
+    });
     setIsAutoPlaying(false);
   };
 
   const scrollRight = () => {
-    setCurrentSlide(prev => Math.min(Math.ceil(products.length / 4) - 1, prev + 1));
+    setCurrentSlide(prev => {
+      const next = prev + 1;
+      return next >= totalSlides ? 0 : next;
+    });
     setIsAutoPlaying(false);
+  };
+
+  // Mouse/Touch drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setIsAutoPlaying(false);
+    setStartX(e.pageX - carouselRef.current?.offsetLeft!);
+    setScrollLeft(currentSlide);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - carouselRef.current?.offsetLeft!;
+    const walk = (x - startX) / 300; // Calculate drag distance
+    if (walk > 0.5) {
+      scrollLeft();
+      setIsDragging(false);
+    } else if (walk < -0.5) {
+      scrollRight();
+      setIsDragging(false);
+    }
+  };
+
+  // Touch handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setIsAutoPlaying(false);
+    setStartX(e.touches[0].pageX - carouselRef.current?.offsetLeft!);
+    setScrollLeft(currentSlide);
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const x = e.touches[0].pageX - carouselRef.current?.offsetLeft!;
+    const walk = (x - startX) / 300;
+    if (walk > 0.5) {
+      scrollLeft();
+      setIsDragging(false);
+    } else if (walk < -0.5) {
+      scrollRight();
+      setIsDragging(false);
+    }
   };
 
   const handleToggleWishlist = (product: any, e: React.MouseEvent) => {
@@ -109,8 +181,6 @@ export default function FeaturedProducts() {
       toast.success(`Added ${product.name} to wishlist`);
     }
   };
-
-  const totalSlides = Math.ceil(products.length / 4);
 
   return (
     <section id="featured" ref={sectionRef} className="section-padding bg-beige-100 overflow-hidden">
