@@ -214,8 +214,15 @@ export default function FeaturedProducts() {
           {/* Carousel Track */}
           <div
             ref={carouselRef}
-            className="flex transition-transform duration-500 ease-out"
+            className="flex transition-transform duration-500 ease-out cursor-grab active:cursor-grabbing"
             style={{ transform: `translateX(-${currentSlide * 25}%)` }}
+            onMouseDown={handleMouseDown}
+            onMouseLeave={handleMouseLeave}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+            onTouchMove={handleTouchMove}
           >
             {products.map((product) => (
               <div key={product.id} className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-3">
