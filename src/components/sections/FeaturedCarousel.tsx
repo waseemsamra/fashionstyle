@@ -32,19 +32,21 @@ export default function FeaturedCarousel() {
 
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;
+    const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
     const interval = setInterval(() => {
-      setCurrentSlide(prev => prev >= products.length - 1 ? 0 : prev + 1);
+      setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
     }, 4000);
     return () => clearInterval(interval);
   }, [isAutoPlaying, products.length]);
 
   const scrollLeft = () => {
-    setCurrentSlide(prev => prev <= 0 ? products.length - 1 : prev - 1);
+    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(4, products.length)) : prev - 1);
     setIsAutoPlaying(false);
   };
 
   const scrollRight = () => {
-    setCurrentSlide(prev => prev >= products.length - 1 ? 0 : prev + 1);
+    const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
+    setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
     setIsAutoPlaying(false);
   };
 
@@ -75,7 +77,11 @@ export default function FeaturedCarousel() {
         </div>
 
         <div className="relative">
-          <button onClick={scrollLeft} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white -ml-6">
+          {/* Left Arrow - Middle Left */}
+          <button 
+            onClick={scrollLeft} 
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8"
+          >
             <ChevronLeft className="w-6 h-6" />
           </button>
 
@@ -89,13 +95,17 @@ export default function FeaturedCarousel() {
             </div>
           </div>
 
-          <button onClick={scrollRight} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white -mr-6">
+          {/* Right Arrow - Middle Right */}
+          <button 
+            onClick={scrollRight} 
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6 lg:-mr-8"
+          >
             <ChevronRight className="w-6 h-6" />
           </button>
         </div>
 
         <div className="flex justify-center gap-2 mt-8">
-          {products.map((_, i) => (
+          {Array.from({ length: Math.max(1, products.length - 3) }).map((_, i) => (
             <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
           ))}
         </div>
