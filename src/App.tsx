@@ -24,6 +24,7 @@ const VirtualTryOnPage = lazy(() => import('@/pages/VirtualTryOnPage'));
 const AdminLogin = lazy(() => import('@/pages/admin/AdminLogin'));
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
 const FeaturedCollection = lazy(() => import('@/pages/admin/FeaturedCollection'));
+const WeddingTalesCMS = lazy(() => import('@/pages/admin/WeddingTalesCMS'));
 const Users = lazy(() => import('@/pages/admin/Users'));
 const Profile = lazy(() => import('@/pages/admin/Profile'));
 const AdminOrders = lazy(() => import('@/pages/admin/Orders'));
@@ -58,6 +59,7 @@ function Layout() {
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<Dashboard />} />
             <Route path="/admin/featured" element={<FeaturedCollection />} />
+            <Route path="/admin/wedding-tales" element={<WeddingTalesCMS />} />
             <Route path="/admin/users" element={<Users />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/admin/profile" element={<Profile />} />
