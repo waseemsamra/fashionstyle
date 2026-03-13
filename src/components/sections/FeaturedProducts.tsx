@@ -21,7 +21,9 @@ export default function FeaturedProducts() {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
 
-  const totalSlides = products.length > 0 ? Math.ceil(products.length / 4) : 1;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+  const itemsPerSlide = isMobile ? 2 : 4;
+  const totalSlides = products.length > 0 ? Math.ceil(products.length / itemsPerSlide) : 1;
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -83,19 +85,20 @@ export default function FeaturedProducts() {
     return () => observer.disconnect();
   }, []);
 
-  const scrollLeft = () => {
+  const scrollRight = () => {
     setCurrentSlide(prev => {
-      const next = prev - 1;
-      return next < 0 ? totalSlides - 1 : next;
+      const maxSlide = Math.ceil(products.length / itemsPerSlide) - 1;
+      const next = prev + 1;
+      return next > maxSlide ? 0 : next;
     });
     setIsAutoPlaying(false);
   };
 
-  const scrollRight = () => {
-    setCurrentSlide(prev => {
-      const next = prev + 1;
-      const maxSlide = products.length > 0 ? Math.ceil(products.length / 4) - 1 : 0;
-      return next > maxSlide ? 0 : next;
+  const scrollLeft = () => {
+    setCurrentSlide(prevSlide => {
+      const maxSlide = Math.ceil(products.length / itemsPerSlide) - 1;
+      const next = prevSlide - 1;
+      return next < 0 ? maxSlide : next;
     });
     setIsAutoPlaying(false);
   };
@@ -213,7 +216,7 @@ export default function FeaturedProducts() {
           <div
             ref={carouselRef}
             className="flex transition-transform duration-500 ease-out cursor-grab active:cursor-grabbing"
-            style={{ transform: `translateX(-${currentSlide * 25}%)` }}
+            style={{ transform: `translateX(-${currentSlide * (100 / itemsPerSlide)}%)` }}
             onMouseDown={handleMouseDown}
             onMouseLeave={handleMouseLeave}
             onMouseUp={handleMouseUp}
@@ -223,7 +226,7 @@ export default function FeaturedProducts() {
             onTouchMove={handleTouchMove}
           >
             {products.map((product) => (
-              <div key={product.id} className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-3">
+              <div key={product.id} className="min-w-[50%] lg:min-w-[25%] px-3">
                 <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
                   {/* Image */}
                   <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
@@ -271,7 +274,7 @@ export default function FeaturedProducts() {
             ))}
             {/* Add placeholder cards to fill last slide */}
             {Array.from({ length: (4 - (products.length % 4)) % 4 }).map((_, i) => (
-              <div key={`placeholder-${i}`} className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-3" />
+              <div key={`placeholder-${i}`} className="min-w-[50%] lg:min-w-[25%] px-3" />
             ))}
           </div>
 
