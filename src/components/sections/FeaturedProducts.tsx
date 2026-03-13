@@ -269,6 +269,10 @@ export default function FeaturedProducts() {
                 </div>
               </div>
             ))}
+            {/* Add placeholder cards to fill last slide */}
+            {Array.from({ length: (4 - (products.length % 4)) % 4 }).map((_, i) => (
+              <div key={`placeholder-${i}`} className="w-full sm:w-1/2 lg:w-1/4 flex-shrink-0 px-3" />
+            ))}
           </div>
 
           {/* Right Arrow */}
