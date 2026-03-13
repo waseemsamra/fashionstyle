@@ -5,6 +5,7 @@ import { CartProvider } from '@/hooks/useCart';
 import { Toaster } from '@/components/ui/sonner';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 // Route-based code splitting via dynamic imports
 const Home = lazy(() => import('@/pages/Home'));
@@ -29,6 +30,7 @@ const DesignersDiscountCMS = lazy(() => import('@/pages/admin/DesignersDiscountC
 const Users = lazy(() => import('@/pages/admin/Users'));
 const Profile = lazy(() => import('@/pages/admin/Profile'));
 const AdminOrders = lazy(() => import('@/pages/admin/Orders'));
+const AdminOrderDetails = lazy(() => import('@/pages/admin/OrderDetails'));
 
 function Layout() {
   const location = useLocation();
@@ -58,13 +60,17 @@ function Layout() {
             <Route path="/dashboard/orders/:orderId" element={<OrderDetails />} />
             <Route path="/try-on" element={<VirtualTryOnPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<Dashboard />} />
-            <Route path="/admin/featured" element={<FeaturedCollection />} />
-            <Route path="/admin/wedding-tales" element={<WeddingTalesCMS />} />
-            <Route path="/admin/designers-discount" element={<DesignersDiscountCMS />} />
-            <Route path="/admin/users" element={<Users />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route path="/admin/profile" element={<Profile />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Dashboard minimal />} />
+              <Route path="dashboard" element={<Dashboard minimal />} />
+              <Route path="featured" element={<FeaturedCollection />} />
+              <Route path="wedding-tales" element={<WeddingTalesCMS />} />
+              <Route path="designers-discount" element={<DesignersDiscountCMS />} />
+              <Route path="users" element={<Users />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="orders/:orderId" element={<AdminOrderDetails />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
           </Routes>
         </Suspense>
       </main>

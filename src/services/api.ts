@@ -181,7 +181,7 @@ export const api = {
 
   // Get all orders (admin)
   getAllOrders: async () => {
-    const token = localStorage.getItem('jwt_token');
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     
     try {
       const response = await fetch(`${API_URL}/admin/orders`, {
@@ -203,6 +203,34 @@ export const api = {
       return data;
     } catch (error) {
       console.error('❌ Fetch error:', error);
+      throw error;
+    }
+  },
+
+  // Get single order by id (admin)
+  getOrderById: async (orderId: string) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/admin/orders/${orderId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`✅ Order ${orderId} fetched:`, data);
+      return data;
+    } catch (error) {
+      console.error('❌ Fetch order error:', error);
       throw error;
     }
   }

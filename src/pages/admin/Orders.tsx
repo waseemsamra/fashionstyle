@@ -4,7 +4,6 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { Package, Search, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import AdminLayout from '@/components/admin/AdminLayout';
 import OrderRow from '@/components/admin/OrderRow';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
@@ -49,9 +48,25 @@ export default function AdminOrders() {
 
   const checkAuth = async () => {
     try {
+      const jwtToken = localStorage.getItem('jwt_token');
+      const accessToken = localStorage.getItem('accessToken');
+      const userEmail = localStorage.getItem('user_email');
+
+      if ((jwtToken || accessToken) && userEmail) {
+        setIsAuthenticated(true);
+        return;
+      }
+
+      if (accessToken && !jwtToken) {
+        // support legacy path where backend sets accessToken
+        setIsAuthenticated(true);
+        return;
+      }
+
       await getCurrentUser();
       setIsAuthenticated(true);
-    } catch {
+    } catch (err) {
+      console.error('AdminOrders auth failed:', err);
       navigate('/admin/login');
     } finally {
       setIsLoading(false);
@@ -163,19 +178,19 @@ export default function AdminOrders() {
 
   if (isLoading) {
     return (
-      <AdminLayout>
+      <>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
             <p className="text-gray-600">Loading orders...</p>
           </div>
         </div>
-      </AdminLayout>
+      </>
     );
   }
 
   return (
-    <AdminLayout>
+    <>
       <div className="p-6">
         {/* Header */}
         <div className="mb-8">
@@ -329,6 +344,6 @@ export default function AdminOrders() {
           </div>
         </div>
       </div>
-    </AdminLayout>
+    </>
   );
 }

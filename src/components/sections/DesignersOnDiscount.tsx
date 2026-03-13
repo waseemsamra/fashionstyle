@@ -15,6 +15,7 @@ export default function DesignersOnDiscount() {
   const [products, setProducts] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -42,6 +43,8 @@ export default function DesignersOnDiscount() {
         setProducts(discount.slice(0, 20));
       } catch (error) {
         setProducts([]);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadProducts();
@@ -82,8 +85,6 @@ export default function DesignersOnDiscount() {
     }
   };
 
-  if (products.length === 0) return null;
-
   const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
 
   return (
@@ -95,41 +96,55 @@ export default function DesignersOnDiscount() {
             <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-1">Designer Deals</span>
             <h2 className="font-playfair text-3xl md:text-4xl font-semibold text-black">Designers On Discount</h2>
           </div>
-          <a 
-            href="#shop" 
+          <button
+            onClick={() => navigate('/shop')}
             className="text-gold font-medium hover:text-gold/80 transition-colors flex items-center gap-2"
           >
             View All
             <ChevronRight className="w-4 h-4" />
-          </a>
+          </button>
         </div>
 
-        {/* Carousel */}
-        <div className="relative">
-          {/* Left Arrow */}
-          <button 
-            onClick={scrollLeft} 
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          {/* Slides Container */}
-          <div className="overflow-hidden">
-            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
-              {products.map((product) => (
-                <div key={product.id} className="min-w-[25%] px-3">
-                  <ProductCard 
-                    product={product} 
-                    onWishlist={(e: any) => handleWishlist(product, e)} 
-                    isInWishlist={isInWishlist(product.id)} 
-                    onNavigate={() => navigate(getProductUrl(product))} 
-                    onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name} added!`); }} 
-                  />
-                </div>
-              ))}
-            </div>
+        {isLoading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
+            <p className="text-gray-600">Loading discounted brands...</p>
           </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600">
+              No discounted products found yet. Please add products in Admin → Designers Discount.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Carousel */}
+            <div className="relative">
+              {/* Left Arrow */}
+              <button 
+                onClick={scrollLeft} 
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+
+              {/* Slides Container */}
+              <div className="overflow-hidden">
+                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
+                  {products.map((product) => (
+                    <div key={product.id} className="min-w-[25%] px-3">
+                      <ProductCard
+                        product={product}
+                        onWishlist={(e: any) => handleWishlist(product, e)}
+                        isInWishlist={isInWishlist(product.id)}
+                        onNavigate={() => navigate(getProductUrl(product))}
+                        onBrandNavigate={() => navigate(`/brand/${encodeURIComponent(product.brand)}`)}
+                        onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name} added!`); }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
 
           {/* Right Arrow */}
           <button 
@@ -146,12 +161,14 @@ export default function DesignersOnDiscount() {
             <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
           ))}
         </div>
+      </>
+    )}
       </div>
     </section>
   );
 }
 
-function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onAddToCart }: any) {
+function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNavigate, onAddToCart }: any) {
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
       <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
@@ -159,9 +176,12 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onAddToCar
         
         {/* Brand Name - Centered on Image */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          <span className="bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full font-bold uppercase text-sm tracking-wide shadow-lg whitespace-nowrap">
+          <button
+            onClick={(e) => { e.stopPropagation(); onBrandNavigate(); }}
+            className="bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full font-bold uppercase text-sm tracking-wide shadow-lg whitespace-nowrap hover:bg-gray-100"
+          >
             {product.brand}
-          </span>
+          </button>
         </div>
         
         {/* Sale Badge */}
@@ -187,7 +207,14 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onAddToCar
 
       {/* Product Info */}
       <div className="p-4">
-        <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{product.brand}</p>
+        <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onBrandNavigate(); }}
+            className="underline hover:text-gold"
+          >
+            {product.brand}
+          </button>
+        </p>
         <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer">{product.name}</h3>
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (

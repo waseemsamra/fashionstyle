@@ -64,6 +64,11 @@ export default function Shop() {
     }
   }, [productsData]);
 
+  useEffect(() => {
+    // Ensure the Shop page always starts at top when navigated to
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, []);
+
   // Show loading state
   if (isLoading) {
     return (

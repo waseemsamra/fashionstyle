@@ -1,11 +1,11 @@
 import { type ReactNode, useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { signOut, getCurrentUser } from 'aws-amplify/auth';
 import { checkAdminAccess } from '@/utils/auth';
 import { Package, ShoppingCart, Users as UsersIcon, LogOut, LayoutDashboard, Settings, Tag, UserCircle, Star, FolderOpen, ChevronDown, ChevronRight, Heart, ShoppingBag } from 'lucide-react';
 
 interface AdminLayoutProps {
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
@@ -22,9 +22,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   };
 
+  const isMenuItemActive = (item: any) => {
+    if (!item?.path) return false;
+    const [pathPart, queryPart] = item.path.split('?');
+    if (location.pathname !== pathPart) return false;
+
+    if (!queryPart) return true;
+    const expectedParams = new URLSearchParams(queryPart);
+    const currentParams = new URLSearchParams(location.search);
+
+    for (const [key, value] of expectedParams.entries()) {
+      if (currentParams.get(key) !== value) return false;
+    }
+    return true;
+  };
+
   // Check if any sub-item is active
   const isSubItemActive = (subItems: any[]) => {
-    return subItems.some(sub => location.pathname === sub.path);
+    return subItems.some(sub => isMenuItemActive(sub));
   };
 
   useEffect(() => {
@@ -97,8 +112,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   };
 
+  const resolveMenuPath = (id: string) => {
+    switch (id) {
+      case 'dashboard':
+        return '/admin/dashboard?tab=overview';
+      case 'products':
+        return '/admin/dashboard?tab=products';
+      case 'customers':
+        return '/admin/dashboard?tab=customers';
+      case 'brands':
+        return '/admin/dashboard?tab=brands';
+      case 'settings':
+        return '/admin/dashboard?tab=settings';
+      default:
+        return '/admin/dashboard';
+    }
+  };
+
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: resolveMenuPath('dashboard') },
     {
       id: 'cms',
       label: 'CMS',
@@ -109,12 +141,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         { id: 'designers', label: 'Designers Discount', icon: ShoppingBag, path: '/admin/designers-discount' }
       ]
     },
-    { id: 'products', label: 'Products', icon: Package, path: '/admin/dashboard' },
+    { id: 'products', label: 'Products', icon: Package, path: resolveMenuPath('products') },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
-    { id: 'customers', label: 'Customers', icon: UsersIcon, path: '/admin/dashboard' },
+    { id: 'customers', label: 'Customers', icon: UsersIcon, path: resolveMenuPath('customers') },
     { id: 'users', label: 'Users', icon: UsersIcon, path: '/admin/users' },
-    { id: 'brands', label: 'Brands', icon: Tag, path: '/admin/dashboard' },
-    { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/dashboard' },
+    { id: 'brands', label: 'Brands', icon: Tag, path: resolveMenuPath('brands') },
+    { id: 'settings', label: 'Settings', icon: Settings, path: resolveMenuPath('settings') },
     { id: 'profile', label: 'Profile', icon: UserCircle, path: '/admin/profile' },
   ];
 
@@ -176,7 +208,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <button
                   onClick={() => navigate(item.path)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 ${
-                    location.pathname === item.path ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
+                    isMenuItemActive(item) ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
@@ -193,7 +225,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </div>
 
       <div className="ml-64 flex-1">
-        {children}
+        {children ?? <Outlet />}
       </div>
     </div>
   );

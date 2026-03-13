@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
 import { Users as UsersIcon, Edit, Trash2, UserPlus, X, RefreshCw } from 'lucide-react';
 import { api } from '@/services/api';
 
@@ -117,7 +116,7 @@ export default function Users() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="p-8">
       <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b flex justify-between items-center">
@@ -358,6 +357,6 @@ export default function Users() {
         </div>
       )}
       </div>
-    </AdminLayout>
+    </>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import AdminLayout from '@/components/admin/AdminLayout';
 import { getCurrentUser, updatePassword } from 'aws-amplify/auth';
 import { User, Lock, Mail, Calendar } from 'lucide-react';
 
@@ -54,7 +53,7 @@ export default function Profile() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <div className="p-8">
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="bg-white rounded-lg shadow p-6">
@@ -147,6 +146,6 @@ export default function Profile() {
         </div>
       </div>
       </div>
-    </AdminLayout>
+    </>
   );
 }

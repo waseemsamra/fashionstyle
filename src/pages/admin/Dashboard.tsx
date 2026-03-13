@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { signOut } from 'aws-amplify/auth';
 import { api } from '@/services/api';
 import { userService } from '@/services/user';
@@ -8,11 +8,21 @@ import { getAllBrands, createBrand } from '@/services/brandService';
 import ProductForm from '@/components/admin/ProductForm';
 import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
 
-export default function Dashboard() {
+type DashboardProps = { minimal?: boolean };
+
+export default function Dashboard({ minimal = false }: DashboardProps) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [activeOrder, setActiveOrder] = useState<string | null>(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    const currentTab = new URLSearchParams(location.search).get('tab');
+    if (currentTab) {
+      setActiveTab(currentTab);
+    }
+  }, [location.search]);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -871,33 +881,36 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <div className="w-64 bg-white shadow-lg fixed h-full">
-        <div className="p-6 border-b">
-          <h1 className="text-xl font-bold">Fashion Admin</h1>
-        </div>
-        <nav className="p-4">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => item.link ? navigate(item.link) : setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 ${
-                activeTab === item.id ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
+    <div className={minimal ? 'p-8' : 'min-h-screen bg-gray-50 flex'}>
+      {!minimal && (
+        <div className="w-64 bg-white shadow-lg fixed h-full">
+          <div className="p-6 border-b">
+            <h1 className="text-xl font-bold">Fashion Admin</h1>
+          </div>
+          <nav className="p-4">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => item.link ? navigate(item.link) : setActiveTab(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 ${
+                  activeTab === item.id ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </button>
+            ))}
+            <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 mt-4">
+              <LogOut className="w-5 h-5" />
+              Logout
             </button>
-          ))}
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 mt-4">
-            <LogOut className="w-5 h-5" />
-            Logout
-          </button>
-        </nav>
-      </div>
+          </nav>
+        </div>
+      )}
 
-      <div className="ml-64 flex-1">
+      <div className={minimal ? 'w-full' : 'ml-64 flex-1'}>
         <div className="bg-white shadow">
+
           <div className="px-8 py-4">
             <h2 className="text-2xl font-bold">{menuItems.find(m => m.id === activeTab)?.label}</h2>
           </div>
