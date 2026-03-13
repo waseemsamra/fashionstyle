@@ -22,7 +22,7 @@ export default function DesignersOnDiscount() {
         const data = await api.listProducts();
         let productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
         
-        // First try to load products with isDesignersDiscount flag (from backend)
+        // First try to load products with isDesignersDiscount flag
         let discount = productsArray.filter((p: any) => p.isDesignersDiscount);
         
         // If no flagged products, check localStorage (for testing before Lambda deployed)
@@ -36,10 +36,10 @@ export default function DesignersOnDiscount() {
         
         // If still no products, fall back to sale products
         if (discount.length === 0) {
-          discount = productsArray.filter((p: any) => p.isSale || p.originalPrice).slice(0, 8);
+          discount = productsArray.filter((p: any) => p.isSale || p.originalPrice).slice(0, 20);
         }
         
-        setProducts(discount.slice(0, 8));
+        setProducts(discount.slice(0, 20));
       } catch (error) {
         setProducts([]);
       }
@@ -91,14 +91,15 @@ export default function DesignersOnDiscount() {
       <div className="container-custom">
         {/* Header: Title Left, View All Right */}
         <div className="flex items-center justify-between mb-8">
-          <h2 className="font-playfair text-3xl md:text-4xl font-bold text-black uppercase tracking-tight">
-            DESIGNERS ON DISCOUNT
-          </h2>
+          <div>
+            <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-1">Designer Deals</span>
+            <h2 className="font-playfair text-3xl md:text-4xl font-semibold text-black">Designers On Discount</h2>
+          </div>
           <a 
             href="#shop" 
-            className="text-black font-semibold uppercase tracking-wide border-b-2 border-black pb-1 hover:text-gold hover:border-gold transition-colors flex items-center gap-1"
+            className="text-gold font-medium hover:text-gold/80 transition-colors flex items-center gap-2"
           >
-            VIEW ALL
+            View All
             <ChevronRight className="w-4 h-4" />
           </a>
         </div>
@@ -115,9 +116,9 @@ export default function DesignersOnDiscount() {
 
           {/* Slides Container */}
           <div className="overflow-hidden">
-            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * (100 / Math.min(4, products.length))}%)` }}>
+            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
               {products.map((product) => (
-                <div key={product.id} className="min-w-[50%] lg:min-w-[25%] px-3">
+                <div key={product.id} className="min-w-[25%] px-3">
                   <ProductCard 
                     product={product} 
                     onWishlist={(e: any) => handleWishlist(product, e)} 
@@ -152,9 +153,9 @@ export default function DesignersOnDiscount() {
 
 function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onAddToCart }: any) {
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all hover:-translate-y-2">
+    <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
       <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
-        <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" onError={(e) => handleImageError(e, product.name)} />
+        <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => handleImageError(e, product.name)} />
         
         {/* Brand Name - Centered on Image */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
@@ -167,33 +168,37 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onAddToCar
         {product.isSale && <span className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white text-xs rounded-full">Sale</span>}
         
         {/* Quick Actions */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all">
-          <button onClick={onWishlist} className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md ${isInWishlist ? 'bg-gold text-white' : 'bg-white hover:bg-gold hover:text-white'}`}>
+        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+          <button onClick={onWishlist} className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${isInWishlist ? 'bg-gold text-white' : 'bg-white text-gray-700 hover:bg-gold hover:text-white'}`}>
             <Heart className={`w-4 h-4 ${isInWishlist ? 'fill-current' : ''}`} />
           </button>
-          <button className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white"><Star className="w-4 h-4" /></button>
+          <button className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white">
+            <Star className="w-4 h-4" />
+          </button>
         </div>
-        
+
         {/* Add to Cart */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all">
-          <button onClick={onAddToCart} className="w-full py-3 bg-black text-white text-sm rounded-full flex items-center justify-center gap-2 hover:bg-gold"><ShoppingBag className="w-4 h-4" /> Add to Cart</button>
+        <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+          <button onClick={onAddToCart} className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors duration-300">
+            <ShoppingBag className="w-4 h-4" /> Add to Cart
+          </button>
         </div>
       </div>
-      
+
       {/* Product Info */}
       <div className="p-4">
-        <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold mb-2 group-hover:text-gold cursor-pointer">{product.name}</h3>
-        
-        {/* Price with Discount */}
+        <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{product.brand}</p>
+        <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer">{product.name}</h3>
+        <div className="flex items-center gap-1 mb-2">
+          {[...Array(5)].map((_, i) => (
+            <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />
+          ))}
+          <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
+        </div>
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-lg text-red-600">${product.price}</span>
+          <span className="font-semibold text-lg">${product.price}</span>
           {product.originalPrice && (
-            <>
-              <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
-              <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
-                -{Math.round((1 - product.price / product.originalPrice) * 100)}%
-              </span>
-            </>
+            <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
           )}
         </div>
       </div>
