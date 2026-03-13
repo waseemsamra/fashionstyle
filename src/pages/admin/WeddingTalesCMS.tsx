@@ -80,7 +80,7 @@ export default function WeddingTalesCMS() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            weddingTales: selectedIds
+            weddingIds: selectedIds
           })
         }
       );
@@ -111,9 +111,9 @@ export default function WeddingTalesCMS() {
   return (
     <div className="min-h-screen bg-beige-100 py-12">
       <div className="container mx-auto px-4 max-w-7xl">
-        <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4">
+        <Button variant="ghost" onClick={() => navigate('/admin/dashboard')} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Dashboard
+          Back to Admin Dashboard
         </Button>
         
         <div className="flex items-center justify-between mb-8">

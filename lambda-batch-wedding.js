@@ -16,17 +16,17 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body);
-    const { weddingTales } = body;
+    const { weddingIds } = body;
 
-    if (!Array.isArray(weddingTales)) {
+    if (!Array.isArray(weddingIds)) {
       return {
         statusCode: 400,
         headers,
-        body: JSON.stringify({ error: 'weddingTales must be an array' })
+        body: JSON.stringify({ error: 'weddingIds must be an array' })
       };
     }
 
-    console.log('📝 Updating Wedding Tales products:', weddingTales);
+    console.log('📝 Updating Wedding Tales products:', weddingIds);
 
     // Get all products
     const scanResult = await dynamodb.scan({
@@ -38,7 +38,7 @@ exports.handler = async (event) => {
 
     // Update each product's isWeddingTales flag
     for (const product of products) {
-      const isWeddingTales = weddingTales.includes(product.id);
+      const isWeddingTales = weddingIds.includes(product.id);
       
       // Only update if status changed
       if (product.isWeddingTales !== isWeddingTales) {
@@ -69,7 +69,7 @@ exports.handler = async (event) => {
       headers,
       body: JSON.stringify({
         message: 'Wedding Tales products updated successfully',
-        weddingTales: weddingTales.length,
+        weddingIds: weddingIds.length,
         updated: updatePromises.length
       })
     };

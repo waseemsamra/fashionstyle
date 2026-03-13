@@ -15,11 +15,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [expandedMenus, setExpandedMenus] = useState<string[]>(['cms']); // CMS expanded by default
 
   const toggleMenu = (menuId: string) => {
-    setExpandedMenus(prev => 
-      prev.includes(menuId) 
-        ? prev.filter(id => id !== menuId) 
+    setExpandedMenus(prev =>
+      prev.includes(menuId)
+        ? prev.filter(id => id !== menuId)
         : [...prev, menuId]
     );
+  };
+
+  // Check if any sub-item is active
+  const isSubItemActive = (subItems: any[]) => {
+    return subItems.some(sub => location.pathname === sub.path);
   };
 
   useEffect(() => {
@@ -135,7 +140,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   <button
                     onClick={() => toggleMenu(item.id)}
                     className={`w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg mb-2 ${
-                      location.pathname.startsWith('/admin/' + item.id) ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
+                      location.pathname.startsWith('/admin/' + item.id) || isSubItemActive(item.subItems) ? 'bg-gold text-white' : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
                     <div className="flex items-center gap-3">
