@@ -1,7 +1,7 @@
 import Hero from '@/components/sections/Hero';
 import Features from '@/components/sections/Features';
 import Categories from '@/components/sections/Categories';
-import FeaturedProducts from '@/components/sections/FeaturedProducts';
+import FeaturedCarousel from '@/components/sections/FeaturedCarousel';
 import NewArrivals from '@/components/sections/NewArrivals';
 import About from '@/components/sections/About';
 import Testimonials from '@/components/sections/Testimonials';
@@ -13,7 +13,7 @@ export default function Home() {
       <Hero />
       <Features />
       <Categories />
-      <FeaturedProducts />
+      <FeaturedCarousel />
       <NewArrivals />
       <About />
       <Testimonials />
