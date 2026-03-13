@@ -22,10 +22,19 @@ export default function DesignersOnDiscount() {
         const data = await api.listProducts();
         let productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
         
-        // Filter products with isDesignersDiscount flag
+        // First try to load products with isDesignersDiscount flag (from backend)
         let discount = productsArray.filter((p: any) => p.isDesignersDiscount);
         
-        // If no flagged products, fall back to sale products
+        // If no flagged products, check localStorage (for testing before Lambda deployed)
+        if (discount.length === 0) {
+          const savedProductIds = localStorage.getItem('designersDiscountProducts');
+          if (savedProductIds) {
+            const ids = JSON.parse(savedProductIds);
+            discount = productsArray.filter((p: any) => ids.includes(p.id));
+          }
+        }
+        
+        // If still no products, fall back to sale products
         if (discount.length === 0) {
           discount = productsArray.filter((p: any) => p.isSale || p.originalPrice).slice(0, 8);
         }

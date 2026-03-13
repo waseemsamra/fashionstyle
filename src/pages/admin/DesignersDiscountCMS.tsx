@@ -71,16 +71,19 @@ export default function DesignersDiscountCMS() {
     try {
       setSaving(true);
       
+      // Save to localStorage immediately (works without Lambda)
+      localStorage.setItem('designersDiscountProducts', JSON.stringify(selectedProductIds));
+      console.log('💾 Saved to localStorage:', selectedProductIds);
+      
       const token = localStorage.getItem('jwt_token');
       if (!token) {
-        alert('Please login as admin first');
-        navigate('/admin/login');
+        alert('✅ Saved locally! Please login to save to backend.');
         return;
       }
       
       console.log('📝 Starting save with', selectedProductIds.length, 'products from', selectedBrands.length, 'brands');
       
-      // Update all products
+      // Update all products in backend
       const updatePromises = products.map(async (product: any) => {
         const shouldFlag = selectedProductIds.includes(product.id);
         if (product.isDesignersDiscount !== shouldFlag) {
