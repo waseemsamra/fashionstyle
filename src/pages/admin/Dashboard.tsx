@@ -99,6 +99,30 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
 
+  // FORCE LOAD categories from localStorage IMMEDIATELY on mount
+  if (typeof window !== 'undefined') {
+    const savedCategories = localStorage.getItem('admin_categories');
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        console.log('🚀 FORCE LOAD: Categories from localStorage:', parsed.length, 'categories');
+        // Don't set here - let useEffect handle it to avoid hydration issues
+      } catch (e) {
+        console.error('❌ Failed to parse localStorage categories:', e);
+      }
+    }
+  }
+
+  // Track ALL category state changes
+  useEffect(() => {
+    console.log('👀 CATEGORIES STATE CHANGED!');
+    console.log('  - Count:', categories.length, 'categories');
+    console.log('  - localStorage:', localStorage.getItem('admin_categories') ? 'HAS DATA' : 'EMPTY');
+    if (categories.length > 0) {
+      console.log('  - Categories:', categories.map(c => c.name));
+    }
+  }, [categories]);
+
   const ensureArray = (value: any): string[] => Array.isArray(value) ? value : [];
 
   const toNamedList = (raw: any, fallback: any[] = []) => {
@@ -430,6 +454,49 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     checkAuth();
   }, [navigate]);
 
+  // EFFECT 1: Load categories from DynamoDB FIRST (with localStorage fallback)
+  useEffect(() => {
+    console.log('🚀 EFFECT 1: RUNNING - Loading categories...');
+    
+    const loadCategories = async () => {
+      console.log('🔍 EFFECT 1: Loading categories from DynamoDB...');
+
+      try {
+        // Try DynamoDB first
+        const response = await api.getCategories();
+        console.log('📋 Categories from DynamoDB:', response);
+
+        if (response.categories && response.categories.length > 0) {
+          console.log('✅ EFFECT 1: Loaded', response.categories.length, 'categories from DynamoDB');
+          setCategories(response.categories);
+
+          // Cache in localStorage
+          localStorage.setItem('admin_categories', JSON.stringify(response.categories));
+          return;
+        }
+      } catch (apiErr) {
+        console.log('⚠️ DynamoDB load failed, trying localStorage...');
+      }
+
+      // Fallback to localStorage
+      const savedCategories = localStorage.getItem('admin_categories');
+      if (savedCategories) {
+        try {
+          const parsed = JSON.parse(savedCategories);
+          console.log('✅ EFFECT 1: Loaded', parsed.length, 'categories from localStorage');
+          setCategories(parsed);
+        } catch (e) {
+          console.error('❌ EFFECT 1: Failed to parse localStorage categories:', e);
+        }
+      } else {
+        console.log('⚠️ EFFECT 1: No categories found in DynamoDB or localStorage');
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  // EFFECT 2: Load dashboard settings from API (runs second)
   useEffect(() => {
     let mounted = true;
 
@@ -456,14 +523,10 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
           return;
         }
 
-        setCategories((prev) =>
-          toNamedList(data.categories ?? data.categoryOptions ?? data.category, prev).map((item: any) => ({
-            ...item,
-            description: item.description ?? item.desc ?? '',
-            products: item.products ?? 0,
-          }))
-        );
-
+        // SKIP loading categories from API - they're loaded from DynamoDB in EFFECT 1
+        console.log('⏭️ Skipping categories from API (already loaded from DynamoDB)');
+        
+        // Load other filters from API (brands, genders, etc.)
         setBrands((prev) =>
           toNamedList(data.brands ?? data.brandOptions ?? data.brand, prev).map((item: any) => ({
             ...item,
@@ -502,25 +565,16 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
 
         setSizes((prev) => toSizeList(data.sizes ?? data.sizeOptions ?? data.size, prev));
         setColors((prev) => toColorList(data.colors ?? data.colorOptions ?? data.color, prev));
+        
+        // DO NOT overwrite localStorage with API data!
+        // localStorage is the source of truth for categories
       } catch (error) {
         console.error('Failed to load dashboard settings filters:', error);
       }
     };
 
     loadDashboardSettings();
-    
-    // Load categories from localStorage
-    const savedCategories = localStorage.getItem('admin_categories');
-    if (savedCategories) {
-      try {
-        const parsed = JSON.parse(savedCategories);
-        setCategories(parsed);
-        console.log('✅ Categories loaded from localStorage:', parsed);
-      } catch (e) {
-        console.log('Failed to load categories from localStorage');
-      }
-    }
-    
+
     // Load settings from localStorage
     loadSettings();
 
@@ -840,18 +894,37 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     setShowCategoryModal(true);
   };
 
-  const handleSaveCategory = () => {
+  const handleSaveCategory = async () => {
+    console.log('🔘 Save Category clicked');
+    console.log('📝 Category to save:', editingCategory);
+    
     let updatedCategories;
     if (categories.find(c => c.id === editingCategory.id)) {
+      console.log('✏️ Updating existing category');
       updatedCategories = categories.map(c => c.id === editingCategory.id ? editingCategory : c);
     } else {
+      console.log('➕ Adding NEW category');
       updatedCategories = [...categories, editingCategory];
     }
+    
+    console.log('💾 Updated categories:', updatedCategories);
     setCategories(updatedCategories);
     
-    // Save to localStorage
-    localStorage.setItem('admin_categories', JSON.stringify(updatedCategories));
-    console.log('✅ Category saved and persisted to localStorage');
+    // Save to DynamoDB via API
+    try {
+      console.log('📡 Saving categories to DynamoDB...');
+      await api.saveCategories(updatedCategories);
+      console.log('✅ Categories saved to DynamoDB!');
+      
+      // Also save to localStorage as backup
+      localStorage.setItem('admin_categories', JSON.stringify(updatedCategories));
+      console.log('💾 Backup saved to localStorage');
+    } catch (err: any) {
+      console.error('❌ Failed to save to DynamoDB:', err);
+      // Fallback to localStorage
+      localStorage.setItem('admin_categories', JSON.stringify(updatedCategories));
+      console.log('⚠️ Saved to localStorage only (API failed)');
+    }
     
     setShowCategoryModal(false);
   };
