@@ -93,22 +93,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       localStorage.removeItem('jwt_token');
       localStorage.removeItem('user_email');
       localStorage.removeItem('refreshToken');
-      
+
       // Try to sign out from Amplify (if used)
       try {
         await signOut();
       } catch (e) {
         // Ignore Amplify sign out errors
       }
-      
+
       console.log('✅ Admin logged out');
-      navigate('/admin/login');
+      navigate('/');  // Redirect to home page
     } catch (error) {
       console.error('Logout error:', error);
       // Force logout even on error
       localStorage.removeItem('jwt_token');
       localStorage.removeItem('user_email');
-      navigate('/admin/login');
+      navigate('/');  // Redirect to home page
     }
   };
 

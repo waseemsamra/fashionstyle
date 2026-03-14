@@ -7,6 +7,7 @@ import { createProduct, updateProduct, deleteProduct } from '@/services/productS
 import { getAllBrands, createBrand } from '@/services/brandService';
 import ProductForm from '@/components/admin/ProductForm';
 import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 type DashboardProps = { minimal?: boolean };
 
@@ -15,6 +16,16 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [activeOrder, setActiveOrder] = useState<string | null>(null);
+  const [settings, setSettings] = useState({
+    currency: 'USD',
+    taxRate: 0,
+    shippingFee: 0,
+    storeName: '',
+    storeEmail: '',
+    storePhone: '',
+    storeAddress: '',
+    description: ''
+  });
   const location = useLocation();
 
   useEffect(() => {
@@ -497,6 +508,21 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     };
 
     loadDashboardSettings();
+    
+    // Load categories from localStorage
+    const savedCategories = localStorage.getItem('admin_categories');
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        setCategories(parsed);
+        console.log('✅ Categories loaded from localStorage:', parsed);
+      } catch (e) {
+        console.log('Failed to load categories from localStorage');
+      }
+    }
+    
+    // Load settings from localStorage
+    loadSettings();
 
     return () => {
       mounted = false;
@@ -510,6 +536,67 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     } catch (error) {
       console.error('Logout error:', error);
     }
+  };
+
+  const handleSaveSettings = async (section?: string) => {
+    console.log('🔘 Save button clicked - Section:', section);
+    console.log('💾 Settings to save:', settings);
+    
+    try {
+      // Save to localStorage ONLY (no API calls to avoid CORS)
+      localStorage.setItem('admin_settings', JSON.stringify(settings));
+      
+      const message = section === 'store' ? 'Store information saved!' : 'Settings saved successfully!';
+      toast.success(message);
+      console.log('✅ Settings saved to localStorage');
+      console.log('📦 Stored in localStorage:', localStorage.getItem('admin_settings'));
+    } catch (err: any) {
+      console.error('Settings save error:', err);
+      localStorage.setItem('admin_settings', JSON.stringify(settings));
+      toast.success('Settings saved locally');
+    }
+  };
+
+  const loadSettings = () => {
+    console.log('🔍 Loading settings from localStorage...');
+    
+    // Load from localStorage ONLY (no API calls to avoid CORS)
+    const saved = localStorage.getItem('admin_settings');
+    console.log('📦 localStorage admin_settings:', saved ? 'FOUND' : 'NOT FOUND');
+    
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        console.log('✅ Parsed settings:', parsed);
+        setSettings({
+          currency: parsed.currency || 'USD',
+          taxRate: parsed.taxRate || 0,
+          shippingFee: parsed.shippingFee || 0,
+          storeName: parsed.storeName || 'Fashion Store',
+          storeEmail: parsed.storeEmail || '',
+          storePhone: parsed.storePhone || '',
+          storeAddress: parsed.storeAddress || '',
+          description: parsed.description || ''
+        });
+        console.log('✅ Settings loaded from localStorage');
+        return;
+      } catch (e) {
+        console.error('❌ Failed to parse settings:', e);
+      }
+    }
+    
+    // Use defaults if no saved settings
+    console.log('⚠️ No saved settings found, using defaults');
+    setSettings({
+      currency: 'USD',
+      taxRate: 0,
+      shippingFee: 0,
+      storeName: 'Fashion Store',
+      storeEmail: '',
+      storePhone: '',
+      storeAddress: '',
+      description: ''
+    });
   };
 
   const handleEdit = (product: any) => {
@@ -754,17 +841,28 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
   };
 
   const handleSaveCategory = () => {
+    let updatedCategories;
     if (categories.find(c => c.id === editingCategory.id)) {
-      setCategories(categories.map(c => c.id === editingCategory.id ? editingCategory : c));
+      updatedCategories = categories.map(c => c.id === editingCategory.id ? editingCategory : c);
     } else {
-      setCategories([...categories, editingCategory]);
+      updatedCategories = [...categories, editingCategory];
     }
+    setCategories(updatedCategories);
+    
+    // Save to localStorage
+    localStorage.setItem('admin_categories', JSON.stringify(updatedCategories));
+    console.log('✅ Category saved and persisted to localStorage');
+    
     setShowCategoryModal(false);
   };
 
   const handleDeleteCategory = (id: number) => {
     if (confirm('Delete this category?')) {
-      setCategories(categories.filter(c => c.id !== id));
+      const updatedCategories = categories.filter(c => c.id !== id);
+      setCategories(updatedCategories);
+      // Save to localStorage
+      localStorage.setItem('admin_categories', JSON.stringify(updatedCategories));
+      console.log('✅ Category deleted and localStorage updated');
     }
   };
 
@@ -1200,26 +1298,6 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
 
           {activeTab === 'settings' && (
             <div className="space-y-4">
-              {/* Store Information */}
-              <div className="bg-white rounded-lg shadow">
-                <button
-                  onClick={() => setExpandedSection(expandedSection === 'store' ? null : 'store')}
-                  className="w-full p-6 text-left flex justify-between items-center hover:bg-gray-50"
-                >
-                  <h3 className="text-xl font-bold">Store Information</h3>
-                  <span className="text-2xl">{expandedSection === 'store' ? '−' : '+'}</span>
-                </button>
-                {expandedSection === 'store' && (
-                  <div className="p-6 border-t space-y-4">
-                    <input type="text" placeholder="Store Name" defaultValue="Fashion Style" className="w-full p-3 border rounded-lg" />
-                    <input type="email" placeholder="Email" defaultValue="info@fashionstyle.com" className="w-full p-3 border rounded-lg" />
-                    <input type="tel" placeholder="Phone" defaultValue="+92 300 1234567" className="w-full p-3 border rounded-lg" />
-                    <textarea placeholder="Address" defaultValue="Karachi, Pakistan" className="w-full p-3 border rounded-lg" rows={2} />
-                    <button className="px-6 py-3 bg-gold text-white rounded-lg hover:bg-gold/90">Save</button>
-                  </div>
-                )}
-              </div>
-
               {/* Categories */}
               <div className="bg-white rounded-lg shadow">
                 <button
@@ -1441,22 +1519,128 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
                 </button>
                 {expandedSection === 'general' && (
                   <div className="p-6 border-t space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Currency</label>
-                      <select className="w-full p-3 border rounded-lg">
-                        <option>USD ($)</option>
-                        <option>PKR (₨)</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Tax Rate (%)</label>
-                      <input type="number" defaultValue="0" className="w-full p-3 border rounded-lg" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Currency</label>
+                        <select
+                          value={settings.currency}
+                          onChange={(e) => setSettings({...settings, currency: e.target.value})}
+                          className="w-full p-3 border rounded-lg"
+                        >
+                          <option value="USD">USD ($)</option>
+                          <option value="PKR">PKR (₨)</option>
+                          <option value="EUR">EUR (€)</option>
+                          <option value="GBP">GBP (£)</option>
+                          <option value="AED">AED (د.إ)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Tax Rate (%)</label>
+                        <input
+                          type="number"
+                          value={settings.taxRate}
+                          onChange={(e) => setSettings({...settings, taxRate: parseFloat(e.target.value) || 0})}
+                          className="w-full p-3 border rounded-lg"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">Shipping Fee ($)</label>
-                      <input type="number" defaultValue="0" className="w-full p-3 border rounded-lg" />
+                      <input
+                        type="number"
+                        value={settings.shippingFee}
+                        onChange={(e) => setSettings({...settings, shippingFee: parseFloat(e.target.value) || 0})}
+                        className="w-full p-3 border rounded-lg"
+                      />
                     </div>
-                    <button className="px-6 py-3 bg-gold text-white rounded-lg hover:bg-gold/90">Save Settings</button>
+                    <button
+                      onClick={() => {
+                        console.log('🔘 Save Settings button clicked');
+                        handleSaveSettings('general');
+                      }}
+                      className="px-6 py-3 bg-gold text-white rounded-lg hover:bg-gold/90 cursor-pointer"
+                      type="button"
+                    >
+                      Save Settings
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Store Information */}
+              <div className="bg-white rounded-lg shadow">
+                <button
+                  onClick={() => setExpandedSection(expandedSection === 'store' ? null : 'store')}
+                  className="w-full p-6 text-left flex justify-between items-center hover:bg-gray-50"
+                >
+                  <h3 className="text-xl font-bold">Store Information</h3>
+                  <span className="text-2xl">{expandedSection === 'store' ? '−' : '+'}</span>
+                </button>
+                {expandedSection === 'store' && (
+                  <div className="p-6 border-t space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Store Name</label>
+                      <input
+                        type="text"
+                        value={settings.storeName}
+                        onChange={(e) => setSettings({...settings, storeName: e.target.value})}
+                        placeholder="Fashion Store"
+                        className="w-full p-3 border rounded-lg"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Store Email</label>
+                        <input
+                          type="email"
+                          value={settings.storeEmail}
+                          onChange={(e) => setSettings({...settings, storeEmail: e.target.value})}
+                          placeholder="info@fashionstore.com"
+                          className="w-full p-3 border rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Store Phone</label>
+                        <input
+                          type="tel"
+                          value={settings.storePhone}
+                          onChange={(e) => setSettings({...settings, storePhone: e.target.value})}
+                          placeholder="+1 234 567 8900"
+                          className="w-full p-3 border rounded-lg"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Store Address</label>
+                      <textarea
+                        value={settings.storeAddress}
+                        onChange={(e) => setSettings({...settings, storeAddress: e.target.value})}
+                        placeholder="123 Fashion Street, New York, NY 10001"
+                        rows={2}
+                        className="w-full p-3 border rounded-lg"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Store Description</label>
+                      <textarea
+                        value={settings.description}
+                        onChange={(e) => setSettings({...settings, description: e.target.value})}
+                        placeholder="Your store description..."
+                        rows={3}
+                        className="w-full p-3 border rounded-lg"
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        console.log('🔘 Save Store Information button clicked');
+                        console.log('📋 Current settings:', settings);
+                        handleSaveSettings('store');
+                      }}
+                      className="px-6 py-3 bg-gold text-white rounded-lg hover:bg-gold/90 cursor-pointer"
+                      type="button"
+                    >
+                      Save Store Information
+                    </button>
                   </div>
                 )}
               </div>

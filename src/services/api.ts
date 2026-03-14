@@ -183,6 +183,191 @@ export const api = {
     return await response.json();
   },
 
+  // Get payment methods
+  getPaymentMethods: async (userId: string) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}/payment-methods`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to fetch payment methods');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to get payment methods:', error);
+      throw error;
+    }
+  },
+
+  // Add payment method
+  addPaymentMethod: async (userId: string, paymentData: any) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}/payment-methods`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        body: JSON.stringify(paymentData)
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to add payment method');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to add payment method:', error);
+      throw error;
+    }
+  },
+
+  // Update payment method
+  updatePaymentMethod: async (userId: string, paymentId: string, paymentData: any) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}/payment-methods/${paymentId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        body: JSON.stringify(paymentData)
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to update payment method');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to update payment method:', error);
+      throw error;
+    }
+  },
+
+  // Delete payment method
+  deletePaymentMethod: async (userId: string, paymentId: string) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}/payment-methods/${paymentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to delete payment method');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to delete payment method:', error);
+      throw error;
+    }
+  },
+
+  // Set default payment method
+  setDefaultPaymentMethod: async (userId: string, paymentId: string) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}/payment-methods/${paymentId}/default`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to set default payment method');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to set default payment method:', error);
+      throw error;
+    }
+  },
+
+  // Get admin settings
+  getAdminSettings: async () => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/admin/settings`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to fetch settings');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to get admin settings:', error);
+      throw error;
+    }
+  },
+
+  // Update admin settings
+  updateAdminSettings: async (settings: any) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/admin/settings`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        body: JSON.stringify(settings)
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to update settings');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to update admin settings:', error);
+      throw error;
+    }
+  },
+
   // Create order
   createOrder: async (userId: string, orderData: any) => {
     const response = await apiClient.post(`/users/${userId}/orders`, orderData);

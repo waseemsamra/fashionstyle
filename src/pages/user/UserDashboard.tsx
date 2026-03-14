@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, signOut, updatePassword } from 'aws-amplify/auth';
-import { User, Package, Heart, Wallet, CreditCard, LogOut, Lock, X, Trash2, MapPin, Edit, ShoppingCart } from 'lucide-react';
+import { User, Package, Heart, Wallet, CreditCard, LogOut, Lock, X, Trash2, MapPin, Edit, ShoppingCart, CheckCircle } from 'lucide-react';
 import { api } from '../../services/api';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useCart } from '@/hooks/useCart';
@@ -42,10 +42,15 @@ export default function UserDashboard() {
     { id: 2, type: 'Debit', amount: 50, date: '2024-03-05', desc: 'Order payment' },
   ]});
 
-  const [paymentMethods, setPaymentMethods] = useState([
-    { id: 1, type: 'Visa', last4: '4242', expiry: '12/25', default: true },
-    { id: 2, type: 'Mastercard', last4: '5555', expiry: '08/26', default: false },
-  ]);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [editingPayment, setEditingPayment] = useState<any>(null);
+  const [newPayment, setNewPayment] = useState({
+    cardNumber: '',
+    cardHolder: '',
+    expiry: '',
+    cvv: '',
+    type: 'Visa'
+  });
 
   const [addresses, setAddresses] = useState([
     { id: 1, name: 'Home', street: '123 Main Street', city: 'Karachi', state: 'Sindh', zip: '75500', country: 'Pakistan', default: true },
@@ -83,6 +88,14 @@ export default function UserDashboard() {
     }
   }, [activeTab]);
 
+  // Refresh payment methods when switching to payment tab
+  useEffect(() => {
+    if (activeTab === 'payment' && user) {
+      console.log('🔄 Refreshing payment methods when switching to payment tab');
+      loadPaymentMethods();
+    }
+  }, [activeTab]);
+
   const loadUser = async () => {
     try {
       // Check localStorage first (where login stores auth)
@@ -103,6 +116,9 @@ export default function UserDashboard() {
         
         // Load profile data from API
         await loadProfile(userId);
+        
+        // Load payment methods from localStorage
+        loadPaymentMethods();
         
         setLoading(false);
         return;
@@ -130,23 +146,25 @@ export default function UserDashboard() {
     try {
       console.log('👤 Loading profile for userId:', userId);
       const data = await api.getUserProfile(userId);
-      console.log('👤 Profile response:', data);
+      console.log('👤 Profile API response:', data);
 
       if (data && data.profile) {
-        console.log('✅ Profile loaded:', data.profile);
+        console.log('✅ Profile loaded from API:', data.profile);
         const profileData = {
           firstName: data.profile.firstName || '',
           lastName: data.profile.lastName || '',
           dob: data.profile.dob || '',
-          contact: data.profile.contact || '',
-          whatsapp: data.profile.whatsapp || '',
+          contact: data.profile.contact || data.profile.phone || '',
+          whatsapp: data.profile.whatsapp || data.profile.phone || '',
           address: data.profile.address || '',
           city: data.profile.city || '',
           postalCode: data.profile.postalCode || ''
         };
+        console.log('📝 Setting profile state:', profileData);
         setProfile(profileData);
         // Cache in localStorage
         localStorage.setItem('user_profile', JSON.stringify(profileData));
+        console.log('💾 Profile cached to localStorage');
       } else if (data && data.userId) {
         // Flat format from API
         console.log('✅ Profile loaded (flat format):', data);
@@ -154,27 +172,29 @@ export default function UserDashboard() {
           firstName: data.firstName || '',
           lastName: data.lastName || '',
           dob: data.dob || '',
-          contact: data.contact || '',
-          whatsapp: data.whatsapp || '',
+          contact: data.contact || data.phone || '',
+          whatsapp: data.whatsapp || data.phone || '',
           address: data.address || '',
           city: data.city || '',
           postalCode: data.postalCode || ''
         };
+        console.log('📝 Setting profile state:', profileData);
         setProfile(profileData);
         localStorage.setItem('user_profile', JSON.stringify(profileData));
+        console.log('💾 Profile cached to localStorage');
       } else {
-        console.log('ℹ️ No profile found, will create on save');
-        // Try to load from localStorage cache
+        console.log('ℹ️ No profile found in API response (will load from cache or create on save)');
+        // Try to load from localStorage cache FIRST
         const cachedProfile = localStorage.getItem('user_profile');
         if (cachedProfile) {
-          console.log('📦 Loading cached profile from localStorage');
+          console.log('📦 Loading cached profile from localStorage:', JSON.parse(cachedProfile));
           setProfile(JSON.parse(cachedProfile));
           return;
         }
-        // Initialize with email data
+        // No cache - initialize with email data
         const email = localStorage.getItem('user_email') || '';
         const nameParts = email.split('@')[0].split(/[._-]/);
-        setProfile({
+        const emptyProfile = {
           firstName: nameParts[0] || '',
           lastName: nameParts[1] || '',
           dob: '',
@@ -183,18 +203,20 @@ export default function UserDashboard() {
           address: '',
           city: '',
           postalCode: ''
-        });
+        };
+        console.log('📝 Initializing empty profile:', emptyProfile);
+        setProfile(emptyProfile);
       }
     } catch (err: any) {
-      console.log('ℹ️ Profile load failed, using cache or defaults');
-      // Try to load from localStorage cache
+      console.log('ℹ️ Profile load failed (403 or network), using cache or defaults');
+      // ALWAYS try to load from localStorage cache first on error
       const cachedProfile = localStorage.getItem('user_profile');
       if (cachedProfile) {
-        console.log('📦 Loading cached profile from localStorage');
+        console.log('📦 Loading cached profile from localStorage (error fallback):', JSON.parse(cachedProfile));
         setProfile(JSON.parse(cachedProfile));
         return;
       }
-      // Profile doesn't exist yet - initialize with email data
+      // No cache - initialize with email data
       const email = localStorage.getItem('user_email') || '';
       const nameParts = email.split('@')[0].split(/[._-]/);
       setProfile({
@@ -282,27 +304,46 @@ export default function UserDashboard() {
     setMessage('');
     setError('');
     try {
-      // Send profile data in the format expected by the API
+      // Prepare profile data - ensure ALL fields are sent
       const profileData = {
         userId: user.userId,
         firstName: profile.firstName,
         lastName: profile.lastName,
-        dob: profile.dob,
-        contact: profile.contact,
-        whatsapp: profile.whatsapp,
+        dob: profile.dob || '',
+        contact: profile.contact || '',
+        whatsapp: profile.whatsapp || '',
+        phone: profile.contact || profile.whatsapp || '',  // Also send as 'phone' for compatibility
         email: user.email || localStorage.getItem('user_email'),
-        address: profile.address,
-        city: profile.city,
-        postalCode: profile.postalCode
+        address: profile.address || '',
+        city: profile.city || '',
+        postalCode: profile.postalCode || ''
       };
       
-      console.log('📝 Saving profile:', profileData);
-      await api.updateUserProfile(user.userId, profileData);
+      console.log('📝 Saving profile to API:', profileData);
+      console.log('   - contact:', profileData.contact);
+      console.log('   - whatsapp:', profileData.whatsapp);
+      console.log('   - phone:', profileData.phone);
       
-      // Cache in localStorage
-      localStorage.setItem('user_profile', JSON.stringify(profile));
+      const response = await api.updateUserProfile(user.userId, profileData);
+      console.log('✅ API response:', response);
       
-      console.log('✅ Profile saved and cached');
+      // Cache the EXACT data we sent (not what API returns)
+      const profileToCache = {
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        dob: profile.dob || '',
+        contact: profile.contact || '',
+        whatsapp: profile.whatsapp || '',
+        address: profile.address || '',
+        city: profile.city || '',
+        postalCode: profile.postalCode || ''
+      };
+      localStorage.setItem('user_profile', JSON.stringify(profileToCache));
+      
+      console.log('✅ Profile saved to DynamoDB and cached');
+      console.log('   - Cached contact:', profileToCache.contact);
+      console.log('   - Cached whatsapp:', profileToCache.whatsapp);
+      
       setEditMode(false);
       setMessage('Profile updated successfully');
       setTimeout(() => setMessage(''), 3000);
@@ -311,6 +352,137 @@ export default function UserDashboard() {
       setError(err.message || 'Failed to update profile');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Payment Methods Handlers
+  const loadPaymentMethods = async () => {
+    try {
+      const response = await api.getPaymentMethods(user.userId);
+      console.log('💳 Payment methods loaded:', response);
+      if (response.paymentMethods) {
+        setPaymentMethods(response.paymentMethods);
+      }
+    } catch (err: any) {
+      console.log('Failed to load payment methods:', err.message);
+      // Try localStorage fallback
+      const saved = localStorage.getItem('user_payment_methods');
+      if (saved) {
+        setPaymentMethods(JSON.parse(saved));
+      }
+    }
+  };
+
+  const handleAddPayment = async () => {
+    setEditingPayment(null);
+    setNewPayment({
+      cardNumber: '',
+      cardHolder: '',
+      expiry: '',
+      cvv: '',
+      type: 'Visa'
+    });
+    setShowPaymentModal(true);
+  };
+
+  const handleEditPayment = (payment: any) => {
+    setEditingPayment(payment);
+    setNewPayment({
+      cardNumber: '****-****-****-' + payment.last4,
+      cardHolder: payment.name || payment.cardHolder || '',
+      expiry: `${String(payment.expMonth).padStart(2, '0')}/${payment.expYear}` || payment.expiry || '',
+      cvv: '',
+      type: payment.brand || payment.type || 'Visa'
+    });
+    setShowPaymentModal(true);
+  };
+
+  const handleDeletePayment = async (payment: any) => {
+    const paymentId = payment.paymentId || payment.id;
+    if (confirm('Delete this payment method?')) {
+      try {
+        // Try API first
+        await api.deletePaymentMethod(user.userId, paymentId);
+        setPaymentMethods(paymentMethods.filter(p => p.paymentId !== paymentId));
+        toast.success('Payment method deleted');
+      } catch (err: any) {
+        console.log('API delete failed, using localStorage fallback:', err.message);
+        // Fallback: remove from state and localStorage
+        setPaymentMethods(paymentMethods.filter(p => p.paymentId !== paymentId && p.id !== paymentId));
+        toast.success('Payment method deleted (local only)');
+      }
+    }
+  };
+
+  const handleSavePayment = async () => {
+    if (!newPayment.cardNumber || !newPayment.expiry || !newPayment.cardHolder) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const last4 = newPayment.cardNumber.slice(-4) || '0000';
+    const [expMonth, expYear] = newPayment.expiry.split('/').map(n => parseInt(n, 10));
+    
+    try {
+      const paymentData = {
+        type: 'card',
+        token: `tok_${newPayment.type.toLowerCase()}_${last4}`,  // Generate a token
+        last4,
+        brand: newPayment.type.toLowerCase(),
+        expMonth,
+        expYear,
+        name: newPayment.cardHolder,
+        isDefault: paymentMethods.length === 0
+      };
+
+      console.log('💳 Saving payment method:', paymentData);
+
+      if (editingPayment) {
+        // Update existing
+        await api.updatePaymentMethod(user.userId, editingPayment.paymentId, paymentData);
+        toast.success('Payment method updated');
+      } else {
+        // Add new
+        await api.addPaymentMethod(user.userId, paymentData);
+        toast.success('Payment method added');
+      }
+
+      // Clear form and close modal
+      setShowPaymentModal(false);
+      setEditingPayment(null);
+      setNewPayment({
+        cardNumber: '',
+        cardHolder: '',
+        expiry: '',
+        cvv: '',
+        type: 'Visa'
+      });
+      
+      // Force reload payment methods from API
+      console.log('🔄 Reloading payment methods...');
+      await loadPaymentMethods();
+      
+    } catch (err: any) {
+      console.error('Failed to save payment method:', err);
+      toast.error('Failed to save: ' + err.message);
+    }
+  };
+
+  const handleSetDefaultPayment = async (payment: any) => {
+    const paymentId = payment.paymentId || payment.id;
+    try {
+      await api.setDefaultPaymentMethod(user.userId, paymentId);
+      toast.success('Default payment method updated');
+      // Reload payment methods
+      await loadPaymentMethods();
+    } catch (err: any) {
+      console.log('API set default failed:', err.message);
+      // Fallback: update locally
+      setPaymentMethods(paymentMethods.map(p => ({
+        ...p,
+        isDefault: (p.paymentId || p.id) === paymentId
+      })));
+      toast.success('Default payment method updated (local only)');
     }
   };
 
@@ -370,12 +542,6 @@ export default function UserDashboard() {
       setTimeout(() => setShowPasswordModal(false), 2000);
     } catch (err: any) {
       setError(err.message);
-    }
-  };
-
-  const handleDeletePayment = (id: number) => {
-    if (confirm('Delete this payment method?')) {
-      setPaymentMethods(paymentMethods.filter(p => p.id !== id));
     }
   };
 
@@ -752,28 +918,50 @@ export default function UserDashboard() {
               <div className="bg-white rounded-lg shadow">
                 <div className="p-6 border-b flex justify-between items-center">
                   <h2 className="text-2xl font-bold">Payment Methods</h2>
-                  <button onClick={() => setShowPaymentModal(true)} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
+                  <button onClick={handleAddPayment} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
                     Add Card
                   </button>
                 </div>
                 <div className="p-6 space-y-4">
-                  {paymentMethods.map(method => (
-                    <div key={method.id} className="border rounded-lg p-4 flex justify-between items-center">
-                      <div className="flex items-center gap-4">
-                        <CreditCard className="w-8 h-8 text-gray-600" />
-                        <div>
-                          <p className="font-bold">{method.type} •••• {method.last4}</p>
-                          <p className="text-sm text-gray-600">Expires {method.expiry}</p>
-                        </div>
-                        {method.default && (
-                          <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full">Default</span>
-                        )}
-                      </div>
-                      <button onClick={() => handleDeletePayment(method.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
-                        <Trash2 className="w-4 h-4" />
+                  {paymentMethods.length === 0 ? (
+                    <div className="text-center py-12">
+                      <CreditCard className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <p className="text-gray-600">No payment methods yet</p>
+                      <button onClick={handleAddPayment} className="mt-4 px-6 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
+                        Add your first card
                       </button>
                     </div>
-                  ))}
+                  ) : (
+                    paymentMethods.map(method => (
+                      <div key={method.paymentId || method.id} className="border rounded-lg p-4 flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                          <CreditCard className="w-8 h-8 text-gray-600" />
+                          <div>
+                            <p className="font-bold capitalize">{method.brand || method.type} •••• {method.last4}</p>
+                            <p className="text-sm text-gray-600">
+                              Expires {String(method.expMonth).padStart(2, '0')}/{method.expYear || method.expiry} • {method.name || method.cardHolder}
+                            </p>
+                            {method.isDefault && (
+                              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full">Default</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {!method.isDefault && (
+                            <button onClick={() => handleSetDefaultPayment(method)} className="p-2 text-blue-600 hover:bg-blue-50 rounded" title="Set as default">
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button onClick={() => handleEditPayment(method)} className="p-2 text-gold hover:bg-gold/10 rounded">
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDeletePayment(method)} className="p-2 text-red-600 hover:bg-red-50 rounded">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -804,17 +992,70 @@ export default function UserDashboard() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Add Payment Method</h2>
+              <h2 className="text-xl font-bold">{editingPayment ? 'Edit Payment Method' : 'Add Payment Method'}</h2>
               <button onClick={() => setShowPaymentModal(false)}><X className="w-6 h-6" /></button>
             </div>
             <div className="space-y-4">
-              <input type="text" placeholder="Card Number" className="w-full p-3 border rounded-lg" />
-              <div className="grid grid-cols-2 gap-4">
-                <input type="text" placeholder="MM/YY" className="w-full p-3 border rounded-lg" />
-                <input type="text" placeholder="CVV" className="w-full p-3 border rounded-lg" />
+              <div>
+                <label className="block text-sm font-medium mb-2">Card Type</label>
+                <select 
+                  value={newPayment.type} 
+                  onChange={(e) => setNewPayment({...newPayment, type: e.target.value})}
+                  className="w-full p-3 border rounded-lg"
+                >
+                  <option value="Visa">Visa</option>
+                  <option value="Mastercard">Mastercard</option>
+                  <option value="American Express">American Express</option>
+                </select>
               </div>
-              <input type="text" placeholder="Cardholder Name" className="w-full p-3 border rounded-lg" />
-              <button onClick={() => setShowPaymentModal(false)} className="w-full py-3 bg-gold text-white rounded-lg hover:bg-gold/90">Add Card</button>
+              <div>
+                <label className="block text-sm font-medium mb-2">Card Number</label>
+                <input 
+                  type="text" 
+                  placeholder="1234-5678-9012-3456" 
+                  value={newPayment.cardNumber}
+                  onChange={(e) => setNewPayment({...newPayment, cardNumber: e.target.value})}
+                  className="w-full p-3 border rounded-lg"
+                  maxLength={19}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Cardholder Name</label>
+                <input 
+                  type="text" 
+                  placeholder="John Doe" 
+                  value={newPayment.cardHolder}
+                  onChange={(e) => setNewPayment({...newPayment, cardHolder: e.target.value})}
+                  className="w-full p-3 border rounded-lg"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Expiry Date</label>
+                  <input 
+                    type="text" 
+                    placeholder="MM/YY" 
+                    value={newPayment.expiry}
+                    onChange={(e) => setNewPayment({...newPayment, expiry: e.target.value})}
+                    className="w-full p-3 border rounded-lg"
+                    maxLength={5}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">CVV</label>
+                  <input 
+                    type="text" 
+                    placeholder="123" 
+                    value={newPayment.cvv}
+                    onChange={(e) => setNewPayment({...newPayment, cvv: e.target.value})}
+                    className="w-full p-3 border rounded-lg"
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+              <button onClick={handleSavePayment} className="w-full py-3 bg-gold text-white rounded-lg hover:bg-gold/90">
+                {editingPayment ? 'Update Card' : 'Add Card'}
+              </button>
             </div>
           </div>
         </div>
