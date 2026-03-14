@@ -523,8 +523,8 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
           return;
         }
 
-        // SKIP loading categories from API - they're loaded from DynamoDB in EFFECT 1
-        console.log('⏭️ Skipping categories from API (already loaded from DynamoDB)');
+        // NEVER load categories from API - localStorage is source of truth
+        console.log('⏭️ Categories: Using localStorage (NOT loading from API)');
         
         // Load other filters from API (brands, genders, etc.)
         setBrands((prev) =>
