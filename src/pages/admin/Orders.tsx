@@ -76,24 +76,39 @@ export default function AdminOrders() {
   const loadAllOrders = async () => {
     setIsRefreshing(true);
     try {
-      console.log('📋 Admin Orders: Fetching all orders...');
-      console.log('📋 Admin Orders: JWT token present:', !!localStorage.getItem('jwt_token'));
-      console.log('📋 Admin Orders: Admin email:', localStorage.getItem('user_email'));
+      const jwtToken = localStorage.getItem('jwt_token');
+      const userEmail = localStorage.getItem('user_email');
       
+      console.log('📋 Admin Orders: Fetching all orders...');
+      console.log('📋 Admin Orders: JWT token present:', !!jwtToken);
+      console.log('📋 Admin Orders: Admin email:', userEmail);
+
+      if (!jwtToken) {
+        console.warn('⚠️ Admin Orders: No JWT token found, redirecting to login');
+        toast.error('Authentication required. Please log in again.');
+        navigate('/admin/login');
+        return;
+      }
+
       // Use the admin orders API endpoint
       const response = await api.getAllOrders();
       console.log('📋 Admin Orders: Raw response:', response);
-      
+
       if (response && response.orders) {
+        console.log('📋 Admin Orders: Total orders from API:', response.orders.length);
+        response.orders.forEach((order: any, idx: number) => {
+          console.log(`📋 Order ${idx + 1}:`, order.orderId, 'Status:', order.status, 'Email:', order.email);
+        });
+
         const ordersList = response.orders.map((order: Order) => ({
           ...order,
           total: order.totalPrice || order.total || 0
         }));
-        
+
         setOrders(ordersList);
         setAllOrders(ordersList);
-        console.log(`📋 Admin Orders: Loaded ${ordersList.length} orders`);
-        
+        console.log(`📋 Admin Orders: Loaded ${ordersList.length} orders to state`);
+
         if (ordersList.length === 0) {
           toast.info('No orders found');
         }
@@ -107,7 +122,18 @@ export default function AdminOrders() {
       console.error('❌ Admin Orders: Failed to load orders:', err);
       console.error('❌ Admin Orders: Error response:', err.response?.data);
       console.error('❌ Admin Orders: Error status:', err.response?.status);
-      toast.error(`Failed to load orders: ${err.message}`);
+      
+      let errorMessage = 'Failed to load orders';
+      if (err.response?.status === 401) {
+        errorMessage = 'Authentication failed. Please log in again.';
+        navigate('/admin/login');
+      } else if (err.response?.status === 403) {
+        errorMessage = 'Access denied. Admin privileges required.';
+      } else if (err.message) {
+        errorMessage = `Failed to load orders: ${err.message}`;
+      }
+      
+      toast.error(errorMessage);
       setOrders([]);
       setAllOrders([]);
     } finally {
@@ -129,12 +155,22 @@ export default function AdminOrders() {
     let filtered = allOrders;
 
     if (search) {
-      filtered = filtered.filter(order =>
-        order.orderId.toLowerCase().includes(search.toLowerCase()) ||
-        order.email.toLowerCase().includes(search.toLowerCase()) ||
-        order.fullName.toLowerCase().includes(search.toLowerCase()) ||
-        order.city.toLowerCase().includes(search.toLowerCase())
-      );
+      // Normalize search term (remove special chars, lowercase)
+      const normalizedSearch = search.toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      filtered = filtered.filter(order => {
+        // Normalize order fields for comparison
+        const orderIdNorm = (order.orderId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const emailNorm = (order.email || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const nameNorm = (order.fullName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cityNorm = (order.city || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        
+        // Check if any field contains the search term
+        return orderIdNorm.includes(normalizedSearch) ||
+               emailNorm.includes(normalizedSearch) ||
+               nameNorm.includes(normalizedSearch) ||
+               cityNorm.includes(normalizedSearch);
+      });
     }
 
     if (status && status !== 'all') {
@@ -146,10 +182,26 @@ export default function AdminOrders() {
     setOrders(filtered);
   };
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
+  const handleStatusChange = async (orderId: string, newStatus: string, action?: 'update' | 'delete') => {
     console.log('🔄 Updating order status:', orderId, '→', newStatus);
-    
+
     try {
+      // Handle delete action
+      if (action === 'delete') {
+        await api.deleteOrder(orderId);
+        
+        // Remove from local state
+        setOrders(prevOrders => prevOrders.filter(order => order.orderId !== orderId));
+        setAllOrders(prevOrders => prevOrders.filter(order => order.orderId !== orderId));
+        
+        toast.success(`Order ${orderId} deleted successfully`);
+        return;
+      }
+
+      // Call API to update order status
+      await api.updateOrderStatus(orderId, newStatus);
+      
+      // Update local state after successful API call
       setOrders(prevOrders =>
         prevOrders.map(order =>
           order.orderId === orderId
@@ -157,7 +209,7 @@ export default function AdminOrders() {
             : order
         )
       );
-      
+
       setAllOrders(prevOrders =>
         prevOrders.map(order =>
           order.orderId === orderId
@@ -165,11 +217,12 @@ export default function AdminOrders() {
             : order
         )
       );
-      
+
       toast.success(`Order ${orderId} status updated to ${newStatus}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update order status:', error);
-      toast.error('Failed to update order status');
+      toast.error(`Failed to update order status: ${error.message}`);
+      throw error;
     }
   };
 

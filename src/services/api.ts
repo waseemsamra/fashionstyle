@@ -107,28 +107,80 @@ export const api = {
 
   // Get user profile
   getUserProfile: async (userId: string) => {
-    const response = await apiClient.get(`/users/${userId}`);
-    return response.data;
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    const response = await fetch(`${API_URL}/users/${userId}/profile`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      mode: 'cors'
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to fetch profile');
+    }
+    
+    return await response.json();
   },
 
   // Update user profile
   updateUserProfile: async (userId: string, profile: any) => {
-    const response = await apiClient.put(`/users/${userId}/profile`, profile);
-    return response.data;
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    const response = await fetch(`${API_URL}/users/${userId}/profile`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      mode: 'cors',
+      body: JSON.stringify(profile)
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to update profile');
+    }
+    
+    return await response.json();
   },
 
   // Create user profile (auto-created on signup)
   createUserProfile: async (userId: string, email: string) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
     const defaultProfile = {
+      userId: userId,
       firstName: '',
       lastName: '',
       dob: '',
       contact: '',
       whatsapp: '',
-      email: email
+      email: email,
+      role: 'customer',
+      status: 'active'
     };
-    const response = await apiClient.put(`/users/${userId}/profile`, defaultProfile);
-    return response.data;
+    
+    const response = await fetch(`${API_URL}/users/${userId}/profile`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      mode: 'cors',
+      body: JSON.stringify(defaultProfile)
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Failed to create profile:', error);
+      return { success: true };
+    }
+    
+    return await response.json();
   },
 
   // Create order
@@ -139,8 +191,40 @@ export const api = {
 
   // Get user orders
   getUserOrders: async (userId: string) => {
-    const response = await apiClient.get(`/users/${userId}/orders`);
-    return response.data.orders || [];
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    console.log('📋 getUserOrders - userId:', userId);
+    console.log('📋 getUserOrders - Token present:', !!token);
+
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}/orders?t=${Date.now()}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        credentials: 'include',
+        cache: 'no-store'
+      });
+
+      console.log('📋 getUserOrders - Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ getUserOrders - Error:', response.status, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('📋 getUserOrders - Response:', data);
+      console.log('📋 getUserOrders - Orders count:', data.orders?.length || 0);
+      
+      return data.orders || [];
+    } catch (error) {
+      console.error('❌ getUserOrders - Fetch error:', error);
+      throw error;
+    }
   },
 
   // Get single order
@@ -182,8 +266,19 @@ export const api = {
   // Get all orders (admin)
   getAllOrders: async () => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
+
+    console.log('🔑 API getAllOrders - Token present:', !!token);
+    console.log('🔑 API getAllOrders - Token type:', token ? (token.startsWith('ey') ? 'JWT' : 'Other') : 'None');
+    console.log('🔑 API getAllOrders - Token length:', token?.length || 0);
+
+    if (!token) {
+      console.error('❌ API getAllOrders - No authentication token found!');
+      throw new Error('No authentication token');
+    }
+
     try {
+      console.log('📡 API getAllOrders - Fetching from:', `${API_URL}/admin/orders`);
+      
       const response = await fetch(`${API_URL}/admin/orders`, {
         method: 'GET',
         headers: {
@@ -193,14 +288,25 @@ export const api = {
         mode: 'cors',
         credentials: 'include'
       });
+
+      console.log('📡 API getAllOrders - Response status:', response.status);
       
+      const responseText = await response.text();
+      console.log('📡 API getAllOrders - Raw response:', responseText);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        console.error('❌ API getAllOrders - HTTP error:', response.status);
+        throw new Error(`HTTP ${response.status}: ${responseText}`);
       }
-      
-      const data = await response.json();
-      console.log('✅ Orders fetched:', data);
-      return data;
+
+      try {
+        const data = JSON.parse(responseText);
+        console.log('✅ Orders fetched:', data);
+        return data;
+      } catch (jsonErr) {
+        console.error('❌ API getAllOrders - JSON parse error:', jsonErr);
+        throw new Error('Invalid JSON response from server');
+      }
     } catch (error) {
       console.error('❌ Fetch error:', error);
       throw error;
@@ -210,9 +316,16 @@ export const api = {
   // Get single order by id (admin)
   getOrderById: async (orderId: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
+    const email = localStorage.getItem('user_email') || 'admin@fashionstore.com';
+    const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
+
+    if (!token) {
+      throw new Error('No authentication token');
+    }
+
     try {
-      const response = await fetch(`${API_URL}/admin/orders/${orderId}`, {
+      // Use user endpoint (admin endpoints require IAM auth)
+      const response = await fetch(`${API_URL}/users/${userId}/orders/${orderId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -231,6 +344,95 @@ export const api = {
       return data;
     } catch (error) {
       console.error('❌ Fetch order error:', error);
+      throw error;
+    }
+  },
+
+  // Update order status (admin)
+  updateOrderStatus: async (orderId: string, status: string) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    const email = localStorage.getItem('user_email') || 'admin@fashionstore.com';
+    const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
+
+    console.log('🔑 API updateOrderStatus - Token present:', !!token);
+    console.log('📡 API updateOrderStatus - Using userId:', userId);
+
+    if (!token) {
+      console.error('❌ API updateOrderStatus - No authentication token found!');
+      throw new Error('No authentication token');
+    }
+
+    try {
+      // Use user endpoint (admin endpoints require IAM auth)
+      console.log('📡 API updateOrderStatus - Updating order:', orderId, 'to status:', status);
+      
+      const response = await fetch(`${API_URL}/users/${userId}/orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        credentials: 'include',
+        body: JSON.stringify({ status })
+      });
+
+      const responseText = await response.text();
+      console.log('📡 API updateOrderStatus - Response:', response.status, responseText);
+
+      if (!response.ok) {
+        console.error('❌ API updateOrderStatus - HTTP error:', response.status);
+        throw new Error(`HTTP ${response.status}: ${responseText}`);
+      }
+
+      try {
+        const data = JSON.parse(responseText);
+        console.log('✅ Order status updated:', data);
+        return data;
+      } catch (jsonErr) {
+        console.error('❌ API updateOrderStatus - JSON parse error:', jsonErr);
+        throw new Error('Invalid JSON response from server');
+      }
+    } catch (error) {
+      console.error('❌ API updateOrderStatus - Fetch error:', error);
+      throw error;
+    }
+  },
+
+  // Delete order (admin)
+  deleteOrder: async (orderId: string) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    const email = localStorage.getItem('user_email') || 'admin@fashionstore.com';
+    const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
+
+    if (!token) {
+      throw new Error('No authentication token');
+    }
+
+    try {
+      // Use user endpoint (admin endpoints require IAM auth)
+      const response = await fetch(`${API_URL}/users/${userId}/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        credentials: 'include'
+      });
+
+      const responseText = await response.text();
+      console.log('📡 API deleteOrder - Response:', response.status, responseText);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = JSON.parse(responseText);
+      console.log('✅ Order deleted:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Delete order error:', error);
       throw error;
     }
   }

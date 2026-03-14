@@ -26,7 +26,10 @@ export default function UserDashboard() {
     lastName: '',
     dob: '',
     contact: '',
-    whatsapp: ''
+    whatsapp: '',
+    address: '',
+    city: '',
+    postalCode: ''
   });
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -59,6 +62,27 @@ export default function UserDashboard() {
     }
   }, [user]);
 
+  // Refresh orders when tab becomes visible (user returns to this tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && activeTab === 'orders') {
+        console.log('🔄 Refreshing orders when tab becomes visible');
+        loadOrders();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [activeTab, user]);
+
+  // Refresh orders when switching to orders tab
+  useEffect(() => {
+    if (activeTab === 'orders' && user) {
+      console.log('🔄 Refreshing orders when switching to orders tab');
+      loadOrders();
+    }
+  }, [activeTab]);
+
   const loadUser = async () => {
     try {
       // Check localStorage first (where login stores auth)
@@ -68,20 +92,22 @@ export default function UserDashboard() {
       if (token && email) {
         // User is logged in via our login flow
         console.log('User authenticated via localStorage:', email);
+
+        // Use the FULL email-based userId (matches DynamoDB)
+        const userId = email.replace(/[^a-zA-Z0-9]/g, '-'); // waseem-samra-hotmail-com
+
+        console.log('🆔 Using userId:', userId);
+
+        // Set user with correct userId format
+        setUser({ userId: userId, username: email, email });
         
-        // Try both userId formats to maintain backward compatibility
-        const userIdFull = email.replace(/[^a-zA-Z0-9]/g, '-'); // waseem-samra-gmail-com
-        const userIdShort = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '-'); // waseem-samra
+        // Load profile data from API
+        await loadProfile(userId);
         
-        console.log('Trying userId (full):', userIdFull);
-        console.log('Trying userId (short):', userIdShort);
-        
-        // Use short format for backward compatibility with existing orders
-        setUser({ userId: userIdShort, username: email, email });
         setLoading(false);
         return;
       }
-      
+
       // Try Cognito auth as fallback
       try {
         const currentUser = await getCurrentUser();
@@ -92,7 +118,7 @@ export default function UserDashboard() {
         navigate('/login', { state: { from: '/dashboard' } });
         return;
       }
-      
+
       setLoading(false);
     } catch (err) {
       console.log('Authentication check failed, redirecting to login');
@@ -102,12 +128,85 @@ export default function UserDashboard() {
 
   const loadProfile = async (userId: string) => {
     try {
+      console.log('👤 Loading profile for userId:', userId);
       const data = await api.getUserProfile(userId);
-      if (data.profile) {
-        setProfile(data.profile);
+      console.log('👤 Profile response:', data);
+
+      if (data && data.profile) {
+        console.log('✅ Profile loaded:', data.profile);
+        const profileData = {
+          firstName: data.profile.firstName || '',
+          lastName: data.profile.lastName || '',
+          dob: data.profile.dob || '',
+          contact: data.profile.contact || '',
+          whatsapp: data.profile.whatsapp || '',
+          address: data.profile.address || '',
+          city: data.profile.city || '',
+          postalCode: data.profile.postalCode || ''
+        };
+        setProfile(profileData);
+        // Cache in localStorage
+        localStorage.setItem('user_profile', JSON.stringify(profileData));
+      } else if (data && data.userId) {
+        // Flat format from API
+        console.log('✅ Profile loaded (flat format):', data);
+        const profileData = {
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          dob: data.dob || '',
+          contact: data.contact || '',
+          whatsapp: data.whatsapp || '',
+          address: data.address || '',
+          city: data.city || '',
+          postalCode: data.postalCode || ''
+        };
+        setProfile(profileData);
+        localStorage.setItem('user_profile', JSON.stringify(profileData));
+      } else {
+        console.log('ℹ️ No profile found, will create on save');
+        // Try to load from localStorage cache
+        const cachedProfile = localStorage.getItem('user_profile');
+        if (cachedProfile) {
+          console.log('📦 Loading cached profile from localStorage');
+          setProfile(JSON.parse(cachedProfile));
+          return;
+        }
+        // Initialize with email data
+        const email = localStorage.getItem('user_email') || '';
+        const nameParts = email.split('@')[0].split(/[._-]/);
+        setProfile({
+          firstName: nameParts[0] || '',
+          lastName: nameParts[1] || '',
+          dob: '',
+          contact: '',
+          whatsapp: '',
+          address: '',
+          city: '',
+          postalCode: ''
+        });
       }
-    } catch (err) {
-      console.log('No profile found, using defaults');
+    } catch (err: any) {
+      console.log('ℹ️ Profile load failed, using cache or defaults');
+      // Try to load from localStorage cache
+      const cachedProfile = localStorage.getItem('user_profile');
+      if (cachedProfile) {
+        console.log('📦 Loading cached profile from localStorage');
+        setProfile(JSON.parse(cachedProfile));
+        return;
+      }
+      // Profile doesn't exist yet - initialize with email data
+      const email = localStorage.getItem('user_email') || '';
+      const nameParts = email.split('@')[0].split(/[._-]/);
+      setProfile({
+        firstName: nameParts[0] || '',
+        lastName: nameParts[1] || '',
+        dob: '',
+        contact: '',
+        whatsapp: '',
+        address: '',
+        city: '',
+        postalCode: ''
+      });
     }
   };
 
@@ -115,74 +214,63 @@ export default function UserDashboard() {
     if (!user) return;
     setOrdersLoading(true);
     try {
-      console.log('Loading orders for user:', user.userId);
-      console.log('User email:', user.email);
-      console.log('Full user object:', user);
+      console.log('📋 Loading orders for user:', user.userId);
+      console.log('📋 User email:', user.email);
       
+      // Clear cache and fetch fresh orders
       const response = await api.getUserOrders(user.userId);
-      console.log('API response:', response);
-      console.log('Response type:', typeof response);
-      console.log('Is array?', Array.isArray(response));
+      console.log('📋 API response:', response);
 
       // Handle different response formats
       let data = response;
-      
-      console.log('📦 Raw API response:', response);
-      console.log('📦 Response type:', typeof response, 'Is array?', Array.isArray(response));
 
       // If response has orders property, use that
       if (response && typeof response === 'object' && response.orders) {
         data = response.orders;
-        console.log('✅ Using response.orders:', data);
       }
 
       if (data && Array.isArray(data)) {
         console.log('✅ Found orders:', data.length);
-        console.log('📋 First order:', data[0]);
-        
-        const formattedOrders = data.map((order: any) => {
-          const formatted = {
-            id: order.orderId || order.id,
-            date: new Date(order.date || order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-            items: order.itemCount || order.items?.length || 0,
-            total: order.totalPrice || 0,
-            status: order.status || 'Processing',
-            orderId: order.orderId || order.id // Ensure orderId is set
-          };
-          console.log('📝 Formatted order:', formatted);
-          return formatted;
+
+        // Filter orders to only show ones that match the logged-in user's exact email
+        // This prevents orders from other users with similar userId from showing
+        const userOrders = data.filter((order: any) => {
+          const orderEmail = (order.email || '').toLowerCase();
+          const userEmail = (user.email || '').toLowerCase();
+          return orderEmail === userEmail;
         });
         
-        console.log('📦 Setting orders state:', formattedOrders.length, 'orders');
-        setOrders(formattedOrders);
-        console.log('✅ Orders state updated');
-      } else if (data && typeof data === 'object' && data.message) {
-        console.log('ℹ️ API returned message:', data.message);
-        console.log('📦 Orders in response:', data.orders?.length || 0);
-        if (data.orders && Array.isArray(data.orders)) {
-          console.log('✅ Using data.orders from message response');
-          const formattedOrders = data.orders.map((order: any) => ({
+        console.log('✅ Filtered to user orders:', userOrders.length);
+
+        const formattedOrders = userOrders.map((order: any) => {
+          const formatted = {
             id: order.orderId || order.id,
+            orderId: order.orderId || order.id,
             date: new Date(order.date || order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
             items: order.itemCount || order.items?.length || 0,
             total: order.totalPrice || 0,
             status: order.status || 'Processing',
-            orderId: order.orderId || order.id
-          }));
-          setOrders(formattedOrders);
-        } else {
-          setOrders([]);
-        }
-      } else {
-        console.log('⚠️ No orders found, response:', data);
+            itemsData: order.items || [],
+            paymentMethod: order.paymentMethod,
+            address: order.address,
+            city: order.city
+          };
+          return formatted;
+        });
+
+        setOrders(formattedOrders);
+        console.log('✅ Orders state updated with', formattedOrders.length, 'orders');
+      } else if (data && typeof data === 'object' && data.message) {
+        // No orders yet
         setOrders([]);
+        console.log('ℹ️ No orders found');
+      } else {
+        setOrders([]);
+        console.log('⚠️ Unexpected response format');
       }
     } catch (error: any) {
-      console.error('Error loading orders:', error);
-      console.error('Error status:', error.response?.status);
-      console.error('Error data:', error.response?.data);
-      console.error('Error config:', error.config);
-      setError('Failed to load orders: ' + (error.response?.data?.message || error.message));
+      console.error('❌ Failed to load orders:', error);
+      toast.error('Failed to load orders');
       setOrders([]);
     } finally {
       setOrdersLoading(false);
@@ -194,11 +282,32 @@ export default function UserDashboard() {
     setMessage('');
     setError('');
     try {
-      await api.updateUserProfile(user.userId, profile);
+      // Send profile data in the format expected by the API
+      const profileData = {
+        userId: user.userId,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        dob: profile.dob,
+        contact: profile.contact,
+        whatsapp: profile.whatsapp,
+        email: user.email || localStorage.getItem('user_email'),
+        address: profile.address,
+        city: profile.city,
+        postalCode: profile.postalCode
+      };
+      
+      console.log('📝 Saving profile:', profileData);
+      await api.updateUserProfile(user.userId, profileData);
+      
+      // Cache in localStorage
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      
+      console.log('✅ Profile saved and cached');
       setEditMode(false);
       setMessage('Profile updated successfully');
       setTimeout(() => setMessage(''), 3000);
     } catch (err: any) {
+      console.error('Profile update error:', err);
       setError(err.message || 'Failed to update profile');
     } finally {
       setSaving(false);
@@ -363,7 +472,14 @@ export default function UserDashboard() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium mb-2">Email</label>
-                      <input type="email" value={user?.signInDetails?.loginId} disabled className="w-full p-3 border rounded-lg bg-gray-50" />
+                      <input 
+                        type="email" 
+                        value={user?.email || user?.signInDetails?.loginId || localStorage.getItem('user_email') || ''} 
+                        disabled 
+                        className="w-full p-3 border rounded-lg bg-gray-100 cursor-not-allowed"
+                        readOnly
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">Date of Birth</label>
@@ -378,6 +494,20 @@ export default function UserDashboard() {
                     <div>
                       <label className="block text-sm font-medium mb-2">WhatsApp Number</label>
                       <input type="tel" value={profile.whatsapp} onChange={(e) => setProfile({...profile, whatsapp: e.target.value})} disabled={!editMode} className={`w-full p-3 border rounded-lg ${!editMode ? 'bg-gray-50' : ''}`} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Address</label>
+                    <input type="text" value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} disabled={!editMode} placeholder="Street address" className={`w-full p-3 border rounded-lg ${!editMode ? 'bg-gray-50' : ''}`} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">City</label>
+                      <input type="text" value={profile.city} onChange={(e) => setProfile({...profile, city: e.target.value})} disabled={!editMode} className={`w-full p-3 border rounded-lg ${!editMode ? 'bg-gray-50' : ''}`} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Postal Code</label>
+                      <input type="text" value={profile.postalCode} onChange={(e) => setProfile({...profile, postalCode: e.target.value})} disabled={!editMode} className={`w-full p-3 border rounded-lg ${!editMode ? 'bg-gray-50' : ''}`} />
                     </div>
                   </div>
                   <div className="flex gap-4">
@@ -399,8 +529,21 @@ export default function UserDashboard() {
 
             {activeTab === 'orders' && (
               <div className="bg-white rounded-lg shadow">
-                <div className="p-6 border-b">
-                  <h2 className="text-2xl font-bold">My Orders</h2>
+                <div className="p-6 border-b flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">My Orders</h2>
+                    <p className="text-sm text-gray-600 mt-1">Track and manage your orders</p>
+                  </div>
+                  <button
+                    onClick={loadOrders}
+                    disabled={ordersLoading}
+                    className="flex items-center gap-2 px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90 disabled:opacity-50"
+                  >
+                    <svg className={`w-4 h-4 ${ordersLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
                 </div>
                 {ordersLoading ? (
                   <div className="p-6 text-center">
@@ -436,18 +579,19 @@ export default function UserDashboard() {
                             <td className="px-6 py-4 font-semibold">${(order.totalPrice || order.total || 0).toFixed(2)}</td>
                             <td className="px-6 py-4">
                               <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
-                                order.status === 'Out for Delivery' ? 'bg-purple-100 text-purple-700' :
-                                order.status === 'Shipped' ? 'bg-indigo-100 text-indigo-700' :
-                                order.status === 'Ready for Delivery' ? 'bg-blue-100 text-blue-700' :
-                                order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                                order.status === 'delivered' || order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                                order.status === 'on-delivery' || order.status === 'Out for Delivery' ? 'bg-purple-100 text-purple-700' :
+                                order.status === 'shipped' || order.status === 'Shipped' ? 'bg-indigo-100 text-indigo-700' :
+                                order.status === 'ready-to-pickup' || order.status === 'Ready for Delivery' ? 'bg-blue-100 text-blue-700' :
+                                order.status === 'cancelled' || order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                                order.status === 'processing' || order.status === 'Processing' ? 'bg-yellow-100 text-yellow-700' :
                                 'bg-yellow-100 text-yellow-700'
                               }`}>
-                                {order.status === 'Out for Delivery' ? '📦 Out for Delivery' :
-                                 order.status === 'Delivered' ? '✅ Delivered' :
-                                 order.status === 'Shipped' ? '🚚 Shipped' :
-                                 order.status === 'Ready for Delivery' ? '🔵 Ready' :
-                                 order.status === 'Cancelled' ? '❌ Cancelled' :
+                                {order.status === 'on-delivery' || order.status === 'Out for Delivery' ? '📦 Out for Delivery' :
+                                 order.status === 'delivered' || order.status === 'Delivered' ? '✅ Delivered' :
+                                 order.status === 'shipped' || order.status === 'Shipped' ? '🚚 Shipped' :
+                                 order.status === 'ready-to-pickup' || order.status === 'Ready for Delivery' ? '🔵 Ready to Pickup' :
+                                 order.status === 'cancelled' || order.status === 'Cancelled' ? '❌ Cancelled' :
                                  '🟡 Processing'}
                               </span>
                             </td>

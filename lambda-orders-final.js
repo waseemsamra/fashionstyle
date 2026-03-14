@@ -225,7 +225,7 @@ exports.handler = async (event) => {
     // GET /admin/orders - Get ALL orders (admin only)
     if (method === 'GET' && !userId && event.path.includes('/admin/orders')) {
       console.log('📋 Fetching all orders for admin');
-      
+
       // Scan all orders from DynamoDB
       const params = {
         TableName: ORDERS_TABLE,
@@ -234,9 +234,9 @@ exports.handler = async (event) => {
           ':skPrefix': 'ORDER#'
         }
       };
-      
+
       const result = await dynamodb.scan(params).promise();
-      
+
       const orders = result.Items.map(item => ({
         orderId: item.orderId,
         userId: item.userId,
@@ -254,12 +254,12 @@ exports.handler = async (event) => {
         itemCount: item.itemCount,
         createdAt: item.createdAt
       }));
-      
+
       // Sort by date (newest first)
       orders.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      
+
       console.log(`✅ Found ${orders.length} orders`);
-      
+
       return {
         statusCode: 200,
         headers,
@@ -267,6 +267,145 @@ exports.handler = async (event) => {
           orders,
           total: orders.length
         })
+      };
+    }
+
+    // PUT /admin/orders/{orderId}/status - Update order status (admin)
+    if (method === 'PUT' && event.path.includes('/admin/orders/') && event.path.includes('/status')) {
+      console.log('🔄 Admin updating order status');
+      
+      const adminOrderId = event.pathParameters?.orderId;
+      const body = JSON.parse(event.body);
+      const timestamp = new Date().toISOString();
+
+      if (!adminOrderId) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Order ID required' })
+        };
+      }
+
+      // Get existing order using orderId
+      const existingOrder = await dynamodb.get({
+        TableName: ORDERS_TABLE,
+        Key: { orderId: adminOrderId }
+      }).promise();
+
+      if (!existingOrder.Item) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({ error: 'Order not found' })
+        };
+      }
+
+      // Update order status
+      const updateExpression = [];
+      const expressionAttributeValues = {};
+
+      if (body.status) {
+        updateExpression.push('status = :status');
+        expressionAttributeValues[':status'] = body.status;
+      }
+
+      updateExpression.push('updatedAt = :updatedAt');
+      expressionAttributeValues[':updatedAt'] = timestamp;
+
+      await dynamodb.update({
+        TableName: ORDERS_TABLE,
+        Key: { orderId: adminOrderId },
+        UpdateExpression: `SET ${updateExpression.join(', ')}`,
+        ExpressionAttributeValues: expressionAttributeValues
+      }).promise();
+
+      console.log('✅ Order status updated:', adminOrderId, 'to', body.status);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          message: 'Order updated successfully',
+          orderId: adminOrderId,
+          status: body.status
+        })
+      };
+    }
+
+    // DELETE /admin/orders/{orderId} - Delete order (admin)
+    if (method === 'DELETE' && event.path.includes('/admin/orders/')) {
+      console.log('🗑️ Admin deleting order');
+      
+      const adminOrderId = event.pathParameters?.orderId;
+
+      if (!adminOrderId) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Order ID required' })
+        };
+      }
+
+      // Check if order exists
+      const existingOrder = await dynamodb.get({
+        TableName: ORDERS_TABLE,
+        Key: { orderId: adminOrderId }
+      }).promise();
+
+      if (!existingOrder.Item) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({ error: 'Order not found' })
+        };
+      }
+
+      await dynamodb.delete({
+        TableName: ORDERS_TABLE,
+        Key: { orderId: adminOrderId }
+      }).promise();
+
+      console.log('✅ Order deleted:', adminOrderId);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          message: 'Order deleted successfully',
+          orderId: adminOrderId
+        })
+      };
+    }
+
+    // GET /admin/orders/{orderId} - Get a specific order (admin)
+    if (method === 'GET' && event.path.includes('/admin/orders/') && !event.path.includes('/status')) {
+      const adminOrderId = event.pathParameters?.orderId;
+
+      if (!adminOrderId) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Order ID required' })
+        };
+      }
+
+      const result = await dynamodb.get({
+        TableName: ORDERS_TABLE,
+        Key: { orderId: adminOrderId }
+      }).promise();
+
+      if (!result.Item) {
+        return {
+          statusCode: 404,
+          headers,
+          body: JSON.stringify({ error: 'Order not found' })
+        };
+      }
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(result.Item)
       };
     }
 
