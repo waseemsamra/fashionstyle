@@ -53,6 +53,8 @@ export default function SimpleSettings({
     // Load from DynamoDB API
     try {
       const token = localStorage.getItem('jwt_token');
+      console.log('📡 Fetching from API with token:', token ? 'Present' : 'Missing');
+      
       const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/${section}`, {
         method: 'GET',
         headers: {
@@ -62,8 +64,11 @@ export default function SimpleSettings({
         mode: 'cors'
       });
       
+      console.log('📊 API Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('📋 API Response data:', data);
         const apiItems = data.items || data.data || [];
         console.log('✅ Loaded', apiItems.length, 'items from DynamoDB');
         
@@ -74,13 +79,14 @@ export default function SimpleSettings({
           console.log('💾 Cached to localStorage');
         }
       } else {
-        console.log('⚠️ API returned', response.status);
+        const errorText = await response.text();
+        console.error('❌ API error:', response.status, errorText);
       }
     } catch (apiErr) {
       console.error('❌ API failed:', apiErr);
     }
     
-    // Fallback to localStorage
+    // Fallback to localStorage if no items loaded
     if (items.length === 0) {
       const saved = localStorage.getItem(`admin_${section}`);
       if (saved) {
@@ -94,7 +100,7 @@ export default function SimpleSettings({
     }
 
     setLoading(false);
-    console.log('✅ loadItems complete for', section);
+    console.log('✅ loadItems complete for', section, '- Total items:', items.length);
   };
 
   const handleSave = async () => {
