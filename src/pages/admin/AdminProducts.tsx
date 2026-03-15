@@ -13,11 +13,15 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  category: string;
-  brand: string;
-  image: string;
-  stock: number;
-  active: boolean;
+  category?: string;
+  brand?: string;
+  image?: string;
+  images?: string[];
+  stock?: number;
+  description?: string;
+  sizes?: string[];
+  colors?: string[];
+  active?: boolean;
 }
 
 export default function AdminProducts() {
@@ -40,7 +44,7 @@ export default function AdminProducts() {
       console.log('✅ Loaded', products.length, 'products from API');
       
       if (products.length > 0) {
-        setProducts(products);
+        setProducts(products as Product[]);
         // Cache in localStorage as backup
         localStorage.setItem('admin_products', JSON.stringify(products));
       } else {
@@ -78,7 +82,7 @@ export default function AdminProducts() {
   };
 
   const handleSaveProduct = async (data: any) => {
-    const product: Product = {
+    const product = {
       id: editingProduct?.id || Date.now().toString(),
       name: data.name,
       price: data.price,
@@ -98,8 +102,8 @@ export default function AdminProducts() {
         // Update existing
         console.log('📝 Updating product via API...');
         await updateProduct(product);
-        const updated = products.map(p => p.id === product.id ? product : p);
-        setProducts(updated);
+        const updated = products.map(p => p.id === product.id ? { ...p, ...product } : p);
+        setProducts(updated as Product[]);
         localStorage.setItem('admin_products', JSON.stringify(updated));
         toast.success('Product updated successfully!');
       } else {
@@ -107,7 +111,7 @@ export default function AdminProducts() {
         console.log('📝 Creating product via API...');
         const created = await createProduct(product);
         const updated = [...products, created];
-        setProducts(updated);
+        setProducts(updated as Product[]);
         localStorage.setItem('admin_products', JSON.stringify(updated));
         toast.success('Product added successfully!');
       }
@@ -234,8 +238,8 @@ export default function AdminProducts() {
                 
                 <div className="flex justify-between items-center">
                   <span className="text-xl font-bold text-gold">${product.price}</span>
-                  <Badge variant={product.stock > 0 ? 'default' : 'secondary'}>
-                    {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                  <Badge variant={(product.stock || 0) > 0 ? 'default' : 'secondary'}>
+                    {(product.stock || 0) > 0 ? `${product.stock} in stock` : 'Out of stock'}
                   </Badge>
                 </div>
 
