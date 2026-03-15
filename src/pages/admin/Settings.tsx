@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import SimpleSettings from '@/components/admin/SimpleSettings';
 import StoreSettings from '@/pages/admin/StoreSettings';
+import GeneralSettings from '@/pages/admin/GeneralSettings';
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState('store');
@@ -105,12 +106,7 @@ export default function Settings() {
         );
       
       case 'general':
-        return (
-          <div className="p-6">
-            <h2 className="text-3xl font-bold mb-4">General Settings</h2>
-            <p className="text-gray-600">Currency, tax, and shipping settings coming soon...</p>
-          </div>
-        );
+        return <GeneralSettings />;
       
       default:
         return null;
