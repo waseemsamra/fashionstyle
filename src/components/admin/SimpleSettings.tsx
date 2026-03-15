@@ -47,29 +47,44 @@ export default function SimpleSettings({
   }, [section]);
 
   const loadItems = async () => {
+    console.log('🔍 loadItems called for section:', section);
+    console.log('📦 localStorage key:', `admin_${section}`);
+    
     setLoading(true);
     
     // ALWAYS load from localStorage first - it's the source of truth
     const saved = localStorage.getItem(`admin_${section}`);
+    console.log('📦 localStorage value:', saved);
+    
     if (saved) {
       const parsed = JSON.parse(saved);
+      console.log('✅ Parsed', parsed.length, 'items from localStorage');
       setItems(parsed);
-      console.log(`✅ ${section} loaded from localStorage:`, parsed.length, 'items');
+      console.log('✅ Items set in state:', parsed);
+    } else {
+      console.log('⚠️ No saved data in localStorage for', section);
+      setItems([]);
     }
     
     // Try DynamoDB in background (don't wait, don't overwrite)
     try {
+      console.log('📡 Trying DynamoDB...');
       const response = await api.getAllSettings();
+      console.log('📋 API response:', response);
       if (response.settings && response.settings[section]) {
         const apiItems = Array.isArray(response.settings[section]) 
           ? response.settings[section] 
           : response.settings[section].items || [];
+        console.log('📋 API items:', apiItems.length);
         
         // Only update if API has MORE items than localStorage
         if (apiItems.length > items.length) {
+          console.log('✅ API has more items, updating...');
           setItems(apiItems);
           localStorage.setItem(`admin_${section}`, JSON.stringify(apiItems));
           console.log(`✅ ${section} updated from DynamoDB (more items)`);
+        } else {
+          console.log('⏭️ Keeping localStorage items (same or more than API)');
         }
       }
     } catch (apiErr) {
@@ -77,6 +92,7 @@ export default function SimpleSettings({
     }
     
     setLoading(false);
+    console.log('✅ loadItems complete for', section);
   };
 
   const handleSave = async () => {
