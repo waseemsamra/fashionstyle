@@ -128,6 +128,37 @@ export default function SimpleSettings({
     }
   };
 
+  const handleSaveWithItems = async (itemsToSave: SettingsItem[]) => {
+    // Save itemsToSave directly without modifying state
+    setSaving(true);
+    try {
+      console.log('📡 Calling API.saveSettingsSection...');
+      // Save to DynamoDB
+      await api.saveSettingsSection(section, itemsToSave);
+      console.log(`✅ ${section} saved to DynamoDB`);
+      
+      // Also save to localStorage
+      const jsonString = JSON.stringify(itemsToSave);
+      console.log('💾 Saving to localStorage:', `admin_${section}`, jsonString);
+      localStorage.setItem(`admin_${section}`, jsonString);
+      console.log(`💾 ${section} saved to localStorage`);
+      
+      // Verify it was saved
+      const saved = localStorage.getItem(`admin_${section}`);
+      console.log('🔍 Verification - localStorage now contains:', saved);
+      
+      toast.success(`${title} saved successfully!`);
+    } catch (err: any) {
+      console.error(`❌ Failed to save to DynamoDB:`, err);
+      // Fallback to localStorage
+      localStorage.setItem(`admin_${section}`, JSON.stringify(itemsToSave));
+      console.log(`💾 ${section} saved to localStorage (fallback)`);
+      toast.success(`${title} saved locally`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleAdd = async () => {
     console.log('🔘 handleAdd called for section:', section);
     console.log('📝 newItem data:', newItem);
@@ -151,15 +182,17 @@ export default function SimpleSettings({
     console.log('📋 Current items before add:', items);
     
     const updatedItems = [...items, item];
+    console.log('📋 Updated items:', updatedItems);
+    
     setItems(updatedItems);
-    console.log('📋 Items after add:', updatedItems);
+    console.log('📋 Items state updated');
     
     setNewItem({});
     setShowAddForm(false);
     
-    console.log('💾 Calling handleSave...');
-    // Auto-save
-    await handleSave();
+    console.log('💾 Calling handleSaveWithItems...');
+    // Auto-save - use handleSaveWithItems to save updatedItems directly
+    await handleSaveWithItems(updatedItems);
   };
 
   const handleUpdate = async () => {
