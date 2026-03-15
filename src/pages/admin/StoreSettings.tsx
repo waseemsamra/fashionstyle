@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { api } from '@/services/api';
 
 export default function StoreSettings() {
   const [loading, setLoading] = useState(false);
@@ -40,39 +39,149 @@ export default function StoreSettings() {
 
   const loadStoreData = async () => {
     setLoading(true);
-    
-    // ALWAYS load from localStorage first - it's the source of truth
-    const saved = localStorage.getItem('admin_store');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      setStoreData({
-        ...storeData,
-        ...parsed,
-        businessHours: parsed.businessHours || storeData.businessHours
-      });
-      console.log('✅ Store data loaded from localStorage');
-    }
 
-    setLoading(false);
+    try {
+      // FIRST: Try to load from DynamoDB via API
+      console.log('📡 Loading store info from DynamoDB...');
+      const token = localStorage.getItem('jwt_token');
+      
+      const response = await fetch('https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/store-info', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
+
+      if (response.ok) {
+        const data: any = await response.json();
+        console.log('✅ Store data loaded from DynamoDB:', data);
+        
+        // Transform API data to match component's state structure
+        setStoreData({
+          ...storeData,
+          storeName: data.name || data.storeName || '',
+          storeEmail: data.email || data.storeEmail || '',
+          storePhone: data.phone || data.storePhone || '',
+          storeAddress: data.address || data.storeAddress || '',
+          city: data.city || '',
+          state: data.state || '',
+          zipCode: data.zipCode || '',
+          country: data.country || '',
+          website: data.website || '',
+          description: data.description || '',
+          logo: data.logo || '',
+          favicon: data.favicon || '',
+          businessHours: data.businessHours || storeData.businessHours
+        });
+        
+        // Save to localStorage as backup
+        localStorage.setItem('admin_store', JSON.stringify(data));
+      } else {
+        // Fallback to localStorage
+        console.log('⚠️ API returned', response.status, ', falling back to localStorage');
+        const saved = localStorage.getItem('admin_store');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setStoreData({
+            ...storeData,
+            storeName: parsed.name || parsed.storeName || storeData.storeName,
+            storeEmail: parsed.email || parsed.storeEmail || storeData.storeEmail,
+            storePhone: parsed.phone || parsed.storePhone || storeData.storePhone,
+            storeAddress: parsed.address || parsed.storeAddress || storeData.storeAddress,
+            city: parsed.city || storeData.city,
+            state: parsed.state || storeData.state,
+            zipCode: parsed.zipCode || storeData.zipCode,
+            country: parsed.country || storeData.country,
+            website: parsed.website || storeData.website,
+            description: parsed.description || storeData.description,
+            logo: parsed.logo || storeData.logo,
+            favicon: parsed.favicon || storeData.favicon,
+            businessHours: parsed.businessHours || storeData.businessHours
+          });
+          console.log('✅ Store data loaded from localStorage');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading store data:', error);
+      
+      // Fallback to localStorage
+      const saved = localStorage.getItem('admin_store');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setStoreData({
+          ...storeData,
+          storeName: parsed.name || parsed.storeName || storeData.storeName,
+          storeEmail: parsed.email || parsed.storeEmail || storeData.storeEmail,
+          storePhone: parsed.phone || parsed.storePhone || storeData.storePhone,
+          storeAddress: parsed.address || parsed.storeAddress || storeData.storeAddress,
+          city: parsed.city || storeData.city,
+          state: parsed.state || storeData.state,
+          zipCode: parsed.zipCode || storeData.zipCode,
+          country: parsed.country || storeData.country,
+          website: parsed.website || storeData.website,
+          description: parsed.description || storeData.description,
+          logo: parsed.logo || storeData.logo,
+          favicon: parsed.favicon || storeData.favicon,
+          businessHours: parsed.businessHours || storeData.businessHours
+        });
+        console.log('✅ Store data loaded from localStorage (error fallback)');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Transform data to match API expected format
+      const apiData: any = {
+        name: storeData.storeName,
+        email: storeData.storeEmail,
+        phone: storeData.storePhone,
+        address: storeData.storeAddress,
+        city: storeData.city,
+        state: storeData.state,
+        zipCode: storeData.zipCode,
+        country: storeData.country,
+        website: storeData.website,
+        description: storeData.description,
+        logo: storeData.logo,
+        favicon: storeData.favicon,
+        businessHours: storeData.businessHours
+      };
+
       // Save to DynamoDB
-      await api.saveSettingsSection('store', storeData);
-      console.log('✅ Store data saved to DynamoDB');
+      console.log('📡 Saving store info to DynamoDB...');
+      const token = localStorage.getItem('jwt_token');
       
-      // Also save to localStorage as backup
-      localStorage.setItem('admin_store', JSON.stringify(storeData));
-      console.log('💾 Store data saved to localStorage');
-      
-      toast.success('Store information saved successfully!');
+      const response = await fetch('https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/store-info', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        body: JSON.stringify(apiData)
+      });
+
+      if (response.ok) {
+        console.log('✅ Store data saved to DynamoDB');
+        // Also save to localStorage as backup
+        localStorage.setItem('admin_store', JSON.stringify(storeData));
+        console.log('💾 Store data saved to localStorage');
+        toast.success('Store information saved successfully!');
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Failed to save to DynamoDB:', response.status, errorText);
+        throw new Error('Failed to save');
+      }
     } catch (err: any) {
       console.error('❌ Failed to save to DynamoDB:', err);
       // Fallback to localStorage
       localStorage.setItem('admin_store', JSON.stringify(storeData));
-      toast.success('Store information saved locally');
+      toast.success('Store information saved locally (DynamoDB unavailable)');
     } finally {
       setSaving(false);
     }
