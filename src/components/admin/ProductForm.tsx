@@ -93,19 +93,17 @@ export default function ProductForm({
   onOpenChange,
   onSubmit,
   initialData,
-  brands,
-  categories,
-  sizes,
-  colors,
-  materials,
-  patterns,
-  occasions,
-  genders,
+  brands = [],
+  categories = [],
+  sizes = [],
+  colors = [],
+  materials = [],
+  patterns = [],
+  occasions = [],
+  genders = [],
 }: ProductFormProps) {
   const [activeTab, setActiveTab] = useState('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  console.log('📋 ProductForm render - open:', open, 'initialData:', initialData?.name || 'new product', 'brands:', brands?.length);
 
   const {
     control,
