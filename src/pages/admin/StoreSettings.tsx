@@ -52,27 +52,7 @@ export default function StoreSettings() {
       });
       console.log('✅ Store data loaded from localStorage');
     }
-    
-    // Try DynamoDB in background (don't wait, don't overwrite)
-    try {
-      const response = await api.getAllSettings();
-      if (response.settings && response.settings.store) {
-        const apiStore = response.settings.store;
-        // Only update if API has data and localStorage doesn't
-        if (!saved) {
-          setStoreData({
-            ...storeData,
-            ...apiStore,
-            businessHours: apiStore.businessHours || storeData.businessHours
-          });
-          localStorage.setItem('admin_store', JSON.stringify(apiStore));
-          console.log('✅ Store data loaded from DynamoDB');
-        }
-      }
-    } catch (apiErr) {
-      console.log('⚠️ DynamoDB load skipped, using localStorage');
-    }
-    
+
     setLoading(false);
   };
 
