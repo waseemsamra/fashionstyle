@@ -146,7 +146,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { id: 'customers', label: 'Customers', icon: UsersIcon, path: resolveMenuPath('customers') },
     { id: 'users', label: 'Users', icon: UsersIcon, path: '/admin/users' },
     { id: 'brands', label: 'Brands', icon: Tag, path: resolveMenuPath('brands') },
-    { id: 'settings', label: 'Settings', icon: Settings, path: resolveMenuPath('settings') },
+    { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },
     { id: 'profile', label: 'Profile', icon: UserCircle, path: '/admin/profile' },
   ];
 
