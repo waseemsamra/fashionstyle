@@ -78,45 +78,68 @@ export default function AdminBrands() {
     setShowAddModal(true);
   };
 
-  const handleSaveBrand = () => {
+  const handleSaveBrand = async () => {
     if (!newBrandName.trim()) {
       toast.error('Brand name is required');
       return;
     }
 
-    if (editingBrand) {
-      // Update existing
-      const updated = brands.map(b => 
-        b.id === editingBrand.id 
-          ? { ...b, name: newBrandName, description: newBrandDescription }
-          : b
-      );
-      setBrands(updated);
-      localStorage.setItem('admin_brands', JSON.stringify(updated));
-      toast.success('Brand updated successfully!');
-    } else {
-      // Add new
-      const newBrand: Brand = {
-        id: Date.now().toString(),
+    try {
+      const token = localStorage.getItem('jwt_token');
+      const brandData = {
         name: newBrandName,
-        description: newBrandDescription,
-        active: true,
-        products: 0
+        description: newBrandDescription
       };
-      const updated = [...brands, newBrand];
-      setBrands(updated);
-      localStorage.setItem('admin_brands', JSON.stringify(updated));
-      toast.success('Brand added successfully!');
+
+      if (editingBrand) {
+        // Update existing brand via API
+        console.log('📝 Updating brand via API...');
+        await axios.put(`${API_URL}/brands/${editingBrand.id}`, brandData, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` })
+          }
+        });
+        toast.success('Brand updated successfully!');
+      } else {
+        // Add new brand via API
+        console.log('📝 Creating brand via API...');
+        await axios.post(`${API_URL}/brands`, brandData, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` })
+          }
+        });
+        toast.success('Brand added successfully!');
+      }
+      
+      // Reload brands from API
+      await loadBrands();
+      setShowAddModal(false);
+    } catch (error: any) {
+      console.error('Failed to save brand:', error);
+      toast.error('Failed to save brand to backend');
     }
-    setShowAddModal(false);
   };
 
-  const handleDeleteBrand = (id: string) => {
+  const handleDeleteBrand = async (id: string) => {
     if (confirm('Are you sure you want to delete this brand?')) {
-      const updated = brands.filter(b => b.id !== id);
-      setBrands(updated);
-      localStorage.setItem('admin_brands', JSON.stringify(updated));
-      toast.success('Brand deleted successfully!');
+      try {
+        const token = localStorage.getItem('jwt_token');
+        console.log('🗑️ Deleting brand via API...');
+        await axios.delete(`${API_URL}/brands/${id}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` })
+          }
+        });
+        toast.success('Brand deleted successfully!');
+        // Reload brands from API
+        await loadBrands();
+      } catch (error: any) {
+        console.error('Failed to delete brand:', error);
+        toast.error('Failed to delete brand from backend');
+      }
     }
   };
 
