@@ -176,8 +176,10 @@ export default function AdminProducts() {
   };
 
   const handleEditProduct = (product: Product) => {
+    console.log('✏️ Edit product clicked:', product.name);
     setEditingProduct(product);
     setShowFormModal(true);
+    console.log('🔓 Form modal state set to true, editing:', product.name);
   };
 
   const handleSaveProduct = async (data: any) => {

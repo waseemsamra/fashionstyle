@@ -105,6 +105,8 @@ export default function ProductForm({
   const [activeTab, setActiveTab] = useState('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  console.log('📋 ProductForm render - open:', open, 'initialData:', initialData?.name || 'new product', 'brands:', brands?.length);
+
   const {
     control,
     handleSubmit,
