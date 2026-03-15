@@ -400,7 +400,6 @@ export const api = {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     
     try {
-      // Use settings-v2 endpoint
       const response = await fetch(`${API_URL}/admin/settings-v2/categories`, {
         method: 'POST',
         headers: {
@@ -408,7 +407,7 @@ export const api = {
           'Content-Type': 'application/json'
         },
         mode: 'cors',
-        body: JSON.stringify({ categories })
+        body: JSON.stringify({ items: categories })
       });
       
       if (!response.ok) {
@@ -419,6 +418,59 @@ export const api = {
       return await response.json();
     } catch (error) {
       console.error('Failed to save categories:', error);
+      throw error;
+    }
+  },
+
+  // Get all settings
+  getAllSettings: async () => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/admin/settings-v2`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to fetch settings');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to get settings:', error);
+      throw error;
+    }
+  },
+
+  // Save settings section
+  saveSettingsSection: async (section: string, data: any) => {
+    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+    
+    try {
+      const response = await fetch(`${API_URL}/admin/settings-v2/${section}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors',
+        body: JSON.stringify({ data })
+      });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || 'Failed to save settings');
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to save settings:', error);
       throw error;
     }
   },

@@ -388,8 +388,8 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
             existing.products = (existing.products || 0) + 1;
           }
         });
-        setCategories(Array.from(categoryMap.values()));
-        console.log('✅ Found', categoryMap.size, 'categories');
+        // REMOVED: setCategories(Array.from(categoryMap.values())); - This was overwriting localStorage!
+        console.log('ℹ️ Categories: Using localStorage data (NOT overwriting with API data)');
 
         // Load orders using admin orders endpoint
         console.log('📋 Loading orders...');
