@@ -126,9 +126,22 @@ export default function AdminProducts() {
   const loadBrands = async () => {
     try {
       console.log('🏷️ Fetching brands for product form...');
-      const fetchedBrands = await getAllBrands();
-      console.log('✅ Loaded', fetchedBrands.length, 'brands');
-      setBrands(fetchedBrands);
+      const result: any = await getAllBrands();
+      
+      // Handle both possible response structures
+      let brandsArray = [];
+      if (Array.isArray(result)) {
+        brandsArray = result;
+      } else if (result && result.items && Array.isArray(result.items)) {
+        brandsArray = result.items;
+      } else if (result && result.brands && Array.isArray(result.brands)) {
+        brandsArray = result.brands;
+      } else if (result && result.data && Array.isArray(result.data)) {
+        brandsArray = result.data;
+      }
+      
+      console.log('✅ Loaded', brandsArray.length, 'brands');
+      setBrands(brandsArray);
     } catch (error) {
       console.error('❌ Failed to fetch brands:', error);
       // Brands will remain empty, but form can still create new ones
@@ -139,13 +152,27 @@ export default function AdminProducts() {
     setLoading(true);
     try {
       console.log('📦 Loading products from backend API...');
-      const products = await getAllProducts();
-      console.log('✅ Loaded', products.length, 'products from API');
+      const result: any = await getAllProducts();
       
-      if (products.length > 0) {
-        setProducts(products as Product[]);
-        // Cache in localStorage as backup
-        localStorage.setItem('admin_products', JSON.stringify(products));
+      // Handle both possible response structures
+      let productsArray = [];
+      if (Array.isArray(result)) {
+        productsArray = result;
+      } else if (result && result.items && Array.isArray(result.items)) {
+        productsArray = result.items;
+      } else if (result && result.data && Array.isArray(result.data)) {
+        productsArray = result.data;
+      } else if (result && typeof result === 'object') {
+        // Try to extract array from any wrapper
+        productsArray = Array.isArray(result) ? result : [];
+      }
+      
+      console.log('✅ Loaded', productsArray.length, 'products from API');
+      console.log('📦 Products array:', productsArray);
+
+      if (productsArray.length > 0) {
+        setProducts(productsArray as Product[]);
+        localStorage.setItem('admin_products', JSON.stringify(productsArray));
       } else {
         // Fallback to localStorage if API returns empty
         const savedProducts = localStorage.getItem('admin_products');

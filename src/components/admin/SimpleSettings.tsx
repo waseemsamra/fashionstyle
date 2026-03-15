@@ -54,7 +54,7 @@ export default function SimpleSettings({
     try {
       const token = localStorage.getItem('jwt_token');
       console.log('📡 Fetching from API with token:', token ? 'Present' : 'Missing');
-      
+
       const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/${section}`, {
         method: 'GET',
         headers: {
@@ -63,36 +63,57 @@ export default function SimpleSettings({
         },
         mode: 'cors'
       });
-      
+
       console.log('📊 API Response status:', response.status);
-      
+
       if (response.ok) {
-        const data = await response.json();
+        const data: any = await response.json();
         console.log('📋 API Response data:', data);
-        const apiItems = data.items || data.data || [];
-        console.log('✅ Loaded', apiItems.length, 'items from DynamoDB');
         
+        // Handle different response formats
+        let apiItems: any[] = [];
+        if (Array.isArray(data)) {
+          apiItems = data;
+        } else if (data && Array.isArray(data.items)) {
+          apiItems = data.items;
+        } else if (data && Array.isArray(data.data)) {
+          apiItems = data.data;
+        } else if (data && typeof data === 'object') {
+          // Single object response - convert to array
+          apiItems = [data];
+        }
+        
+        console.log('✅ Loaded', apiItems.length, 'items from DynamoDB');
+
         if (apiItems.length > 0) {
           setItems(apiItems);
           // Cache in localStorage
           localStorage.setItem(`admin_${section}`, JSON.stringify(apiItems));
           console.log('💾 Cached to localStorage');
+        } else {
+          console.log('⚠️ API returned empty data');
         }
       } else {
         const errorText = await response.text();
         console.error('❌ API error:', response.status, errorText);
+        toast.error(`Failed to load ${title}`);
       }
-    } catch (apiErr) {
+    } catch (apiErr: any) {
       console.error('❌ API failed:', apiErr);
+      toast.error(`Failed to load ${title}`);
     }
-    
+
     // Fallback to localStorage if no items loaded
     if (items.length === 0) {
       const saved = localStorage.getItem(`admin_${section}`);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('✅ Loaded', parsed.length, 'items from localStorage (fallback)');
-        setItems(parsed);
+        try {
+          const parsed = JSON.parse(saved);
+          console.log('✅ Loaded', parsed.length, 'items from localStorage (fallback)');
+          setItems(Array.isArray(parsed) ? parsed : []);
+        } catch (e) {
+          console.error('❌ Failed to parse localStorage data:', e);
+        }
       } else {
         console.log('⚠️ No data in localStorage for', section);
         setItems([]);

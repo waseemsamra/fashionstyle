@@ -95,8 +95,17 @@ export const api = {
 
   // Get single product
   getProduct: async (id: string) => {
-    const products = await api.listProducts();
-    return products.find((p: any) => p.id === id) || null;
+    try {
+      const response = await apiClient.get(`/products/${id}`);
+      // Handle different response formats: { item: ... }, { product: ... }, or direct object
+      const data = response.data.item || response.data.product || response.data;
+      return data;
+    } catch (error) {
+      // Fallback to finding from list
+      const products = await api.listProducts();
+      const items = products.items || products.products || products || [];
+      return items.find((p: any) => p.id === id) || null;
+    }
   },
 
   // Search products

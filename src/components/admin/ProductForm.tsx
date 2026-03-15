@@ -320,7 +320,7 @@ export default function ProductForm({
                                 <SelectValue placeholder="Select category" />
                               </SelectTrigger>
                               <SelectContent>
-                                {categories.map((cat) => (
+                                {(categories || []).map((cat) => (
                                   <SelectItem key={cat.id} value={cat.name}>
                                     {cat.name}
                                   </SelectItem>
@@ -341,7 +341,7 @@ export default function ProductForm({
                           control={control}
                           render={({ field }) => (
                             <SearchableSelect
-                              options={brands.map((b) => ({
+                              options={(brands || []).map((b) => ({
                                 id: b.name,
                                 name: b.name,
                                 description: b.description || '',
@@ -572,7 +572,7 @@ export default function ProductForm({
                         control={control}
                         render={({ field }) => (
                           <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30">
-                            {sizes.map((size) => {
+                            {(sizes || []).map((size) => {
                               const isSelected = (field.value || []).includes(size.code);
                               return (
                                 <Badge
@@ -607,7 +607,7 @@ export default function ProductForm({
                         control={control}
                         render={({ field }) => (
                           <div className="flex flex-wrap gap-3 p-3 border rounded-lg bg-muted/30">
-                            {colors.map((color) => {
+                            {(colors || []).map((color) => {
                               const isSelected = (field.value || []).includes(color.name);
                               return (
                                 <div
@@ -657,7 +657,7 @@ export default function ProductForm({
                         control={control}
                         render={({ field }) => (
                           <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30">
-                            {genders.map((gender) => {
+                            {(genders || []).map((gender) => {
                               const isSelected = (field.value || []).includes(gender.name);
                               return (
                                 <Badge
@@ -700,7 +700,7 @@ export default function ProductForm({
                         control={control}
                         render={({ field }) => (
                           <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30">
-                            {materials.map((material) => {
+                            {(materials || []).map((material) => {
                               const isSelected = (field.value || []).includes(material.name);
                               return (
                                 <Badge
@@ -728,7 +728,7 @@ export default function ProductForm({
                         control={control}
                         render={({ field }) => (
                           <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30">
-                            {patterns.map((pattern) => {
+                            {(patterns || []).map((pattern) => {
                               const isSelected = (field.value || []).includes(pattern.name);
                               return (
                                 <Badge
@@ -756,7 +756,7 @@ export default function ProductForm({
                         control={control}
                         render={({ field }) => (
                           <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30">
-                            {occasions.map((occasion) => {
+                            {(occasions || []).map((occasion) => {
                               const isSelected = (field.value || []).includes(occasion.name);
                               return (
                                 <Badge

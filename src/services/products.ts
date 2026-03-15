@@ -16,13 +16,22 @@ export const productsService = {
   // Get all products
   getAllProducts: async (): Promise<Product[]> => {
     const response = await apiClient.get('/products');
-    return response.data.items || [];
+    return response.data.items || response.data.products || response.data || [];
   },
 
   // Get product by ID
   getProductById: async (id: string): Promise<Product | null> => {
-    const products = await productsService.getAllProducts();
-    return products.find(p => p.id === id) || null;
+    try {
+      // Try to fetch single product directly
+      const response = await apiClient.get(`/products/${id}`);
+      // Handle different response formats: { item: ... }, { product: ... }, or direct object
+      const product = response.data.item || response.data.product || response.data;
+      return product || null;
+    } catch (error) {
+      // Fallback to finding from list
+      const products = await productsService.getAllProducts();
+      return products.find(p => p.id === id) || null;
+    }
   },
 
   // Get products by category

@@ -18,9 +18,9 @@ export interface Brand {
 export const getAllBrands = async (): Promise<Brand[]> => {
   try {
     console.log('🏷️ Fetching all brands...');
-    
+
     const token = localStorage.getItem('jwt_token');
-    
+
     const response = await axios.get(
       `${API_URL}/admin/brands`,
       {
@@ -29,9 +29,19 @@ export const getAllBrands = async (): Promise<Brand[]> => {
         }
       }
     );
-    
+
     console.log('✅ Brands fetched:', response.data);
-    return response.data.items || response.data;
+    
+    // Handle different response formats and ensure we return an array
+    const data = response.data;
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data && typeof data === 'object') {
+      // Extract array from common wrapper formats
+      const brands = data.items || data.brands || data.data || [];
+      return Array.isArray(brands) ? brands : [];
+    }
+    return [];
   } catch (error: any) {
     console.error('❌ Failed to fetch brands:', error);
     return [];
