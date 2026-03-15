@@ -6,6 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import axios from 'axios';
+
+const API_URL = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
 
 interface Brand {
   id: string;
@@ -32,15 +35,30 @@ export default function AdminBrands() {
   const loadBrands = async () => {
     setLoading(true);
     try {
-      // Load from localStorage
-      const savedBrands = localStorage.getItem('admin_brands');
-      if (savedBrands) {
-        const parsed = JSON.parse(savedBrands);
-        setBrands(parsed);
-        console.log('✅ Loaded', parsed.length, 'brands from localStorage');
+      console.log('📦 Loading brands from backend API...');
+      const token = localStorage.getItem('jwt_token');
+      
+      const response = await axios.get(`${API_URL}/brands`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
+        }
+      });
+      
+      console.log('✅ Brands response:', response.data);
+      const brandsData = response.data.brands || response.data.items || response.data || [];
+      
+      if (brandsData.length > 0) {
+        setBrands(brandsData);
+        console.log('✅ Loaded', brandsData.length, 'brands from API');
+      } else {
+        console.log('⚠️ No brands found in API');
+        setBrands([]);
       }
-    } catch (error) {
-      console.error('Failed to load brands:', error);
+    } catch (error: any) {
+      console.error('❌ Failed to load brands from API:', error);
+      toast.error('Failed to load brands from backend');
+      setBrands([]);
     } finally {
       setLoading(false);
     }
