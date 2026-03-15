@@ -78,14 +78,14 @@ interface ProductFormProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: ProductFormData) => void;
   initialData?: any;
-  brands: any[];
-  categories: any[];
-  sizes: any[];
-  colors: any[];
-  materials: any[];
-  patterns: any[];
-  occasions: any[];
-  genders: any[];
+  brands?: any[];
+  categories?: any[];
+  sizes?: any[];
+  colors?: any[];
+  materials?: any[];
+  patterns?: any[];
+  occasions?: any[];
+  genders?: any[];
 }
 
 export default function ProductForm({

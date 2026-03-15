@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 
 interface SearchableSelectProps {
-  options: { id: string | number; name: string; description?: string }[];
+  options?: { id: string | number; name: string; description?: string }[];
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -12,7 +12,7 @@ interface SearchableSelectProps {
 }
 
 export default function SearchableSelect({
-  options,
+  options = [],
   value,
   onChange,
   placeholder = 'Select...',
@@ -22,18 +22,19 @@ export default function SearchableSelect({
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredOptions, setFilteredOptions] = useState(options);
+  const [filteredOptions, setFilteredOptions] = useState<{ id: string | number; name: string; description?: string }[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Filter options based on search
   useEffect(() => {
+    const opts = options || [];
     if (searchTerm) {
-      const filtered = options.filter(opt =>
-        opt.name.toLowerCase().includes(searchTerm.toLowerCase())
+      const filtered = opts.filter(opt =>
+        opt.name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredOptions(filtered);
     } else {
-      setFilteredOptions(options);
+      setFilteredOptions(opts);
     }
   }, [searchTerm, options]);
 
@@ -63,7 +64,7 @@ export default function SearchableSelect({
     }
   };
 
-  const selectedOption = options.find(opt => opt.id != null && String(opt.id) === value);
+  const selectedOption = (options || []).find(opt => opt.id != null && String(opt.id) === value);
 
   return (
     <div className="space-y-2" ref={dropdownRef}>
@@ -112,7 +113,7 @@ export default function SearchableSelect({
 
             {/* Options List */}
             <div className="overflow-y-auto max-h-48">
-              {filteredOptions.length === 0 ? (
+              {!filteredOptions || filteredOptions.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   {allowCreate && searchTerm ? (
                     <button
@@ -126,7 +127,7 @@ export default function SearchableSelect({
                   )}
                 </div>
               ) : (
-                filteredOptions.map((option) => (
+                (filteredOptions || []).map((option) => (
                   <button
                     key={option.id}
                     type="button"
