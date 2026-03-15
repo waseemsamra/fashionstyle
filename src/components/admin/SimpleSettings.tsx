@@ -49,18 +49,50 @@ export default function SimpleSettings({
   const loadItems = async () => {
     console.log('🔍 loadItems called for section:', section);
     setLoading(true);
-    
-    // Load from localStorage (seed data is saved here)
-    const saved = localStorage.getItem(`admin_${section}`);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      console.log('✅ Loaded', parsed.length, 'items from localStorage');
-      setItems(parsed);
-    } else {
-      console.log('⚠️ No data in localStorage for', section);
-      setItems([]);
+
+    // Load from DynamoDB API
+    try {
+      const token = localStorage.getItem('jwt_token');
+      const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/${section}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        mode: 'cors'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const apiItems = data.items || data.data || [];
+        console.log('✅ Loaded', apiItems.length, 'items from DynamoDB');
+        
+        if (apiItems.length > 0) {
+          setItems(apiItems);
+          // Cache in localStorage
+          localStorage.setItem(`admin_${section}`, JSON.stringify(apiItems));
+          console.log('💾 Cached to localStorage');
+        }
+      } else {
+        console.log('⚠️ API returned', response.status);
+      }
+    } catch (apiErr) {
+      console.error('❌ API failed:', apiErr);
     }
     
+    // Fallback to localStorage
+    if (items.length === 0) {
+      const saved = localStorage.getItem(`admin_${section}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('✅ Loaded', parsed.length, 'items from localStorage (fallback)');
+        setItems(parsed);
+      } else {
+        console.log('⚠️ No data in localStorage for', section);
+        setItems([]);
+      }
+    }
+
     setLoading(false);
     console.log('✅ loadItems complete for', section);
   };
