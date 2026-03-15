@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import ProductForm from '@/components/admin/ProductForm';
+import { getAllProducts, deleteProduct, createProduct, updateProduct } from '@/services/productService';
 
 interface Product {
   id: string;
@@ -34,15 +35,33 @@ export default function AdminProducts() {
   const loadProducts = async () => {
     setLoading(true);
     try {
-      // Load from localStorage
+      console.log('📦 Loading products from backend API...');
+      const products = await getAllProducts();
+      console.log('✅ Loaded', products.length, 'products from API');
+      
+      if (products.length > 0) {
+        setProducts(products);
+        // Cache in localStorage as backup
+        localStorage.setItem('admin_products', JSON.stringify(products));
+      } else {
+        // Fallback to localStorage if API returns empty
+        const savedProducts = localStorage.getItem('admin_products');
+        if (savedProducts) {
+          const parsed = JSON.parse(savedProducts);
+          console.log('✅ Loaded', parsed.length, 'products from localStorage (fallback)');
+          setProducts(parsed);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load products from API:', error);
+      // Fallback to localStorage
       const savedProducts = localStorage.getItem('admin_products');
       if (savedProducts) {
         const parsed = JSON.parse(savedProducts);
+        console.log('✅ Loaded', parsed.length, 'products from localStorage (error fallback)');
         setProducts(parsed);
-        console.log('✅ Loaded', parsed.length, 'products from localStorage');
       }
-    } catch (error) {
-      console.error('Failed to load products:', error);
+      toast.error('Failed to load products from backend');
     } finally {
       setLoading(false);
     }
@@ -58,7 +77,7 @@ export default function AdminProducts() {
     setShowFormModal(true);
   };
 
-  const handleSaveProduct = (data: any) => {
+  const handleSaveProduct = async (data: any) => {
     const product: Product = {
       id: editingProduct?.id || Date.now().toString(),
       name: data.name,
@@ -67,31 +86,54 @@ export default function AdminProducts() {
       brand: data.brand,
       image: data.image,
       stock: data.stock,
-      active: true
+      active: true,
+      description: data.description,
+      images: data.images || [],
+      sizes: data.sizes || [],
+      colors: data.colors || []
     };
     
-    if (editingProduct) {
-      // Update existing
-      const updated = products.map(p => p.id === product.id ? product : p);
-      setProducts(updated);
-      localStorage.setItem('admin_products', JSON.stringify(updated));
-      toast.success('Product updated successfully!');
-    } else {
-      // Add new
-      const updated = [...products, product];
-      setProducts(updated);
-      localStorage.setItem('admin_products', JSON.stringify(updated));
-      toast.success('Product added successfully!');
+    try {
+      if (editingProduct) {
+        // Update existing
+        console.log('📝 Updating product via API...');
+        await updateProduct(product);
+        const updated = products.map(p => p.id === product.id ? product : p);
+        setProducts(updated);
+        localStorage.setItem('admin_products', JSON.stringify(updated));
+        toast.success('Product updated successfully!');
+      } else {
+        // Add new
+        console.log('📝 Creating product via API...');
+        const created = await createProduct(product);
+        const updated = [...products, created];
+        setProducts(updated);
+        localStorage.setItem('admin_products', JSON.stringify(updated));
+        toast.success('Product added successfully!');
+      }
+      setShowFormModal(false);
+    } catch (error) {
+      console.error('Failed to save product:', error);
+      toast.error('Failed to save product to backend');
     }
-    setShowFormModal(false);
   };
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
-      const updated = products.filter(p => p.id !== id);
-      setProducts(updated);
-      localStorage.setItem('admin_products', JSON.stringify(updated));
-      toast.success('Product deleted successfully!');
+      try {
+        const success = await deleteProduct(id);
+        if (success) {
+          const updated = products.filter(p => p.id !== id);
+          setProducts(updated);
+          localStorage.setItem('admin_products', JSON.stringify(updated));
+          toast.success('Product deleted successfully!');
+        } else {
+          toast.error('Failed to delete product');
+        }
+      } catch (error) {
+        console.error('Failed to delete product:', error);
+        toast.error('Failed to delete product from backend');
+      }
     }
   };
 
