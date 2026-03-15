@@ -31,6 +31,7 @@ const Users = lazy(() => import('@/pages/admin/Users'));
 const Profile = lazy(() => import('@/pages/admin/Profile'));
 const AdminOrders = lazy(() => import('@/pages/admin/Orders'));
 const AdminOrderDetails = lazy(() => import('@/pages/admin/OrderDetails'));
+const Settings = lazy(() => import('@/pages/admin/Settings'));
 
 function Layout() {
   const location = useLocation();
@@ -70,6 +71,7 @@ function Layout() {
               <Route path="orders" element={<AdminOrders />} />
               <Route path="orders/:orderId" element={<AdminOrderDetails />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
         </Suspense>
