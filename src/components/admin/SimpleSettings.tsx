@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { api, API_URL } from '@/services/api';
+import { api } from '@/services/api';
 
 interface SettingsItem {
   id: string;
@@ -49,53 +49,15 @@ export default function SimpleSettings({
   const loadItems = async () => {
     console.log('🔍 loadItems called for section:', section);
     setLoading(true);
-
-    // Try DynamoDB FIRST
-    try {
-      console.log('📡 Fetching from DynamoDB...');
-      await api.saveSettingsSection(section, []); // This will fail but we'll catch it
-    } catch (err) {
-      // We expect this to fail - we just want to check if API is available
-    }
     
-    // Load from API endpoint directly
-    try {
-      const token = localStorage.getItem('jwt_token');
-      const response = await fetch(`${API_URL}/admin/settings-v2/${section}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        mode: 'cors'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const apiItems = data.items || data.data || [];
-        console.log('✅ Loaded', apiItems.length, 'items from DynamoDB');
-        
-        if (apiItems.length > 0) {
-          setItems(apiItems);
-          // Cache in localStorage
-          localStorage.setItem(`admin_${section}`, JSON.stringify(apiItems));
-          console.log('💾 Cached to localStorage');
-        }
-      } else {
-        console.log('⚠️ API returned', response.status);
-      }
-    } catch (apiErr) {
-      console.log('⚠️ API failed, trying localStorage');
-    }
-    
-    // Fallback to localStorage
+    // Load from localStorage (seed data is saved here)
     const saved = localStorage.getItem(`admin_${section}`);
     if (saved) {
       const parsed = JSON.parse(saved);
       console.log('✅ Loaded', parsed.length, 'items from localStorage');
       setItems(parsed);
     } else {
-      console.log('⚠️ No data in localStorage');
+      console.log('⚠️ No data in localStorage for', section);
       setItems([]);
     }
     
