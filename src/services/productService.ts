@@ -145,27 +145,32 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
  */
 export const getAllProducts = async (): Promise<Product[]> => {
   try {
+    console.log('📦 Fetching products from API...');
+    
     const token = localStorage.getItem('jwt_token');
     
-    try {
-      const response = await axios.get(
-        `${API_URL}/admin/products`,
-        {
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` })
-          }
+    // Use the working endpoint: GET /products
+    const response = await axios.get(
+      `${API_URL}/products`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
         }
-      );
-      
-      return response.data.items || response.data;
-    } catch (adminErr: any) {
-      console.log('Admin endpoint not available, using regular endpoint');
-      // Fallback to regular products endpoint
-      const response = await axios.get(API_URL + '/products');
-      return response.data.items || response.data;
-    }
+      }
+    );
+
+    console.log('✅ Products response:', response.data);
+    
+    // Handle different response formats
+    const products = response.data.items || response.data.products || response.data || [];
+    console.log('✅ Extracted', products.length, 'products');
+    
+    return products;
   } catch (error: any) {
     console.error('❌ Failed to get products:', error);
+    console.error('❌ Error response:', error.response?.data);
+    console.error('❌ Error status:', error.response?.status);
     return [];
   }
 };
