@@ -3,7 +3,7 @@ import { Package, Plus, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import ProductForm from '@/components/admin/ProductForm';
@@ -202,71 +202,99 @@ export default function AdminProducts() {
         </CardContent>
       </Card>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-bold mb-2">No Products Found</h3>
-            <p className="text-gray-600 mb-4">
-              {products.length === 0 
-                ? "Get started by adding your first product" 
-                : "Try adjusting your search or filters"}
-            </p>
-            {products.length === 0 && (
-              <Button onClick={handleAddProduct} className="bg-gold hover:bg-gold/90">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Product
-              </Button>
-            )}
-          </div>
-        ) : (
-          filteredProducts.map((product) => (
-            <Card key={product.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="p-0">
-                <img
-                  src={product.image || '/placeholder.png'}
-                  alt={product.name}
-                  className="w-full h-48 object-cover rounded-t-lg"
-                />
-              </CardHeader>
-              <CardContent className="p-4 space-y-3">
-                <div>
-                  <h3 className="font-bold text-lg truncate">{product.name}</h3>
-                  <p className="text-sm text-gray-600">{product.category}</p>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-xl font-bold text-gold">${product.price}</span>
-                  <Badge variant={(product.stock || 0) > 0 ? 'default' : 'secondary'}>
-                    {(product.stock || 0) > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                  </Badge>
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditProduct(product)}
-                    className="flex-1"
-                  >
-                    <Edit className="w-4 h-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteProduct(product.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      {/* Products Table */}
+      <Card>
+        <CardContent className="p-0">
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-xl font-bold mb-2">No Products Found</h3>
+              <p className="text-gray-600 mb-4">
+                {products.length === 0 
+                  ? "Get started by adding your first product" 
+                  : "Try adjusting your search or filters"}
+              </p>
+              {products.length === 0 && (
+                <Button onClick={handleAddProduct} className="bg-gold hover:bg-gold/90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Product
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Product</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Category</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Price</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Stock</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProducts.map((product) => (
+                    <tr key={product.id} className="border-b hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={product.image || '/placeholder.png'}
+                            alt={product.name}
+                            className="w-12 h-12 object-cover rounded"
+                          />
+                          <div>
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-sm text-gray-500">{product.brand || ''}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline">{product.category || 'N/A'}</Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-semibold text-gold">${product.price}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={(product.stock || 0) > 0 ? 'default' : 'secondary'}>
+                          {(product.stock || 0) > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant={product.active ? 'default' : 'secondary'}>
+                          {product.active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditProduct(product)}
+                            title="Edit Product"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="text-red-600 hover:text-red-700"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Product Form Modal */}
       {showFormModal && (
