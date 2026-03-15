@@ -38,14 +38,38 @@ export default function AdminBrands() {
       console.log('📦 Loading brands from backend API...');
       const token = localStorage.getItem('jwt_token');
       
-      const response = await axios.get(`${API_URL}/brands`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
-        }
-      });
+      // Try different possible endpoints
+      const endpoints = [
+        `${API_URL}/admin/brands`,
+        `${API_URL}/brands`,
+        `${API_URL}/admin/settings-v2/brands`
+      ];
       
-      console.log('✅ Brands response:', response.data);
+      let response;
+      let usedEndpoint = '';
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`📡 Trying endpoint: ${endpoint}`);
+          response = await axios.get(endpoint, {
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token && { Authorization: `Bearer ${token}` })
+            }
+          });
+          usedEndpoint = endpoint;
+          break;
+        } catch (err: any) {
+          console.log(`⚠️ Endpoint ${endpoint} failed:`, err.response?.status || err.message);
+          continue;
+        }
+      }
+      
+      if (!response) {
+        throw new Error('All endpoints failed');
+      }
+      
+      console.log('✅ Brands response from', usedEndpoint, ':', response.data);
       const brandsData = response.data.brands || response.data.items || response.data || [];
       
       if (brandsData.length > 0) {
@@ -54,10 +78,13 @@ export default function AdminBrands() {
       } else {
         console.log('⚠️ No brands found in API');
         setBrands([]);
+        toast.info('No brands found - add your first brand!');
       }
     } catch (error: any) {
       console.error('❌ Failed to load brands from API:', error);
-      toast.error('Failed to load brands from backend');
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      toast.error('Failed to load brands: ' + (error.response?.data?.message || error.message));
       setBrands([]);
     } finally {
       setLoading(false);
