@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import ProductForm from '@/components/admin/ProductForm';
 import { getAllProducts, deleteProduct, createProduct, updateProduct } from '@/services/productService';
+import { getAllBrands } from '@/services/brandService';
 
 interface Product {
   id: string;
@@ -24,6 +25,83 @@ interface Product {
   active?: boolean;
 }
 
+// Default metadata options
+const DEFAULT_CATEGORIES = [
+  { id: '1', name: 'Bridal Wear' },
+  { id: '2', name: 'Casual Wear' },
+  { id: '3', name: 'Formal Wear' },
+  { id: '4', name: 'Accessories' },
+  { id: '5', name: 'Festive Collection' },
+  { id: '6', name: 'New Arrivals' },
+];
+
+const DEFAULT_SIZES = [
+  { id: '1', code: 'XS', name: 'Extra Small' },
+  { id: '2', code: 'S', name: 'Small' },
+  { id: '3', code: 'M', name: 'Medium' },
+  { id: '4', code: 'L', name: 'Large' },
+  { id: '5', code: 'XL', name: 'Extra Large' },
+  { id: '6', code: 'XXL', name: 'Double XL' },
+];
+
+const DEFAULT_COLORS = [
+  { id: '1', name: 'Black', code: '#000000' },
+  { id: '2', name: 'White', code: '#FFFFFF' },
+  { id: '3', name: 'Red', code: '#FF0000' },
+  { id: '4', name: 'Blue', code: '#0000FF' },
+  { id: '5', name: 'Green', code: '#008000' },
+  { id: '6', name: 'Yellow', code: '#FFFF00' },
+  { id: '7', name: 'Orange', code: '#FFA500' },
+  { id: '8', name: 'Purple', code: '#800080' },
+  { id: '9', name: 'Pink', code: '#FFC0CB' },
+  { id: '10', name: 'Brown', code: '#A52A2A' },
+  { id: '11', name: 'Gray', code: '#808080' },
+  { id: '12', name: 'Navy', code: '#000080' },
+  { id: '13', name: 'Gold', code: '#FFD700' },
+  { id: '14', name: 'Silver', code: '#C0C0C0' },
+  { id: '15', name: 'Beige', code: '#F5F5DC' },
+  { id: '16', name: 'Cream', code: '#FFFDD0' },
+  { id: '17', name: 'Maroon', code: '#800000' },
+  { id: '18', name: 'Teal', code: '#008080' },
+];
+
+const DEFAULT_MATERIALS = [
+  { id: '1', name: 'Cotton' },
+  { id: '2', name: 'Silk' },
+  { id: '3', name: 'Chiffon' },
+  { id: '4', name: 'Organza' },
+  { id: '5', name: 'Velvet' },
+  { id: '6', name: 'Linen' },
+  { id: '7', name: 'Satin' },
+  { id: '8', name: 'Georgette' },
+];
+
+const DEFAULT_PATTERNS = [
+  { id: '1', name: 'Solid' },
+  { id: '2', name: 'Printed' },
+  { id: '3', name: 'Embroidered' },
+  { id: '4', name: 'Striped' },
+  { id: '5', name: 'Floral' },
+  { id: '6', name: 'Geometric' },
+];
+
+const DEFAULT_OCCASIONS = [
+  { id: '1', name: 'Casual' },
+  { id: '2', name: 'Formal' },
+  { id: '3', name: 'Wedding' },
+  { id: '4', name: 'Party' },
+  { id: '5', name: 'Office' },
+  { id: '6', name: 'Festive' },
+];
+
+const DEFAULT_GENDERS = [
+  { id: '1', name: 'Women' },
+  { id: '2', name: 'Men' },
+  { id: '3', name: 'Unisex' },
+  { id: '4', name: 'Girls' },
+  { id: '5', name: 'Boys' },
+];
+
 export default function AdminProducts() {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
@@ -31,10 +109,31 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [brands, setBrands] = useState<any[]>([]);
+  const [categories] = useState(DEFAULT_CATEGORIES);
+  const [sizes] = useState(DEFAULT_SIZES);
+  const [colors] = useState(DEFAULT_COLORS);
+  const [materials] = useState(DEFAULT_MATERIALS);
+  const [patterns] = useState(DEFAULT_PATTERNS);
+  const [occasions] = useState(DEFAULT_OCCASIONS);
+  const [genders] = useState(DEFAULT_GENDERS);
 
   useEffect(() => {
     loadProducts();
+    loadBrands();
   }, []);
+
+  const loadBrands = async () => {
+    try {
+      console.log('🏷️ Fetching brands for product form...');
+      const fetchedBrands = await getAllBrands();
+      console.log('✅ Loaded', fetchedBrands.length, 'brands');
+      setBrands(fetchedBrands);
+    } catch (error) {
+      console.error('❌ Failed to fetch brands:', error);
+      // Brands will remain empty, but form can still create new ones
+    }
+  };
 
   const loadProducts = async () => {
     setLoading(true);
@@ -303,14 +402,14 @@ export default function AdminProducts() {
           onOpenChange={setShowFormModal}
           onSubmit={handleSaveProduct}
           initialData={editingProduct}
-          brands={[]}
-          categories={[]}
-          sizes={[]}
-          colors={[]}
-          materials={[]}
-          patterns={[]}
-          occasions={[]}
-          genders={[]}
+          brands={brands}
+          categories={categories}
+          sizes={sizes}
+          colors={colors}
+          materials={materials}
+          patterns={patterns}
+          occasions={occasions}
+          genders={genders}
         />
       )}
     </div>
