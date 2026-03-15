@@ -80,21 +80,32 @@ export default function SimpleSettings({
   };
 
   const handleSave = async () => {
+    console.log('💾 handleSave called for section:', section);
+    console.log('📋 Items to save:', items);
+    
     setSaving(true);
     try {
+      console.log('📡 Calling API.saveSettingsSection...');
       // Save to DynamoDB
       await api.saveSettingsSection(section, items);
       console.log(`✅ ${section} saved to DynamoDB`);
       
       // Also save to localStorage
-      localStorage.setItem(`admin_${section}`, JSON.stringify(items));
+      const jsonString = JSON.stringify(items);
+      console.log('💾 Saving to localStorage:', `admin_${section}`, jsonString);
+      localStorage.setItem(`admin_${section}`, jsonString);
       console.log(`💾 ${section} saved to localStorage`);
+      
+      // Verify it was saved
+      const saved = localStorage.getItem(`admin_${section}`);
+      console.log('🔍 Verification - localStorage now contains:', saved);
       
       toast.success(`${title} saved successfully!`);
     } catch (err: any) {
       console.error(`❌ Failed to save to DynamoDB:`, err);
       // Fallback to localStorage
       localStorage.setItem(`admin_${section}`, JSON.stringify(items));
+      console.log(`💾 ${section} saved to localStorage (fallback)`);
       toast.success(`${title} saved locally`);
     } finally {
       setSaving(false);
@@ -102,7 +113,11 @@ export default function SimpleSettings({
   };
 
   const handleAdd = async () => {
+    console.log('🔘 handleAdd called for section:', section);
+    console.log('📝 newItem data:', newItem);
+    
     if (!newItem.name) {
+      console.log('❌ Name is required');
       toast.error('Name is required');
       return;
     }
@@ -116,10 +131,17 @@ export default function SimpleSettings({
       createdAt: new Date().toISOString()
     };
 
-    setItems([...items, item]);
+    console.log('➕ Created item:', item);
+    console.log('📋 Current items before add:', items);
+    
+    const updatedItems = [...items, item];
+    setItems(updatedItems);
+    console.log('📋 Items after add:', updatedItems);
+    
     setNewItem({});
     setShowAddForm(false);
     
+    console.log('💾 Calling handleSave...');
     // Auto-save
     await handleSave();
   };
