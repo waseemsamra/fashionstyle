@@ -454,46 +454,23 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     checkAuth();
   }, [navigate]);
 
-  // EFFECT 1: Load categories from DynamoDB FIRST (with localStorage fallback)
+  // EFFECT 1: Load categories from localStorage ONLY - NO API calls
   useEffect(() => {
-    console.log('🚀 EFFECT 1: RUNNING - Loading categories...');
+    console.log('🔍 Loading categories from localStorage...');
+    const savedCategories = localStorage.getItem('admin_categories');
     
-    const loadCategories = async () => {
-      console.log('🔍 EFFECT 1: Loading categories from DynamoDB...');
-
+    if (savedCategories) {
       try {
-        // Try DynamoDB first
-        const response = await api.getCategories();
-        console.log('📋 Categories from DynamoDB:', response);
-
-        if (response.categories && response.categories.length > 0) {
-          console.log('✅ EFFECT 1: Loaded', response.categories.length, 'categories from DynamoDB');
-          setCategories(response.categories);
-
-          // Cache in localStorage
-          localStorage.setItem('admin_categories', JSON.stringify(response.categories));
-          return;
-        }
-      } catch (apiErr) {
-        console.log('⚠️ DynamoDB load failed, trying localStorage...');
+        const parsed = JSON.parse(savedCategories);
+        console.log('✅ Loaded', parsed.length, 'categories from localStorage');
+        console.log('📋 Categories:', parsed.map((c: any) => c.name));
+        setCategories(parsed);
+      } catch (e) {
+        console.error('❌ Failed to parse localStorage categories:', e);
       }
-
-      // Fallback to localStorage
-      const savedCategories = localStorage.getItem('admin_categories');
-      if (savedCategories) {
-        try {
-          const parsed = JSON.parse(savedCategories);
-          console.log('✅ EFFECT 1: Loaded', parsed.length, 'categories from localStorage');
-          setCategories(parsed);
-        } catch (e) {
-          console.error('❌ EFFECT 1: Failed to parse localStorage categories:', e);
-        }
-      } else {
-        console.log('⚠️ EFFECT 1: No categories found in DynamoDB or localStorage');
-      }
-    };
-
-    loadCategories();
+    } else {
+      console.log('⚠️ No saved categories in localStorage, using defaults');
+    }
   }, []);
 
   // EFFECT 2: Load dashboard settings from API (runs second)
