@@ -48,30 +48,32 @@ export default function SimpleSettings({
 
   const loadItems = async () => {
     setLoading(true);
-    try {
-      // Try DynamoDB first
-      const response = await api.getAllSettings();
-      if (response.settings && response.settings[section]) {
-        const loadedItems = Array.isArray(response.settings[section]) 
-          ? response.settings[section] 
-          : response.settings[section].items || [];
-        setItems(loadedItems);
-        console.log(`✅ ${section} loaded from DynamoDB`);
-        
-        // Cache in localStorage
-        localStorage.setItem(`admin_${section}`, JSON.stringify(loadedItems));
-        return;
-      }
-    } catch (apiErr) {
-      console.log('⚠️ API load failed, trying localStorage...');
-    }
     
-    // Fallback to localStorage
+    // ALWAYS load from localStorage first - it's the source of truth
     const saved = localStorage.getItem(`admin_${section}`);
     if (saved) {
       const parsed = JSON.parse(saved);
       setItems(parsed);
-      console.log(`✅ ${section} loaded from localStorage`);
+      console.log(`✅ ${section} loaded from localStorage:`, parsed.length, 'items');
+    }
+    
+    // Try DynamoDB in background (don't wait, don't overwrite)
+    try {
+      const response = await api.getAllSettings();
+      if (response.settings && response.settings[section]) {
+        const apiItems = Array.isArray(response.settings[section]) 
+          ? response.settings[section] 
+          : response.settings[section].items || [];
+        
+        // Only update if API has MORE items than localStorage
+        if (apiItems.length > items.length) {
+          setItems(apiItems);
+          localStorage.setItem(`admin_${section}`, JSON.stringify(apiItems));
+          console.log(`✅ ${section} updated from DynamoDB (more items)`);
+        }
+      }
+    } catch (apiErr) {
+      console.log('⚠️ DynamoDB load skipped, using localStorage');
     }
     
     setLoading(false);
