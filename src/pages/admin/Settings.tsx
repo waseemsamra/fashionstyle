@@ -23,7 +23,7 @@ export default function Settings() {
     { id: 'sizes', name: 'Sizes', icon: Ruler },
     { id: 'patterns', name: 'Patterns', icon: Heart },
     { id: 'occasions', name: 'Occasions', icon: Star },
-    { id: 'genders', name: 'Gender', icon: Users },
+    { id: 'gender', name: 'Gender', icon: Users },
     { id: 'general', name: 'General Settings', icon: DollarSign },
   ];
 
@@ -92,11 +92,11 @@ export default function Settings() {
             showActive={true}
           />
         );
-      
-      case 'genders':
+
+      case 'gender':
         return (
           <SimpleSettings
-            section="genders"
+            section="gender"
             title="Gender"
             description="Manage gender options (Men, Women, Kids, etc.)"
             icon={Users}
@@ -104,7 +104,7 @@ export default function Settings() {
             showActive={true}
           />
         );
-      
+
       case 'general':
         return <GeneralSettings />;
       

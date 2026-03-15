@@ -50,10 +50,14 @@ export default function SimpleSettings({
     console.log('🔍 loadItems called for section:', section);
     setLoading(true);
 
+    // Clear items first to avoid stale data
+    setItems([]);
+
     // Load from DynamoDB API
     try {
       const token = localStorage.getItem('jwt_token');
       console.log('📡 Fetching from API with token:', token ? 'Present' : 'Missing');
+      console.log('📡 API URL:', `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/${section}`);
 
       const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/${section}`, {
         method: 'GET',
@@ -69,7 +73,7 @@ export default function SimpleSettings({
       if (response.ok) {
         const data: any = await response.json();
         console.log('📋 API Response data:', data);
-        
+
         // Handle different response formats
         let apiItems: any[] = [];
         if (Array.isArray(data)) {
@@ -78,11 +82,11 @@ export default function SimpleSettings({
           apiItems = data.items;
         } else if (data && Array.isArray(data.data)) {
           apiItems = data.data;
-        } else if (data && typeof data === 'object') {
+        } else if (data && typeof data === 'object' && !Array.isArray(data)) {
           // Single object response - convert to array
           apiItems = [data];
         }
-        
+
         console.log('✅ Loaded', apiItems.length, 'items from DynamoDB');
 
         if (apiItems.length > 0) {
@@ -90,38 +94,96 @@ export default function SimpleSettings({
           // Cache in localStorage
           localStorage.setItem(`admin_${section}`, JSON.stringify(apiItems));
           console.log('💾 Cached to localStorage');
+          setLoading(false);
+          return; // Exit early - we have data
         } else {
-          console.log('⚠️ API returned empty data');
+          console.log('⚠️ API returned empty data for', section);
         }
       } else {
         const errorText = await response.text();
         console.error('❌ API error:', response.status, errorText);
-        toast.error(`Failed to load ${title}`);
+        // Don't show toast for 404 - endpoint might not exist yet
+        if (response.status !== 404) {
+          toast.error(`Failed to load ${title}`);
+        }
       }
     } catch (apiErr: any) {
       console.error('❌ API failed:', apiErr);
-      toast.error(`Failed to load ${title}`);
+      // Don't show toast for network errors - use fallback
     }
 
-    // Fallback to localStorage if no items loaded
-    if (items.length === 0) {
-      const saved = localStorage.getItem(`admin_${section}`);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          console.log('✅ Loaded', parsed.length, 'items from localStorage (fallback)');
-          setItems(Array.isArray(parsed) ? parsed : []);
-        } catch (e) {
-          console.error('❌ Failed to parse localStorage data:', e);
-        }
+    // Fallback to localStorage if no items loaded from API
+    const saved = localStorage.getItem(`admin_${section}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        console.log('✅ Loaded', parsed.length, 'items from localStorage (fallback)');
+        setItems(Array.isArray(parsed) ? parsed : []);
+      } catch (e) {
+        console.error('❌ Failed to parse localStorage data:', e);
+        setItems([]);
+      }
+    } else {
+      console.log('⚠️ No data in localStorage for', section);
+      // Provide default items for common sections
+      const defaultItems = getDefaultItems(section);
+      if (defaultItems.length > 0) {
+        console.log('💡 Using default items for', section);
+        setItems(defaultItems);
+        localStorage.setItem(`admin_${section}`, JSON.stringify(defaultItems));
       } else {
-        console.log('⚠️ No data in localStorage for', section);
         setItems([]);
       }
     }
 
     setLoading(false);
     console.log('✅ loadItems complete for', section, '- Total items:', items.length);
+  };
+
+  // Default items for sections that don't have API endpoints yet
+  const getDefaultItems = (sectionName: string): SettingsItem[] => {
+    const defaults: Record<string, SettingsItem[]> = {
+      gender: [
+        { id: 'women', name: 'Women', active: true },
+        { id: 'men', name: 'Men', active: true },
+        { id: 'unisex', name: 'Unisex', active: true },
+        { id: 'girls', name: 'Girls', active: true },
+        { id: 'boys', name: 'Boys', active: true }
+      ],
+      sizes: [
+        { id: 'xs', name: 'XS', active: true },
+        { id: 's', name: 'S', active: true },
+        { id: 'm', name: 'M', active: true },
+        { id: 'l', name: 'L', active: true },
+        { id: 'xl', name: 'XL', active: true },
+        { id: 'xxl', name: 'XXL', active: true }
+      ],
+      colors: [
+        { id: 'black', name: 'Black', color: '#000000', active: true },
+        { id: 'white', name: 'White', color: '#FFFFFF', active: true },
+        { id: 'red', name: 'Red', color: '#FF0000', active: true },
+        { id: 'blue', name: 'Blue', color: '#0000FF', active: true }
+      ],
+      materials: [
+        { id: 'cotton', name: 'Cotton', active: true },
+        { id: 'silk', name: 'Silk', active: true },
+        { id: 'chiffon', name: 'Chiffon', active: true },
+        { id: 'velvet', name: 'Velvet', active: true }
+      ],
+      patterns: [
+        { id: 'solid', name: 'Solid', active: true },
+        { id: 'printed', name: 'Printed', active: true },
+        { id: 'embroidered', name: 'Embroidered', active: true },
+        { id: 'striped', name: 'Striped', active: true }
+      ],
+      occasions: [
+        { id: 'casual', name: 'Casual', active: true },
+        { id: 'formal', name: 'Formal', active: true },
+        { id: 'wedding', name: 'Wedding', active: true },
+        { id: 'party', name: 'Party', active: true }
+      ]
+    };
+    return defaults[sectionName] || [];
   };
 
   const handleSave = async () => {
