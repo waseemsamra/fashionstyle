@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Star, ShoppingCart, ArrowLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProduct } from '@/hooks/useProducts';
+import { useAddToCart } from '@/hooks/useCart';
 import { getProductIdFromSlug } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
 import VirtualTryOn from '@/components/features/VirtualTryOn';
@@ -16,9 +17,10 @@ export default function ProductDetail() {
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [sizeGuideUnit, setSizeGuideUnit] = useState<'inch' | 'cm'>('cm');
   const [sizeGuideTab, setSizeGuideTab] = useState<'size' | 'measuring' | 'how-to-measure'>('size');
-  
+
   const productId = getProductIdFromSlug(slug);
   const { data: product, isLoading, error } = useProduct(productId);
+  const addToCart = useAddToCart();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -68,7 +70,27 @@ export default function ProductDetail() {
       toast.error('Please select a color');
       return;
     }
-    toast.success('Added to cart!');
+
+    addToCart.mutate(
+      {
+        product: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          stock: product.stock,
+        },
+        quantity: 1,
+        size: selectedSize || undefined,
+        color: selectedColor || undefined,
+      },
+      {
+        onSuccess: () => {
+          setSelectedSize('');
+          setSelectedColor('');
+        },
+      }
+    );
   };
 
   const asList = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : []);
