@@ -7,11 +7,13 @@ import {
   Star, 
   Users,
   Settings as SettingsIcon,
-  DollarSign
+  DollarSign,
+  Truck
 } from 'lucide-react';
 import SimpleSettings from '@/components/admin/SimpleSettings';
 import StoreSettings from '@/pages/admin/StoreSettings';
 import GeneralSettings from '@/pages/admin/GeneralSettings';
+import DeliveryManagement from '@/pages/admin/DeliveryManagement';
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState('store');
@@ -24,6 +26,7 @@ export default function Settings() {
     { id: 'patterns', name: 'Patterns', icon: Heart },
     { id: 'occasions', name: 'Occasions', icon: Star },
     { id: 'gender', name: 'Gender', icon: Users },
+    { id: 'delivery', name: 'Delivery Management', icon: Truck },
     { id: 'general', name: 'General Settings', icon: DollarSign },
   ];
 
@@ -105,9 +108,12 @@ export default function Settings() {
           />
         );
 
+      case 'delivery':
+        return <DeliveryManagement />;
+
       case 'general':
         return <GeneralSettings />;
-      
+
       default:
         return null;
     }

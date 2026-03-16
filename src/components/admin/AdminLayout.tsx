@@ -2,7 +2,7 @@ import { type ReactNode, useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { signOut, getCurrentUser } from 'aws-amplify/auth';
 import { checkAdminAccess } from '@/utils/auth';
-import { Package, ShoppingCart, Users as UsersIcon, LogOut, LayoutDashboard, Settings, Tag, UserCircle, Star, FolderOpen, ChevronDown, ChevronRight, Heart, ShoppingBag } from 'lucide-react';
+import { Package, ShoppingCart, Users as UsersIcon, LogOut, LayoutDashboard, Settings, Tag, UserCircle, Star, FolderOpen, ChevronDown, ChevronRight, Heart, ShoppingBag, Truck } from 'lucide-react';
 
 interface AdminLayoutProps {
   children?: ReactNode;
@@ -143,6 +143,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     },
     { id: 'products', label: 'Products', icon: Package, path: resolveMenuPath('products') },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
+    { id: 'delivery', label: 'Delivery Management', icon: Truck, path: '/admin/delivery' },
     { id: 'customers', label: 'Customers', icon: UsersIcon, path: resolveMenuPath('customers') },
     { id: 'users', label: 'Users', icon: UsersIcon, path: '/admin/users' },
     { id: 'brands', label: 'Brands', icon: Tag, path: resolveMenuPath('brands') },
