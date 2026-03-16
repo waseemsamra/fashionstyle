@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { CartProvider } from './hooks/useCart';
 import { AuthProvider } from './contexts/AuthContext';
+import './utils/apiErrorInterceptor'; // Development API error logging
 import './index.css';
 import './config/aws-config';
 import App from './App.tsx';

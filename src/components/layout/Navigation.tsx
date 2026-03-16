@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { ShoppingBag, Menu, X, Search, User } from 'lucide-react';
-import { useCart } from '@/hooks/useCart';
+import { useCart, useRemoveFromCart, useUpdateCartItem, useCartTotals } from '@/hooks/useCart';
+import { useCartStorage } from '@/hooks/useCartStorage';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { api } from '@/services/api';
@@ -16,7 +17,11 @@ export default function Navigation() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
-  const { items, totalItems, totalPrice, removeFromCart, updateQuantity, isCartOpen, setIsCartOpen } = useCart();
+  const { cart } = useCart();
+  const removeFromCart = useRemoveFromCart();
+  const updateQuantity = useUpdateCartItem();
+  const totals = useCartTotals();
+  const { isCartOpen, setIsCartOpen } = useCartStorage();
   const navigate = useNavigate();
 
   const normalize = (value: unknown) =>
@@ -280,9 +285,9 @@ export default function Navigation() {
                   aria-label="Cart"
                 >
                   <ShoppingBag className="w-5 h-5" />
-                  {totalItems > 0 && (
+                  {totals.itemCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-gold text-white text-xs font-medium rounded-full flex items-center justify-center animate-scale-in">
-                      {totalItems}
+                      {totals.itemCount}
                     </span>
                   )}
                 </button>
@@ -292,7 +297,7 @@ export default function Navigation() {
                   <SheetTitle className="font-playfair text-2xl">Shopping Cart</SheetTitle>
                 </SheetHeader>
                 <div className="mt-8 flex flex-col h-[calc(100vh-180px)]">
-                  {items.length === 0 ? (
+                  {cart.items.length === 0 ? (
                     <div className="flex-1 flex flex-col items-center justify-center text-center">
                       <ShoppingBag className="w-16 h-16 text-gray-300 mb-4" />
                       <p className="text-gray-500 font-medium">Your cart is empty</p>
@@ -301,7 +306,7 @@ export default function Navigation() {
                   ) : (
                     <>
                       <div className="flex-1 overflow-auto space-y-4 pr-2">
-                        {items.map((item) => (
+                        {cart.items.map((item: any) => (
                           <div
                             key={item.id}
                             className="flex gap-4 p-3 bg-beige-50 rounded-lg"
@@ -318,14 +323,14 @@ export default function Navigation() {
                               </p>
                               <div className="flex items-center gap-3 mt-2">
                                 <button
-                                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                  onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity - 1 })}
                                   className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-sm hover:bg-gray-50"
                                 >
                                   -
                                 </button>
                                 <span className="text-sm font-medium">{item.quantity}</span>
                                 <button
-                                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                  onClick={() => updateQuantity.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
                                   className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center text-sm hover:bg-gray-50"
                                 >
                                   +
@@ -333,7 +338,7 @@ export default function Navigation() {
                               </div>
                             </div>
                             <button
-                              onClick={() => removeFromCart(item.id)}
+                              onClick={() => removeFromCart.mutate(item.id)}
                               className="text-gray-400 hover:text-red-500 transition-colors"
                             >
                               <X className="w-4 h-4" />
@@ -345,7 +350,7 @@ export default function Navigation() {
                         <div className="flex justify-between items-center">
                           <span className="text-gray-600">Subtotal</span>
                           <span className="font-playfair text-xl font-semibold">
-                            ${totalPrice.toFixed(2)}
+                            ${totals.total.toFixed(2)}
                           </span>
                         </div>
                         <Button

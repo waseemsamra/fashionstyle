@@ -34,7 +34,7 @@ export function AddToCartButton({
     );
   };
 
-  const isDisabled = addToCart.isPending || (size && !size) || (color && !color);
+  const isDisabled = addToCart.isPending;
 
   const variants = {
     default: 'bg-gold text-white hover:bg-gold/90',

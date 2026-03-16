@@ -6,13 +6,13 @@ import { AddressBook } from './AddressBook';
 import { OrderHistory } from './OrderHistory';
 import { PaymentMethods } from './PaymentMethods';
 import { Settings } from './Settings';
-import { Loader2, User, MapPin, ShoppingBag, CreditCard, Settings as SettingsIcon, Camera } from 'lucide-react';
+import { User, MapPin, ShoppingBag, CreditCard, Settings as SettingsIcon, Camera } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const { data: profile, isLoading: profileLoading } = useUserProfile();
   const { data: addresses, isLoading: addressesLoading } = useUserAddresses();
-  const { data: orders, isLoading: ordersLoading } = useUserOrders();
+  const { isLoading: ordersLoading } = useUserOrders();
   const updateProfile = useUpdateProfile();
 
   if (profileLoading || addressesLoading || ordersLoading) {
@@ -111,7 +111,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="orders">
-            <OrderHistory orders={orders || []} />
+            <OrderHistory />
           </TabsContent>
 
           <TabsContent value="payment">
@@ -119,7 +119,7 @@ export default function ProfilePage() {
           </TabsContent>
 
           <TabsContent value="settings">
-            <Settings profile={profile!} onUpdate={updateProfile.mutate} />
+            <Settings profile={profile!} _onUpdate={updateProfile.mutate} />
           </TabsContent>
         </Tabs>
       </div>

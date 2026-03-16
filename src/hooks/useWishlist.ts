@@ -97,26 +97,28 @@ export function useWishlist() {
 export function useWishlistStats() {
   const { data: wishlist } = useWishlist();
 
+  // Fix: Ensure counts are numbers
+  const categoriesMap: Record<string, number> = {};
+  const brandsMap: Record<string, number> = {};
+  
+  wishlist?.forEach((item: WishlistItem) => {
+    // Count categories
+    const category = item.product.category;
+    categoriesMap[category] = (categoriesMap[category] || 0) + 1;
+    
+    // Count brands
+    const brand = item.product.brand;
+    brandsMap[brand] = (brandsMap[brand] || 0) + 1;
+  });
+
   const stats: WishlistStats = {
     totalItems: wishlist?.length || 0,
-    totalValue: wishlist?.reduce((sum: number, item: any) => sum + item.product.price, 0) || 0,
-    averagePrice: wishlist?.length
-      ? wishlist.reduce((sum: number, item: any) => sum + item.product.price, 0) / wishlist.length
+    totalValue: wishlist?.reduce((sum: number, item: WishlistItem) => sum + item.product.price, 0) || 0,
+    averagePrice: wishlist?.length 
+      ? (wishlist.reduce((sum: number, item: WishlistItem) => sum + item.product.price, 0) / wishlist.length) 
       : 0,
-    categories: Object.entries(
-      wishlist?.reduce((acc: Record<string, number>, item: any) => {
-        const cat = item.product.category;
-        acc[cat] = (acc[cat] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {}
-    ).map(([name, count]) => ({ name, count })),
-    brands: Object.entries(
-      wishlist?.reduce((acc: Record<string, number>, item: any) => {
-        const brand = item.product.brand;
-        acc[brand] = (acc[brand] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) || {}
-    ).map(([name, count]) => ({ name, count })),
+    categories: Object.entries(categoriesMap).map(([name, count]) => ({ name, count })),
+    brands: Object.entries(brandsMap).map(([name, count]) => ({ name, count })),
     lastAdded: wishlist?.[0]?.addedAt,
   };
 
@@ -125,7 +127,7 @@ export function useWishlistStats() {
 
 export function useIsInWishlist(productId: string) {
   const { data: wishlist } = useWishlist();
-  return wishlist?.some(item => item.productId === productId) || false;
+  return wishlist?.some((item: any) => item.productId === productId) || false;
 }
 
 export function useToggleWishlist() {

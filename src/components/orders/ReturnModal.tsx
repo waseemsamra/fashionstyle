@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Order } from '@/services/ordersService';
+import type { Order } from '@/services/ordersService';
 import { X, AlertCircle } from 'lucide-react';
 
 interface ReturnModalProps {

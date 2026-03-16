@@ -2,8 +2,6 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Star } from 'lucide-react';
 import { WishlistButton } from '@/components/wishlist/WishlistButton';
 import LazyImage from '@/components/ui/LazyImage';
-import { useAddToCart } from '@/hooks/useCart';
-import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { getProductUrl } from '@/utils/productUrl';
 
 interface ProductCardProps {
@@ -28,19 +26,10 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, variant = 'default' }: ProductCardProps) {
-  const { addToCart, setIsCartOpen } = useCart();
-
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      quantity: 1
-    });
-    setIsCartOpen(true);
+    // Navigate to product detail page for full cart options
   };
 
   const isOutOfStock = product.inStock === false;

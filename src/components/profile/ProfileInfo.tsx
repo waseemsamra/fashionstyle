@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserProfile } from '@/services/userService';
+import type { UserProfile } from '@/services/userService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Save, X, Edit2 } from 'lucide-react';

@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAddToCart } from '@/hooks/useCart';
-import { useToggleWishlist, useIsInWishlist } from '@/hooks/useWishlist';
-import { AddToCartButton } from '@/components/cart/AddToCartButton';
-import { WishlistButton } from '@/components/wishlist/WishlistButton';
+import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
@@ -12,7 +9,7 @@ import { getProductImage, handleImageError } from '@/utils/productImage';
 
 export default function DesignersOnDiscount() {
   const navigate = useNavigate();
-  const addToCart = useAddToCart();
+  const { toggleWishlist } = useToggleWishlist();
   const [products, setProducts] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
@@ -77,13 +74,7 @@ export default function DesignersOnDiscount() {
       toast.error('Please login', { action: { label: 'Login', onClick: () => navigate('/login') } });
       return;
     }
-    if (isInWishlist(product.id)) {
-      removeFromWishlist(product.id);
-      toast.success(`Removed ${product.name}`);
-    } else {
-      addToWishlist(product);
-      toast.success(`Added ${product.name}`);
-    }
+    toggleWishlist({ productId: product.id, product });
   };
 
   const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
@@ -137,10 +128,9 @@ export default function DesignersOnDiscount() {
                       <ProductCard
                         product={product}
                         onWishlist={(e: any) => handleWishlist(product, e)}
-                        isInWishlist={isInWishlist(product.id)}
                         onNavigate={() => navigate(getProductUrl(product))}
                         onBrandNavigate={() => navigate(`/brand/${encodeURIComponent(product.brand)}`)}
-                        onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name} added!`); }}
+                        onAddToCart={() => toast.info('Add to cart coming soon')}
                       />
                     </div>
                   ))}
@@ -169,7 +159,7 @@ export default function DesignersOnDiscount() {
   );
 }
 
-function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNavigate, onAddToCart }: any) {
+function ProductCard({ product, onWishlist, onNavigate, onBrandNavigate, onAddToCart }: any) {
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
       <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
@@ -190,8 +180,8 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
         
         {/* Quick Actions */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-          <button onClick={onWishlist} className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${isInWishlist ? 'bg-gold text-white' : 'bg-white text-gray-700 hover:bg-gold hover:text-white'}`}>
-            <Heart className={`w-4 h-4 ${isInWishlist ? 'fill-current' : ''}`} />
+          <button onClick={onWishlist} className="w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 bg-white text-gray-700 hover:bg-gold hover:text-white">
+            <Heart className="w-4 h-4" />
           </button>
           <button className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white">
             <Star className="w-4 h-4" />

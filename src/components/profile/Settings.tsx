@@ -4,16 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import type { UserProfile } from '@/services/userService';
 
 interface SettingsProps {
   profile: UserProfile;
-  onUpdate: (data: Partial<UserProfile>) => void;
+  _onUpdate: (data: Partial<UserProfile>) => void;
 }
 
-export function Settings({ profile, onUpdate }: SettingsProps) {
+export function Settings({ profile }: SettingsProps) {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const { register, handleSubmit } = useForm({
     defaultValues: {

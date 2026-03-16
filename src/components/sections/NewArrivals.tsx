@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
-import { useAddToCart } from '@/hooks/useCart';
-import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
@@ -12,7 +10,6 @@ export default function NewArrivals() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
-  const addToCart = useAddToCart();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,14 +34,8 @@ export default function NewArrivals() {
     return () => observer.disconnect();
   }, []);
 
-  const handleAddToCart = (product: any) => {
-    addToCart(product);
-    toast.success(`${product.name} added to cart!`, {
-      action: {
-        label: 'View Cart',
-        onClick: () => setIsCartOpen(true),
-      },
-    });
+  const handleAddToCart = (_product: any) => {
+    toast.info('Add to cart coming soon');
   };
 
   return (

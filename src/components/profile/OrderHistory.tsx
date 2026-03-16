@@ -4,7 +4,6 @@ import { useOrders, useDownloadInvoice } from '@/hooks/useOrders';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShoppingBag, Download, Eye, Package, CheckCircle, XCircle, Clock, Truck } from 'lucide-react';
 
@@ -131,7 +130,7 @@ export function OrderHistory() {
               {/* Order Items Preview */}
               <div className="border-t pt-4 mb-4">
                 <div className="flex gap-4 overflow-x-auto">
-                  {order.items.slice(0, 4).map((item) => (
+                  {order.items.slice(0, 4).map((item: any) => (
                     <div key={item.id} className="flex-shrink-0 w-24">
                       <img
                         src={item.image}

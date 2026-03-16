@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAddToCart } from '@/hooks/useCart';
-import { useToggleWishlist, useIsInWishlist } from '@/hooks/useWishlist';
-import { AddToCartButton } from '@/components/cart/AddToCartButton';
-import { WishlistButton } from '@/components/wishlist/WishlistButton';
+import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
@@ -12,10 +9,10 @@ import { getProductImage, handleImageError } from '@/utils/productImage';
 
 export default function WeddingTales() {
   const navigate = useNavigate();
-  const addToCart = useAddToCart();
   const [products, setProducts] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const { toggleWishlist } = useToggleWishlist();
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -69,13 +66,8 @@ export default function WeddingTales() {
       toast.error('Please login', { action: { label: 'Login', onClick: () => navigate('/login') } });
       return;
     }
-    if (isInWishlist(product.id)) {
-      removeFromWishlist(product.id);
-      toast.success(`Removed ${product.name}`);
-    } else {
-      addToWishlist(product);
-      toast.success(`Added ${product.name}`);
-    }
+    toggleWishlist({ productId: product.id, product });
+    toast.success(`Toggled ${product.name} in wishlist`);
   };
 
   if (products.length === 0) return null;
@@ -102,7 +94,7 @@ export default function WeddingTales() {
             <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * (100 / Math.min(4, products.length))}%)` }}>
               {products.map((product) => (
                 <div key={product.id} className="min-w-[50%] lg:min-w-[25%] px-3">
-                  <ProductCard product={product} onWishlist={(e: any) => handleWishlist(product, e)} isInWishlist={isInWishlist(product.id)} onNavigate={() => navigate(getProductUrl(product))} onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name} added!`); }} />
+                  <ProductCard product={product} onWishlist={(e: any) => handleWishlist(product, e)} onNavigate={() => navigate(getProductUrl(product))} onAddToCart={() => toast.info('Add to cart coming soon')} />
                 </div>
               ))}
             </div>

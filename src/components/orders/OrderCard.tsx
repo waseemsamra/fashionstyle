@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Order } from '@/services/ordersService';
+import type { Order } from '@/services/ordersService';
 import { useCancelOrder, useReturnOrder, useReorder, useDownloadInvoice } from '@/hooks/useOrders';
 import { Link } from 'react-router-dom';
 import {
@@ -13,9 +13,7 @@ import {
   Download,
   RotateCcw,
   ShoppingBag,
-  MapPin,
-  CreditCard,
-  AlertCircle
+  CreditCard
 } from 'lucide-react';
 
 interface OrderCardProps {
@@ -205,7 +203,7 @@ export function OrderCard({ order }: OrderCardProps) {
         {canReorder && (
           <button
             onClick={handleReorder}
-            disabled={reorder.isLoading}
+            disabled={reorder.isPending}
             className="px-4 py-2 border rounded-lg hover:bg-gray-100 transition flex items-center gap-2 disabled:opacity-50"
           >
             <ShoppingBag className="w-4 h-4" />
@@ -216,7 +214,7 @@ export function OrderCard({ order }: OrderCardProps) {
         {canCancel && (
           <button
             onClick={handleCancel}
-            disabled={cancelOrder.isLoading}
+            disabled={cancelOrder.isPending}
             className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition flex items-center gap-2 disabled:opacity-50"
           >
             <XCircle className="w-4 h-4" />
@@ -236,7 +234,7 @@ export function OrderCard({ order }: OrderCardProps) {
 
         <button
           onClick={() => downloadInvoice.mutate(order.id)}
-          disabled={downloadInvoice.isLoading}
+          disabled={downloadInvoice.isPending}
           className="px-4 py-2 border rounded-lg hover:bg-gray-100 transition flex items-center gap-2 disabled:opacity-50"
         >
           <Download className="w-4 h-4" />
@@ -249,7 +247,7 @@ export function OrderCard({ order }: OrderCardProps) {
         <ReturnModal
           order={order}
           onClose={() => setShowReturnModal(false)}
-          onSubmit={(items, reason) => {
+          onSubmit={(items: string[], reason: string) => {
             returnOrder.mutate({ orderId: order.id, items, reason });
             setShowReturnModal(false);
           }}
@@ -260,7 +258,7 @@ export function OrderCard({ order }: OrderCardProps) {
 }
 
 // Return Modal Component
-function ReturnModal({ order, onClose, onSubmit }: any) {
+function ReturnModal({ order, onClose, onSubmit }: { order: Order; onClose: () => void; onSubmit: (items: string[], reason: string) => void }) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [reason, setReason] = useState('');
 

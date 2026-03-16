@@ -1,4 +1,4 @@
-import { OrderTimeline as TimelineEvent } from '@/services/ordersService';
+import type { OrderTimeline as TimelineEvent } from '@/services/ordersService';
 import { CheckCircle, Package, Truck, Check, Clock, XCircle } from 'lucide-react';
 
 interface OrderTimelineProps {

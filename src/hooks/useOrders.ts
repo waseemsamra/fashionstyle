@@ -5,14 +5,13 @@ import { toast } from 'sonner';
 
 export function useOrders(filters?: OrderFilters) {
   const { user } = useAuth();
-  const userId = user?.id;
 
   return useInfiniteQuery({
-    queryKey: ['orders', userId, filters],
+    queryKey: ['orders', user?.id, filters],
     queryFn: async ({ pageParam = 1 }) => {
-      if (!userId) throw new Error('Not authenticated');
+      if (!user?.id) throw new Error('Not authenticated');
       console.log(`📦 Fetching orders page ${pageParam}...`);
-      const data = await ordersService.getUserOrders(userId, {
+      const data = await ordersService.getUserOrders(user.id, {
         ...filters,
         page: pageParam as number,
         limit: 10
@@ -21,7 +20,7 @@ export function useOrders(filters?: OrderFilters) {
     },
     getNextPageParam: (lastPage: any) => lastPage.nextPage,
     initialPageParam: 1,
-    enabled: !!userId,
+    enabled: !!user?.id,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
     placeholderData: (previousData) => previousData,
@@ -158,9 +157,6 @@ export function useReturnOrder() {
 }
 
 export function useReorder() {
-  const { user } = useAuth();
-  const userId = user?.id;
-
   return useMutation({
     mutationFn: async (orderId: string) => {
       return ordersService.reorder(orderId);

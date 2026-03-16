@@ -138,20 +138,21 @@ function Layout() {
             const { ordersService } = await import('@/services/ordersService');
             const data = await ordersService.getUserOrders(user.id, last30Days);
             console.log('✅ Prefetched orders from last 30 days');
-            
+
             // Calculate and cache order stats
             if (data.orders && data.orders.length > 0) {
               const stats = calculateOrderStats(data.orders);
               queryClient.setQueryData(['order-stats', user.id], stats);
               console.log('✅ Cached order stats');
             }
-            
+
             return data;
           } catch (error) {
             console.warn('⚠️ Failed to prefetch recent orders:', error);
             return { orders: [], total: 0, totalPages: 1, currentPage: 1 };
           }
         },
+        initialPageParam: 1,
         staleTime: 5 * 60 * 1000, // 5 minutes
       });
     }

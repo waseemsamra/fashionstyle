@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function PaymentMethods() {
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [paymentMethods] = useState<any[]>([]);
 
-  const handleDelete = (methodId: string) => {
+  const handleDelete = (_methodId: string) => {
     if (confirm('Are you sure you want to delete this payment method?')) {
       toast.success('Payment method deleted');
     }

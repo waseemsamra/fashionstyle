@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAddToCart } from '@/hooks/useCart';
-import { usePrefetchWishlistStatus, useToggleWishlist } from '@/hooks/useWishlist';
-import { WishlistButton } from '@/components/wishlist/WishlistButton';
-import { AddToCartButton } from '@/components/cart/AddToCartButton';
+import { ShoppingBag, Star, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
@@ -19,13 +15,7 @@ export default function FeaturedProducts() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
-  const addToCart = useAddToCart();
-  const { toggleWishlist } = useToggleWishlist();
   const navigate = useNavigate();
-
-  // Prefetch wishlist status for visible products
-  const productIds = products.map(p => p.id);
-  usePrefetchWishlistStatus(productIds);
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
   const itemsPerSlide = isMobile ? 2 : 4;
@@ -220,17 +210,9 @@ export default function FeaturedProducts() {
 
                     {/* Quick Actions */}
                     <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-                      <WishlistButton
-                        productId={product.id}
-                        product={{
-                          id: product.id,
-                          name: product.name,
-                          price: product.price,
-                          image: product.image
-                        }}
-                        variant="icon"
-                        size="sm"
-                      />
+                      <button className="w-9 h-9 rounded-full flex items-center justify-center shadow-md bg-white hover:bg-gold hover:text-white">
+                        <Heart className="w-4 h-4" />
+                      </button>
                       <button onClick={() => navigate(getProductUrl(product))} className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white">
                         <Star className="w-4 h-4" />
                       </button>
@@ -238,7 +220,7 @@ export default function FeaturedProducts() {
 
                     {/* Add to Cart */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                      <button onClick={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name} added to cart!`); }} className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold">
+                      <button onClick={() => toast.info('Add to cart coming soon')} className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold">
                         <ShoppingBag className="w-4 h-4" /> Add to Cart
                       </button>
                     </div>
