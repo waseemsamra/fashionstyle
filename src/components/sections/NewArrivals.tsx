@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
-import { useCart } from '@/hooks/useCart';
+import { useAddToCart } from '@/hooks/useCart';
+import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
@@ -11,7 +12,7 @@ export default function NewArrivals() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
-  const { addToCart, setIsCartOpen } = useCart();
+  const addToCart = useAddToCart();
   const navigate = useNavigate();
 
   useEffect(() => {

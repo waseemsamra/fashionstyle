@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCart } from '@/hooks/useCart';
-import { useWishlist } from '@/hooks/useWishlist';
+import { useAddToCart } from '@/hooks/useCart';
+import { useToggleWishlist, useIsInWishlist } from '@/hooks/useWishlist';
+import { AddToCartButton } from '@/components/cart/AddToCartButton';
+import { WishlistButton } from '@/components/wishlist/WishlistButton';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
@@ -10,8 +12,7 @@ import { getProductImage, handleImageError } from '@/utils/productImage';
 
 export default function WeddingTales() {
   const navigate = useNavigate();
-  const { addToCart, setIsCartOpen } = useCart();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const addToCart = useAddToCart();
   const [products, setProducts] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);

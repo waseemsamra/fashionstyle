@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCart } from '@/hooks/useCart';
+import { useAddToCart } from '@/hooks/useCart';
 import { usePrefetchWishlistStatus, useToggleWishlist } from '@/hooks/useWishlist';
 import { WishlistButton } from '@/components/wishlist/WishlistButton';
+import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
@@ -18,7 +19,7 @@ export default function FeaturedProducts() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
-  const { addToCart, setIsCartOpen } = useCart();
+  const addToCart = useAddToCart();
   const { toggleWishlist } = useToggleWishlist();
   const navigate = useNavigate();
 
