@@ -4,13 +4,11 @@ import { getCurrentUser, signOut, updatePassword } from 'aws-amplify/auth';
 import { User, Package, Heart, Wallet, CreditCard, LogOut, Lock, X, Trash2, MapPin, Edit, ShoppingCart, CheckCircle } from 'lucide-react';
 import { api } from '../../services/api';
 import { useWishlist } from '@/hooks/useWishlist';
-import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
 
 export default function UserDashboard() {
   const navigate = useNavigate();
-  const { items: wishlistItems, removeFromWishlist } = useWishlist();
-  const { addToCart } = useCart();
+  const { data: wishlistItems } = useWishlist();
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
@@ -808,24 +806,7 @@ export default function UserDashboard() {
                           />
                           <button
                             onClick={() => {
-                              removeFromWishlist(item.id);
-                              toast.success(`Removed ${item.name} from wishlist`);
-                            }}
-                            className="absolute top-2 right-2 p-2 bg-white rounded-full shadow hover:bg-red-500 hover:text-white transition-colors"
-                            title="Remove from wishlist"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <h3 className="font-bold text-lg">{item.name}</h3>
-                        {item.brand && <p className="text-sm text-gray-600">{item.brand}</p>}
-                        {item.category && <p className="text-xs text-gray-500 mt-1">{item.category}</p>}
-                        <p className="text-xl font-bold text-gold mt-2">${item.price}</p>
-                        <div className="flex gap-2 mt-3">
-                          <button 
-                            onClick={() => {
-                              addToCart(item);
-                              toast.success(`Added ${item.name} to cart`);
+                              toast.info('Add to cart coming soon');
                             }}
                             className="flex-1 py-2 bg-black text-white rounded-lg hover:bg-gray-800 flex items-center justify-center gap-2"
                           >

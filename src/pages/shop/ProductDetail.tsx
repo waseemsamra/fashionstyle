@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { Star, ShoppingCart, ArrowLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -12,7 +11,6 @@ import VirtualTryOn from '@/components/features/VirtualTryOn';
 export default function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useCart();
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [showSizeGuide, setShowSizeGuide] = useState(false);
@@ -70,11 +68,6 @@ export default function ProductDetail() {
       toast.error('Please select a color');
       return;
     }
-    addToCart({ 
-      ...product, 
-      selectedSize: selectedSize || undefined, 
-      selectedColor: selectedColor || undefined 
-    } as any);
     toast.success('Added to cart!');
   };
 

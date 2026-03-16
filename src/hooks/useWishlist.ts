@@ -57,7 +57,7 @@ export function useWishlist() {
   });
 
   // Local state for guest users
-  const [guestWishlist, setGuestWishlist] = useState<string[]>(() => {
+  const [guestWishlist] = useState<string[]>(() => {
     const saved = localStorage.getItem('guestWishlist');
     return saved ? JSON.parse(saved) : [];
   });
@@ -68,11 +68,11 @@ export function useWishlist() {
     queryFn: async () => {
       if (guestWishlist.length === 0) return [];
       const products = await wishlistService.getProductsByIds(guestWishlist);
-      return products.map((product: any, index: number) => ({
+      return products.map((product: any, idx: number) => ({
         id: `guest-${product.id}`,
         productId: product.id,
         userId: 'guest',
-        addedAt: new Date(Date.now() - index * 86400000).toISOString(),
+        addedAt: new Date(Date.now() - idx * 86400000).toISOString(),
         product
       }));
     },
@@ -99,19 +99,19 @@ export function useWishlistStats() {
 
   const stats: WishlistStats = {
     totalItems: wishlist?.length || 0,
-    totalValue: wishlist?.reduce((sum, item) => sum + item.product.price, 0) || 0,
-    averagePrice: wishlist?.length 
-      ? wishlist.reduce((sum, item) => sum + item.product.price, 0) / wishlist.length 
+    totalValue: wishlist?.reduce((sum: number, item: any) => sum + item.product.price, 0) || 0,
+    averagePrice: wishlist?.length
+      ? wishlist.reduce((sum: number, item: any) => sum + item.product.price, 0) / wishlist.length
       : 0,
     categories: Object.entries(
-      wishlist?.reduce((acc, item) => {
+      wishlist?.reduce((acc: Record<string, number>, item: any) => {
         const cat = item.product.category;
         acc[cat] = (acc[cat] || 0) + 1;
         return acc;
       }, {} as Record<string, number>) || {}
     ).map(([name, count]) => ({ name, count })),
     brands: Object.entries(
-      wishlist?.reduce((acc, item) => {
+      wishlist?.reduce((acc: Record<string, number>, item: any) => {
         const brand = item.product.brand;
         acc[brand] = (acc[brand] || 0) + 1;
         return acc;

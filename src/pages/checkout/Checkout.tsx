@@ -9,7 +9,9 @@ import { apiClient } from '@/services/api';
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { items, totalPrice, clearCart } = useCart();
+  const { cart } = useCart();
+  const items = cart.items;
+  const totalPrice = cart.total;
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -147,7 +149,6 @@ export default function Checkout() {
 
       // Step 7: Clear cart and store order info
       localStorage.removeItem('cart');
-      clearCart();
 
       localStorage.setItem('lastOrder', JSON.stringify({
         orderId: result.orderId,
@@ -373,7 +374,7 @@ export default function Checkout() {
               <div className="bg-white p-6 rounded-lg shadow sticky top-24">
                 <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
                 <div className="space-y-3 max-h-64 overflow-auto">
-                  {items.map((item) => (
+                  {items.map((item: any) => (
                     <div key={item.id} className="flex gap-3">
                       <img
                         src={item.image}

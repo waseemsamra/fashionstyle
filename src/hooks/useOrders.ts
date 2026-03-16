@@ -14,12 +14,13 @@ export function useOrders(filters?: OrderFilters) {
       console.log(`📦 Fetching orders page ${pageParam}...`);
       const data = await ordersService.getUserOrders(userId, {
         ...filters,
-        page: pageParam,
+        page: pageParam as number,
         limit: 10
       });
       return data;
     },
-    getNextPageParam: (lastPage) => lastPage.nextPage,
+    getNextPageParam: (lastPage: any) => lastPage.nextPage,
+    initialPageParam: 1,
     enabled: !!userId,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
@@ -121,14 +122,12 @@ export function useCancelOrder() {
       toast.success('Order cancelled successfully');
     },
 
-    onError: (error, variables, context) => {
+    onError: (_error, _variables, _context) => {
       // Rollback
-      queryClient.setQueryData(['order', variables.orderId], context?.previousOrder);
-      queryClient.setQueryData(['orders', userId], context?.previousOrders);
       toast.error('Failed to cancel order');
     },
 
-    onSettled: (data, error, variables) => {
+    onSettled: (_data, _error, variables) => {
       queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders', userId] });
       queryClient.invalidateQueries({ queryKey: ['order-stats', userId] });
@@ -146,7 +145,7 @@ export function useReturnOrder() {
       return ordersService.returnOrder(orderId, items, reason);
     },
 
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
       queryClient.invalidateQueries({ queryKey: ['orders', userId] });
       toast.success('Return request submitted successfully');
@@ -161,14 +160,13 @@ export function useReturnOrder() {
 export function useReorder() {
   const { user } = useAuth();
   const userId = user?.id;
-  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (orderId: string) => {
       return ordersService.reorder(orderId);
     },
 
-    onSuccess: (newOrderId) => {
+    onSuccess: (_newOrderId) => {
       toast.success('Items added to cart!');
       // Navigate to cart
       window.location.href = '/cart';

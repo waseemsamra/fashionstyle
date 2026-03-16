@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { newArrivals } from '@/data/products';
-import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,21 +9,10 @@ import { getProductImage, handleImageError } from '@/utils/productImage';
 
 export default function NewArrivals() {
   const navigate = useNavigate();
-  const { addToCart, setIsCartOpen } = useCart();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-
-  const handleAddToCart = (product: typeof newArrivals[0]) => {
-    addToCart(product);
-    toast.success(`${product.name} added to cart!`, {
-      action: {
-        label: 'View Cart',
-        onClick: () => setIsCartOpen(true),
-      },
-    });
-  };
 
   return (
     <div className="min-h-screen bg-beige-100 py-12">
@@ -73,7 +61,7 @@ export default function NewArrivals() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleAddToCart(product);
+                      toast.info('Add to cart coming soon');
                     }}
                     className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
                   >

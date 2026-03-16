@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Star } from 'lucide-react';
 import { WishlistButton } from '@/components/wishlist/WishlistButton';
 import LazyImage from '@/components/ui/LazyImage';
-import { useCart } from '@/hooks/useCart';
+import { useAddToCart } from '@/hooks/useCart';
+import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { getProductUrl } from '@/utils/productUrl';
 
 interface ProductCardProps {

@@ -51,7 +51,7 @@ export default function WishlistPage() {
     if (selectedItems.length === wishlist?.length) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(wishlist?.map(item => item.productId) || []);
+      setSelectedItems(wishlist?.map((item: any) => item.productId) || []);
     }
   };
 
@@ -226,9 +226,9 @@ export default function WishlistPage() {
                     key={item.id} 
                     item={item}
                     isSelected={selectedItems.includes(item.productId)}
-                    onSelectChange={(checked) => {
+                    onSelectChange={(checked: boolean) => {
                       setSelectedItems(prev =>
-                        checked 
+                        checked
                           ? [...prev, item.productId]
                           : prev.filter(id => id !== item.productId)
                       );
@@ -243,9 +243,9 @@ export default function WishlistPage() {
                     key={item.id} 
                     item={item}
                     isSelected={selectedItems.includes(item.productId)}
-                    onSelectChange={(checked) => {
+                    onSelectChange={(checked: boolean) => {
                       setSelectedItems(prev =>
-                        checked 
+                        checked
                           ? [...prev, item.productId]
                           : prev.filter(id => id !== item.productId)
                       );

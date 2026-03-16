@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useOrder, useTrackOrder, useCancelOrder, useReorder, useDownloadInvoice } from '@/hooks/useOrders';
+import { useOrder, useTrackOrder, useCancelOrder, useDownloadInvoice } from '@/hooks/useOrders';
 import { Button } from '@/components/ui/button';
 import {
   Package,
@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   Download,
   RotateCcw,
-  ShoppingBag,
   MapPin,
   CreditCard,
   AlertCircle,
@@ -26,7 +25,6 @@ export default function OrderDetailPage() {
   const { data: order, isLoading } = useOrder(id!);
   const { data: tracking } = useTrackOrder(id!);
   const cancelOrder = useCancelOrder();
-  const reorder = useReorder();
   const downloadInvoice = useDownloadInvoice();
 
   if (isLoading) {
@@ -92,7 +90,7 @@ export default function OrderDetailPage() {
 
               <Button
                 onClick={() => downloadInvoice.mutate(order.id)}
-                disabled={downloadInvoice.isLoading}
+                disabled={downloadInvoice.isPending}
                 variant="outline"
                 className="flex items-center gap-2"
               >
@@ -103,7 +101,7 @@ export default function OrderDetailPage() {
               {canCancel && (
                 <Button
                   onClick={() => cancelOrder.mutate({ orderId: order.id, reason: 'Cancelled by user' })}
-                  disabled={cancelOrder.isLoading}
+                  disabled={cancelOrder.isPending}
                   variant="outline"
                   className="text-red-600 border-red-300 hover:bg-red-50"
                 >
@@ -273,7 +271,7 @@ export default function OrderDetailPage() {
           <ReturnModal
             order={order}
             onClose={() => setShowReturnModal(false)}
-            onSubmit={(items, reason) => {
+            onSubmit={(_items: string[], _reason: string) => {
               // Handle return
               setShowReturnModal(false);
             }}
@@ -286,7 +284,7 @@ export default function OrderDetailPage() {
 
 // Status Box Component
 function StatusBox({ icon: Icon, label, value, color }: any) {
-  const colors = {
+  const colors: Record<string, string> = {
     green: 'bg-green-100 text-green-800',
     red: 'bg-red-100 text-red-800',
     yellow: 'bg-yellow-100 text-yellow-800',
@@ -296,7 +294,7 @@ function StatusBox({ icon: Icon, label, value, color }: any) {
 
   return (
     <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-      <div className={`p-2 rounded-full ${colors[color]}`}>
+      <div className={`p-2 rounded-full ${colors[color] || 'bg-gray-100 text-gray-800'}`}>
         <Icon className="w-5 h-5" />
       </div>
       <div>

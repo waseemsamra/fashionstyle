@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, X, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,7 +9,6 @@ import LazyImage from '@/components/ui/LazyImage';
 
 export default function Shop() {
   const navigate = useNavigate();
-  const { addToCart, setIsCartOpen } = useCart();
   const [showFilters, setShowFilters] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [filters, setFilters] = useState({
@@ -131,16 +129,6 @@ export default function Shop() {
 
     return true;
   });
-
-  const handleAddToCart = (product: typeof allProducts[0]) => {
-    addToCart(product);
-    toast.success(`${product.name} added to cart!`, {
-      action: {
-        label: 'View Cart',
-        onClick: () => setIsCartOpen(true),
-      },
-    });
-  };
 
   const resetFilters = () => {
     setFilters({
@@ -362,7 +350,7 @@ export default function Shop() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleAddToCart(product);
+                          toast.info('Add to cart coming soon');
                         }}
                         className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
                       >

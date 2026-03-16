@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { featuredProducts, newArrivals } from '@/data/products';
-import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,7 +10,6 @@ import { getProductImage, handleImageError } from '@/utils/productImage';
 export default function Category() {
   const { name } = useParams();
   const navigate = useNavigate();
-  const { addToCart, setIsCartOpen } = useCart();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -21,16 +19,6 @@ export default function Category() {
   const categoryProducts = allProducts.filter(
     (product) => product.category.toLowerCase() === name?.toLowerCase()
   );
-
-  const handleAddToCart = (product: typeof allProducts[0]) => {
-    addToCart(product);
-    toast.success(`${product.name} added to cart!`, {
-      action: {
-        label: 'View Cart',
-        onClick: () => setIsCartOpen(true),
-      },
-    });
-  };
 
   return (
     <div className="min-h-screen bg-beige-100 py-12">
@@ -87,7 +75,7 @@ export default function Category() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleAddToCart(product);
+                        toast.info('Add to cart coming soon');
                       }}
                       className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
                     >

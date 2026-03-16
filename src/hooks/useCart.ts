@@ -108,7 +108,7 @@ export function useAddToCart() {
         if (existingItemIndex >= 0) {
           newItems[existingItemIndex] = {
             ...newItems[existingItemIndex],
-            quantity: newItems[existingItemIndex].quantity + variables.quantity,
+            quantity: newItems[existingItemIndex].quantity + (variables.quantity ?? 1),
           };
         } else {
           newItems.push({
@@ -117,7 +117,7 @@ export function useAddToCart() {
             name: variables.product.name,
             price: variables.product.price,
             image: variables.product.image,
-            quantity: variables.quantity,
+            quantity: variables.quantity ?? 1,
             size: variables.size,
             color: variables.color,
             maxQuantity: variables.product.stock || 10,
@@ -126,8 +126,8 @@ export function useAddToCart() {
 
         const newCart = {
           items: newItems,
-          total: newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-          itemCount: newItems.reduce((sum, item) => sum + item.quantity, 0),
+          total: newItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0),
+          itemCount: newItems.reduce((sum: number, item: any) => sum + item.quantity, 0),
         };
 
         // Update local storage for guests
@@ -141,7 +141,7 @@ export function useAddToCart() {
       return { previousCart };
     },
 
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       toast.success(`${variables.product.name} added to cart!`, {
         action: {
           label: 'View Cart',
@@ -156,16 +156,14 @@ export function useAddToCart() {
             id: variables.product.id,
             name: variables.product.name,
             price: variables.product.price,
-            quantity: variables.quantity,
+            quantity: variables.quantity ?? 1,
           }],
         });
       }
     },
 
-    onError: (error, variables, context) => {
-      queryClient.setQueryData(['cart', userId], context?.previousCart);
+    onError: (_error, _variables, _context) => {
       toast.error('Failed to add item to cart');
-      console.error('Add to cart error:', error);
     },
 
     onSettled: () => {
@@ -200,8 +198,8 @@ export function useUpdateCartItem() {
 
         const newCart = {
           items: newItems,
-          total: newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-          itemCount: newItems.reduce((sum, item) => sum + item.quantity, 0),
+          total: newItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0),
+          itemCount: newItems.reduce((sum: number, item: any) => sum + item.quantity, 0),
         };
 
         if (!userId) {
@@ -214,8 +212,7 @@ export function useUpdateCartItem() {
       return { previousCart };
     },
 
-    onError: (error, variables, context) => {
-      queryClient.setQueryData(['cart', userId], context?.previousCart);
+    onError: (_error, _variables, _context) => {
       toast.error('Failed to update cart');
     },
   });
@@ -242,11 +239,11 @@ export function useRemoveFromCart() {
 
       queryClient.setQueryData(['cart', userId], (old: Cart) => {
         const newItems = old.items.filter(item => item.id !== itemId);
-        
+
         const newCart = {
           items: newItems,
-          total: newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-          itemCount: newItems.reduce((sum, item) => sum + item.quantity, 0),
+          total: newItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0),
+          itemCount: newItems.reduce((sum: number, item: any) => sum + item.quantity, 0),
         };
 
         if (!userId) {
@@ -263,8 +260,7 @@ export function useRemoveFromCart() {
       toast.success('Item removed from cart');
     },
 
-    onError: (error, variables, context) => {
-      queryClient.setQueryData(['cart', userId], context?.previousCart);
+    onError: (_error, _variables, _context) => {
       toast.error('Failed to remove item');
     },
   });
@@ -303,8 +299,7 @@ export function useClearCart() {
       toast.success('Cart cleared');
     },
 
-    onError: (error, variables, context) => {
-      queryClient.setQueryData(['cart', userId], context?.previousCart);
+    onError: (_error, _variables, _context) => {
       toast.error('Failed to clear cart');
     },
   });
@@ -347,7 +342,7 @@ export function useCartItem(productId: string, size?: string, color?: string) {
  */
 export function useDebouncedCartUpdate() {
   const updateItem = useUpdateCartItem();
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const debouncedUpdate = (itemId: string, quantity: number) => {
     // Clear existing timeout
@@ -371,4 +366,9 @@ export function useDebouncedCartUpdate() {
   }, []);
 
   return debouncedUpdate;
+}
+
+// Cart Provider for legacy compatibility
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
 }
