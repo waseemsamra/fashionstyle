@@ -8,9 +8,11 @@ import { useState } from 'react';
 
 export default function BrandsPage() {
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
-  const { data: brands, isLoading, error } = useBrands({ 
-    featured: showFeaturedOnly ? true : undefined 
+  const { data: brands, isLoading, error } = useBrands({
+    featured: showFeaturedOnly ? true : undefined
   });
+
+  console.log('📊 Brands state:', { brands, isLoading, error, count: brands?.length });
 
   if (isLoading) {
     return (
@@ -24,6 +26,7 @@ export default function BrandsPage() {
   }
 
   if (error) {
+    console.error('❌ Brands error:', error);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

@@ -6,36 +6,47 @@ class BrandsService {
 
   async getBrands(options?: { featured?: boolean; limit?: number }): Promise<Brand[]> {
     const token = localStorage.getItem('jwt_token');
-    
+
     let url = `${this.baseUrl}/brands`;
     const params = new URLSearchParams();
-    
+
     if (options?.featured) params.append('featured', 'true');
     if (options?.limit) params.append('limit', options.limit.toString());
-    
+
     if (params.toString()) url += `?${params.toString()}`;
 
     console.log('🏷️ Fetching brands from:', url);
+    console.log('🔑 Token exists:', !!token);
 
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('📥 Brands response status:', response.status);
+
+      if (!response.ok) {
+        console.warn('⚠️ Failed to fetch brands (status:', response.status, '), using fallback data');
+        // Return mock brands as fallback
+        return getMockBrands();
       }
-    });
 
-    if (!response.ok) {
-      console.warn('⚠️ Failed to fetch brands, using fallback data');
-      // Return mock brands as fallback
+      const data = await response.json();
+      console.log('📦 Raw brands response:', data);
+      
+      const brands = data.items?.map(this.transformBrand) || [];
+
+      console.log('✅ Brands fetched:', brands.length, 'brands');
+
+      return brands;
+    } catch (error) {
+      console.error('❌ Brands fetch error:', error);
+      console.log('🔄 Returning mock brands due to error');
       return getMockBrands();
     }
-
-    const data = await response.json();
-    const brands = data.items?.map(this.transformBrand) || [];
-    
-    console.log('✅ Brands fetched:', brands.length, 'brands');
-    
-    return brands;
   }
 
   async getBrandBySlug(slug: string): Promise<Brand> {
