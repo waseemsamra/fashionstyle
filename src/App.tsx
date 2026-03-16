@@ -6,6 +6,7 @@ import { CartProvider } from '@/hooks/useCart';
 import { Toaster } from '@/components/ui/sonner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
+import { CartSync } from '@/components/cart/CartSync';
 import { userService } from '@/services/userService';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
@@ -58,7 +59,7 @@ function Layout() {
   useEffect(() => {
     if (user?.id) {
       console.log('👤 Prefetching user data...');
-      
+
       // Prefetch user profile
       queryClient.prefetchQuery({
         queryKey: ['user-profile', user.id],
@@ -74,7 +75,7 @@ function Layout() {
         },
         staleTime: 30 * 60 * 1000, // 30 minutes
       });
-      
+
       // Prefetch user addresses
       queryClient.prefetchQuery({
         queryKey: ['user-addresses', user.id],
@@ -89,6 +90,23 @@ function Layout() {
           }
         },
         staleTime: 5 * 60 * 1000, // 5 minutes
+      });
+
+      // Prefetch user cart
+      queryClient.prefetchQuery({
+        queryKey: ['cart', user.id],
+        queryFn: async () => {
+          try {
+            const { cartService } = await import('@/services/cartService');
+            const cart = await cartService.getCart(user.id);
+            console.log('✅ Prefetched cart with', cart.itemCount, 'items');
+            return cart;
+          } catch (error) {
+            console.warn('⚠️ Failed to prefetch cart:', error);
+            return { items: [], total: 0, itemCount: 0 };
+          }
+        },
+        staleTime: 2 * 60 * 1000, // 2 minutes
       });
       
       // Prefetch user orders
@@ -106,8 +124,67 @@ function Layout() {
         },
         staleTime: 5 * 60 * 1000, // 5 minutes
       });
+
+      // Prefetch last 30 days orders for order history page
+      const last30Days = {
+        dateFrom: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        dateTo: new Date().toISOString(),
+      };
+
+      queryClient.prefetchInfiniteQuery({
+        queryKey: ['orders', user.id, last30Days],
+        queryFn: async () => {
+          try {
+            const { ordersService } = await import('@/services/ordersService');
+            const data = await ordersService.getUserOrders(user.id, last30Days);
+            console.log('✅ Prefetched orders from last 30 days');
+            
+            // Calculate and cache order stats
+            if (data.orders && data.orders.length > 0) {
+              const stats = calculateOrderStats(data.orders);
+              queryClient.setQueryData(['order-stats', user.id], stats);
+              console.log('✅ Cached order stats');
+            }
+            
+            return data;
+          } catch (error) {
+            console.warn('⚠️ Failed to prefetch recent orders:', error);
+            return { orders: [], total: 0, totalPages: 1, currentPage: 1 };
+          }
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      });
     }
   }, [user?.id, queryClient]);
+
+  // Helper function to calculate order stats
+  const calculateOrderStats = (orders: any[]) => {
+    const stats = {
+      totalOrders: orders.length,
+      totalSpent: orders.reduce((sum, order) => sum + order.total, 0),
+      averageOrderValue: orders.length > 0 ? orders.reduce((sum, order) => sum + order.total, 0) / orders.length : 0,
+      pendingOrders: orders.filter(o => o.status === 'pending').length,
+      processingOrders: orders.filter(o => o.status === 'processing').length,
+      shippedOrders: orders.filter(o => o.status === 'shipped').length,
+      deliveredOrders: orders.filter(o => o.status === 'delivered').length,
+      cancelledOrders: orders.filter(o => o.status === 'cancelled').length,
+      returnedOrders: orders.filter(o => o.status === 'returned').length,
+      monthlySpending: [] as Array<{ month: string; amount: number }>,
+    };
+
+    // Calculate monthly spending
+    const monthMap = new Map<string, number>();
+    orders.forEach(order => {
+      const month = new Date(order.createdAt).toISOString().slice(0, 7); // YYYY-MM
+      monthMap.set(month, (monthMap.get(month) || 0) + order.total);
+    });
+
+    stats.monthlySpending = Array.from(monthMap.entries())
+      .map(([month, amount]) => ({ month, amount }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    return stats;
+  };
 
   // Prefetch popular brands in background on app mount
   useEffect(() => {
@@ -216,6 +293,7 @@ function Layout() {
       </main>
       {!isAdminRoute && !isAuthOnlyRoute && <Footer />}
       <Toaster position="bottom-right" richColors />
+      <CartSync />
     </div>
   );
 }

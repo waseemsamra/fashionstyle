@@ -1,54 +1,79 @@
-const API_URL = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
-
-export interface OrderItem {
-  id: string;
-  productId: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-  variant?: string;
-}
-
 export interface Order {
   id: string;
   orderNumber: string;
   userId: string;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'returned';
-  total: number;
+  paymentStatus: 'paid' | 'unpaid' | 'refunded' | 'partially_refunded';
+  paymentMethod: string;
   subtotal: number;
   shipping: number;
   tax: number;
+  discount: number;
+  total: number;
   items: OrderItem[];
-  shippingAddress: {
-    name: string;
-    line1: string;
-    line2?: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-    phone: string;
-  };
-  paymentMethod?: {
-    type: string;
-    last4?: string;
-  };
-  trackingNumber?: string;
-  carrier?: string;
-  estimatedDelivery?: string;
+  shippingAddress: Address;
+  billingAddress: Address;
+  tracking?: TrackingInfo;
+  timeline: OrderTimeline[];
+  notes?: string;
   createdAt: string;
   updatedAt: string;
-  shippedAt?: string;
   deliveredAt?: string;
   cancelledAt?: string;
-  cancelReason?: string;
+}
+
+export interface OrderItem {
+  id: string;
+  productId: string;
+  name: string;
+  image: string;
+  price: number;
+  quantity: number;
+  size?: string;
+  color?: string;
+  returned: boolean;
+  returnReason?: string;
+}
+
+export interface Address {
+  name: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+}
+
+export interface TrackingInfo {
+  carrier: string;
+  trackingNumber: string;
+  status: string;
+  estimatedDelivery?: string;
+  deliveredAt?: string;
+  events: TrackingEvent[];
+}
+
+export interface TrackingEvent {
+  date: string;
+  status: string;
+  location: string;
+  description: string;
+}
+
+export interface OrderTimeline {
+  date: string;
+  status: string;
+  description: string;
+  actor?: 'system' | 'user' | 'admin';
 }
 
 export interface OrderFilters {
   status?: string;
   dateFrom?: string;
   dateTo?: string;
+  search?: string;
   page?: number;
   limit?: number;
 }
@@ -56,82 +81,74 @@ export interface OrderFilters {
 export interface OrderStats {
   totalOrders: number;
   totalSpent: number;
-  pendingOrders: number;
-  completedOrders: number;
-  cancelledOrders: number;
   averageOrderValue: number;
-}
-
-export interface TrackingEvent {
-  timestamp: string;
-  status: string;
-  location: string;
-  description: string;
-}
-
-export interface TrackingInfo {
-  trackingNumber: string;
-  carrier: string;
-  status: string;
-  estimatedDelivery: string;
-  events: TrackingEvent[];
+  pendingOrders: number;
+  processingOrders: number;
+  shippedOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  returnedOrders: number;
+  monthlySpending: Array<{
+    month: string;
+    amount: number;
+  }>;
 }
 
 class OrdersService {
-  async getUserOrders(userId: string, filters?: OrderFilters): Promise<{
-    orders: Order[];
-    total: number;
-    page: number;
-    nextPage: number | null;
-  }> {
+  private baseUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+
+  async getUserOrders(userId: string, params: any) {
     const token = localStorage.getItem('jwt_token');
     
-    const params = new URLSearchParams();
-    if (filters?.status) params.append('status', filters.status);
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
-    if (filters?.page) params.append('page', filters.page.toString());
-    if (filters?.limit) params.append('limit', filters.limit.toString());
+    const url = new URL(`${this.baseUrl}/users/${userId}/orders`);
+    Object.keys(params).forEach(key => 
+      url.searchParams.append(key, params[key])
+    );
 
-    const response = await fetch(`${API_URL}/users/${userId}/orders?${params}`, {
+    const response = await fetch(url.toString(), {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      },
     });
 
     if (!response.ok) {
       throw new Error('Failed to fetch orders');
     }
 
-    return response.json();
+    const data = await response.json();
+    
+    return {
+      orders: data.items || [],
+      total: data.total || 0,
+      totalPages: data.totalPages || 1,
+      currentPage: data.currentPage || 1,
+      nextPage: data.currentPage < data.totalPages ? data.currentPage + 1 : undefined,
+    };
   }
 
-  async getOrder(orderId: string): Promise<Order> {
+  async getOrder(orderId: string) {
     const token = localStorage.getItem('jwt_token');
     
-    const response = await fetch(`${API_URL}/orders/${orderId}`, {
+    const response = await fetch(`${this.baseUrl}/orders/${orderId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      },
     });
 
     if (!response.ok) {
-      throw new Error('Order not found');
+      throw new Error('Failed to fetch order');
     }
 
     return response.json();
   }
 
-  async getOrderStats(userId: string): Promise<OrderStats> {
+  async getOrderStats(userId: string) {
     const token = localStorage.getItem('jwt_token');
     
-    const response = await fetch(`${API_URL}/users/${userId}/orders/stats`, {
+    const response = await fetch(`${this.baseUrl}/users/${userId}/orders/stats`, {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      },
     });
 
     if (!response.ok) {
@@ -141,66 +158,68 @@ class OrdersService {
     return response.json();
   }
 
-  async trackOrder(orderId: string): Promise<TrackingInfo> {
+  async trackOrder(orderId: string) {
     const token = localStorage.getItem('jwt_token');
     
-    const response = await fetch(`${API_URL}/orders/${orderId}/tracking`, {
+    const response = await fetch(`${this.baseUrl}/orders/${orderId}/track`, {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      },
     });
 
     if (!response.ok) {
-      throw new Error('Failed to fetch tracking info');
+      throw new Error('Failed to track order');
     }
 
     return response.json();
   }
 
-  async cancelOrder(orderId: string, reason: string): Promise<void> {
+  async cancelOrder(orderId: string, reason: string) {
     const token = localStorage.getItem('jwt_token');
     
-    const response = await fetch(`${API_URL}/orders/${orderId}/cancel`, {
+    const response = await fetch(`${this.baseUrl}/orders/${orderId}/cancel`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ reason })
+      body: JSON.stringify({ reason }),
     });
 
     if (!response.ok) {
       throw new Error('Failed to cancel order');
     }
+
+    return response.json();
   }
 
-  async returnOrder(orderId: string, items: string[], reason: string): Promise<void> {
+  async returnOrder(orderId: string, items: string[], reason: string) {
     const token = localStorage.getItem('jwt_token');
     
-    const response = await fetch(`${API_URL}/orders/${orderId}/return`, {
+    const response = await fetch(`${this.baseUrl}/orders/${orderId}/return`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ items, reason })
+      body: JSON.stringify({ items, reason }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to submit return request');
+      throw new Error('Failed to submit return');
     }
+
+    return response.json();
   }
 
-  async reorder(orderId: string): Promise<{ cartId: string }> {
+  async reorder(orderId: string) {
     const token = localStorage.getItem('jwt_token');
     
-    const response = await fetch(`${API_URL}/orders/${orderId}/reorder`, {
+    const response = await fetch(`${this.baseUrl}/orders/${orderId}/reorder`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      },
     });
 
     if (!response.ok) {
@@ -213,11 +232,10 @@ class OrdersService {
   async downloadInvoice(orderId: string): Promise<Blob> {
     const token = localStorage.getItem('jwt_token');
     
-    const response = await fetch(`${API_URL}/orders/${orderId}/invoice`, {
+    const response = await fetch(`${this.baseUrl}/orders/${orderId}/invoice`, {
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      },
     });
 
     if (!response.ok) {
@@ -227,27 +245,23 @@ class OrdersService {
     return response.blob();
   }
 
-  async createOrder(orderData: {
-    items: { productId: string; quantity: number; variant?: string }[];
-    shippingAddressId: string;
-    paymentMethodId?: string;
-  }): Promise<Order> {
+  async getReturnLabel(orderId: string, itemIds: string[]): Promise<Blob> {
     const token = localStorage.getItem('jwt_token');
     
-    const response = await fetch(`${API_URL}/orders`, {
+    const response = await fetch(`${this.baseUrl}/orders/${orderId}/return-label`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(orderData)
+      body: JSON.stringify({ items: itemIds }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create order');
+      throw new Error('Failed to generate return label');
     }
 
-    return response.json();
+    return response.blob();
   }
 }
 
