@@ -16,31 +16,43 @@ class BrandsService {
     if (params.toString()) url += `?${params.toString()}`;
 
     console.log('🏷️ Fetching brands from:', url);
+    console.log('🔑 Token:', token ? 'EXISTS' : 'NOT FOUND');
 
     try {
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json'
+      };
+
+      // Only add Authorization header if token exists
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(url, { headers });
 
       console.log('📥 Brands response status:', response.status);
+      console.log('📥 Response OK:', response.ok);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ API Error:', response.status, errorText);
-        throw new Error(`Failed to fetch brands: ${response.status}`);
+        console.error('❌ API Error:', response.status, response.statusText);
+        console.error('❌ Error body:', errorText);
+        throw new Error(`Failed to fetch brands: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('📦 Raw brands response:', data);
-      
+      console.log('📦 Raw brands response:', JSON.stringify(data, null, 2));
+
       // Handle different response structures
       const items = data.items || data.brands || data.data || [];
+      console.log('📦 Extracted items:', items?.length || 0);
+      
       const brands = Array.isArray(items) ? items.map(this.transformBrand) : [];
 
       console.log('✅ Brands fetched:', brands.length, 'brands');
+      if (brands.length > 0) {
+        console.log('✅ First brand:', brands[0].name);
+      }
 
       return brands;
     } catch (error) {
