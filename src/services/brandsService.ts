@@ -16,7 +16,6 @@ class BrandsService {
     if (params.toString()) url += `?${params.toString()}`;
 
     console.log('🏷️ Fetching brands from:', url);
-    console.log('🔑 Token exists:', !!token);
 
     try {
       const response = await fetch(url, {
@@ -29,23 +28,24 @@ class BrandsService {
       console.log('📥 Brands response status:', response.status);
 
       if (!response.ok) {
-        console.warn('⚠️ Failed to fetch brands (status:', response.status, '), using fallback data');
-        // Return mock brands as fallback
-        return getMockBrands();
+        const errorText = await response.text();
+        console.error('❌ API Error:', response.status, errorText);
+        throw new Error(`Failed to fetch brands: ${response.status}`);
       }
 
       const data = await response.json();
       console.log('📦 Raw brands response:', data);
       
-      const brands = data.items?.map(this.transformBrand) || [];
+      // Handle different response structures
+      const items = data.items || data.brands || data.data || [];
+      const brands = Array.isArray(items) ? items.map(this.transformBrand) : [];
 
       console.log('✅ Brands fetched:', brands.length, 'brands');
 
       return brands;
     } catch (error) {
       console.error('❌ Brands fetch error:', error);
-      console.log('🔄 Returning mock brands due to error');
-      return getMockBrands();
+      throw error;
     }
   }
 
@@ -205,126 +205,6 @@ class BrandsService {
       console.log('🗑️ Cleared all brand cache');
     }
   }
-}
-
-// Mock brands fallback (when API is unavailable)
-function getMockBrands(): Brand[] {
-  return [
-    {
-      id: '1',
-      name: 'Gucci',
-      slug: 'gucci',
-      logo: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-gucci.jpg',
-      coverImage: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-gucci-cover.jpg',
-      description: 'Italian luxury fashion house known for high-quality leather goods and ready-to-wear apparel.',
-      shortDescription: 'Italian luxury fashion',
-      establishedYear: 1921,
-      country: 'Italy',
-      isFeatured: true,
-      productCount: 156,
-      collections: [],
-      seo: {
-        title: 'Gucci - Luxury Fashion',
-        description: 'Shop Gucci luxury fashion',
-        keywords: ['gucci', 'luxury', 'italian fashion']
-      }
-    },
-    {
-      id: '2',
-      name: 'Prada',
-      slug: 'prada',
-      logo: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-prada.jpg',
-      coverImage: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-prada-cover.jpg',
-      description: 'Luxury fashion house specializing in leather handbags, travel accessories, shoes, and more.',
-      shortDescription: 'Luxury leather goods',
-      establishedYear: 1913,
-      country: 'Italy',
-      isFeatured: true,
-      productCount: 142,
-      collections: [],
-      seo: {
-        title: 'Prada - Luxury Leather Goods',
-        description: 'Shop Prada luxury items',
-        keywords: ['prada', 'luxury', 'leather']
-      }
-    },
-    {
-      id: '3',
-      name: 'Chanel',
-      slug: 'chanel',
-      logo: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-chanel.jpg',
-      coverImage: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-chanel-cover.jpg',
-      description: 'French luxury fashion house known for timeless elegance and the iconic Chanel No. 5 perfume.',
-      shortDescription: 'French luxury & elegance',
-      establishedYear: 1910,
-      country: 'France',
-      isFeatured: true,
-      productCount: 189,
-      collections: [],
-      seo: {
-        title: 'Chanel - French Luxury Fashion',
-        description: 'Shop Chanel luxury fashion',
-        keywords: ['chanel', 'luxury', 'french fashion']
-      }
-    },
-    {
-      id: '4',
-      name: 'Louis Vuitton',
-      slug: 'louis-vuitton',
-      logo: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-lv.jpg',
-      coverImage: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-lv-cover.jpg',
-      description: 'French luxury fashion house and company known for its LV monogram and leather goods.',
-      shortDescription: 'Iconic LV monogram',
-      establishedYear: 1854,
-      country: 'France',
-      isFeatured: true,
-      productCount: 234,
-      collections: [],
-      seo: {
-        title: 'Louis Vuitton - Luxury Fashion',
-        description: 'Shop Louis Vuitton luxury items',
-        keywords: ['louis vuitton', 'lv', 'luxury']
-      }
-    },
-    {
-      id: '5',
-      name: 'Hermès',
-      slug: 'hermes',
-      logo: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-hermes.jpg',
-      coverImage: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-hermes-cover.jpg',
-      description: 'French luxury goods manufacturer specializing in leather, lifestyle accessories, and perfumes.',
-      shortDescription: 'Ultimate luxury craftsmanship',
-      establishedYear: 1837,
-      country: 'France',
-      isFeatured: true,
-      productCount: 98,
-      collections: [],
-      seo: {
-        title: 'Hermès - Luxury Craftsmanship',
-        description: 'Shop Hermès luxury goods',
-        keywords: ['hermes', 'luxury', 'craftsmanship']
-      }
-    },
-    {
-      id: '6',
-      name: 'Dior',
-      slug: 'dior',
-      logo: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-dior.jpg',
-      coverImage: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brand-dior-cover.jpg',
-      description: 'French luxury goods company known for haute couture, ready-to-wear, and accessories.',
-      shortDescription: 'French haute couture',
-      establishedYear: 1946,
-      country: 'France',
-      isFeatured: false,
-      productCount: 167,
-      collections: [],
-      seo: {
-        title: 'Dior - Haute Couture',
-        description: 'Shop Dior fashion',
-        keywords: ['dior', 'haute couture', 'luxury']
-      }
-    }
-  ];
 }
 
 export const brandsService = new BrandsService();

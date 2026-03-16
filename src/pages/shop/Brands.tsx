@@ -31,9 +31,27 @@ export default function BrandsPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Failed to load brands</h2>
-          <p className="text-gray-600 mb-4">Please try again later</p>
+          <p className="text-gray-600 mb-4">
+            {error instanceof Error ? error.message : 'Please try again later'}
+          </p>
           <Button onClick={() => window.location.reload()}>
             Try again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle empty array (API returned successfully but no brands)
+  if (!brands || brands.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Store className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-4">No brands available</h2>
+          <p className="text-gray-600 mb-4">Check back soon for new brands</p>
+          <Button onClick={() => window.location.reload()}>
+            Refresh
           </Button>
         </div>
       </div>

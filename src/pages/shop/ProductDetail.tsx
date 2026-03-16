@@ -131,7 +131,12 @@ export default function ProductDetail() {
               <h1 className="text-3xl font-bold mt-2">{product.name}</h1>
               <p className="text-sm text-gray-600 mt-1">Product ID: {product.id || product.PK}</p>
               {product.brand && (
-                <p className="text-sm text-gray-600 mt-1">Brand: {product.brand}</p>
+                <button
+                  onClick={() => navigate(`/brands/${product.brand.toLowerCase().replace(/\s+/g, '-')}`)}
+                  className="text-sm text-gold hover:text-gold/80 mt-1 underline"
+                >
+                  Brand: {product.brand}
+                </button>
               )}
             </div>
 
