@@ -9,6 +9,14 @@ import { getProductIdFromSlug } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
 import VirtualTryOn from '@/components/features/VirtualTryOn';
 
+// Helper function to create brand slug from brand name
+const createBrandSlug = (brandName: string): string => {
+  if (!brandName) return '';
+  return brandName.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+};
+
 export default function ProductDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -132,7 +140,7 @@ export default function ProductDetail() {
               <p className="text-sm text-gray-600 mt-1">Product ID: {product.id || product.PK}</p>
               {product.brand && (
                 <button
-                  onClick={() => navigate(`/brands/${product.brand.toLowerCase().replace(/\s+/g, '-')}`)}
+                  onClick={() => navigate(`/brands/${createBrandSlug(product.brand)}`)}
                   className="text-sm text-gold hover:text-gold/80 mt-1 underline"
                 >
                   Brand: {product.brand}
