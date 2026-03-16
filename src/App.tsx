@@ -11,7 +11,7 @@ import { userService } from '@/services/userService';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { brandsService } from '@/services/brandsService';
+import { brandService } from '@/services/brandService';
 import { adminService } from '@/services/adminService';
 import { prefetchReviews } from '@/services/reviewsService';
 import type { Period } from '@/services/adminService';
@@ -194,7 +194,7 @@ function Layout() {
       queryKey: ['brands', { featured: true, limit: 10 }],
       queryFn: async () => {
         try {
-          const brands = await brandsService.getBrands({ featured: true, limit: 10 });
+          const brands = await brandService.getAllBrands({ featured: true, limit: 10 });
           console.log('✅ Prefetched', brands.length, 'featured brands');
           return brands;
         } catch (error) {
@@ -211,7 +211,7 @@ function Layout() {
       queryKey: ['brands', {}],
       queryFn: async () => {
         try {
-          const brands = await brandsService.getBrands();
+          const brands = await brandService.getAllBrands();
           console.log('✅ Prefetched all', brands.length, 'brands');
           return brands;
         } catch (error) {

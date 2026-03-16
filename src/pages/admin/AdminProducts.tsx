@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import ProductForm from '@/components/admin/ProductForm';
 import { getAllProducts, deleteProduct, createProduct, updateProduct } from '@/services/productService';
-import { getAllBrands } from '@/services/brandService';
+import { brandService } from '@/services/brandService';
 
 interface Product {
   id: string;
@@ -126,7 +126,7 @@ export default function AdminProducts() {
   const loadBrands = async () => {
     try {
       console.log('🏷️ Fetching brands for product form...');
-      const result: any = await getAllBrands();
+      const result: any = await brandService.getAllBrands();
       
       // Handle both possible response structures
       let brandsArray = [];

@@ -1,69 +1,97 @@
-import { useState, useEffect } from 'react';
-import { brandsService, type Brand } from '@/services/brandsService';
+import { useState, useEffect, useCallback } from 'react';
+import { brandService, type Brand, type BrandFilters } from '@/services/brandService';
 
-interface UseBrandsOptions {
-  featured?: boolean;
-  limit?: number;
+interface UseBrandsReturn {
+  brands: Brand[];
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
 }
 
-export function useBrands(options?: UseBrandsOptions) {
+export function useBrands(filters?: BrandFilters): UseBrandsReturn {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  const fetchBrands = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setIsError(false);
+      setError(null);
+      console.log('🏷️ [HOOK] Fetching brands...');
+      
+      const data = await brandService.getAllBrands(filters);
+      setBrands(data);
+      console.log('🏷️ [HOOK] Brands loaded:', data.length);
+    } catch (err) {
+      setIsError(true);
+      const errorObj = err instanceof Error ? err : new Error('Failed to fetch brands');
+      setError(errorObj);
+      console.error('❌ [HOOK] Error in useBrands:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters?.featured, filters?.search, filters?.minProducts, filters?.limit]);
+
   useEffect(() => {
-    async function fetchBrands() {
+    fetchBrands();
+  }, [fetchBrands]);
+
+  return {
+    brands,
+    isLoading,
+    isError,
+    error,
+    refetch: fetchBrands
+  };
+}
+
+export function useFeaturedBrands(limit: number = 10) {
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    async function fetchFeatured() {
       try {
         setIsLoading(true);
         setIsError(false);
-        console.log('🏷️ [HOOK] Fetching brands...');
+        console.log('🏷️ [HOOK] Fetching featured brands, limit:', limit);
         
-        let data: Brand[];
-        
-        if (options?.featured) {
-          console.log('🏷️ [HOOK] Fetching featured brands, limit:', options.limit || 10);
-          data = await brandsService.getFeaturedBrands(options.limit || 10);
-        } else {
-          data = await brandsService.getBrands();
-        }
-        
+        const data = await brandService.getFeaturedBrands(limit);
         setBrands(data);
-        console.log('🏷️ [HOOK] Brands loaded:', data.length);
-      } catch (err) {
+        console.log('🏷️ [HOOK] Featured brands loaded:', data.length);
+      } catch (error) {
         setIsError(true);
-        const errorObj = err instanceof Error ? err : new Error('Failed to fetch brands');
-        setError(errorObj);
-        console.error('❌ [HOOK] Error in useBrands:', err);
+        console.error('❌ [HOOK] Error fetching featured brands:', error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchBrands();
-  }, [options?.featured, options?.limit]);
+    fetchFeatured();
+  }, [limit]);
 
-  return {
-    data: brands,
-    isLoading,
-    isError,
-    error,
-    status: isLoading ? 'loading' : isError ? 'error' : 'success'
-  };
+  return { brands, isLoading, isError };
 }
 
-export function useBrand(slug: string) {
+export function useBrand(slug: string | undefined) {
   const [brand, setBrand] = useState<Brand | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     async function fetchBrand() {
+      if (!slug) return;
+      
       try {
         setIsLoading(true);
+        setIsError(false);
         console.log('🏷️ [HOOK] Fetching brand:', slug);
         
-        const data = await brandsService.getBrandBySlug(slug);
+        const data = await brandService.getBrandBySlug(slug);
         setBrand(data);
         
         if (data) {
@@ -79,32 +107,47 @@ export function useBrand(slug: string) {
       }
     }
 
-    if (slug) {
-      fetchBrand();
-    }
+    fetchBrand();
   }, [slug]);
 
   return { brand, isLoading, isError };
 }
 
-// Placeholder hooks for future implementation
-export function useBrandProducts(_brandId: string, _filters?: { category?: string; sortBy?: string }) {
-  return {
-    data: { pages: [] as any[] },
-    isLoading: false,
-    fetchNextPage: () => {},
-    hasNextPage: false,
-    isFetchingNextPage: false,
-  };
+export function useBrandProducts(brandName: string | undefined, limit: number = 20) {
+  const [products, setProducts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      if (!brandName) return;
+      
+      try {
+        setIsLoading(true);
+        console.log('📦 [HOOK] Fetching products for brand:', brandName);
+        
+        const data = await brandService.getBrandProducts(brandName, limit);
+        setProducts(data);
+        console.log('📦 [HOOK] Brand products loaded:', data.length);
+      } catch (error) {
+        console.error('❌ [HOOK] Error fetching brand products:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchProducts();
+  }, [brandName, limit]);
+
+  return { products, isLoading };
 }
 
-export function useBrandCollections(_brandId: string) {
+export function useBrandCollections(_brandId: string | undefined) {
   return {
     data: [] as any[],
     isLoading: false,
   };
 }
 
-// Re-export Brand type
-export type { Brand };
+// Re-export types
+export type { Brand, BrandFilters };
 export type Collection = any;

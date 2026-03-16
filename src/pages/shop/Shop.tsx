@@ -22,7 +22,7 @@ export default function Shop() {
   });
 
   // Fetch brands from API using hook
-  const { data: brandsData } = useBrands();
+  const { brands: brandsData } = useBrands();
   
   const normalize = (value: unknown) =>
     String(value ?? '')
