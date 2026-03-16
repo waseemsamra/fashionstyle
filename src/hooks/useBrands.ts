@@ -51,11 +51,12 @@ export interface BrandProductsResponse {
  * - Keeps previous data while fetching (placeholderData)
  */
 export function useBrands(options?: { featured?: boolean; limit?: number }) {
-  return useQuery({
+  const result = useQuery({
     queryKey: ['brands', options],
     queryFn: async () => {
-      console.log('🏷️ Fetching brands...');
+      console.log('🏷️ [HOOK] Fetching brands...');
       const data = await brandsService.getBrands(options);
+      console.log('🏷️ [HOOK] Brands returned:', data.length, 'brands');
       return data as Brand[];
     },
     staleTime: 60 * 60 * 1000, // 1 hour - brands rarely change
@@ -64,6 +65,16 @@ export function useBrands(options?: { featured?: boolean; limit?: number }) {
     refetchOnReconnect: false, // Don't refetch on network recovery
     placeholderData: (previousData) => previousData, // Keep showing old data while fetching
   });
+  
+  console.log('📊 [HOOK STATE] useBrands:', {
+    data: result.data?.length || 0,
+    isLoading: result.isLoading,
+    isError: result.isError,
+    error: result.error?.message,
+    status: result.status
+  });
+  
+  return result;
 }
 
 /**

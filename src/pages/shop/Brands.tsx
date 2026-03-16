@@ -8,11 +8,18 @@ import { useState } from 'react';
 
 export default function BrandsPage() {
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
-  const { data: brands, isLoading, error } = useBrands({
+  const { data: brands, isLoading, error, status } = useBrands({
     featured: showFeaturedOnly ? true : undefined
   });
 
-  console.log('📊 Brands state:', { brands, isLoading, error, count: brands?.length });
+  console.log('📊 [PAGE] Brands page state:', {
+    status,
+    isLoading,
+    isError: !!error,
+    error: error?.message,
+    brandsCount: brands?.length,
+    brands: brands
+  });
 
   if (isLoading) {
     return (
