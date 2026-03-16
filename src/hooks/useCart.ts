@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cartService, type Cart, type CartItem } from '@/services/cartService';
 import { useAuth } from '@/contexts/AuthContext';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { toast } from 'sonner';
 
 export function useCart() {
@@ -369,6 +369,6 @@ export function useDebouncedCartUpdate() {
 }
 
 // Cart Provider for legacy compatibility
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+export function CartProvider({ children }: { children: ReactNode }) {
+  return children;
 }
