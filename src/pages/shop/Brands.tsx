@@ -1,144 +1,165 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getAllBrands } from '@/services/brandService';
+import { useBrands } from '@/hooks/useBrands';
+import { Link } from 'react-router-dom';
+import { Loader2, Store, MapPin, Calendar, Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import LazyImage from '@/components/ui/LazyImage';
+import { useState } from 'react';
 
-interface Brand {
-  id: string;
-  name: string;
-  description?: string;
-  products?: number;
-}
+export default function BrandsPage() {
+  const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
+  const { data: brands, isLoading, error } = useBrands({ 
+    featured: showFeaturedOnly ? true : undefined 
+  });
 
-export default function Brands() {
-  const navigate = useNavigate();
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    loadBrands();
-  }, []);
-
-  const loadBrands = async () => {
-    try {
-      console.log('🏷️ Loading brands from DynamoDB...');
-      const brandsData = await getAllBrands();
-      
-      // Handle both array and object responses
-      const brandsArray = Array.isArray(brandsData) 
-        ? brandsData 
-        : (brandsData as any).brands || (brandsData as any).items || [];
-      
-      console.log('✅ Loaded', brandsArray.length, 'brands from DynamoDB');
-      setBrands(brandsArray);
-    } catch (error) {
-      console.error('❌ Failed to load brands:', error);
-      setBrands([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const groupedBrands = brands.reduce((acc, brand) => {
-    const firstLetter = brand.name[0].toUpperCase();
-    if (!acc[firstLetter]) {
-      acc[firstLetter] = [];
-    }
-    acc[firstLetter].push(brand);
-    return acc;
-  }, {} as Record<string, Brand[]>);
-
-  const sortedLetters = Object.keys(groupedBrands).sort();
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-beige-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
+          <Loader2 className="w-8 h-8 animate-spin text-gold mx-auto mb-4" />
           <p className="text-gray-600">Loading brands...</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-beige-100">
-      {/* Carousel Section */}
-      <div className="bg-white py-8 overflow-hidden">
-        <div className="animate-scroll flex gap-8 whitespace-nowrap">
-          {[...brands, ...brands].map((brand, index) => (
-            <div
-              key={`${brand.id}-${index}`}  // ✅ Added unique key
-              className="inline-flex items-center justify-center px-6 py-3 bg-beige-50 rounded-lg min-w-[200px]"
-            >
-              <span className="font-medium text-gray-700">{brand.name}</span>
-            </div>
-          ))}
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Failed to load brands</h2>
+          <p className="text-gray-600 mb-4">Please try again later</p>
+          <Button onClick={() => window.location.reload()}>
+            Try again
+          </Button>
         </div>
       </div>
+    );
+  }
 
-      {/* Brands List */}
-      <div className="container mx-auto px-4 py-12">
-        <h1 className="text-4xl font-bold mb-8 text-center">Our Brands</h1>
+  return (
+    <div className="min-h-screen bg-beige-100 py-12">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4">Our Brands</h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Discover premium fashion from the world's most celebrated brands, 
+            each chosen for their exceptional quality and unique style.
+          </p>
+        </div>
 
-        {brands.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">No brands available</p>
-          </div>
-        ) : (
-          <>
-            {/* Alphabet Navigation */}
-            <div className="flex flex-wrap justify-center gap-2 mb-12">
-              {sortedLetters.map((letter) => (
-                <a
-                  key={letter}
-                  href={`#${letter}`}
-                  className="w-10 h-10 flex items-center justify-center bg-white rounded-full hover:bg-gold hover:text-white transition font-semibold"
-                >
-                  {letter}
-                </a>
-              ))}
-            </div>
+        {/* Filter Toggle */}
+        <div className="flex justify-center mb-8">
+          <Button
+            variant={showFeaturedOnly ? 'default' : 'outline'}
+            onClick={() => setShowFeaturedOnly(!showFeaturedOnly)}
+            className="gap-2"
+          >
+            <Star className="w-4 h-4" />
+            {showFeaturedOnly ? 'Show All Brands' : 'Featured Only'}
+          </Button>
+        </div>
 
-            {/* Brands by Letter */}
-            <div className="space-y-12">
-              {sortedLetters.map((letter) => (
-                <div key={letter} id={letter} className="scroll-mt-24">
-                  <h2 className="text-3xl font-bold mb-6 text-gold">{letter}</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {groupedBrands[letter].map((brand) => (
-                      <div
-                        key={brand.id}
-                        onClick={() => navigate(`/brand/${encodeURIComponent(brand.name)}`)}
-                        className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition cursor-pointer hover:scale-105"
-                      >
-                        <p className="font-medium text-gray-800">{brand.name}</p>
-                      </div>
-                    ))}
+        {/* Results Count */}
+        <div className="mb-6 text-sm text-gray-600">
+          {brands?.length || 0} {brands?.length === 1 ? 'brand' : 'brands'} 
+          {showFeaturedOnly && ' (Featured)'}
+        </div>
+
+        {/* Brands Grid */}
+        {brands && brands.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {brands.map((brand) => (
+              <Link
+                key={brand.id}
+                to={`/brands/${brand.slug}`}
+                className="group bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+              >
+                {/* Cover Image */}
+                <div className="relative h-48 overflow-hidden">
+                  <LazyImage
+                    src={brand.coverImage}
+                    alt={brand.name}
+                    productName={brand.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                  
+                  {/* Featured Badge */}
+                  {brand.isFeatured && (
+                    <Badge className="absolute top-3 right-3 bg-gold text-white">
+                      <Star className="w-3 h-3 mr-1" />
+                      Featured
+                    </Badge>
+                  )}
+                  
+                  {/* Logo Overlay */}
+                  <div className="absolute -bottom-8 left-6">
+                    <div className="w-20 h-20 rounded-full border-4 border-white bg-white shadow-lg overflow-hidden">
+                      <LazyImage
+                        src={brand.logo}
+                        alt={`${brand.name} logo`}
+                        productName={brand.name}
+                        className="w-full h-full object-cover p-2"
+                      />
+                    </div>
                   </div>
                 </div>
-              ))}
+
+                {/* Content */}
+                <div className="pt-12 p-6">
+                  <h2 className="text-2xl font-bold mb-2 group-hover:text-gold transition">
+                    {brand.name}
+                  </h2>
+                  
+                  <p className="text-gray-600 mb-4 line-clamp-2">
+                    {brand.shortDescription}
+                  </p>
+
+                  {/* Stats */}
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                    {brand.establishedYear && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>Est. {brand.establishedYear}</span>
+                      </div>
+                    )}
+                    
+                    {brand.country && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-4 h-4" />
+                        <span>{brand.country}</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-1">
+                      <Store className="w-4 h-4" />
+                      <span>{brand.productCount}+ Products</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Store className="w-8 h-8 text-gray-400" />
             </div>
-          </>
+            <h3 className="text-xl font-semibold mb-2">No brands found</h3>
+            <p className="text-gray-600 mb-4">
+              {showFeaturedOnly 
+                ? 'No featured brands available' 
+                : 'Check back soon for new brands'}
+            </p>
+            {showFeaturedOnly && (
+              <Button onClick={() => setShowFeaturedOnly(false)}>
+                Show All Brands
+              </Button>
+            )}
+          </div>
         )}
       </div>
-
-      <style>{`
-        @keyframes scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-        .animate-scroll {
-          animation: scroll 60s linear infinite;
-        }
-        .animate-scroll:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
     </div>
   );
 }

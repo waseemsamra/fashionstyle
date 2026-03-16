@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
+import { adaptProduct } from '../utils/productAdapter';
 
 // Products query with caching
 export const useProducts = (category?: string, brand?: string) => {
@@ -12,26 +13,65 @@ export const useProducts = (category?: string, brand?: string) => {
 };
 
 // Single product query with caching
-export const useProduct = (id: string) => {
+export const useProduct = (id: string | undefined) => {
   return useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
-      // Try direct endpoint first
-      try {
-        const data = await api.getProduct(id);
-        if (data) return data;
-      } catch (e) {
-        console.warn('Direct product fetch failed, using list');
-      }
+      if (!id) throw new Error('No product ID');
       
-      // Fallback: get from list (cached)
-      const allProducts = await api.listProducts();
-      const items = Array.isArray(allProducts?.items) ? allProducts.items : [];
-      return items.find((p: any) => String(p.id) === String(id) || String(p.PK) === String(id));
+      const token = localStorage.getItem('jwt_token');
+      console.log(`🔍 Fetching product with ID: ${id}`);
+      
+      try {
+        const response = await fetch(
+          `https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch products');
+        }
+        
+        const data = await response.json();
+        console.log('📦 Raw API response:', data);
+        
+        // Handle the response which is an array of products
+        const items = data.items || data.products || data || [];
+        if (Array.isArray(items)) {
+          // Find the product with matching ID
+          const foundProduct = items.find((item: any) => 
+            String(item.id) === String(id) || 
+            String(item.PK) === String(id)
+          );
+          
+          if (!foundProduct) {
+            throw new Error(`Product with ID ${id} not found`);
+          }
+          
+          console.log('✅ Found product:', foundProduct);
+          return adaptProduct(foundProduct);
+        }
+        
+        // If it's a single product object
+        if (items.id || items.PK) {
+          return adaptProduct(items);
+        }
+        
+        throw new Error('Unexpected API response format');
+      } catch (error) {
+        console.error('❌ Error fetching product:', error);
+        throw error;
+      }
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
     enabled: !!id,
+    retry: 1
   });
 };
 

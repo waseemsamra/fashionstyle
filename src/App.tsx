@@ -1,11 +1,16 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { lazy, Suspense, useEffect } from 'react';
 import { getCurrentUser, signOut } from 'aws-amplify/auth';
+import { useQueryClient } from '@tanstack/react-query';
 import { CartProvider } from '@/hooks/useCart';
 import { Toaster } from '@/components/ui/sonner';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { brandsService } from '@/services/brandsService';
+import { adminService } from '@/services/adminService';
+import { prefetchReviews } from '@/services/reviewsService';
+import type { Period } from '@/services/adminService';
 
 // Route-based code splitting via dynamic imports
 const Home = lazy(() => import('@/pages/Home'));
@@ -38,9 +43,73 @@ const DeliveryManagement = lazy(() => import('@/pages/admin/DeliveryManagement')
 
 function Layout() {
   const location = useLocation();
+  const queryClient = useQueryClient();
   const isAdminRoute = location.pathname.startsWith('/admin');
   // Show navigation on dashboard now
   const isAuthOnlyRoute = location.pathname === '/login' || location.pathname === '/admin/login';
+
+  // Prefetch popular brands in background on app mount
+  useEffect(() => {
+    console.log('🚀 Prefetching popular brands...');
+    queryClient.prefetchQuery({
+      queryKey: ['brands', { featured: true, limit: 10 }],
+      queryFn: async () => {
+        try {
+          const brands = await brandsService.getBrands({ featured: true, limit: 10 });
+          console.log('✅ Prefetched', brands.length, 'featured brands');
+          return brands;
+        } catch (error) {
+          console.warn('⚠️ Failed to prefetch brands:', error);
+          return [];
+        }
+      },
+      staleTime: 60 * 60 * 1000, // 1 hour
+      gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    });
+
+    // Also prefetch all brands (non-featured)
+    queryClient.prefetchQuery({
+      queryKey: ['brands', {}],
+      queryFn: async () => {
+        try {
+          const brands = await brandsService.getBrands();
+          console.log('✅ Prefetched all', brands.length, 'brands');
+          return brands;
+        } catch (error) {
+          console.warn('⚠️ Failed to prefetch all brands:', error);
+          return [];
+        }
+      },
+      staleTime: 60 * 60 * 1000, // 1 hour
+      gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    });
+
+    // Prefetch common admin stats periods
+    console.log('🚀 Prefetching admin stats for common periods...');
+    const periods: Period[] = ['7d', '30d', '90d'];
+    periods.forEach(period => {
+      queryClient.prefetchQuery({
+        queryKey: ['admin-stats', period],
+        queryFn: async () => {
+          try {
+            const stats = await adminService.getStats(period);
+            console.log('✅ Prefetched admin stats for', period);
+            return stats;
+          } catch (error) {
+            console.warn('⚠️ Failed to prefetch stats for', period, ':', error);
+            return null;
+          }
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        gcTime: 30 * 60 * 1000, // 30 minutes
+      });
+    });
+
+    // Prefetch reviews for top products (mock product IDs for demo)
+    console.log('🚀 Prefetching reviews for top products...');
+    const topProductIds = ['1', '2', '3', '4', '5'];
+    prefetchReviews(queryClient, topProductIds, { limit: 5, sortBy: 'helpful' });
+  }, [queryClient]);
 
   return (
     <div className="min-h-screen bg-beige-100">

@@ -18,9 +18,8 @@ export default function ProductDetail() {
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [sizeGuideUnit, setSizeGuideUnit] = useState<'inch' | 'cm'>('cm');
   const [sizeGuideTab, setSizeGuideTab] = useState<'size' | 'measuring' | 'how-to-measure'>('size');
+  
   const productId = getProductIdFromSlug(slug);
-
-  // Use React Query with caching
   const { data: product, isLoading, error } = useProduct(productId);
 
   useEffect(() => {
@@ -52,8 +51,11 @@ export default function ProductDetail() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Product not found</h2>
-          <Button onClick={() => navigate('/')}>Go Home</Button>
+          <h2 className="text-2xl font-bold mb-4">{error?.message || 'Product not found'}</h2>
+          <div className="flex gap-4 justify-center">
+            <Button onClick={() => navigate('/')}>Go Home</Button>
+            <Button variant="outline" onClick={() => navigate('/shop')}>Browse Shop</Button>
+          </div>
         </div>
       </div>
     );
@@ -68,7 +70,11 @@ export default function ProductDetail() {
       toast.error('Please select a color');
       return;
     }
-    addToCart({ ...product, selectedSize, selectedColor });
+    addToCart({ 
+      ...product, 
+      selectedSize: selectedSize || undefined, 
+      selectedColor: selectedColor || undefined 
+    } as any);
     toast.success('Added to cart!');
   };
 
