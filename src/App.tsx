@@ -4,6 +4,9 @@ import { getCurrentUser, signOut } from 'aws-amplify/auth';
 import { useQueryClient } from '@tanstack/react-query';
 import { CartProvider } from '@/hooks/useCart';
 import { Toaster } from '@/components/ui/sonner';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
+import { userService } from '@/services/userService';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -20,13 +23,15 @@ const BrandDetail = lazy(() => import('@/pages/shop/BrandDetail'));
 const Category = lazy(() => import('@/pages/shop/Category'));
 const NewArrivals = lazy(() => import('@/pages/shop/NewArrivals'));
 const ProductDetail = lazy(() => import('@/pages/shop/ProductDetail'));
-const Wishlist = lazy(() => import('@/pages/shop/Wishlist'));
 const Checkout = lazy(() => import('@/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@/pages/checkout/OrderConfirmation'));
 const Login = lazy(() => import('@/pages/user/Login'));
 const UserDashboard = lazy(() => import('@/pages/user/UserDashboard'));
 const OrderDetails = lazy(() => import('@/pages/user/OrderDetails'));
 const VirtualTryOnPage = lazy(() => import('@/pages/VirtualTryOnPage'));
+const SearchPage = lazy(() => import('@/pages/search/SearchPage'));
+const WishlistPage = lazy(() => import('@/pages/wishlist/WishlistPage'));
+const ProfilePage = lazy(() => import('@/components/profile/ProfilePage'));
 const AdminLogin = lazy(() => import('@/pages/admin/AdminLogin'));
 const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
 const AdminProducts = lazy(() => import('@/pages/admin/AdminProducts'));
@@ -44,9 +49,65 @@ const DeliveryManagement = lazy(() => import('@/pages/admin/DeliveryManagement')
 function Layout() {
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const isAdminRoute = location.pathname.startsWith('/admin');
   // Show navigation on dashboard now
   const isAuthOnlyRoute = location.pathname === '/login' || location.pathname === '/admin/login';
+
+  // Prefetch user data when user is authenticated
+  useEffect(() => {
+    if (user?.id) {
+      console.log('👤 Prefetching user data...');
+      
+      // Prefetch user profile
+      queryClient.prefetchQuery({
+        queryKey: ['user-profile', user.id],
+        queryFn: async () => {
+          try {
+            const profile = await userService.getProfile(user.id);
+            console.log('✅ Prefetched user profile');
+            return profile;
+          } catch (error) {
+            console.warn('⚠️ Failed to prefetch profile:', error);
+            return null;
+          }
+        },
+        staleTime: 30 * 60 * 1000, // 30 minutes
+      });
+      
+      // Prefetch user addresses
+      queryClient.prefetchQuery({
+        queryKey: ['user-addresses', user.id],
+        queryFn: async () => {
+          try {
+            const addresses = await userService.getAddresses(user.id);
+            console.log('✅ Prefetched', addresses.length, 'addresses');
+            return addresses;
+          } catch (error) {
+            console.warn('⚠️ Failed to prefetch addresses:', error);
+            return [];
+          }
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      });
+      
+      // Prefetch user orders
+      queryClient.prefetchQuery({
+        queryKey: ['user-orders', user.id],
+        queryFn: async () => {
+          try {
+            const orders = await userService.getOrders(user.id);
+            console.log('✅ Prefetched', orders.length, 'orders');
+            return orders;
+          } catch (error) {
+            console.warn('⚠️ Failed to prefetch orders:', error);
+            return [];
+          }
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      });
+    }
+  }, [user?.id, queryClient]);
 
   // Prefetch popular brands in background on app mount
   useEffect(() => {
@@ -124,13 +185,15 @@ function Layout() {
             <Route path="/category/:name" element={<Category />} />
             <Route path="/new-arrivals" element={<NewArrivals />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
-            <Route path="/wishlist" element={<Wishlist />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/order-confirmation" element={<OrderConfirmation />} />
-            <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+            <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+            <Route path="/order-confirmation" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
+            <Route path="/order-confirmation/:orderId" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
-            <Route path="/dashboard" element={<UserDashboard />} />
-            <Route path="/dashboard/orders/:orderId" element={<OrderDetails />} />
+            <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/orders/:orderId" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
             <Route path="/try-on" element={<VirtualTryOnPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>

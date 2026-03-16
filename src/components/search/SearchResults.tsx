@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { Star, ShoppingCart } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import LazyImage from '@/components/ui/LazyImage';
 import type { SearchResult } from '@/hooks/useSearchProducts';
 

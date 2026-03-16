@@ -69,7 +69,19 @@ export function useSearchProducts(
     queryKey: ['search', debouncedQuery, filters],
     queryFn: async () => {
       if (!debouncedQuery || debouncedQuery.length < 3) {
-        return { results: [], total: 0, facets: {}, suggestions: [] } as SearchResponse;
+        return { 
+          results: [], 
+          total: 0, 
+          facets: {
+            categories: [],
+            brands: [],
+            priceRanges: [],
+            sizes: [],
+            colors: [],
+            ratings: []
+          }, 
+          suggestions: [] 
+        } as SearchResponse;
       }
       
       console.log(`🔍 Searching for: "${debouncedQuery}"`, filters);

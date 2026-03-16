@@ -1,5 +1,3 @@
-const API_URL = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
-
 export interface SearchFilters {
   q: string;
   category?: string;
@@ -53,53 +51,103 @@ export interface SearchResponse {
 }
 
 class SearchService {
-  async search(filters: SearchFilters): Promise<SearchResponse> {
-    const token = localStorage.getItem('jwt_token');
+  private baseUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+  private abortController: AbortController | null = null;
+
+  async search(params: SearchFilters): Promise<SearchResponse> {
+    // Cancel previous request
+    if (this.abortController) {
+      this.abortController.abort();
+    }
     
-    const params = new URLSearchParams();
-    Object.keys(filters).forEach(key => {
-      const value = filters[key as keyof SearchFilters];
-      if (value !== undefined) {
+    this.abortController = new AbortController();
+    const token = localStorage.getItem('jwt_token');
+
+    const url = new URL(`${this.baseUrl}/products/search`);
+    Object.keys(params).forEach(key => {
+      const value = params[key as keyof SearchFilters];
+      if (value !== undefined && value !== null) {
         if (Array.isArray(value)) {
-          value.forEach(v => params.append(key, v.toString()));
+          value.forEach((v: string) => {
+            url.searchParams.append(`${key}[]`, v);
+          });
         } else {
-          params.append(key, value.toString());
+          url.searchParams.append(key, value.toString());
         }
       }
     });
 
-    console.log('🔍 Searching with params:', params.toString());
+    console.log('🔍 Searching:', url.toString());
 
-    const response = await fetch(`${API_URL}/search?${params}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      return {
-        results: [],
-        total: 0,
-        facets: {
-          categories: [],
-          brands: [],
-          priceRanges: [],
-          sizes: [],
-          colors: [],
-          ratings: []
+    try {
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        suggestions: []
-      };
-    }
+        signal: this.abortController.signal
+      });
 
-    return response.json();
+      if (!response.ok) {
+        throw new Error('Search failed');
+      }
+
+      const data = await response.json();
+      console.log('✅ Search returned', data.results?.length || 0, 'results');
+      
+      return data;
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('⚠️ Search request aborted');
+        return {
+          results: [],
+          total: 0,
+          facets: {
+            categories: [],
+            brands: [],
+            priceRanges: [],
+            sizes: [],
+            colors: [],
+            ratings: []
+          },
+          suggestions: []
+        };
+      }
+      throw error;
+    }
   }
 
   async getSuggestions(query: string): Promise<{ suggestions: string[] }> {
     const token = localStorage.getItem('jwt_token');
     
-    const response = await fetch(`${API_URL}/search/suggestions?q=${encodeURIComponent(query)}`, {
+    console.log('💡 Fetching suggestions for:', query);
+    
+    const response = await fetch(
+      `${this.baseUrl}/products/suggestions?q=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      return { suggestions: [] };
+    }
+
+    const data = await response.json();
+    console.log('✅ Got', data.suggestions?.length || 0, 'suggestions');
+    
+    return data;
+  }
+
+  async getPopularSearches(): Promise<{ searches: string[] }> {
+    const token = localStorage.getItem('jwt_token');
+    
+    console.log('🔥 Fetching popular searches...');
+    
+    const response = await fetch(`${this.baseUrl}/products/popular-searches`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -107,26 +155,19 @@ class SearchService {
     });
 
     if (!response.ok) {
-      return { suggestions: [] };
+      return { searches: [] };
     }
 
-    return response.json();
-  }
-
-  async getPopularSearches(): Promise<string[]> {
-    const response = await fetch(`${API_URL}/search/popular`);
+    const data = await response.json();
+    console.log('✅ Got', data.searches?.length || 0, 'popular searches');
     
-    if (!response.ok) {
-      return [];
-    }
-
-    return response.json();
+    return data;
   }
 
   async logSearch(query: string, resultCount: number, clickedProductId?: string) {
     const token = localStorage.getItem('jwt_token');
     
-    await fetch(`${API_URL}/search/log`, {
+    await fetch(`${this.baseUrl}/search/log`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -139,6 +180,14 @@ class SearchService {
         timestamp: new Date().toISOString()
       })
     });
+  }
+
+  // Cancel current search request
+  cancel() {
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
   }
 }
 
