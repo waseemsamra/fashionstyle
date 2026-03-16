@@ -15,7 +15,7 @@ export default function BrandDetailPage() {
   const [selectedCollection, setSelectedCollection] = useState<string | undefined>(undefined);
   
   // These three queries run in parallel and are cached
-  const { data: brand, isLoading: brandLoading, error: brandError } = useBrand(slug!);
+  const { brand, isLoading: brandLoading, isError: brandError } = useBrand(slug!);
   const { data: collections, isLoading: collectionsLoading } = useBrandCollections(brand?.id!);
   const {
     data: productsData,

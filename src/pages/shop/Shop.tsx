@@ -5,6 +5,7 @@ import { SlidersHorizontal, X, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAllProducts } from '@/hooks/useProducts';
 import { useBrands } from '@/hooks/useBrands';
+import type { Brand } from '@/services/brandsService';
 import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
 
@@ -43,7 +44,7 @@ export default function Shop() {
   // Use brands from API hook instead of extracting from products
   const brands = [
     'all',
-    ...(brandsData?.map((b) => b.name).filter(Boolean) || []),
+    ...(brandsData?.map((b: Brand) => b.name).filter(Boolean) || []),
   ];
 
   const hasRatingData = allProducts.some((p) => typeof p?.rating === 'number');

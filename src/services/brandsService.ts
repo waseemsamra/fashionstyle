@@ -1,211 +1,229 @@
-import type { Brand, Collection } from '@/hooks/useBrands';
+// Brands service - fetches brands from products API
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  productCount: number;
+  logo?: string;
+  coverImage?: string;
+  description?: string;
+  shortDescription?: string;
+  isFeatured?: boolean;
+  establishedYear?: number;
+  country?: string;
+  collections?: Collection[];
+  seo?: {
+    title: string;
+    description: string;
+    keywords: string[];
+  };
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  productCount: number;
+  isSeasonal?: boolean;
+  season?: string;
+  year?: number;
+}
 
 class BrandsService {
   private baseUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+  private productsUrl = `${this.baseUrl}/products`;
   private cache = new Map<string, Brand>();
 
+  /**
+   * Fetch brands by extracting from products API
+   * This works without authentication!
+   */
   async getBrands(options?: { featured?: boolean; limit?: number }): Promise<Brand[]> {
-    const token = localStorage.getItem('jwt_token');
-
-    let url = `${this.baseUrl}/brands`;
-    const params = new URLSearchParams();
-
-    if (options?.featured) params.append('featured', 'true');
-    if (options?.limit) params.append('limit', options.limit.toString());
-
-    if (params.toString()) url += `?${params.toString()}`;
-
-    console.log('🏷️ Fetching brands from:', url);
-    console.log('🔑 Token:', token ? 'EXISTS' : 'NOT FOUND');
+    console.log('🏷️ Fetching brands from products API...');
 
     try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json'
-      };
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-      // Only add Authorization header if token exists
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
+      const response = await fetch(this.productsUrl, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
+      });
 
-      const response = await fetch(url, { headers });
+      clearTimeout(timeoutId);
 
-      console.log('📥 Brands response status:', response.status);
-      console.log('📥 Response OK:', response.ok);
+      console.log('📥 Products response status:', response.status);
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ API Error:', response.status, response.statusText);
-        console.error('❌ Error body:', errorText);
-        throw new Error(`Failed to fetch brands: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to fetch products: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('📦 Raw brands response:', JSON.stringify(data, null, 2));
+      console.log('📦 Raw products response:', data);
 
-      // Handle different response structures
-      const items = data.items || data.brands || data.data || [];
-      console.log('📦 Extracted items:', items?.length || 0);
-      
-      const brands = Array.isArray(items) ? items.map(this.transformBrand) : [];
+      const products = data.items || data.products || data.data || [];
+      console.log('📦 Total products:', products.length);
+
+      // Group products by brand
+      const brandMap = new Map<string, Brand>();
+
+      products.forEach((product: any) => {
+        const brandName = product.brand;
+        if (!brandName) return;
+
+        const brandId = brandName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+        if (!brandMap.has(brandId)) {
+          brandMap.set(brandId, {
+            id: brandId,
+            name: brandName,
+            slug: brandId,
+            productCount: 1,
+            logo: `https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/${brandId}.jpg`,
+            coverImage: `https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/${brandId}-cover.jpg`,
+            description: `Discover the latest collection from ${brandName}`,
+            shortDescription: `Shop ${brandName} collection`,
+            isFeatured: false,
+            collections: [],
+            seo: {
+              title: brandName,
+              description: `Shop ${brandName} collection`,
+              keywords: [brandName.toLowerCase()]
+            }
+          });
+        } else {
+          const existing = brandMap.get(brandId)!;
+          existing.productCount++;
+        }
+      });
+
+      // Convert map to array and sort by product count
+      let brands = Array.from(brandMap.values())
+        .sort((a, b) => b.productCount - a.productCount);
+
+      console.log(`📊 Extracted ${brands.length} brands from ${products.length} products`);
+
+      // Apply limit if specified
+      if (options?.limit) {
+        brands = brands.slice(0, options.limit);
+      }
+
+      // If featured only, return top brands (you can add isFeatured logic later)
+      if (options?.featured) {
+        brands = brands.slice(0, 10);
+      }
 
       console.log('✅ Brands fetched:', brands.length, 'brands');
       if (brands.length > 0) {
-        console.log('✅ First brand:', brands[0].name);
+        console.log('✅ First brand:', brands[0].name, 'with', brands[0].productCount, 'products');
       }
 
       return brands;
-    } catch (error) {
-      console.error('❌ Brands fetch error:', error);
+
+    } catch (error: any) {
+      console.error('❌ Brands fetch error:', error.name, error.message);
+
+      if (error.name === 'AbortError') {
+        console.error('⏱️ Request timed out after 15 seconds');
+        throw new Error('Request timed out - please check your internet connection');
+      }
+
+      if (error.message.includes('Failed to fetch')) {
+        console.error('🌐 Network error - likely CORS or offline');
+        throw new Error('Network error - please check your connection');
+      }
+
       throw error;
     }
   }
 
-  async getBrandBySlug(slug: string): Promise<Brand> {
-    const token = localStorage.getItem('jwt_token');
-    
-    // Try to get from cache first (memory cache for instant navigation)
+  async getFeaturedBrands(limit: number = 10): Promise<Brand[]> {
+    const brands = await this.getBrands();
+    return brands.filter(b => b.isFeatured).slice(0, limit);
+  }
+
+  async getBrandBySlug(slug: string): Promise<Brand | null> {
+    console.log('🏷️ Fetching brand by slug:', slug);
+
+    // Try to get from cache first
     const cached = this.cache.get(`brand-${slug}`);
     if (cached) {
       console.log('📦 Using cached brand data for', slug);
       return cached;
     }
 
-    console.log('🏷️ Fetching brand by slug:', slug);
+    // Get all brands and find by slug
+    const allBrands = await this.getBrands();
+    const brand = allBrands.find(b => b.slug === slug) || null;
 
-    const response = await fetch(`${this.baseUrl}/brands/${slug}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch brand: ${slug}`);
+    if (brand) {
+      // Cache for future requests
+      this.cache.set(`brand-${slug}`, brand);
+      console.log('✅ Brand found:', brand.name);
+    } else {
+      console.warn('⚠️ Brand not found:', slug);
     }
 
-    const data = await response.json();
-    const brand = this.transformBrand(data);
-    
-    // Store in memory cache
-    this.cache.set(`brand-${slug}`, brand);
-    console.log('✅ Brand fetched and cached:', brand.name);
-    
     return brand;
   }
 
-  async getBrandProducts(brandId: string, params: {
-    page?: number;
-    limit?: number;
-    category?: string;
-    sortBy?: string;
-  }): Promise<{
-    products: any[];
-    totalPages: number;
-    currentPage: number;
-    nextPage: number | undefined;
-  }> {
-    const token = localStorage.getItem('jwt_token');
+  async getBrandProducts(brandName: string, params?: { page?: number; limit?: number }) {
+    console.log('📦 Fetching products for brand:', brandName);
     
-    const url = new URL(`${this.baseUrl}/brands/${brandId}/products`);
-    Object.keys(params).forEach(key => {
-      if (params[key as keyof typeof params] !== undefined) {
-        url.searchParams.append(key, params[key as keyof typeof params]!.toString());
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const url = new URL(this.productsUrl);
+      url.searchParams.append('brand', brandName);
+      if (params?.page) url.searchParams.append('page', params.page.toString());
+      if (params?.limit) url.searchParams.append('limit', params.limit.toString());
+
+      const response = await fetch(url.toString(), {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch brand products: ${response.status}`);
       }
-    });
 
-    console.log('📦 Fetching brand products:', url.toString());
+      const data = await response.json();
+      const products = data.items || data.products || [];
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
+      console.log('✅ Brand products fetched:', products.length);
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch brand products');
+      return {
+        products,
+        totalPages: 1,
+        currentPage: 1,
+        nextPage: undefined
+      };
+    } catch (error: any) {
+      console.error('❌ Brand products error:', error.message);
+      return {
+        products: [],
+        totalPages: 0,
+        currentPage: 0,
+        nextPage: undefined
+      };
     }
-
-    const data = await response.json();
-    
-    console.log('✅ Brand products fetched:', data.items?.length || 0, 'products');
-    
-    return {
-      products: data.items || [],
-      totalPages: data.totalPages || 1,
-      currentPage: data.currentPage || 1,
-      nextPage: data.currentPage < data.totalPages ? data.currentPage + 1 : undefined
-    };
   }
 
-  async getBrandCollections(brandId: string): Promise<Collection[]> {
-    const token = localStorage.getItem('jwt_token');
-    
-    console.log('🎯 Fetching collections for brand:', brandId);
-    
-    const response = await fetch(`${this.baseUrl}/brands/${brandId}/collections`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      console.warn('⚠️ Failed to fetch collections');
-      return [];
-    }
-
-    const data = await response.json();
-    const collections = data.items?.map(this.transformCollection) || [];
-    
-    console.log('✅ Collections fetched:', collections.length, 'collections');
-    
-    return collections;
+  async getBrandCollections(_brandId: string) {
+    // Collections not implemented yet - return empty array
+    return [];
   }
-
-  private transformBrand = (data: any): Brand => {
-    return {
-      id: data.id || data.PK || '',
-      name: data.name || '',
-      slug: data.slug || this.createSlug(data.name),
-      logo: data.logo || 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/default-logo.png',
-      coverImage: data.coverImage || data.cover || 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/default-cover.jpg',
-      description: data.description || '',
-      shortDescription: data.shortDescription || data.description?.substring(0, 150) || '',
-      establishedYear: data.establishedYear,
-      country: data.country,
-      isFeatured: Boolean(data.isFeatured),
-      productCount: data.productCount || 0,
-      collections: data.collections?.map(this.transformCollection) || [],
-      seo: data.seo || {
-        title: data.name,
-        description: data.description,
-        keywords: []
-      }
-    };
-  };
-
-  private transformCollection = (data: any): Collection => {
-    return {
-      id: data.id || '',
-      name: data.name || '',
-      slug: data.slug || this.createSlug(data.name),
-      description: data.description || '',
-      image: data.image || 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/collections/default.jpg',
-      productCount: data.productCount || 0,
-      isSeasonal: data.isSeasonal || false,
-      season: data.season,
-      year: data.year
-    };
-  };
-
-  private createSlug = (name: string): string => {
-    if (!name) return '';
-    return name.toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-  };
 
   // Clear cache (useful for admin updates)
   clearCache(slug?: string) {

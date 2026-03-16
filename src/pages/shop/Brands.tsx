@@ -8,17 +8,15 @@ import { useState } from 'react';
 
 export default function BrandsPage() {
   const [showFeaturedOnly, setShowFeaturedOnly] = useState(false);
-  const { data: brands, isLoading, error, status } = useBrands({
+  const { data: brands, isLoading, isError, error } = useBrands({
     featured: showFeaturedOnly ? true : undefined
   });
 
   console.log('📊 [PAGE] Brands page state:', {
-    status,
     isLoading,
-    isError: !!error,
+    isError,
     error: error?.message,
     brandsCount: brands?.length,
-    brands: brands
   });
 
   if (isLoading) {
@@ -32,15 +30,13 @@ export default function BrandsPage() {
     );
   }
 
-  if (error) {
+  if (isError) {
     console.error('❌ Brands error:', error);
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Failed to load brands</h2>
-          <p className="text-gray-600 mb-4">
-            {error instanceof Error ? error.message : 'Please try again later'}
-          </p>
+          <p className="text-gray-600 mb-4">{error?.message || 'Please try again later'}</p>
           <Button onClick={() => window.location.reload()}>
             Try again
           </Button>
