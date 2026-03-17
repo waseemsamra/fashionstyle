@@ -6,8 +6,8 @@ import { Link } from 'react-router-dom';
 
 export default function BrandDetailPage() {
   const { slug } = useParams();
-  const { brand, isLoading: brandLoading, isError: brandError } = useBrand(slug);
-  const { products, isLoading: productsLoading } = useBrandProducts(brand?.name);
+  const { brand, loading: brandLoading } = useBrand(slug);
+  const { products, loading: productsLoading } = useBrandProducts(brand?.name);
 
   if (brandLoading) {
     return (
@@ -17,7 +17,7 @@ export default function BrandDetailPage() {
     );
   }
 
-  if (brandError || !brand) {
+  if (!brand) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <h2 className="text-2xl font-bold mb-4">Brand not found</h2>

@@ -40,7 +40,7 @@ export default function BrandsPage() {
         </div>
 
         {/* Brands Grid */}
-        <BrandsGrid featured={showFeatured} showSearch={!showFeatured} />
+        <BrandsGrid />
       </div>
     </div>
   );

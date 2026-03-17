@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, X, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAllProducts } from '@/hooks/useProducts';
+import { useProducts } from '@/hooks/useProducts';
 import { useBrands } from '@/hooks/useBrands';
 import type { Brand } from '@/services/brandsService';
 import { getProductUrl } from '@/utils/productUrl';
@@ -53,7 +53,7 @@ export default function Shop() {
   );
 
   // Use React Query with caching
-  const { data: productsData, isLoading, error } = useAllProducts();
+  const { data: productsData, isLoading, error } = useProducts();
 
   useEffect(() => {
     console.log('Shop: productsData changed:', productsData?.length);

@@ -194,7 +194,7 @@ function Layout() {
       queryKey: ['brands', { featured: true, limit: 10 }],
       queryFn: async () => {
         try {
-          const brands = await brandService.getAllBrands({ featured: true, limit: 10 });
+          const brands = await brandService.getAllBrands();
           console.log('✅ Prefetched', brands.length, 'featured brands');
           return brands;
         } catch (error) {
