@@ -47,13 +47,8 @@ export const ordersService = {
       console.log('📦 Token present:', !!token);
       
       // userId should be the Cognito sub (unique ID) or email-based ID
-      const response = await apiClient.post(`/users/${userId}/orders`, orderData, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
+      const response = await apiClient.post(`/users/${userId}/orders`, orderData, token);
+
       console.log('✅ Order created:', response.data);
       return response.data;
     } catch (error: any) {

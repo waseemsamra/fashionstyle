@@ -356,7 +356,8 @@ export default function UserDashboard() {
   // Payment Methods Handlers
   const loadPaymentMethods = async () => {
     try {
-      const response = await api.getPaymentMethods(user.userId);
+      const token = localStorage.getItem('jwt_token');
+      const response = await api.getPaymentMethods(user.userId, token);
       console.log('💳 Payment methods loaded:', response);
       if (response.paymentMethods) {
         setPaymentMethods(response.paymentMethods);
@@ -397,10 +398,11 @@ export default function UserDashboard() {
 
   const handleDeletePayment = async (payment: any) => {
     const paymentId = payment.paymentId || payment.id;
+    const token = localStorage.getItem('jwt_token');
     if (confirm('Delete this payment method?')) {
       try {
         // Try API first
-        await api.deletePaymentMethod(user.userId, paymentId);
+        await api.deletePaymentMethod(user.userId, paymentId, token);
         setPaymentMethods(paymentMethods.filter(p => p.paymentId !== paymentId));
         toast.success('Payment method deleted');
       } catch (err: any) {
@@ -420,7 +422,8 @@ export default function UserDashboard() {
 
     const last4 = newPayment.cardNumber.slice(-4) || '0000';
     const [expMonth, expYear] = newPayment.expiry.split('/').map(n => parseInt(n, 10));
-    
+    const token = localStorage.getItem('jwt_token');
+
     try {
       const paymentData = {
         type: 'card',
@@ -437,11 +440,11 @@ export default function UserDashboard() {
 
       if (editingPayment) {
         // Update existing
-        await api.updatePaymentMethod(user.userId, editingPayment.paymentId, paymentData);
+        await api.updatePaymentMethod(user.userId, editingPayment.paymentId, paymentData, token);
         toast.success('Payment method updated');
       } else {
         // Add new
-        await api.addPaymentMethod(user.userId, paymentData);
+        await api.addPaymentMethod(user.userId, paymentData, token);
         toast.success('Payment method added');
       }
 
@@ -468,8 +471,9 @@ export default function UserDashboard() {
 
   const handleSetDefaultPayment = async (payment: any) => {
     const paymentId = payment.paymentId || payment.id;
+    const token = localStorage.getItem('jwt_token');
     try {
-      await api.setDefaultPaymentMethod(user.userId, paymentId);
+      await api.setDefaultPaymentMethod(user.userId, paymentId, token);
       toast.success('Default payment method updated');
       // Reload payment methods
       await loadPaymentMethods();

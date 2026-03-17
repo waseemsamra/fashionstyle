@@ -10,15 +10,15 @@ export interface User {
 export const userService = {
   // Get user by ID
   getUserById: async (userId: string): Promise<User> => {
-    const response = await apiClient.get(`/users/${userId}`);
+    const token = localStorage.getItem('jwt_token');
+    const response = await apiClient.get(`/users/${userId}`, token);
     return response.data;
   },
 
   // Get user by email
   getUserByEmail: async (email: string): Promise<User[]> => {
-    const response = await apiClient.get(`/users`, {
-      params: { email }
-    });
+    const token = localStorage.getItem('jwt_token');
+    const response = await apiClient.get(`/users?email=${email}`, token);
     return response.data.users || [];
   },
 
