@@ -6,7 +6,7 @@ Amplify.configure({
     Cognito: {
       userPoolId: import.meta.env.VITE_USER_POOL_ID || 'us-east-1_qavi3JAVz',
       userPoolClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID || '2o9mbemohjr2re5qd0o045gir0',
-      identityPoolId: import.meta.env.VITE_IDENTITY_POOL_ID || '',
+      // Remove identityPoolId if not using AWS resources
     }
   },
   API: {
