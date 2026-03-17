@@ -40,7 +40,8 @@ export default function GeneralSettings() {
     
     // Try DynamoDB in background (don't wait, don't overwrite)
     try {
-      const response = await api.getAllSettings();
+      const token = localStorage.getItem('jwt_token');
+      const response = await api.getAllSettings(token);
       if (response.settings && response.settings.general) {
         const apiGeneral = response.settings.general;
         // Only update if API has data and localStorage doesn't
@@ -64,7 +65,8 @@ export default function GeneralSettings() {
     setSaving(true);
     try {
       // Save to DynamoDB
-      await api.saveSettingsSection('general', generalData);
+      const token = localStorage.getItem('jwt_token');
+      await api.saveSettingsSection('general', generalData, token);
       console.log('✅ General settings saved to DynamoDB');
       
       // Also save to localStorage as backup

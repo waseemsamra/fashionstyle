@@ -134,11 +134,11 @@ export const api = {
   },
   
   // User methods
-  async getUserProfile(userId: string, token: string) {
+  async getUserProfile(userId: string, token: string | null) {
     return apiClient.get(`/users/${userId}`, token);
   },
   
-  async updateUserProfile(userId: string, data: any, token: string) {
+  async updateUserProfile(userId: string, data: any, token: string | null) {
     return apiClient.put(`/users/${userId}`, data, token);
   },
   
@@ -147,37 +147,83 @@ export const api = {
     return apiClient.post(`/users/${userId}`, { email }, token);
   },
   
-  async getUserOrders(userId: string, token: string) {
+  async getUserOrders(userId: string, token: string | null) {
     return apiClient.get(`/users/${userId}/orders`, token);
   },
   
-  async getPaymentMethods(userId: string, token: string) {
+  async getPaymentMethods(userId: string, token: string | null) {
     return apiClient.get(`/users/${userId}/payment-methods`, token);
   },
   
-  async addPaymentMethod(userId: string, data: any, token: string) {
+  async addPaymentMethod(userId: string, data: any, token: string | null) {
     return apiClient.post(`/users/${userId}/payment-methods`, data, token);
   },
   
-  async updatePaymentMethod(userId: string, methodId: string, data: any, token: string) {
+  async updatePaymentMethod(userId: string, methodId: string, data: any, token: string | null) {
     return apiClient.put(`/users/${userId}/payment-methods/${methodId}`, data, token);
   },
   
-  async deletePaymentMethod(userId: string, methodId: string, token: string) {
+  async deletePaymentMethod(userId: string, methodId: string, token: string | null) {
     return apiClient.delete(`/users/${userId}/payment-methods/${methodId}`, token);
   },
   
-  async setDefaultPaymentMethod(userId: string, methodId: string, token: string) {
+  async setDefaultPaymentMethod(userId: string, methodId: string, token: string | null) {
     return apiClient.patch(`/users/${userId}/payment-methods/${methodId}/default`, { isDefault: true }, token);
   },
   
   // User management (admin)
-  async createUser(data: any, token: string) {
+  async createUser(data: any, token: string | null) {
     return apiClient.post('/admin/users', data, token);
   },
   
-  async deleteUser(userId: string, token: string) {
+  async updateUser(userId: string, data: any, token: string | null) {
+    return apiClient.put(`/admin/users/${userId}`, data, token);
+  },
+  
+  async deleteUser(userId: string, token: string | null) {
     return apiClient.delete(`/admin/users/${userId}`, token);
+  },
+  
+  async getUsers(token: string | null) {
+    return apiClient.get('/admin/users', token);
+  },
+  
+  // Order management (admin)
+  async getAllOrders(token: string | null, params?: any) {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return apiClient.get(`/admin/orders${queryString}`, token);
+  },
+  
+  async updateOrderStatus(orderId: string, status: string, token: string | null) {
+    return apiClient.patch(`/admin/orders/${orderId}`, { status }, token);
+  },
+  
+  async deleteOrder(orderId: string, token: string | null) {
+    return apiClient.delete(`/admin/orders/${orderId}`, token);
+  },
+  
+  // Dashboard stats
+  async getStats(period: string, token: string | null) {
+    return apiClient.get(`/admin/analytics/dashboard?period=${period}`, token);
+  },
+  
+  async getOrders(token: string | null, params?: any) {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return apiClient.get(`/admin/orders${queryString}`, token);
+  },
+  
+  // Settings
+  async getAllSettings(token: string | null) {
+    return apiClient.get('/admin/settings', token);
+  },
+  
+  async saveSettingsSection(section: string, data: any, token: string | null) {
+    return apiClient.put(`/admin/settings/${section}`, data, token);
+  },
+  
+  // Order details
+  async getOrderById(orderId: string, token: string | null) {
+    return apiClient.get(`/admin/orders/${orderId}`, token);
   },
 };
 

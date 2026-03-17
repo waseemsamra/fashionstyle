@@ -193,8 +193,9 @@ export default function SimpleSettings({
     setSaving(true);
     try {
       console.log('📡 Calling API.saveSettingsSection...');
+      const token = localStorage.getItem('jwt_token');
       // Save to DynamoDB
-      await api.saveSettingsSection(section, items);
+      await api.saveSettingsSection(section, items, token);
       console.log(`✅ ${section} saved to DynamoDB`);
       
       // Also save to localStorage
@@ -224,8 +225,9 @@ export default function SimpleSettings({
     setSaving(true);
     try {
       console.log('📡 Calling API.saveSettingsSection...');
+      const token = localStorage.getItem('jwt_token');
       // Save to DynamoDB
-      await api.saveSettingsSection(section, itemsToSave);
+      await api.saveSettingsSection(section, itemsToSave, token);
       console.log(`✅ ${section} saved to DynamoDB`);
       
       // Also save to localStorage

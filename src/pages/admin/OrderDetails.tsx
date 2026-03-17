@@ -31,7 +31,8 @@ export default function AdminOrderDetails() {
 
       try {
         setIsLoading(true);
-        const data = await api.getOrderById(orderId);
+        const token = localStorage.getItem('jwt_token');
+        const data = await api.getOrderById(orderId, token);
         setOrder(data.order || data || null);
       } catch (err: any) {
         console.error('Failed to fetch order:', err);

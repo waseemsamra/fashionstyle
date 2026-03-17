@@ -91,7 +91,8 @@ export default function AdminOrders() {
       }
 
       // Use the admin orders API endpoint
-      const response = await api.getAllOrders();
+      const token = localStorage.getItem('jwt_token');
+      const response = await api.getAllOrders(token);
       console.log('📋 Admin Orders: Raw response:', response);
 
       if (response && response.orders) {
@@ -184,22 +185,23 @@ export default function AdminOrders() {
 
   const handleStatusChange = async (orderId: string, newStatus: string, action?: 'update' | 'delete') => {
     console.log('🔄 Updating order status:', orderId, '→', newStatus);
+    const token = localStorage.getItem('jwt_token');
 
     try {
       // Handle delete action
       if (action === 'delete') {
-        await api.deleteOrder(orderId);
-        
+        await api.deleteOrder(orderId, token);
+
         // Remove from local state
         setOrders(prevOrders => prevOrders.filter(order => order.orderId !== orderId));
         setAllOrders(prevOrders => prevOrders.filter(order => order.orderId !== orderId));
-        
+
         toast.success(`Order ${orderId} deleted successfully`);
         return;
       }
 
       // Call API to update order status
-      await api.updateOrderStatus(orderId, newStatus);
+      await api.updateOrderStatus(orderId, newStatus, token);
       
       // Update local state after successful API call
       setOrders(prevOrders =>

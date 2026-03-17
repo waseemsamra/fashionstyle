@@ -143,7 +143,8 @@ export default function UserDashboard() {
   const loadProfile = async (userId: string) => {
     try {
       console.log('👤 Loading profile for userId:', userId);
-      const data = await api.getUserProfile(userId);
+      const token = localStorage.getItem('jwt_token');
+      const data = await api.getUserProfile(userId, token);
       console.log('👤 Profile API response:', data);
 
       if (data && data.profile) {
@@ -238,7 +239,8 @@ export default function UserDashboard() {
       console.log('📋 User email:', user.email);
       
       // Clear cache and fetch fresh orders
-      const response = await api.getUserOrders(user.userId);
+      const token = localStorage.getItem('jwt_token');
+      const response = await api.getUserOrders(user.userId, token);
       console.log('📋 API response:', response);
 
       // Handle different response formats
@@ -322,7 +324,8 @@ export default function UserDashboard() {
       console.log('   - whatsapp:', profileData.whatsapp);
       console.log('   - phone:', profileData.phone);
       
-      const response = await api.updateUserProfile(user.userId, profileData);
+      const token = localStorage.getItem('jwt_token');
+      const response = await api.updateUserProfile(user.userId, profileData, token);
       console.log('✅ API response:', response);
       
       // Cache the EXACT data we sent (not what API returns)

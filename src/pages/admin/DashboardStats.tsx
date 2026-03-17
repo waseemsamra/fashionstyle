@@ -42,11 +42,12 @@ export default function DashboardStats() {
 
   const loadDashboardStats = async () => {
     setLoading(true);
+    const token = localStorage.getItem('jwt_token');
     try {
       // Load orders
-      const ordersResponse: any = await api.getAllOrders();
+      const ordersResponse: any = await api.getAllOrders(token);
       const orders = ordersResponse.orders || [];
-      
+
       // Calculate order statistics
       const totalOrders = orders.length;
       const totalRevenue = orders.reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
@@ -58,7 +59,7 @@ export default function DashboardStats() {
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
       // Load users
-      const usersResponse: any = await api.getUsers();
+      const usersResponse: any = await api.getUsers(token);
       const totalCustomers = usersResponse.length || 0;
 
       // Load products (from localStorage or API)

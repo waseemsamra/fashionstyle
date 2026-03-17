@@ -134,14 +134,11 @@ export default function Checkout() {
         isGuestOrder: true
       };
 
+      const token = localStorage.getItem('jwt_token');
       const orderResponse = await apiClient.post(
         `/users/${userId}/orders`,
         orderData,
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
+        token
       );
 
       const result = orderResponse.data;

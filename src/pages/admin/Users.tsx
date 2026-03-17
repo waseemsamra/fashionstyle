@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Users as UsersIcon, Edit, Trash2, UserPlus, X, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import { api } from '@/services/api';
 
 export default function Users() {
@@ -17,7 +18,8 @@ export default function Users() {
     try {
       setLoading(true);
       setError('');
-      const data = await api.getUsers();
+      const token = localStorage.getItem('jwt_token');
+      const data = await api.getUsers(token);
       console.log('Loaded users:', data);
       setUsers(data.users || []);
     } catch (err: any) {
@@ -59,6 +61,7 @@ export default function Users() {
 
   const handleSave = async () => {
     try {
+      const token = localStorage.getItem('jwt_token');
       if (editingUser.userId) {
         // Update existing user - send all profile fields
         await api.updateUser(editingUser.userId, {
@@ -73,7 +76,7 @@ export default function Users() {
           postalCode: editingUser.postalCode,
           role: editingUser.role?.toLowerCase() || 'customer',
           status: editingUser.status?.toLowerCase() || 'active'
-        });
+        }, token);
         setUsers(users.map(u => u.userId === editingUser.userId ? editingUser : u));
       } else {
         // Create new user
@@ -82,7 +85,7 @@ export default function Users() {
           name: editingUser.name,
           role: editingUser.role?.toLowerCase() || 'customer',
           status: editingUser.status?.toLowerCase() || 'active'
-        });
+        }, token);
         setUsers([...users, { ...result.user, userId: result.user.userId }]);
       }
       setShowModal(false);
@@ -99,8 +102,13 @@ export default function Users() {
         console.log('🗑️ Deleting user:', userId);
         const token = localStorage.getItem('jwt_token');
         console.log('Token:', token ? 'Present' : 'Missing');
-        
-        const response = await api.deleteUser(userId);
+
+        if (!token) {
+          toast.error('Please login to delete users');
+          return;
+        }
+
+        const response = await api.deleteUser(userId, token);
         console.log('✅ Delete response:', response);
         
         setUsers(users.filter(u => u.userId !== userId));
