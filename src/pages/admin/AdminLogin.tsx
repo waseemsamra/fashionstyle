@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signIn } from 'aws-amplify/auth';
 import { Button } from '@/components/ui/button';
 import { Lock, User, KeyRound } from 'lucide-react';
 
@@ -17,52 +18,51 @@ export default function AdminLogin() {
     try {
       console.log('🔐 Admin login attempt for:', credentials.username);
 
-      // Always use direct API Gateway URL
-      const apiUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/auth/signin';
+      // Use Cognito directly (same as user login)
+      console.log('📡 Authenticating with Cognito...');
+      const result = await signIn({
+        username: credentials.username,
+        password: credentials.password
+      });
 
-      console.log('📡 Calling API:', apiUrl);
-      const response = await fetch(
-        apiUrl,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: credentials.username,
-            password: credentials.password
-          })
+      console.log('✅ Cognito signin result:', result);
+
+      if (result.isSignedIn) {
+        // Get the session tokens
+        const { fetchAuthSession } = await import('aws-amplify/auth');
+        const session = await fetchAuthSession();
+        
+        if (session.tokens) {
+          const email = session.tokens.idToken?.payload?.email as string || credentials.username;
+          const accessToken = session.tokens.accessToken.toString();
+          
+          localStorage.setItem('jwt_token', accessToken);
+          localStorage.setItem('user_email', email);
+          localStorage.setItem('admin_access', 'true');
+
+          console.log('✅ Tokens stored!');
+          console.log('🎉 Admin login successful!');
+
+          // Redirect to admin dashboard
+          navigate('/admin/dashboard', { replace: true });
         }
-      );
-
-      console.log('📊 Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Error data:', errorData);
-        throw new Error(errorData.message || errorData.error || 'Login failed');
-      }
-
-      const data = await response.json();
-      console.log('✅ Login response:', data);
-
-      if (data.accessToken) {
-        // Store tokens - matches your authProvider
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('jwt_token', data.accessToken);
-        localStorage.setItem('user_email', credentials.username);
-
-        console.log('✅ Tokens stored!');
-        console.log('🎉 Admin login successful!');
-
-        navigate('/admin/dashboard');
-      } else {
-        throw new Error('No access token received');
       }
 
     } catch (error: any) {
       console.error('❌ Login error:', error);
-      setError(error.message || 'Login failed. Please check your credentials and ensure the backend API is deployed.');
+      
+      // Simplify error messages
+      let errorMsg = 'Login failed. Please check your credentials.';
+      
+      if (error.name === 'UserNotConfirmedException') {
+        errorMsg = 'Your account is not confirmed. Please check your email.';
+      } else if (error.name === 'NotAuthorizedException') {
+        errorMsg = 'Invalid email or password.';
+      } else if (error.name === 'UserNotFoundException') {
+        errorMsg = 'No account found with this email.';
+      }
+      
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

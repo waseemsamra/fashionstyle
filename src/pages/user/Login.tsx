@@ -313,24 +313,30 @@ export default function Login() {
             const session = await fetchAuthSession();
             if (session.tokens) {
               const email = session.tokens.idToken?.payload?.email as string || credentials.email;
-              localStorage.setItem('jwt_token', session.tokens.accessToken.toString());
+              const accessToken = session.tokens.accessToken.toString();
+              localStorage.setItem('jwt_token', accessToken);
               localStorage.setItem('user_email', email);
 
-              // Auto-create profile if it doesn't exist
+              // Auto-create profile if it doesn't exist (optional - don't block login)
               try {
                 const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
                 console.log('Creating profile for userId:', userId);
                 await api.createUserProfile(userId, email);
                 console.log('✅ User profile created/updated for:', email);
               } catch (profileErr: any) {
-                console.log('Profile creation skipped or failed:', profileErr.message);
+                console.log('⚠️ Profile creation skipped (will create on first dashboard visit):', profileErr.message);
+                // Don't block login - profile will be created on first API call
               }
             }
 
             // Redirect to checkout if coming from there, otherwise dashboard
             const from = (location as any).state?.from || '/dashboard';
-            console.log('Cognito signin successful, redirecting to:', from);
-            navigate(from, { replace: true });
+            console.log('✅ Cognito signin successful, redirecting to:', from);
+            
+            // Force redirect
+            setTimeout(() => {
+              window.location.href = from;
+            }, 100);
           }
         } catch (cognitoErr: any) {
           console.error('Cognito signin failed:', cognitoErr);
