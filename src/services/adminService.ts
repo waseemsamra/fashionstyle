@@ -143,10 +143,12 @@ class AdminService {
     console.log('📦 Fetching admin orders from:', `${API_URL}/admin/orders?${params}`);
 
     const response = await fetch(`${API_URL}/admin/orders?${params}`, {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      }
+      },
+      credentials: 'omit' // Don't send cookies - using Bearer token instead
     });
 
     if (!response.ok) {
