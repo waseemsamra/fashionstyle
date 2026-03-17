@@ -1,11 +1,11 @@
 import { Amplify } from 'aws-amplify';
 
-// Configure Amplify with GraphQL (AppSync)
+// Configure Amplify with Cognito and GraphQL (AppSync)
 Amplify.configure({
   Auth: {
     Cognito: {
-      userPoolId: import.meta.env.VITE_USER_POOL_ID || '',
-      userPoolClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID || '',
+      userPoolId: import.meta.env.VITE_USER_POOL_ID || 'us-east-1_qavi3JAVz',
+      userPoolClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID || '2o9mbemohjr2re5qd0o045gir0',
       identityPoolId: import.meta.env.VITE_IDENTITY_POOL_ID || '',
     }
   },
