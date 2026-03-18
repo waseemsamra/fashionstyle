@@ -44,8 +44,13 @@ class AuthService {
     }
 
     const data = await response.json();
-    this.setupTokenRefresh(data.expiresIn);
     
+    // Store tokens immediately
+    localStorage.setItem('jwt_token', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    
+    this.setupTokenRefresh(data.expiresIn);
+
     return data;
   }
 

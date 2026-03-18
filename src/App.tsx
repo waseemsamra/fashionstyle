@@ -26,6 +26,10 @@ const NewArrivals = lazy(() => import('@/pages/shop/NewArrivals'));
 const ProductDetail = lazy(() => import('@/pages/shop/ProductDetail'));
 const Checkout = lazy(() => import('@/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@/pages/checkout/OrderConfirmation'));
+const Signup = lazy(() => import('@/pages/user/Signup'));
+const ForgotPassword = lazy(() => import('@/pages/user/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/user/ResetPassword'));
+const ConfirmEmail = lazy(() => import('@/pages/user/ConfirmEmail'));
 const Login = lazy(() => import('@/pages/user/Login'));
 const UserDashboard = lazy(() => import('@/pages/user/UserDashboard'));
 const OrderDetails = lazy(() => import('@/pages/user/OrderDetails'));
@@ -270,6 +274,10 @@ function Layout() {
             <Route path="/order-confirmation" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
             <Route path="/order-confirmation/:orderId" element={<ProtectedRoute><OrderConfirmation /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/confirm-email" element={<ConfirmEmail />} />
             <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/orders/:orderId" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
             <Route path="/try-on" element={<VirtualTryOnPage />} />

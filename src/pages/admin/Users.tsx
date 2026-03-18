@@ -19,14 +19,27 @@ export default function Users() {
       setLoading(true);
       setError('');
       const token = localStorage.getItem('jwt_token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
       const data = await api.getUsers(token);
-      console.log('Loaded users:', data);
-      setUsers(data.users || []);
+      console.log('✅ Loaded users:', data);
+      
+      if (data && data.users) {
+        setUsers(data.users);
+      } else {
+        setUsers([]);
+      }
     } catch (err: any) {
-      console.error('Failed to load users:', err);
-      setError('Failed to load users. Make sure the API is deployed.');
-      // Fallback to empty array
-      setUsers([]);
+      console.error('❌ Failed to load users:', err);
+      setError(err.message || 'Failed to load users');
+      // Fallback to mock users only if API completely fails
+      const mockUsers = [
+        { userId: '1', email: 'waseemsamra@gmail.com', name: 'Waseem Samra', role: 'Admin', status: 'Active', created: '2024-01-01' },
+      ];
+      setUsers(mockUsers);
     } finally {
       setLoading(false);
     }
