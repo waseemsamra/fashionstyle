@@ -46,11 +46,21 @@ export function AdvancedLoginForm() {
     console.log('📊 Login result:', result);
 
     if (result.success) {
-      console.log('✅ Login successful, redirecting to dashboard...');
+      console.log('✅ Login successful, redirecting based on role...');
       
       // Force redirect with timeout to ensure state updates
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        // Check if admin email
+        const isAdminEmail = formData.email.toLowerCase().includes('admin') || 
+                            formData.email === 'waseemsamra@gmail.com';
+        
+        if (isAdminEmail) {
+          console.log('👑 Admin user detected, redirecting to admin dashboard...');
+          window.location.href = '/admin/dashboard';
+        } else {
+          console.log('👤 Regular user, redirecting to user dashboard...');
+          window.location.href = '/dashboard';
+        }
       }, 500);
     } else {
       setError(result.error || 'Login failed');
