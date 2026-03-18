@@ -317,6 +317,18 @@ export default function Login() {
               localStorage.setItem('jwt_token', accessToken);
               localStorage.setItem('user_email', email);
 
+              // Decode token to get user info immediately
+              try {
+                const { getUserFromToken } = await import('@/utils/tokenDecoder');
+                const userFromToken = getUserFromToken(accessToken);
+                if (userFromToken) {
+                  localStorage.setItem('user', JSON.stringify(userFromToken));
+                  console.log('✅ User initialized from token:', userFromToken.email);
+                }
+              } catch (err: any) {
+                console.log('⚠️ Token decode will happen on first use:', (err as Error).message);
+              }
+
               // Auto-create profile if it doesn't exist (optional - don't block login)
               try {
                 const userId = email.replace(/[^a-zA-Z0-9]/g, '-');

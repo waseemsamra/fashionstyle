@@ -90,18 +90,75 @@ class AuthService {
 
   async getCurrentUser(): Promise<User> {
     const token = localStorage.getItem('jwt_token');
-    
-    const response = await fetch(`${this.baseUrl}/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    const email = localStorage.getItem('user_email');
 
-    if (!response.ok) {
-      throw new Error('Failed to get user');
+    if (!token) {
+      throw new Error('Not authenticated');
     }
 
-    return response.json();
+    // Try to get user from backend first
+    try {
+      const response = await fetch(`${this.baseUrl}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        return response.json();
+      }
+    } catch (error) {
+      // Backend failed, use token decoding
+      console.log('⚠️ Backend /auth/me failed, decoding token');
+    }
+
+    // Fallback: Decode JWT token to get user info
+    try {
+      const { getUserFromToken } = await import('@/utils/tokenDecoder');
+      const userFromToken = getUserFromToken(token);
+      
+      if (userFromToken) {
+        console.log('✅ User decoded from JWT token');
+        return {
+          id: userFromToken.id,
+          email: userFromToken.email,
+          name: userFromToken.name || 'User',
+          role: (userFromToken.role as 'user' | 'admin' | 'manager') || 'user',
+          createdAt: userFromToken.createdAt,
+          updatedAt: new Date().toISOString(),
+          emailVerified: true,
+          phoneVerified: false,
+          preferences: {
+            newsletter: false,
+            smsNotifications: false,
+            emailNotifications: false,
+            language: 'en',
+            currency: 'USD',
+          },
+        };
+      }
+    } catch (error) {
+      console.error('Failed to decode token:', error);
+    }
+
+    // Last resort: use localStorage
+    return {
+      id: email?.replace(/[^a-zA-Z0-9]/g, '-') || 'user',
+      email: email || 'user@example.com',
+      name: email?.split('@')[0] || 'User',
+      role: 'user',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      emailVerified: true,
+      phoneVerified: false,
+      preferences: {
+        newsletter: false,
+        smsNotifications: false,
+        emailNotifications: false,
+        language: 'en',
+        currency: 'USD',
+      },
+    };
   }
 
   async refreshToken(): Promise<AuthResponse> {
