@@ -448,4 +448,4 @@ export function usePasswordStrength(password: string) {
 }
 
 // Export PasswordStrengthIndicator component
-export { PasswordStrengthIndicator } from '@/components/auth/AdvancedLoginForm';
+export { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';

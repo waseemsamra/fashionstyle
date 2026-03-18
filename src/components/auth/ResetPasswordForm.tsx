@@ -1,7 +1,8 @@
 // components/auth/ResetPasswordForm.tsx
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAdvancedAuth, PasswordStrengthIndicator } from '@/hooks/useAdvancedAuth';
+import { useAdvancedAuth } from '@/hooks/useAdvancedAuth';
+import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
