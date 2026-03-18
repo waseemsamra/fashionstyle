@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, signOut, updatePassword } from 'aws-amplify/auth';
+import { signOut, updatePassword } from 'aws-amplify/auth';
 import { User, Package, Heart, Wallet, CreditCard, LogOut, Lock, X, Trash2, MapPin, Edit, ShoppingCart, CheckCircle } from 'lucide-react';
 import { api } from '../../services/api';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -124,6 +124,7 @@ export default function UserDashboard() {
 
       // Try Cognito auth as fallback
       try {
+        const { getCurrentUser } = await import('aws-amplify/auth');
         const currentUser = await getCurrentUser();
         setUser(currentUser);
         await loadProfile(currentUser.userId);

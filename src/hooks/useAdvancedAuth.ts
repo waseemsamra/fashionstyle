@@ -132,6 +132,20 @@ export function useAdvancedAuth() {
 
       console.log('🔐 Advanced sign in attempt for:', email);
 
+      // Check if user is already signed in
+      try {
+        const { getCurrentUser } = await import('aws-amplify/auth');
+        await getCurrentUser();
+        console.log('⚠️ User already signed in, signing out first...');
+        
+        // Sign out existing user
+        await signOut();
+        console.log('✅ Signed out existing user');
+      } catch (error) {
+        // No user signed in, continue
+        console.log('✅ No existing session');
+      }
+
       // Use Amplify's built-in SRP authentication
       const result = await signIn({
         username: email,

@@ -37,12 +37,21 @@ export function AdvancedLoginForm() {
     e.preventDefault();
     setError('');
 
+    console.log('🔐 Login form submitted');
+
     const result = await signIn(formData.email, formData.password, {
       rememberMe: formData.rememberMe,
     });
 
+    console.log('📊 Login result:', result);
+
     if (result.success) {
-      navigate('/dashboard', { replace: true });
+      console.log('✅ Login successful, redirecting to dashboard...');
+      
+      // Force redirect with timeout to ensure state updates
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 500);
     } else {
       setError(result.error || 'Login failed');
     }
