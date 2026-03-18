@@ -34,9 +34,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!token) return null;
       
       try {
-        const user = await authService.getCurrentUser();
-        return user;
+        // Decode user from token instead of calling backend
+        const { getUserFromToken } = await import('@/utils/tokenDecoder');
+        const userFromToken = getUserFromToken(token);
+        
+        if (userFromToken) {
+          return {
+            id: userFromToken.id,
+            email: userFromToken.email,
+            name: userFromToken.name || 'User',
+            role: (userFromToken.role as 'user' | 'admin' | 'manager') || 'user',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            emailVerified: true,
+            phoneVerified: false,
+            preferences: {
+              newsletter: false,
+              smsNotifications: false,
+              emailNotifications: false,
+              language: 'en',
+              currency: 'USD',
+            },
+          };
+        }
+        
+        return null;
       } catch (error) {
+        console.error('Error decoding token:', error);
         localStorage.removeItem('jwt_token');
         return null;
       }
