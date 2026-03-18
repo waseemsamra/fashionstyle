@@ -146,9 +146,9 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
 export const getAllProducts = async (): Promise<Product[]> => {
   try {
     console.log('📦 Fetching products from API...');
-    
+
     const token = localStorage.getItem('jwt_token');
-    
+
     // Use the working endpoint: GET /products
     const response = await axios.get(
       `${API_URL}/products`,
@@ -156,21 +156,63 @@ export const getAllProducts = async (): Promise<Product[]> => {
         headers: {
           'Content-Type': 'application/json',
           ...(token && { Authorization: `Bearer ${token}` })
-        }
+        },
+        timeout: 10000 // 10 second timeout
       }
     );
 
     console.log('✅ Products response:', response.data);
-    
+
     // Handle different response formats
-    const products = response.data.items || response.data.products || response.data || [];
-    console.log('✅ Extracted', products.length, 'products');
+    let products = [];
+    if (Array.isArray(response.data)) {
+      products = response.data;
+    } else if (response.data.items && Array.isArray(response.data.items)) {
+      products = response.data.items;
+    } else if (response.data.products && Array.isArray(response.data.products)) {
+      products = response.data.products;
+    } else if (response.data.data && Array.isArray(response.data.data)) {
+      products = response.data.data;
+    } else {
+      products = [];
+    }
     
+    console.log('✅ Extracted', products.length, 'products');
+
     return products;
   } catch (error: any) {
-    console.error('❌ Failed to get products:', error);
-    console.error('❌ Error response:', error.response?.data);
-    console.error('❌ Error status:', error.response?.status);
+    console.error('❌ Failed to fetch products:', error.message);
+    
+    // Fallback to localStorage
+    console.log('📦 Loading products from localStorage as fallback...');
+    const savedProducts = localStorage.getItem('admin_products');
+    if (savedProducts) {
+      const parsed = JSON.parse(savedProducts);
+      console.log('✅ Loaded', parsed.length, 'products from localStorage');
+      return parsed;
+    }
+
     return [];
   }
+};
+
+/**
+ * Get product by ID
+ */
+export const getProductById = async (id: string): Promise<Product | null> => {
+  try {
+    const products = await getAllProducts();
+    return products.find(p => p.id === id) || null;
+  } catch (error) {
+    console.error('❌ Failed to get product by ID:', error);
+    return null;
+  }
+};
+
+export default {
+  getAllProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
 };
