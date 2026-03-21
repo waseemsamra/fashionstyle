@@ -4,8 +4,8 @@ import { Amplify } from 'aws-amplify';
 Amplify.configure({
   Auth: {
     Cognito: {
-      userPoolId: import.meta.env.VITE_USER_POOL_ID || 'us-east-1_qavi3JAVz',
-      userPoolClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID || '2o9mbemohjr2re5qd0o045gir0',
+      userPoolId: import.meta.env.VITE_USER_POOL_ID || 'us-east-1_MqsmTDkkg',
+      userPoolClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID || '6oe5dnl9ur41m3o85lddqprkqe',
       // Remove identityPoolId if not using AWS resources
     }
   },

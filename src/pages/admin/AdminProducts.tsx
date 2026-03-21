@@ -119,6 +119,7 @@ export default function AdminProducts() {
   const [genders] = useState(DEFAULT_GENDERS);
 
   useEffect(() => {
+    // Load products and brands on mount
     loadProducts();
     loadBrands();
   }, []);
@@ -152,46 +153,44 @@ export default function AdminProducts() {
     setLoading(true);
     try {
       console.log('📦 Loading products from backend API...');
-      const result: any = await getAllProducts();
       
-      // Handle both possible response structures
-      let productsArray = [];
-      if (Array.isArray(result)) {
-        productsArray = result;
-      } else if (result && result.items && Array.isArray(result.items)) {
-        productsArray = result.items;
-      } else if (result && result.data && Array.isArray(result.data)) {
-        productsArray = result.data;
-      } else if (result && typeof result === 'object') {
-        // Try to extract array from any wrapper
-        productsArray = Array.isArray(result) ? result : [];
+      // Check authentication first
+      const token = localStorage.getItem('jwt_token') || localStorage.getItem('idToken');
+      console.log('🔑 Auth token present:', !!token);
+      
+      if (!token) {
+        console.warn('⚠️ No authentication token found');
+        toast.error('Please log in to view products');
+        setLoading(false);
+        return;
       }
-      
-      console.log('✅ Loaded', productsArray.length, 'products from API');
-      console.log('📦 Products array:', productsArray);
 
-      if (productsArray.length > 0) {
-        setProducts(productsArray as Product[]);
-        localStorage.setItem('admin_products', JSON.stringify(productsArray));
+      const products = await getAllProducts();
+
+      console.log('✅ Loaded', products.length, 'products from API');
+      console.log('📦 Products data:', products);
+
+      setProducts(products);
+
+      if (products.length > 0) {
+        toast.success(`Loaded ${products.length} products`);
       } else {
-        // Fallback to localStorage if API returns empty
-        const savedProducts = localStorage.getItem('admin_products');
-        if (savedProducts) {
-          const parsed = JSON.parse(savedProducts);
-          console.log('✅ Loaded', parsed.length, 'products from localStorage (fallback)');
-          setProducts(parsed);
-        }
+        toast.info('No products found. Add your first product!');
       }
-    } catch (error) {
-      console.error('Failed to load products from API:', error);
-      // Fallback to localStorage
-      const savedProducts = localStorage.getItem('admin_products');
-      if (savedProducts) {
-        const parsed = JSON.parse(savedProducts);
-        console.log('✅ Loaded', parsed.length, 'products from localStorage (error fallback)');
-        setProducts(parsed);
+    } catch (error: any) {
+      console.error('❌ Failed to load products:', error);
+      console.error('❌ Error details:', error.response?.data);
+      
+      // Handle authentication errors
+      if (error.message.includes('Session expired') || error.message.includes('log in')) {
+        toast.error('Session expired. Please log in again.');
+      } else if (error.message.includes('404')) {
+        toast.error('Products API endpoint not found. Check API Gateway configuration.');
+      } else {
+        toast.error('Failed to load products. Please try again.');
       }
-      toast.error('Failed to load products from backend');
+      
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -208,21 +207,31 @@ export default function AdminProducts() {
   };
 
   const handleSaveProduct = async (data: any) => {
-    const product = {
-      id: editingProduct?.id || Date.now().toString(),
+    const product: any = {
+      id: editingProduct?.id || undefined,
       name: data.name,
-      price: data.price,
+      description: data.description,
+      price: parseFloat(data.price) || 0,
+      originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : undefined,
       category: data.category,
       brand: data.brand,
       image: data.image,
-      stock: data.stock,
-      active: true,
-      description: data.description,
       images: data.images || [],
+      stock: parseInt(data.stock) || 0,
+      sku: data.sku,
       sizes: data.sizes || [],
-      colors: data.colors || []
+      colors: data.colors || [],
+      materials: data.materials || [],
+      patterns: data.patterns || [],
+      occasions: data.occasions || [],
+      genders: data.genders || [],
+      isActive: data.isActive !== false,
+      isFeatured: data.isFeatured || false,
+      isNew: data.isNew || false,
+      isSale: data.isSale || false,
+      tags: data.tags || [],
     };
-    
+
     try {
       if (editingProduct) {
         // Update existing
@@ -230,7 +239,6 @@ export default function AdminProducts() {
         await updateProduct(product);
         const updated = products.map(p => p.id === product.id ? { ...p, ...product } : p);
         setProducts(updated as Product[]);
-        localStorage.setItem('admin_products', JSON.stringify(updated));
         toast.success('Product updated successfully!');
       } else {
         // Add new
@@ -238,13 +246,12 @@ export default function AdminProducts() {
         const created = await createProduct(product);
         const updated = [...products, created];
         setProducts(updated as Product[]);
-        localStorage.setItem('admin_products', JSON.stringify(updated));
         toast.success('Product added successfully!');
       }
       setShowFormModal(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save product:', error);
-      toast.error('Failed to save product to backend');
+      toast.error(error.response?.data?.message || 'Failed to save product');
     }
   };
 
@@ -255,14 +262,13 @@ export default function AdminProducts() {
         if (success) {
           const updated = products.filter(p => p.id !== id);
           setProducts(updated);
-          localStorage.setItem('admin_products', JSON.stringify(updated));
           toast.success('Product deleted successfully!');
         } else {
           toast.error('Failed to delete product');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to delete product:', error);
-        toast.error('Failed to delete product from backend');
+        toast.error(error.response?.data?.message || 'Failed to delete product');
       }
     }
   };
@@ -270,6 +276,19 @@ export default function AdminProducts() {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
+    
+    // Debug logging
+    if (products.length > 0 && filteredProducts.length === 0) {
+      console.log('🔍 Filter debug:', {
+        searchTerm,
+        filterCategory,
+        productCategory: product.category,
+        matchesSearch,
+        matchesCategory,
+        totalProducts: products.length
+      });
+    }
+    
     return matchesSearch && matchesCategory;
   });
 

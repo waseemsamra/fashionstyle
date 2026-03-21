@@ -1,5 +1,5 @@
 class WishlistService {
-  private baseUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+  private baseUrl = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
   private listeners: Set<(items: any[]) => void> = new Set();
 
   async getWishlist(userId: string) {

@@ -1,4 +1,4 @@
-const API_URL = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 export interface AdminStats {
   overview: {
@@ -67,12 +67,12 @@ class AdminService {
 
   async getStats(period: Period = '30d', dateRange?: DateRange): Promise<AdminStats> {
     const token = localStorage.getItem('jwt_token');
-    
+
     // Cancel previous request if any
     if (this.abortController) {
       this.abortController.abort();
     }
-    
+
     this.abortController = new AbortController();
 
     const params = new URLSearchParams();
@@ -86,6 +86,7 @@ class AdminService {
     console.log('📊 Fetching admin stats from:', `${API_URL}/admin/analytics/dashboard?${params}`);
 
     try {
+      // Fetch analytics data
       const response = await fetch(`${API_URL}/admin/analytics/dashboard?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -94,15 +95,53 @@ class AdminService {
         signal: this.abortController.signal
       });
 
-      if (!response.ok) {
+      let analyticsData = null;
+      if (response.ok) {
+        analyticsData = await response.json();
+        console.log('✅ Admin stats fetched');
+      } else {
         console.warn('⚠️ Failed to fetch stats, using mock data');
-        return getMockStats();
       }
 
-      const data = await response.json();
-      console.log('✅ Admin stats fetched');
+      // Fetch products to calculate product stats
+      let products = [];
+      try {
+        const productsResponse = await fetch(`${API_URL}/products?limit=100`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json();
+          products = productsData.items || [];
+          console.log('✅ Products fetched for stats:', products.length);
+        }
+      } catch (error) {
+        console.warn('⚠️ Failed to fetch products for stats');
+      }
+
+      // Calculate product stats from actual products
+      const productStats = {
+        totalProducts: products.length,
+        outOfStock: products.filter((p: any) => !p.inStock || p.stock === 0).length,
+        lowStock: products.filter((p: any) => p.stock && p.stock > 0 && p.stock < 10).length,
+        topSelling: products.slice(0, 5).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          sales: Math.floor(Math.random() * 100), // Placeholder until you have sales data
+          revenue: Math.floor(Math.random() * 100) * (p.price || 0)
+        }))
+      };
+
+      // Transform or create mock stats
+      const stats = analyticsData ? this.transformStats(analyticsData) : getMockStats();
       
-      return this.transformStats(data);
+      // Override product stats with real data
+      stats.products = productStats;
+
+      return stats;
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.log('⚠️ Request aborted');

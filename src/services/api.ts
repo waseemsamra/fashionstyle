@@ -1,5 +1,5 @@
 // services/api.ts
-const API_URL = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 // API Client with all methods for backwards compatibility
 export const apiClient = {

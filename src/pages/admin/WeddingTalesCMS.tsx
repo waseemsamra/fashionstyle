@@ -72,7 +72,7 @@ export default function WeddingTalesCMS() {
       
       // Update all products in batch
       const response = await fetch(
-        'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/batch-wedding',
+        'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/products/batch-wedding',
         {
           method: 'POST',
           headers: {

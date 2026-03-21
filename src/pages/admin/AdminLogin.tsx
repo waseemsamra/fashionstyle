@@ -1,6 +1,7 @@
+import { useEffect } from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signIn } from 'aws-amplify/auth';
+import { signIn, signOut, getCurrentUser } from 'aws-amplify/auth';
 import { Button } from '@/components/ui/button';
 import { Lock, User, KeyRound } from 'lucide-react';
 
@@ -10,6 +11,22 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Check if already logged in on mount
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        await getCurrentUser();
+        // If we get here, user is already logged in
+        console.log('✅ User already logged in, redirecting...');
+        navigate('/admin/dashboard', { replace: true });
+      } catch (error) {
+        // Not logged in, which is fine
+        console.log('ℹ️ No existing session');
+      }
+    };
+    checkExistingSession();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -17,6 +34,14 @@ export default function AdminLogin() {
 
     try {
       console.log('🔐 Admin login attempt for:', credentials.username);
+
+      // Sign out any existing user first
+      try {
+        await signOut();
+        console.log('🚪 Signed out existing user');
+      } catch (e) {
+        // Ignore sign out errors
+      }
 
       // Use Cognito directly (same as user login)
       console.log('📡 Authenticating with Cognito...');
@@ -31,11 +56,11 @@ export default function AdminLogin() {
         // Get the session tokens
         const { fetchAuthSession } = await import('aws-amplify/auth');
         const session = await fetchAuthSession();
-        
+
         if (session.tokens) {
           const email = session.tokens.idToken?.payload?.email as string || credentials.username;
           const accessToken = session.tokens.accessToken.toString();
-          
+
           localStorage.setItem('jwt_token', accessToken);
           localStorage.setItem('user_email', email);
           localStorage.setItem('admin_access', 'true');

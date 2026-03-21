@@ -125,7 +125,7 @@ export interface ReturnAnalytics {
   }>;
 }
 
-const API_BASE = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+const API_BASE = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 class DeliveryAnalyticsService {
   async getOverview(period: string = '30d'): Promise<AnalyticsOverview> {

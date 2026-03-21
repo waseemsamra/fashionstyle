@@ -39,7 +39,7 @@ export default function About() {
             <div className="relative z-10">
               <div className="aspect-[4/5] rounded-3xl overflow-hidden">
                 <img
-                  src="https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/about-image.jpg"
+                  src="https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/about-image.jpg"
                   alt="About Pakistani Fashion"
                   className="w-full h-full object-cover"
                 />

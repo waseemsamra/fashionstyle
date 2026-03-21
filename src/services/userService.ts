@@ -60,7 +60,7 @@ export interface Order {
 }
 
 class UserService {
-  private baseUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+  private baseUrl = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
   async getProfile(userId: string): Promise<UserProfile> {
     const token = localStorage.getItem('jwt_token');

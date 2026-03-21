@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import axios from 'axios';
 
-const API_URL = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+// New Brands Management API
+// Using Vite proxy to bypass CORS in development
+const BRANDS_API_URL = '/prod/admin/brands';
 
 interface Brand {
   id: string;
@@ -35,43 +36,26 @@ export default function AdminBrands() {
   const loadBrands = async () => {
     setLoading(true);
     try {
-      console.log('📦 Loading brands from backend API...');
+      console.log('📦 Loading brands from new Brands API...');
       const token = localStorage.getItem('jwt_token');
-      
-      // Try different possible endpoints
-      const endpoints = [
-        `${API_URL}/admin/brands`,
-        `${API_URL}/brands`,
-        `${API_URL}/admin/settings-v2/brands`
-      ];
-      
-      let response;
-      let usedEndpoint = '';
-      
-      for (const endpoint of endpoints) {
-        try {
-          console.log(`📡 Trying endpoint: ${endpoint}`);
-          response = await axios.get(endpoint, {
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token && { Authorization: `Bearer ${token}` })
-            }
-          });
-          usedEndpoint = endpoint;
-          break;
-        } catch (err: any) {
-          console.log(`⚠️ Endpoint ${endpoint} failed:`, err.response?.status || err.message);
-          continue;
+
+      const response = await fetch(BRANDS_API_URL, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` })
         }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
+
+      const data = await response.json();
+      console.log('✅ Brands response:', data);
       
-      if (!response) {
-        throw new Error('All endpoints failed');
-      }
-      
-      console.log('✅ Brands response from', usedEndpoint, ':', response.data);
-      const brandsData = response.data.brands || response.data.items || response.data || [];
-      
+      const brandsData = data.brands || data.items || [];
+
       if (brandsData.length > 0) {
         setBrands(brandsData);
         console.log('✅ Loaded', brandsData.length, 'brands from API');
@@ -82,9 +66,7 @@ export default function AdminBrands() {
       }
     } catch (error: any) {
       console.error('❌ Failed to load brands from API:', error);
-      console.error('❌ Error response:', error.response?.data);
-      console.error('❌ Error status:', error.response?.status);
-      toast.error('Failed to load brands: ' + (error.response?.data?.message || error.message));
+      toast.error('Failed to load brands: ' + (error.message || 'Unknown error'));
       setBrands([]);
     } finally {
       setLoading(false);
@@ -120,32 +102,54 @@ export default function AdminBrands() {
 
       if (editingBrand) {
         // Update existing brand via API
-        console.log('📝 Updating brand via API...');
-        await axios.put(`${API_URL}/brands/${editingBrand.id}`, brandData, {
+        console.log('📝 Updating brand:', editingBrand.id, brandData);
+        const response = await fetch(`${BRANDS_API_URL}/${editingBrand.id}`, {
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             ...(token && { Authorization: `Bearer ${token}` })
-          }
+          },
+          body: JSON.stringify(brandData)
         });
+
+        console.log('📝 Response status:', response.status);
+        const responseData = await response.json();
+        console.log('📝 Response data:', responseData);
+
+        if (!response.ok) {
+          throw new Error(responseData.message || `HTTP ${response.status}`);
+        }
+
         toast.success('Brand updated successfully!');
       } else {
         // Add new brand via API
-        console.log('📝 Creating brand via API...');
-        await axios.post(`${API_URL}/brands`, brandData, {
+        console.log('📝 Creating brand via API...', brandData);
+        const response = await fetch(BRANDS_API_URL, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(token && { Authorization: `Bearer ${token}` })
-          }
+          },
+          body: JSON.stringify(brandData)
         });
+
+        console.log('📝 Response status:', response.status);
+        const responseData = await response.json();
+        console.log('📝 Response data:', responseData);
+
+        if (!response.ok) {
+          throw new Error(responseData.message || `HTTP ${response.status}`);
+        }
+
         toast.success('Brand added successfully!');
       }
-      
+
       // Reload brands from API
       await loadBrands();
       setShowAddModal(false);
     } catch (error: any) {
-      console.error('Failed to save brand:', error);
-      toast.error('Failed to save brand to backend');
+      console.error('❌ Failed to save brand:', error);
+      toast.error('Failed to save brand: ' + (error.message || 'Unknown error'));
     }
   };
 
@@ -154,18 +158,25 @@ export default function AdminBrands() {
       try {
         const token = localStorage.getItem('jwt_token');
         console.log('🗑️ Deleting brand via API...');
-        await axios.delete(`${API_URL}/brands/${id}`, {
+        
+        const response = await fetch(`${BRANDS_API_URL}/${id}`, {
+          method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
             ...(token && { Authorization: `Bearer ${token}` })
           }
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
         toast.success('Brand deleted successfully!');
         // Reload brands from API
         await loadBrands();
       } catch (error: any) {
         console.error('Failed to delete brand:', error);
-        toast.error('Failed to delete brand from backend');
+        toast.error('Failed to delete brand: ' + (error.message || 'Unknown error'));
       }
     }
   };

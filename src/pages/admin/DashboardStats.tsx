@@ -62,11 +62,29 @@ export default function DashboardStats() {
       const usersResponse: any = await api.getUsers(token);
       const totalCustomers = usersResponse.length || 0;
 
-      // Load products (from localStorage or API)
-      const savedProducts = localStorage.getItem('admin_products');
-      const products = savedProducts ? JSON.parse(savedProducts) : [];
-      const totalProducts = products.length;
-      const lowStockProducts = products.filter((p: any) => (p.stock || 0) < 10).length;
+      // Load products from API
+      let totalProducts = 0;
+      let lowStockProducts = 0;
+      try {
+        const API_URL = import.meta.env.VITE_API_URL;
+        if (API_URL) {
+          const productsResponse = await fetch(`${API_URL}/products?limit=100&page=1`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (productsResponse.ok) {
+            const productsData = await productsResponse.json();
+            const products = productsData.items || [];
+            totalProducts = products.length;
+            lowStockProducts = products.filter((p: any) => (p.stock || 0) < 10).length;
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load products for dashboard:', error);
+      }
 
       setStats({
         totalOrders,

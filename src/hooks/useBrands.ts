@@ -2,64 +2,33 @@
 import { useState, useEffect } from 'react';
 import { brandService, type Brand } from '@/services/brandService';
 
-export function useBrands() {
+export function useBrands(options?: { featured?: boolean; limit?: number }) {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    brandService.getAllBrands().then(data => {
-      setBrands(data);
-      setLoading(false);
-    });
-  }, []);
+    setLoading(true);
+    setError(null);
+    
+    brandService.getAllBrands(options)
+      .then(data => {
+        console.log('✅ Loaded', data.length, 'brands');
+        setBrands(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('❌ Failed to load brands:', err);
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [options?.featured, options?.limit]);
 
-  return { brands, loading };
+  return { brands, loading, error };
 }
 
 export function useFeaturedBrands(limit: number = 10) {
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    brandService.getFeaturedBrands(limit).then(data => {
-      setBrands(data);
-      setLoading(false);
-    });
-  }, [limit]);
-
-  return { brands, loading };
-}
-
-export function useBrand(slug: string | undefined) {
-  const [brand, setBrand] = useState<Brand | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (slug) {
-      brandService.getBrandBySlug(slug).then(data => {
-        setBrand(data);
-        setLoading(false);
-      });
-    }
-  }, [slug]);
-
-  return { brand, loading };
-}
-
-export function useBrandProducts(brandName: string | undefined, limit: number = 20) {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (brandName) {
-      brandService.getBrandProducts(brandName, limit).then(data => {
-        setProducts(data);
-        setLoading(false);
-      });
-    }
-  }, [brandName, limit]);
-
-  return { products, loading };
+  return useBrands({ featured: true, limit });
 }
 
 // Re-export types

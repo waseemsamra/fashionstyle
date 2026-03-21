@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || `${API_URL}/generate-upload-url`;
-const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-prod-assets-536217686312';
-const S3_REGION = import.meta.env.VITE_S3_REGION || 'us-east-1';
+const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v';
+const S3_REGION = import.meta.env.VITE_AWS_REGION || 'us-east-1';
 const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com`;
 
 export interface UploadResponse {

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
+import { featuredProducts as localFeaturedProducts } from '@/data/products';
 
 export default function FeaturedCarousel() {
   const navigate = useNavigate();
@@ -19,10 +20,45 @@ export default function FeaturedCarousel() {
       try {
         const data = await api.listProducts();
         let productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
+        
+        // Filter featured products or use first 8
         const featured = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
-        setProducts(featured.length > 0 ? featured : productsArray.slice(0, 8));
+        let displayProducts = featured.length > 0 ? featured : productsArray.slice(0, 8);
+        
+        // If API returns no products, use local fallback
+        if (displayProducts.length === 0) {
+          console.log('Using local featured products as fallback');
+          displayProducts = localFeaturedProducts.map(p => ({
+            ...p,
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            originalPrice: p.originalPrice,
+            category: p.category,
+            isNew: p.isNew,
+            isSale: p.isSale,
+            rating: p.rating,
+            image: p.image,
+          }));
+        }
+        
+        setProducts(displayProducts);
       } catch (error) {
-        setProducts([]);
+        console.error('Failed to load products from API, using local data:', error);
+        // Fallback to local products
+        const displayProducts = localFeaturedProducts.map(p => ({
+          ...p,
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          originalPrice: p.originalPrice,
+          category: p.category,
+          isNew: p.isNew,
+          isSale: p.isSale,
+          rating: p.rating,
+          image: p.image,
+        }));
+        setProducts(displayProducts);
       }
     };
     loadProducts();

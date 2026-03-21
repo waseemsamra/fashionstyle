@@ -21,7 +21,7 @@ export interface Notification {
   error?: string;
 }
 
-const API_BASE = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+const API_BASE = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 class NotificationService {
   async sendNotification(data: {

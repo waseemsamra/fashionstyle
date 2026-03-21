@@ -1,0 +1,121 @@
+// services/apiGatewayClient.ts
+
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
+if (!API_BASE_URL) {
+  console.warn('⚠️ VITE_API_URL not configured. Products API will not work.');
+  console.warn('📝 Add VITE_API_URL to your .env file');
+}
+
+// Generic API Gateway request
+export const apiRequest = async (
+  endpoint: string,
+  method: string = 'GET',
+  body?: any
+): Promise<any> => {
+  if (!API_BASE_URL) {
+    throw new Error('API not configured. Add VITE_API_URL to your .env file');
+  }
+
+  const idToken = localStorage.getItem('idToken') || localStorage.getItem('jwt_token');
+
+  if (!idToken) {
+    throw new Error('No authentication token found. Please log in.');
+  }
+
+  console.log(`🌐 API Request: ${method} ${endpoint}`);
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error(`❌ API Error ${response.status}:`, errorData);
+    
+    // Handle 401 Unauthorized - token might be expired
+    if (response.status === 401) {
+      console.error('❌ Authentication failed. Token may be expired.');
+      throw new Error('Session expired. Please log in again.');
+    }
+    
+    throw new Error(errorData.message || `API Error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log(`✅ API Response:`, data);
+
+  return data;
+};
+
+// Product endpoints
+export const productsApi = {
+  getAll: (limit = 100, page = 1) =>
+    apiRequest(`/products?limit=${limit}&page=${page}`),
+
+  getById: (id: string) =>
+    apiRequest(`/products/${id}`),
+
+  create: (product: any) =>
+    apiRequest('/products', 'POST', product),
+
+  update: (id: string, product: any) =>
+    apiRequest(`/products/${id}`, 'PUT', product),
+
+  delete: (id: string) =>
+    apiRequest(`/products/${id}`, 'DELETE'),
+};
+
+// Brand endpoints
+export const brandsApi = {
+  getAll: (limit = 500, featured?: boolean) => {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (featured) params.append('featured', 'true');
+    return apiRequest(`/brands/v2?${params.toString()}`);
+  },
+  
+  getById: (id: string) => 
+    apiRequest(`/brands/v2/${id}`),
+};
+
+// Order endpoints
+export const ordersApi = {
+  getAll: (filters?: any) => {
+    const params = new URLSearchParams(filters || {});
+    return apiRequest(`/admin/orders?${params.toString()}`);
+  },
+  
+  getById: (orderId: string) => 
+    apiRequest(`/admin/orders/${orderId}`),
+  
+  updateStatus: (orderId: string, status: string) => 
+    apiRequest(`/admin/orders/${orderId}/status`, 'PUT', { status }),
+};
+
+// User endpoints
+export const usersApi = {
+  getProfile: (userId: string) => 
+    apiRequest(`/users/${userId}/profile`),
+  
+  getOrders: (userId: string, filters?: any) => {
+    const params = new URLSearchParams(filters || {});
+    return apiRequest(`/users/${userId}/orders?${params.toString()}`);
+  },
+  
+  getAddresses: (userId: string) => 
+    apiRequest(`/users/${userId}/addresses`),
+};
+
+// Admin endpoints
+export const adminApi = {
+  getStats: (period: string = '30d') => 
+    apiRequest(`/admin/analytics/dashboard?period=${period}`),
+  
+  getOrders: (filters?: any) => 
+    apiRequest(`/admin/orders`, 'GET', filters),
+};

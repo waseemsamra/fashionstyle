@@ -162,9 +162,10 @@ export function useAdvancedAuth() {
           const accessToken = session.tokens.accessToken.toString();
           const idToken = session.tokens.idToken?.toString() || accessToken;
           
-          // Store tokens
-          localStorage.setItem('jwt_token', accessToken);
-          localStorage.setItem('idToken', idToken);
+          // Store BOTH tokens - ID Token for API Gateway, Access Token for other uses
+          localStorage.setItem('jwt_token', idToken); // ID Token for API Gateway
+          localStorage.setItem('accessToken', accessToken); // Access Token for other uses
+          localStorage.setItem('idToken', idToken); // Explicit ID Token storage
           
           if (options?.rememberMe) {
             localStorage.setItem('rememberMe', 'true');
@@ -174,8 +175,8 @@ export function useAdvancedAuth() {
             setRememberMe(false);
           }
 
-          // Decode user from token
-          const userFromToken = getUserFromToken(accessToken);
+          // Decode user from ID Token (has more user info)
+          const userFromToken = getUserFromToken(idToken);
           
           const authenticatedUser: AuthUser = {
             id: userFromToken?.id || email,

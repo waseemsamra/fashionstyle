@@ -95,7 +95,7 @@ export interface OrderStats {
 }
 
 class OrdersService {
-  private baseUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+  private baseUrl = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
   async getUserOrders(userId: string, params: any) {
     const token = localStorage.getItem('jwt_token');

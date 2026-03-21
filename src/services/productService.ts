@@ -1,12 +1,11 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+import { productsApi } from './apiGatewayClient';
 
 export interface Product {
   id: string;
   name: string;
   description?: string;
   price: number;
+  originalPrice?: number;
   category?: string;
   brand?: string;
   image?: string;
@@ -19,162 +18,43 @@ export interface Product {
   patterns?: string[];
   occasions?: string[];
   genders?: string[];
+  isActive?: boolean;
+  isFeatured?: boolean;
+  isNew?: boolean;
+  isSale?: boolean;
+  rating?: number;
+  reviewCount?: number;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 /**
- * Create a new product
- */
-export const createProduct = async (product: Product): Promise<Product> => {
-  try {
-    console.log('📦 Creating product:', product.name);
-    
-    const token = localStorage.getItem('jwt_token');
-    
-    // Use correct endpoint: POST /products
-    const response = await axios.post(
-      `${API_URL}/products`,
-      product,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
-        }
-      }
-    );
-    
-    console.log('✅ Product created:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.error('❌ Failed to create product:', error);
-    throw error;
-  }
-};
-
-/**
- * Update an existing product
- */
-export const updateProduct = async (product: Product): Promise<Product> => {
-  try {
-    console.log('📦 Updating product:', product.id, product.name);
-    console.log('📸 Images:', product.images);
-    console.log('💲 Price being sent:', product.price);
-    console.log('📝 Full product data:', product);
-    
-    const token = localStorage.getItem('jwt_token');
-    
-    const url = `${API_URL}/products/${product.id}`;
-    console.log('🌐 PUT URL:', url);
-    console.log('🔑 Token exists:', !!token);
-    
-    // Try WITHOUT Authorization header first (public API)
-    const response = await axios.put(
-      url,
-      product,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-          // No Authorization header - test if API is public
-        }
-      }
-    );
-    
-    console.log('✅ API Response:', response.data);
-    console.log('✅ Price in response:', response.data.price);
-    return response.data;
-  } catch (error: any) {
-    console.error('❌ Failed to update product:', error);
-    console.error('❌ Error response:', error.response?.data);
-    console.error('❌ Error status:', error.response?.status);
-    
-    // If 403, try with Authorization header
-    if (error.response?.status === 403) {
-      console.log('🔑 403 detected, trying with Authorization header...');
-      const token = localStorage.getItem('jwt_token');
-      if (token) {
-        const cleanToken = token.replace(/^["']|["']$/g, '');
-        
-        const retryResponse = await axios.put(
-          `${API_URL}/products/${product.id}`,
-          product,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${cleanToken}`
-            }
-          }
-        );
-        
-        console.log('✅ Retry successful:', retryResponse.data);
-        return retryResponse.data;
-      }
-    }
-    
-    throw error;
-  }
-};
-
-/**
- * Delete a product
- */
-export const deleteProduct = async (productId: string): Promise<boolean> => {
-  try {
-    console.log('🗑️ Deleting product:', productId);
-    
-    const token = localStorage.getItem('jwt_token');
-    
-    // Use correct endpoint: DELETE /products/{id}
-    await axios.delete(
-      `${API_URL}/products/${productId}`,
-      {
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` })
-        }
-      }
-    );
-    
-    console.log('✅ Product deleted');
-    return true;
-  } catch (error: any) {
-    console.error('❌ Failed to delete product:', error);
-    return false;
-  }
-};
-
-/**
- * Get all products
+ * Get all products via API Gateway
  */
 export const getAllProducts = async (): Promise<Product[]> => {
   try {
-    console.log('📦 Fetching products from API...');
+    console.log('📦 Fetching ALL products from API Gateway...');
 
-    const token = localStorage.getItem('jwt_token');
-
-    // Use the working endpoint: GET /products
-    const response = await axios.get(
-      `${API_URL}/products`,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
-        },
-        timeout: 10000 // 10 second timeout
-      }
-    );
-
-    console.log('✅ Products response:', response.data);
+    const response = await productsApi.getAll(100, 1);
+    console.log('✅ Products response received');
+    console.log('📊 Raw response:', response);
 
     // Handle different response formats
     let products = [];
-    if (Array.isArray(response.data)) {
+    if (Array.isArray(response)) {
+      products = response;
+    } else if (response.items && Array.isArray(response.items)) {
+      products = response.items;
+    } else if (response.products && Array.isArray(response.products)) {
+      products = response.products;
+    } else if (response.data && Array.isArray(response.data)) {
       products = response.data;
-    } else if (response.data.items && Array.isArray(response.data.items)) {
-      products = response.data.items;
-    } else if (response.data.products && Array.isArray(response.data.products)) {
-      products = response.data.products;
-    } else if (response.data.data && Array.isArray(response.data.data)) {
-      products = response.data.data;
-    } else {
-      products = [];
+    } else if (response.body) {
+      const body = typeof response.body === 'string' 
+        ? JSON.parse(response.body) 
+        : response.body;
+      products = body.items || body.products || body.data || [];
     }
     
     console.log('✅ Extracted', products.length, 'products');
@@ -182,30 +62,75 @@ export const getAllProducts = async (): Promise<Product[]> => {
     return products;
   } catch (error: any) {
     console.error('❌ Failed to fetch products:', error.message);
-    
-    // Fallback to localStorage
-    console.log('📦 Loading products from localStorage as fallback...');
-    const savedProducts = localStorage.getItem('admin_products');
-    if (savedProducts) {
-      const parsed = JSON.parse(savedProducts);
-      console.log('✅ Loaded', parsed.length, 'products from localStorage');
-      return parsed;
-    }
-
-    return [];
+    throw error;
   }
 };
 
 /**
- * Get product by ID
+ * Get product by ID via API Gateway
  */
 export const getProductById = async (id: string): Promise<Product | null> => {
   try {
-    const products = await getAllProducts();
-    return products.find(p => p.id === id) || null;
-  } catch (error) {
-    console.error('❌ Failed to get product by ID:', error);
+    console.log('📦 Fetching product:', id);
+
+    const response = await productsApi.getById(id);
+    console.log('✅ Product fetched:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Failed to fetch product:', error.message);
     return null;
+  }
+};
+
+/**
+ * Create a new product via API Gateway
+ */
+export const createProduct = async (product: Product): Promise<Product> => {
+  try {
+    console.log('📦 Creating product:', product.name);
+
+    const response = await productsApi.create(product);
+    console.log('✅ Product created:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Failed to create product:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Update an existing product via API Gateway
+ */
+export const updateProduct = async (product: Product): Promise<Product> => {
+  try {
+    console.log('📦 Updating product:', product.id, product.name);
+
+    if (!product.id) {
+      throw new Error('Product ID is required for update');
+    }
+
+    const response = await productsApi.update(product.id, product);
+    console.log('✅ Product updated:', response);
+    return response;
+  } catch (error: any) {
+    console.error('❌ Failed to update product:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Delete a product via API Gateway
+ */
+export const deleteProduct = async (productId: string): Promise<boolean> => {
+  try {
+    console.log('🗑️ Deleting product:', productId);
+
+    await productsApi.delete(productId);
+    console.log('✅ Product deleted');
+    return true;
+  } catch (error: any) {
+    console.error('❌ Failed to delete product:', error.message);
+    return false;
   }
 };
 

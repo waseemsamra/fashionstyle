@@ -75,7 +75,7 @@ export interface SlotAnalytics {
   byHour: Record<string, { total: number; booked: number }>;
 }
 
-const API_BASE = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+const API_BASE = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 class TimeSlotService {
   async getConfig(): Promise<TimeSlotConfig> {

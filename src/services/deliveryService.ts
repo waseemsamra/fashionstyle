@@ -1,4 +1,4 @@
-const API_BASE = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/admin/delivery';
+const API_BASE = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/admin/delivery';
 
 export interface DeliveryZone {
   id: string;

@@ -1,4 +1,6 @@
 // services/brandService.ts
+import { brandsApi } from './apiGatewayClient';
+
 export interface Brand {
   id: string;
   name: string;
@@ -17,12 +19,11 @@ export interface Brand {
 }
 
 class BrandService {
-  private productsUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products';
   private cachedBrands: Brand[] | null = null;
   private cacheTime: number = 5 * 60 * 1000; // 5 minutes
   private lastFetch: number = 0;
 
-  async getAllBrands(): Promise<Brand[]> {
+  async getAllBrands(options?: { featured?: boolean; limit?: number }): Promise<Brand[]> {
     // Check cache first
     if (this.cachedBrands && Date.now() - this.lastFetch < this.cacheTime) {
       console.log('📦 Using cached brands');
@@ -30,98 +31,72 @@ class BrandService {
     }
 
     try {
-      console.log('🔄 Fetching products to extract brands...');
-      const response = await fetch(this.productsUrl);
+      console.log('🏷️ Fetching ALL brands from API Gateway...');
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch products: ${response.status}`);
+      const response = await brandsApi.getAll(options?.limit || 500, options?.featured);
+      console.log('📦 Raw brands response:', response);
+
+      // Handle different response structures
+      let items = [];
+      if (Array.isArray(response)) {
+        items = response;
+      } else if (response.items && Array.isArray(response.items)) {
+        items = response.items;
+      } else if (response.brands && Array.isArray(response.brands)) {
+        items = response.brands;
+      } else if (response.data && Array.isArray(response.data)) {
+        items = response.data;
+      } else if (response.body) {
+        const body = typeof response.body === 'string' ? JSON.parse(response.body) : response.body;
+        items = body.items || body.brands || body.data || [];
       }
-      
-      const data = await response.json();
-      const products = data.items || [];
-      
-      const brandMap = new Map<string, Brand>();
-      
-      products.forEach((product: any) => {
-        const brandName = product.brand;
-        if (!brandName) return;
-        
-        const brandId = brandName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        
-        if (!brandMap.has(brandId)) {
-          brandMap.set(brandId, {
-            id: brandId,
-            name: brandName,
-            slug: brandId,
-            description: `Discover the latest collection from ${brandName}`,
-            logo: `https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/${brandId}.jpg`,
-            coverImage: `https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/${brandId}-cover.jpg`,
-            productCount: 1,
-            isFeatured: product.isFeatured || false,
-            products: [{
-              id: product.id,
-              name: product.name,
-              price: product.price,
-              image: product.image
-            }]
-          });
-        } else {
-          const existing = brandMap.get(brandId)!;
-          existing.productCount++;
-          if (product.isFeatured) existing.isFeatured = true;
-          
-          // Add product preview (keep last 5)
-          if (!existing.products) existing.products = [];
-          if (existing.products.length < 5) {
-            existing.products.push({
-              id: product.id,
-              name: product.name,
-              price: product.price,
-              image: product.image
-            });
-          }
-        }
-      });
-      
-      this.cachedBrands = Array.from(brandMap.values())
-        .sort((a, b) => b.productCount - a.productCount);
-      
+
+      console.log('📦 Extracted items:', items.length);
+
+      const brands = items.map(this.transformBrand);
+
+      console.log('✅ Brands fetched:', brands.length, 'brands');
+      if (brands.length > 0) {
+        console.log('✅ First brand:', brands[0].name);
+      }
+
+      // Cache the results
+      this.cachedBrands = brands;
       this.lastFetch = Date.now();
-      
-      console.log(`📊 Extracted ${this.cachedBrands.length} brands from ${products.length} products`);
-      
-      return this.cachedBrands;
-    } catch (error) {
-      console.error('❌ Error fetching brands:', error);
-      return [];
+
+      return brands;
+    } catch (error: any) {
+      console.error('❌ Brands fetch error:', error.name, error.message);
+      throw error;
     }
   }
 
-  async getFeaturedBrands(limit: number = 10): Promise<Brand[]> {
-    const brands = await this.getAllBrands();
-    return brands.filter(b => b.isFeatured).slice(0, limit);
-  }
+  private transformBrand = (data: any): Brand => {
+    return {
+      id: data.id || data.PK || '',
+      name: data.name || '',
+      slug: data.slug || this.createSlug(data.name),
+      description: data.description || '',
+      logo: data.logo || 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/default-logo.png',
+      coverImage: data.coverImage || data.cover || 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/default-cover.jpg',
+      productCount: data.productCount || 0,
+      isFeatured: Boolean(data.isFeatured),
+      products: data.products || []
+    };
+  };
 
-  async getBrandBySlug(slug: string): Promise<Brand | null> {
-    const brands = await this.getAllBrands();
-    return brands.find(b => b.slug === slug) || null;
-  }
+  private createSlug = (name: string): string => {
+    if (!name) return '';
+    return name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+  };
 
-  async getBrandProducts(brandName: string, limit: number = 20) {
-    try {
-      const url = `${this.productsUrl}?brand=${encodeURIComponent(brandName)}&limit=${limit}`;
-      const response = await fetch(url);
-      const data = await response.json();
-      return data.items || [];
-    } catch (error) {
-      console.error('Error fetching brand products:', error);
-      return [];
-    }
-  }
-
+  // Clear cache (useful for admin updates)
   clearCache() {
     this.cachedBrands = null;
     this.lastFetch = 0;
+    console.log('🗑️ Cleared brands cache');
   }
 }
 
