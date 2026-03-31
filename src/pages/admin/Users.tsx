@@ -166,7 +166,6 @@ export default function Users() {
         status: editingUser.status?.toLowerCase() || 'active',
       };
 
-      let result;
       if (editingUser.userId) {
         // Update existing user
         console.log('📝 Updating user:', editingUser.userId);
@@ -184,7 +183,6 @@ export default function Users() {
           throw new Error(errorData.message || 'Failed to update user');
         }
 
-        result = await response.json();
         toast.success('User updated successfully!');
       } else {
         // Create new user
@@ -203,7 +201,6 @@ export default function Users() {
           throw new Error(errorData.message || 'Failed to create user');
         }
 
-        result = await response.json();
         toast.success('User created successfully!');
       }
 
