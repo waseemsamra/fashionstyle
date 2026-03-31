@@ -3,6 +3,28 @@ import { useQuery } from '@tanstack/react-query';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
+async function fetchAllProducts(): Promise<any[]> {
+  const allProducts: any[] = [];
+  let nextToken: string | undefined;
+
+  do {
+    const url = nextToken
+      ? `${API_URL}/products?nextToken=${encodeURIComponent(nextToken)}`
+      : `${API_URL}/products`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch: ${response.status}`);
+    }
+
+    const data = await response.json();
+    allProducts.push(...(data.items || []));
+    nextToken = data.nextToken;
+  } while (nextToken);
+
+  return allProducts;
+}
+
 export function useProduct(productIdentifier: string | undefined) {
   return useQuery({
     queryKey: ['product', productIdentifier],
@@ -20,15 +42,8 @@ export function useProduct(productIdentifier: string | undefined) {
       const searchId = extractId(productIdentifier);
       console.log('🔍 Extracted ID:', searchId);
 
-      // Fetch all products from API
-      const response = await fetch(`${API_URL}/products`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.status}`);
-      }
-
-      const data = await response.json();
-      const products = data.items || [];
+      // Fetch all products from API (handling pagination)
+      const products = await fetchAllProducts();
 
       console.log('📊 Got', products.length, 'products');
 
