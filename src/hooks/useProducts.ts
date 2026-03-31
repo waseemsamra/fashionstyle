@@ -12,16 +12,22 @@ async function fetchAllProducts(): Promise<any[]> {
       ? `${API_URL}/products?nextToken=${encodeURIComponent(nextToken)}`
       : `${API_URL}/products`;
 
+    console.log('📡 Fetching products from:', url);
     const response = await fetch(url);
+    
     if (!response.ok) {
-      throw new Error(`Failed to fetch: ${response.status}`);
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error('❌ API Error:', response.status, errorText);
+      throw new Error(`Failed to fetch products: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('📦 Got', data.items?.length || 0, 'products, nextToken:', !!data.nextToken);
     allProducts.push(...(data.items || []));
     nextToken = data.nextToken;
   } while (nextToken);
 
+  console.log('✅ Total products fetched:', allProducts.length);
   return allProducts;
 }
 
@@ -29,7 +35,10 @@ export function useProduct(productIdentifier: string | undefined) {
   return useQuery({
     queryKey: ['product', productIdentifier],
     queryFn: async () => {
-      if (!productIdentifier) return null;
+      if (!productIdentifier) {
+        console.warn('⚠️ No product identifier provided');
+        return null;
+      }
 
       console.log('🔍 Looking for product:', productIdentifier);
 
@@ -42,24 +51,31 @@ export function useProduct(productIdentifier: string | undefined) {
       const searchId = extractId(productIdentifier);
       console.log('🔍 Extracted ID:', searchId);
 
-      // Fetch all products from API (handling pagination)
-      const products = await fetchAllProducts();
+      try {
+        // Fetch all products from API (handling pagination)
+        const products = await fetchAllProducts();
 
-      console.log('📊 Got', products.length, 'products');
+        console.log('📊 Searching in', products.length, 'products');
 
-      // Find product by ID
-      const product = products.find((p: any) => String(p.id) === String(searchId));
+        // Find product by ID
+        const product = products.find((p: any) => String(p.id) === String(searchId));
 
-      if (!product) {
-        console.error('❌ Product not found. Available IDs:', products.map((p: any) => p.id).slice(0, 10));
-        return null;
+        if (!product) {
+          console.error('❌ Product not found. Searched for ID:', searchId);
+          console.log('Available IDs:', products.map((p: any) => p.id).join(', '));
+          return null;
+        }
+
+        console.log('✅ Found product:', product.name, product.id);
+        return product;
+      } catch (err: any) {
+        console.error('❌ Error fetching product:', err.message);
+        throw err;
       }
-
-      console.log('✅ Found product:', product.name);
-      return product;
     },
     enabled: !!productIdentifier,
     staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 }
 
