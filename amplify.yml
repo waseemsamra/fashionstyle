@@ -4,6 +4,7 @@ applications:
       phases:
         preBuild:
           commands:
+            - rm -rf node_modules/.vite dist .amplify 2>/dev/null || true
             - npm ci --cache .npm --prefer-offline
             - npm install react react-dom
         build:
