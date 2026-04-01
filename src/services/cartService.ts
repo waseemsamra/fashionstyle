@@ -40,24 +40,41 @@ class CartService {
 
   async addToCart(userId: string, item: CartItem): Promise<Cart> {
     const token = localStorage.getItem('jwt_token');
-    
-    const response = await fetch(`${this.baseUrl}/users/${userId}/cart/items`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(item),
-    });
 
-    if (!response.ok) {
-      throw new Error('Failed to add to cart');
+    // If no token, use local storage instead
+    if (!token) {
+      console.log('⚠️ No auth token, using local storage');
+      return this.addToLocalCart(item);
     }
 
-    const data = await response.json();
-    const cart = this.transformCart(data);
-    this.notifyListeners(cart);
-    return cart;
+    try {
+      const response = await fetch(`${this.baseUrl}/users/${userId}/cart/items`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(item),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.error('❌ Add to cart API error:', error);
+        // Fallback to local storage if API fails
+        console.log('⚠️ API failed, using local storage');
+        return this.addToLocalCart(item);
+      }
+
+      const data = await response.json();
+      const cart = this.transformCart(data);
+      this.notifyListeners(cart);
+      return cart;
+    } catch (err) {
+      console.error('❌ Add to cart error:', err);
+      // Fallback to local storage on error
+      console.log('⚠️ Network error, using local storage');
+      return this.addToLocalCart(item);
+    }
   }
 
   async updateItemQuantity(userId: string, itemId: string, quantity: number): Promise<Cart> {
