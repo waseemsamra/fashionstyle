@@ -276,21 +276,21 @@ export default function AdminProducts() {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
-    
-    // Debug logging
+
+    return matchesSearch && matchesCategory;
+  });
+
+  // Debug logging for empty results
+  useEffect(() => {
     if (products.length > 0 && filteredProducts.length === 0) {
       console.log('🔍 Filter debug:', {
         searchTerm,
         filterCategory,
-        productCategory: product.category,
-        matchesSearch,
-        matchesCategory,
-        totalProducts: products.length
+        totalProducts: products.length,
+        filteredCount: filteredProducts.length
       });
     }
-    
-    return matchesSearch && matchesCategory;
-  });
+  }, [searchTerm, filterCategory, products.length]);
 
   if (loading) {
     return (
