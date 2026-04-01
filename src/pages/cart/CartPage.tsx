@@ -24,11 +24,6 @@ export default function CartPage() {
     }
   };
 
-  // Navigate to product detail or login
-  const handleProductClick = (productId: string) => {
-    navigate(`/product/${productId}`);
-  };
-
   if (isLoading) {
     return <CartSkeleton />;
   }
