@@ -7,9 +7,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
-// New Brands Management API
-// Using Vite proxy to bypass CORS in development
-const BRANDS_API_URL = '/prod/admin/brands';
+// API Gateway URL
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const BRANDS_API_URL = `${API_URL}/admin/brands`;
 
 interface Brand {
   id: string;
