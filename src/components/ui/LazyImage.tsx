@@ -25,7 +25,20 @@ export default function LazyImage({
 
   // Generate the image URL
   useEffect(() => {
-    const imageUrl = src || getProductImage({ image: src, name: productName, id: productId });
+    let imageUrl = '';
+    
+    if (src) {
+      // If src is provided, use it directly
+      imageUrl = src;
+    } else if (productId || productName) {
+      // Generate image from product info
+      imageUrl = getProductImage({ id: productId, name: productName });
+    } else {
+      // Fallback placeholder
+      imageUrl = `https://via.placeholder.com/300x400/f5f5dc/333333?text=${encodeURIComponent(productName || 'Product')}`;
+    }
+    
+    console.log('🖼️ LazyImage:', { src, productId, productName, imageUrl });
     setImgSrc(imageUrl);
   }, [src, productName, productId]);
 
@@ -51,13 +64,16 @@ export default function LazyImage({
   }, []);
 
   const handleLoad = () => {
+    console.log('✅ Image loaded:', imgSrc.substring(0, 50));
     setIsLoaded(true);
     onLoad?.();
   };
 
   const handleError = () => {
+    console.error('❌ Image failed to load:', imgSrc);
     // Fallback to placeholder with product name
-    setImgSrc(`https://via.placeholder.com/300x400/f5f5dc/333333?text=${encodeURIComponent(productName || 'Product')}`);
+    const placeholder = `https://via.placeholder.com/300x400/f5f5dc/333333?text=${encodeURIComponent(productName || 'Product')}`;
+    setImgSrc(placeholder);
     setIsLoaded(true);
   };
 

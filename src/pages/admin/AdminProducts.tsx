@@ -235,10 +235,14 @@ export default function AdminProducts() {
     try {
       if (editingProduct) {
         // Update existing
-        console.log('📝 Updating product via API...');
-        await updateProduct(product);
-        const updated = products.map(p => p.id === product.id ? { ...p, ...product } : p);
-        setProducts(updated as Product[]);
+        console.log('📝 Updating product via API...', product);
+        const updatedProduct = await updateProduct(product);
+        console.log('✅ Product updated successfully:', updatedProduct);
+        
+        // Reload all products to get fresh data
+        console.log('🔄 Reloading products list...');
+        const allProducts = await getAllProducts();
+        setProducts(allProducts as Product[]);
         toast.success('Product updated successfully!');
       } else {
         // Add new
@@ -250,7 +254,7 @@ export default function AdminProducts() {
       }
       setShowFormModal(false);
     } catch (error: any) {
-      console.error('Failed to save product:', error);
+      console.error('❌ Failed to save product:', error);
       toast.error(error.response?.data?.message || 'Failed to save product');
     }
   };
