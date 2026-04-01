@@ -27,18 +27,33 @@ export default function LazyImage({
   useEffect(() => {
     let imageUrl = '';
     
-    if (src) {
-      // If src is provided, use it directly
+    if (src && src.startsWith('http')) {
+      // If src is provided and is a full URL, use it directly
       imageUrl = src;
-    } else if (productId || productName) {
-      // Generate image from product info
-      imageUrl = getProductImage({ id: productId, name: productName });
+    } else if (productId) {
+      // Generate S3 image URL from product ID
+      imageUrl = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/${productId}.jpg`;
+    } else if (productName) {
+      // Use Unsplash fashion image based on product name
+      const lowerName = productName.toLowerCase();
+      if (lowerName.includes('shirt') || lowerName.includes('t-shirt')) {
+        imageUrl = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop';
+      } else if (lowerName.includes('blazer') || lowerName.includes('jacket')) {
+        imageUrl = 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&h=600&fit=crop';
+      } else if (lowerName.includes('trouser') || lowerName.includes('pant')) {
+        imageUrl = 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop';
+      } else if (lowerName.includes('dress')) {
+        imageUrl = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop';
+      } else {
+        // Default fashion image
+        imageUrl = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&h=600&fit=crop';
+      }
     } else {
-      // Fallback placeholder
-      imageUrl = `https://via.placeholder.com/300x400/f5f5dc/333333?text=${encodeURIComponent(productName || 'Product')}`;
+      // Default fashion image
+      imageUrl = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&h=600&fit=crop';
     }
     
-    console.log('🖼️ LazyImage:', { src, productId, productName, imageUrl });
+    console.log('🖼️ LazyImage:', { src, productId, productName, imageUrl: imageUrl.substring(0, 60) });
     setImgSrc(imageUrl);
   }, [src, productName, productId]);
 
@@ -71,9 +86,8 @@ export default function LazyImage({
 
   const handleError = () => {
     console.error('❌ Image failed to load:', imgSrc);
-    // Fallback to placeholder with product name
-    const placeholder = `https://via.placeholder.com/300x400/f5f5dc/333333?text=${encodeURIComponent(productName || 'Product')}`;
-    setImgSrc(placeholder);
+    // Fallback to generic fashion image from Unsplash
+    setImgSrc('https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&h=600&fit=crop');
     setIsLoaded(true);
   };
 
