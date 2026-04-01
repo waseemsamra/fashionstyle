@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { getProductImage } from '@/utils/productImage';
 
 interface LazyImageProps {
   src?: string;
