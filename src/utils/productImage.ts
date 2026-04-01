@@ -1,7 +1,7 @@
-// S3 Bucket configuration
-const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || 'https://fashionstore-prod-assets-536217686312.s3.us-east-1.amazonaws.com';
+// S3 Bucket configuration - Use the correct bucket from .env
+const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com';
 
-// Fashion images for products (real Unsplash images)
+// Fashion images for products (real Unsplash images) - used as fallback
 const PRODUCT_IMAGES: Record<string, string> = {
   'shirt': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&h=600&fit=crop',
   't-shirt': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
@@ -29,6 +29,12 @@ const getImageFromName = (name: string): string => {
 
 // Helper function to get product image with S3 fallback
 export const getProductImage = (product: { image?: string; name?: string; id?: string | number; category?: string }, size: string = '300x400'): string => {
+  // Try to load from S3 using product ID first (correct bucket)
+  if (product.id) {
+    const s3Url = `${S3_BASE_URL}/${product.id}.jpg`;
+    return s3Url;
+  }
+
   // If product has an image URL, use it (ensure it has extension)
   if (product.image) {
     // If it's already a full URL, return as is (ensure it has extension)
@@ -46,11 +52,6 @@ export const getProductImage = (product: { image?: string; name?: string; id?: s
   // Try to get image from product name
   if (product.name) {
     return getImageFromName(product.name);
-  }
-
-  // Try to load from S3 using product ID
-  if (product.id) {
-    return `${S3_BASE_URL}/products/${product.id}.jpg`;
   }
 
   // Generate placeholder with product name as final fallback
