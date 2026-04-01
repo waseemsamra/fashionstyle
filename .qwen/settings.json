@@ -10,7 +10,10 @@
       "Bash(sleep *)",
       "Bash(curl *)",
       "Bash(python3 *)",
-      "Bash(grep *)"
+      "Bash(grep *)",
+      "Bash(aws *)",
+      "Bash(do)",
+      "Bash(done)"
     ]
   },
   "$version": 3
