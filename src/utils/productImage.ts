@@ -29,17 +29,23 @@ const getImageFromName = (name: string): string => {
 
 // Helper function to get product image with S3 fallback
 export const getProductImage = (product: { image?: string; name?: string; id?: string | number; category?: string }, size: string = '300x400'): string => {
-  // Try to load from S3 using product ID first (correct bucket)
+  // Try to load from S3 using product ID first (most reliable)
   if (product.id) {
     const s3Url = `${S3_BASE_URL}/${product.id}.jpg`;
     return s3Url;
   }
 
-  // If product has an image URL, use it (ensure it has extension)
+  // If product has an image URL from API, try to extract product ID from it
   if (product.image) {
-    // If it's already a full URL, return as is (ensure it has extension)
+    // If it's a full URL, try to extract the product filename
     if (product.image.startsWith('http')) {
-      // Add .jpg extension if missing
+      // Extract filename from URL like ".../product-2.jpg" -> "2.jpg"
+      const match = product.image.match(/product-(\d+)\.(jpg|jpeg|png|gif|webp)/i);
+      if (match) {
+        // Use the correct S3 URL with just the ID
+        return `${S3_BASE_URL}/${match[1]}.${match[2]}`;
+      }
+      // If no match, return as is (ensure it has extension)
       if (!product.image.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
         return product.image + '.jpg';
       }
