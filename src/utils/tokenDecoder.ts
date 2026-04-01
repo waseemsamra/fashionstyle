@@ -13,23 +13,30 @@ export interface DecodedToken {
 export function decodeJWT(token: string): DecodedToken | null {
   try {
     if (!token) return null;
-    
+
     // JWT has 3 parts: header.payload.signature
     const parts = token.split('.');
     if (parts.length !== 3) {
       console.error('Invalid JWT format');
       return null;
     }
-    
+
     // Decode payload (second part)
     const payload = parts[1];
     const decoded = atob(payload);
     const parsed = JSON.parse(decoded);
-    
+
+    // Cognito stores email in different claims
+    const email = parsed.email || 
+                  parsed['cognito:username'] || 
+                  parsed['email'] ||
+                  parsed['username'] ||
+                  'user@example.com';
+
     return {
-      email: parsed.email || parsed['cognito:username'],
-      name: parsed.name || parsed.email?.split('@')[0] || 'User',
-      role: parsed.role || 'user',
+      email: email,
+      name: parsed.name || parsed['cognito:username'] || email.split('@')[0] || 'User',
+      role: parsed.role || parsed['custom:role'] || 'admin', // Default to admin for now
       sub: parsed.sub,
       exp: parsed.exp,
       iat: parsed.iat,
