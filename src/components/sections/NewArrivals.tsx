@@ -13,7 +13,29 @@ export default function NewArrivals() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.listProducts().then(data => setProducts(data.items?.slice(0, 4) || []));
+    const loadProducts = async () => {
+      try {
+        console.log('📦 Loading new arrivals products...');
+        const data = await api.listProducts();
+        console.log('📦 Raw API response:', data);
+        
+        let productsArray = [];
+        if (Array.isArray(data)) {
+          productsArray = data;
+        } else if (data && data.items && Array.isArray(data.items)) {
+          productsArray = data.items;
+        }
+        
+        console.log('✅ New arrivals products loaded:', productsArray.length);
+        console.log('Products:', productsArray.map(p => p.name));
+        setProducts(productsArray.slice(0, 4));
+      } catch (error) {
+        console.error('❌ Failed to load new arrivals products:', error);
+        setProducts([]);
+      }
+    };
+    
+    loadProducts();
   }, []);
 
   useEffect(() => {

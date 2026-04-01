@@ -38,9 +38,14 @@ export default function FeaturedProducts() {
 
         // Filter to show only featured products (max 20)
         const featuredProducts = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
-        const displayProducts = featuredProducts.length > 0 ? featuredProducts : productsArray.slice(0, 8);
+        
+        // If no featured products, show all available products (up to 8)
+        const displayProducts = featuredProducts.length > 0 
+          ? featuredProducts 
+          : productsArray.slice(0, 8);
 
-        console.log('Featured products loaded:', displayProducts.length);
+        console.log('Featured products loaded:', displayProducts.length, '(featured:', featuredProducts.length, ', total:', productsArray.length, ')');
+        console.log('Products to display:', displayProducts.map(p => p.name));
         setProducts(displayProducts);
       } catch (error) {
         console.error('Failed to load featured products:', error);
