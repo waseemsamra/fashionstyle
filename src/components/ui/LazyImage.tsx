@@ -27,7 +27,7 @@ export default function LazyImage({
     let imageUrl = '';
     
     if (src && src.startsWith('http')) {
-      // If src is provided and is a full URL, use it directly
+      // If src is provided and is a full URL (from API), use it directly
       imageUrl = src;
     } else if (productId) {
       // Generate S3 image URL from product ID
@@ -52,7 +52,7 @@ export default function LazyImage({
       imageUrl = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&h=600&fit=crop';
     }
     
-    console.log('🖼️ LazyImage:', { src, productId, productName, imageUrl: imageUrl.substring(0, 60) });
+    console.log('🖼️ LazyImage:', { src: src ? src.substring(0, 50) : 'none', productId, imageUrl: imageUrl.substring(0, 50) });
     setImgSrc(imageUrl);
   }, [src, productName, productId]);
 
