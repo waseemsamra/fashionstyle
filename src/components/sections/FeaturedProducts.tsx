@@ -45,7 +45,7 @@ export default function FeaturedProducts() {
           : productsArray.slice(0, 8);
 
         console.log('Featured products loaded:', displayProducts.length, '(featured:', featuredProducts.length, ', total:', productsArray.length, ')');
-        console.log('Products to display:', displayProducts.map(p => p.name));
+        console.log('Products to display:', displayProducts.map((p: any) => p.name));
         setProducts(displayProducts);
       } catch (error) {
         console.error('Failed to load featured products:', error);

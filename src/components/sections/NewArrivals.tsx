@@ -27,7 +27,7 @@ export default function NewArrivals() {
         }
         
         console.log('✅ New arrivals products loaded:', productsArray.length);
-        console.log('Products:', productsArray.map(p => p.name));
+        console.log('Products:', productsArray.map((p: any) => p.name));
         setProducts(productsArray.slice(0, 4));
       } catch (error) {
         console.error('❌ Failed to load new arrivals products:', error);
