@@ -27,27 +27,21 @@ const getImageFromName = (name: string): string => {
   return 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&h=600&fit=crop';
 };
 
-// Helper function to get product image with S3 fallback
+// Helper function to get product image - S3 ONLY for production
 export const getProductImage = (product: { image?: string; name?: string; id?: string | number; category?: string }, size: string = '300x400'): string => {
-  // If product has an image URL from API, use it (it's already a valid S3 URL)
+  // Priority 1: Use image URL from API (already a valid S3 URL)
   if (product.image && product.image.startsWith('http')) {
     return product.image;
   }
 
-  // Try to load from S3 using product ID
+  // Priority 2: Build S3 URL from product ID
   if (product.id) {
-    const s3Url = `${S3_BASE_URL}/${product.id}.jpg`;
-    return s3Url;
+    return `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/${product.id}.jpg`;
   }
 
-  // Try to get image from product name
-  if (product.name) {
-    return getImageFromName(product.name);
-  }
-
-  // Generate placeholder with product name as final fallback
-  const name = product.name || 'Product';
-  return `https://via.placeholder.com/${size}/f5f5dc/333333?text=${encodeURIComponent(name)}`;
+  // Production: Return empty string if no S3 image available
+  // (This will trigger onError handler in components)
+  return '';
 };
 
 // Helper function to handle image error

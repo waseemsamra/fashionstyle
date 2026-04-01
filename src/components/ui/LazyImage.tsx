@@ -22,7 +22,7 @@ export default function LazyImage({
   const [imgSrc, setImgSrc] = useState('');
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Generate the image URL
+  // Generate the image URL - S3 ONLY for production
   useEffect(() => {
     let imageUrl = '';
     
@@ -32,25 +32,9 @@ export default function LazyImage({
     } else if (productId) {
       // Generate S3 image URL from product ID
       imageUrl = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/${productId}.jpg`;
-    } else if (productName) {
-      // Use Unsplash fashion image based on product name
-      const lowerName = productName.toLowerCase();
-      if (lowerName.includes('shirt') || lowerName.includes('t-shirt')) {
-        imageUrl = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop';
-      } else if (lowerName.includes('blazer') || lowerName.includes('jacket')) {
-        imageUrl = 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&h=600&fit=crop';
-      } else if (lowerName.includes('trouser') || lowerName.includes('pant')) {
-        imageUrl = 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop';
-      } else if (lowerName.includes('dress')) {
-        imageUrl = 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop';
-      } else {
-        // Default fashion image
-        imageUrl = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&h=600&fit=crop';
-      }
-    } else {
-      // Default fashion image
-      imageUrl = 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&h=600&fit=crop';
     }
+    // Production mode: No Unsplash fallbacks, no placeholders
+    // If no image, onError will handle it
     
     console.log('🖼️ LazyImage:', { src: src ? src.substring(0, 50) : 'none', productId, imageUrl: imageUrl.substring(0, 50) });
     setImgSrc(imageUrl);
@@ -85,8 +69,8 @@ export default function LazyImage({
 
   const handleError = () => {
     console.error('❌ Image failed to load:', imgSrc);
-    // Fallback to generic fashion image from Unsplash
-    setImgSrc('https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&h=600&fit=crop');
+    // Production: Hide image on error (no fallbacks)
+    setImgSrc('');
     setIsLoaded(true);
   };
 
