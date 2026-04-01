@@ -215,7 +215,7 @@ class CartService {
     const items = data.items || [];
     return {
       items: items.map((item: any) => ({
-        id: item.id,
+        id: item.id || `${item.productId}-${item.size || ''}-${item.color || ''}`,
         productId: item.productId,
         name: item.name,
         price: item.price,
@@ -223,10 +223,10 @@ class CartService {
         quantity: item.quantity,
         size: item.size,
         color: item.color,
-        maxQuantity: item.maxQuantity || 10,
+        maxQuantity: item.maxQuantity || item.stock || 10,
       })),
-      total: items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0),
-      itemCount: items.reduce((sum: number, item: any) => sum + item.quantity, 0),
+      total: data.total || items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0),
+      itemCount: data.itemCount || items.reduce((sum: number, item: any) => sum + item.quantity, 0),
     };
   }
 
