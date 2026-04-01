@@ -15,6 +15,20 @@ export default function CartPage() {
 
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
+  // Redirect to login if trying to checkout without auth
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: '/checkout' } });
+    } else {
+      navigate('/checkout');
+    }
+  };
+
+  // Navigate to product detail or login
+  const handleProductClick = (productId: string) => {
+    navigate(`/product/${productId}`);
+  };
+
   if (isLoading) {
     return <CartSkeleton />;
   }
@@ -180,13 +194,7 @@ export default function CartPage() {
 
                 {/* Checkout Button */}
                 <button
-                  onClick={() => {
-                    if (!isAuthenticated) {
-                      navigate('/login?redirect=checkout');
-                    } else {
-                      navigate('/checkout');
-                    }
-                  }}
+                  onClick={handleCheckout}
                   className="w-full bg-gold text-white py-3 rounded-lg hover:bg-gold/90 transition flex items-center justify-center gap-2"
                 >
                   <CreditCard className="w-5 h-5" />
