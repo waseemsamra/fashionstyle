@@ -87,11 +87,35 @@ export default function Users() {
       const data = await response.json();
       console.log('✅ Loaded users:', data);
 
+      // Handle different response structures
+      let userList: User[] = [];
+      
       if (data && data.users && Array.isArray(data.users)) {
-        setUsers(data.users);
-        toast.success(`Loaded ${data.users.length} user(s)`);
+        userList = data.users;
+      } else if (data && data.items && Array.isArray(data.items)) {
+        // Check if it's actually users data (has email field) vs brands data
+        const firstItem = data.items[0];
+        if (firstItem && firstItem.email) {
+          userList = data.items;
+        } else {
+          console.warn('⚠️ API returned brands data instead of users');
+          toast.error('User service temporarily unavailable. Please contact support.');
+          setError('User service is returning incorrect data. Backend needs to be fixed.');
+          setLoading(false);
+          return;
+        }
+      } else if (data && data.message) {
+        console.warn('⚠️ User service returned status message:', data.message);
+        toast.info('User service is initializing. Please try again in a moment.');
+        setError('User service is not fully initialized yet.');
+        setLoading(false);
+        return;
+      }
+
+      setUsers(userList);
+      if (userList.length > 0) {
+        toast.success(`Loaded ${userList.length} user(s)`);
       } else {
-        setUsers([]);
         toast.info('No users found');
       }
     } catch (err: any) {
