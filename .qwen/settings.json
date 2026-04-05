@@ -15,7 +15,8 @@
       "Bash(do)",
       "Bash(done)",
       "Bash(echo *)",
-      "Bash(head *)"
+      "Bash(head *)",
+      "Bash(true)"
     ]
   },
   "$version": 3
