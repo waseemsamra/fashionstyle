@@ -52,13 +52,19 @@ async function getAllBrands(event) {
   }
 }
 
-// POST /admin/brands - Create new brand
+// POST /admin/brands - Create new brand OR update if id is provided
 async function createBrand(event) {
-  console.log('Creating brand...');
-  
+  console.log('Creating/updating brand...');
+
   try {
     const body = JSON.parse(event.body);
-    const { name, description, logo, active } = body;
+    const { id, name, description, logo, active } = body;
+
+    // If id is provided, treat as update
+    if (id) {
+      console.log('POST with id detected, treating as update:', id);
+      return await updateBrand(event, id);
+    }
 
     if (!name) {
       return {

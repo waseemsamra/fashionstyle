@@ -138,13 +138,25 @@ echo "✅ API methods created"
 echo "7️⃣ Adding Lambda permissions..."
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
-for method in GET POST PUT DELETE OPTIONS; do
+# Permissions for /admin/brands
+for method in GET POST OPTIONS; do
   aws lambda add-permission \
     --function-name $LAMBDA_NAME \
     --statement-id apigateway-$method \
     --action lambda:InvokeFunction \
     --principal apigateway.amazonaws.com \
     --source-arn "arn:aws:execute-api:$REGION:$ACCOUNT_ID:$API_ID/*/$method/admin/brands" \
+    --region $REGION 2>/dev/null || true
+done
+
+# Permissions for /admin/brands/{id}
+for method in PUT DELETE OPTIONS; do
+  aws lambda add-permission \
+    --function-name $LAMBDA_NAME \
+    --statement-id apigateway-$method-id \
+    --action lambda:InvokeFunction \
+    --principal apigateway.amazonaws.com \
+    --source-arn "arn:aws:execute-api:$REGION:$ACCOUNT_ID:$API_ID/*/$method/admin/brands/*" \
     --region $REGION 2>/dev/null || true
 done
 

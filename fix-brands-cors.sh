@@ -2,10 +2,50 @@
 
 echo "🔧 Fixing CORS for Brands API Gateway..."
 
-API_ID="jxh66jgwq8"
+API_ID="rvtv0snm8k"
 REGION="us-east-1"
-BRANDS_RESOURCE_ID="xlmsc0"      # /admin/brands
-BRAND_RESOURCE_ID="m7yzfg"       # /admin/brands/{id}
+
+echo "🔍 Looking up resource IDs..."
+
+# Get all resources
+RESOURCES=$(aws apigateway get-resources \
+  --rest-api-id $API_ID \
+  --region $REGION \
+  --output json)
+
+echo "$RESOURCES" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for item in data.get('items', []):
+    print(f\"  {item['path']}: {item['id']}\")
+"
+
+# Find resource IDs dynamically
+BRANDS_RESOURCE_ID=$(echo "$RESOURCES" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for item in data.get('items', []):
+    if item.get('path') == '/admin/brands':
+        print(item['id'])
+        break
+")
+
+BRAND_RESOURCE_ID=$(echo "$RESOURCES" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for item in data.get('items', []):
+    if item.get('path') == '/admin/brands/{id}':
+        print(item['id'])
+        break
+")
+
+if [ -z "$BRANDS_RESOURCE_ID" ] || [ -z "$BRAND_RESOURCE_ID" ]; then
+  echo "❌ Could not find brand resources. You may need to run deploy-brands-api.sh first."
+  exit 1
+fi
+
+echo "✅ Found /admin/brands resource: $BRANDS_RESOURCE_ID"
+echo "✅ Found /admin/brands/{id} resource: $BRAND_RESOURCE_ID"
 
 # Update OPTIONS method for /admin/brands/{id}
 echo "📝 Updating /admin/brands/{id} OPTIONS method..."
@@ -133,8 +173,17 @@ echo ""
 echo "⏳ Waiting 10 seconds for deployment to propagate..."
 sleep 10
 
-# Test CORS
+# Test CORS with Amplify origin
 echo "🧪 Testing CORS..."
+curl -s -X OPTIONS \
+  -H "Origin: https://main.d1l8ayoz0simv1.amplifyapp.com" \
+  -H "Access-Control-Request-Method: PUT" \
+  -H "Access-Control-Request-Headers: Content-Type,Authorization" \
+  "https://$API_ID.execute-api.$REGION.amazonaws.com/prod/admin/brands/test-id" \
+  -D - -o /dev/null 2>&1 | grep -i "access-control"
+
+echo ""
+echo "🧪 Testing localhost origin..."
 curl -s -X OPTIONS \
   -H "Origin: http://localhost:3000" \
   -H "Access-Control-Request-Method: PUT" \

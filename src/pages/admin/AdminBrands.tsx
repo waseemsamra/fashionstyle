@@ -95,21 +95,21 @@ export default function AdminBrands() {
 
     try {
       const token = localStorage.getItem('jwt_token');
-      const brandData = {
-        name: newBrandName,
-        description: newBrandDescription
-      };
 
       if (editingBrand) {
-        // Update existing brand via API
-        console.log('📝 Updating brand:', editingBrand.id, brandData);
-        const response = await fetch(`${BRANDS_API_URL}/${editingBrand.id}`, {
-          method: 'PUT',
+        // Update existing brand via POST (includes ID in body)
+        console.log('📝 Updating brand:', editingBrand.id);
+        const response = await fetch(BRANDS_API_URL, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(token && { Authorization: `Bearer ${token}` })
           },
-          body: JSON.stringify(brandData)
+          body: JSON.stringify({
+            id: editingBrand.id,
+            name: newBrandName,
+            description: newBrandDescription
+          })
         });
 
         console.log('📝 Response status:', response.status);
@@ -123,7 +123,11 @@ export default function AdminBrands() {
         toast.success('Brand updated successfully!');
       } else {
         // Add new brand via API
-        console.log('📝 Creating brand via API...', brandData);
+        console.log('📝 Creating brand via API...');
+        const brandData = {
+          name: newBrandName,
+          description: newBrandDescription
+        };
         const response = await fetch(BRANDS_API_URL, {
           method: 'POST',
           headers: {
