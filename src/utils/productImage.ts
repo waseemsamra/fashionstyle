@@ -15,20 +15,8 @@ const PRODUCT_IMAGES: Record<string, string> = {
   'coat': 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=500&h=600&fit=crop',
 };
 
-// Get image based on product name/category
-const getImageFromName = (name: string): string => {
-  const lowerName = name.toLowerCase();
-  for (const [key, url] of Object.entries(PRODUCT_IMAGES)) {
-    if (lowerName.includes(key)) {
-      return url;
-    }
-  }
-  // Default fashion image
-  return 'https://images.unsplash.com/photo-1483985988355-763728e1935b?w=500&h=600&fit=crop';
-};
-
 // Helper function to get product image - S3 ONLY for production
-export const getProductImage = (product: { image?: string; name?: string; id?: string | number; category?: string }, size: string = '300x400'): string => {
+export const getProductImage = (product: { image?: string; name?: string; id?: string | number; category?: string }): string => {
   // Priority 1: Use image URL from API (already a valid S3 URL)
   if (product.image && product.image.startsWith('http')) {
     return product.image;
