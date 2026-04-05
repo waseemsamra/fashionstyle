@@ -1,20 +1,6 @@
 // S3 Bucket configuration - Use the correct bucket from .env
 const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com';
 
-// Fashion images for products (real Unsplash images) - used as fallback
-const PRODUCT_IMAGES: Record<string, string> = {
-  'shirt': 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=500&h=600&fit=crop',
-  't-shirt': 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
-  'blazer': 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=500&h=600&fit=crop',
-  'trousers': 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-  'dress': 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop',
-  'jeans': 'https://images.unsplash.com/photo-1542272617-08f08630329e?w=500&h=600&fit=crop',
-  'jacket': 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
-  'skirt': 'https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=500&h=600&fit=crop',
-  'sweater': 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=500&h=600&fit=crop',
-  'coat': 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=500&h=600&fit=crop',
-};
-
 // Helper function to get product image - S3 ONLY for production
 export const getProductImage = (product: { image?: string; name?: string; id?: string | number; category?: string }): string => {
   // Priority 1: Use image URL from API (already a valid S3 URL)
