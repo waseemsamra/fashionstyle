@@ -1,10 +1,41 @@
 // components/brands/BrandsGrid.tsx
-import { useBrands } from '@/hooks/useBrands';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const BRANDS_API_URL = `${API_URL}/admin/brands`;
+
+interface Brand {
+  id: string;
+  name: string;
+  description?: string;
+  active?: boolean;
+  products?: number;
+}
+
 export function BrandsGrid() {
-  const { brands, loading } = useBrands();
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBrands();
+  }, []);
+
+  const fetchBrands = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(BRANDS_API_URL);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      const brandsData = data.brands || data.items || [];
+      setBrands(brandsData);
+    } catch (error) {
+      console.error('❌ Failed to load brands:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -14,30 +45,39 @@ export function BrandsGrid() {
     );
   }
 
+  if (brands.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <p className="text-gray-500 text-lg">No brands available</p>
+      </div>
+    );
+  }
+
+  // Sort alphabetically
+  const sortedBrands = [...brands].sort((a, b) => a.name.localeCompare(b.name));
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-      {brands.map((brand) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {sortedBrands.map((brand) => (
         <Link
           key={brand.id}
-          to={`/brands/${brand.slug}`}
-          className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition"
+          to={`/brand/${encodeURIComponent(brand.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''))}`}
+          className="group relative bg-white rounded-lg shadow-sm hover:shadow-lg border border-gray-100 hover:border-gold/30 transition-all duration-300 overflow-hidden"
         >
-          <div className="aspect-square p-6 bg-gradient-to-br from-gold/5 to-gold/10">
-            <img
-              src={brand.logo}
-              alt={brand.name}
-              className="w-full h-full object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = `https://via.placeholder.com/200x200/333333/ffffff?text=${brand.name.charAt(0)}`;
-              }}
-            />
+          <div className="p-5 flex flex-col items-center justify-center min-h-[100px]">
+            <h3 className="font-medium text-sm text-center text-gray-800 group-hover:text-gold transition-colors duration-300 leading-tight">
+              {brand.name}
+            </h3>
+            {brand.description && (
+              <p className="text-xs text-gray-400 mt-2 text-center line-clamp-2">
+                {brand.description}
+              </p>
+            )}
           </div>
-          <div className="p-4 text-center">
-            <h3 className="font-semibold text-lg">{brand.name}</h3>
-            <p className="text-sm text-gray-600">{brand.productCount} Products</p>
-          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gold transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
         </Link>
       ))}
     </div>
   );
 }
+
