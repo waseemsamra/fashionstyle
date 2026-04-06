@@ -525,7 +525,7 @@ export default function ProductForm({
                       )}
                     </div>
 
-                    {watchedValues.images && watchedValues.images.length > 0 && (
+                    {(watchedValues.images && watchedValues.images.length > 0) && (
                       <div className="space-y-2">
                         <Label>Image Preview</Label>
                         <div className="grid grid-cols-5 gap-2">
@@ -542,7 +542,7 @@ export default function ProductForm({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const newImages = watchedValues.images.filter(
+                                  const newImages = (watchedValues.images || []).filter(
                                     (_: any, i: number) => i !== index
                                   );
                                   setValue('images', newImages);
