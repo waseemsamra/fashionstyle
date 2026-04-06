@@ -36,9 +36,19 @@ export default function BrandDetailPage() {
         // Fetch brands to find current brand
         console.log('🔍 Fetching brands for slug:', slug);
         const brandsRes = await fetch(`${API_URL}/admin/brands`);
+        console.log('📦 Brands response status:', brandsRes.status);
+        
+        if (!brandsRes.ok) {
+          console.error('❌ Brands API failed:', brandsRes.status);
+          setLoading(false);
+          return;
+        }
+        
         const brandsData = await brandsRes.json();
+        console.log('📦 Brands data keys:', Object.keys(brandsData));
         console.log('📦 Brands data:', brandsData);
         const allBrands = brandsData.brands || brandsData.items || [];
+        console.log(`📦 Extracted ${allBrands.length} brands`);
 
         const foundBrand = allBrands.find((b: Brand) => {
           const brandSlug = b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
