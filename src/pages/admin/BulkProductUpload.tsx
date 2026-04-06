@@ -65,16 +65,16 @@ export default function BulkProductUpload() {
         return;
       }
 
-      // Map Excel columns: Brand, Front pic, Hover-pic, Image 3, Image 4, Image 5, Product Title, Price
+      // Map excel columns: Brand, Front-pic, Hover-pic, product_title, price
       const mappedProducts: ExcelProduct[] = jsonData.map((row: any) => ({
-        name: row['Product Title'] || row['Product title'] || row['product title'] || row['name'] || '',
+        name: row['product_title'] || row['Product Title'] || row['product title'] || row['name'] || '',
         brand: row['Brand'] || row['brand'] || '',
-        frontImageUrl: row['Front pic'] || row['front pic'] || row['Front Pic'] || row['frontPic'] || row['image'] || '',
-        hoverImageUrl: row['Hover-pic'] || row['hover-pic'] || row['Hover pic'] || row['hover pic'] || row['hoverPic'] || '',
-        image3: row['Image 3'] || row['image 3'] || row['Image3'] || row['image3'] || '',
-        image4: row['Image 4'] || row['image 4'] || row['Image4'] || row['image4'] || '',
-        image5: row['Image 5'] || row['image 5'] || row['Image5'] || row['image5'] || '',
-        price: parseFloat(row['Price'] || row['price'] || 0),
+        frontImageUrl: row['Front-pic'] || row['Front pic'] || row['frontPic'] || row['image'] || '',
+        hoverImageUrl: row['Hover-pic'] || row['Hover pic'] || row['hoverPic'] || '',
+        image3: row['Image 3'] || row['image 3'] || '',
+        image4: row['Image 4'] || row['image 4'] || '',
+        image5: row['Image 5'] || row['image 5'] || '',
+        price: parseFloat(row['price'] || row['Price'] || 0),
       }));
 
       const validProducts = mappedProducts.filter(p => p.name && p.brand);
