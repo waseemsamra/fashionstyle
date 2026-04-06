@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, Edit, Trash2 } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, CheckSquare, Square, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import ProductForm from '@/components/admin/ProductForm';
 import { getAllProducts, deleteProduct, createProduct, updateProduct } from '@/services/productService';
 import { brandService } from '@/services/brandService';
 import { getProductImage, handleImageError } from '@/utils/productImage';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Product {
   id: string;
@@ -122,6 +123,8 @@ export default function AdminProducts() {
   const [patterns] = useState(DEFAULT_PATTERNS);
   const [occasions] = useState(DEFAULT_OCCASIONS);
   const [genders] = useState(DEFAULT_GENDERS);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     // Load products and brands on mount
@@ -212,6 +215,74 @@ export default function AdminProducts() {
       setProducts([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Bulk selection functions
+  const toggleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllProducts = () => {
+    if (selectedProducts.size === filteredProducts.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(filteredProducts.map(p => p.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedProducts(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProducts.size === 0) {
+      toast.error('No products selected');
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedProducts.size} product(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeleting(true);
+    let successCount = 0;
+    let failedCount = 0;
+    const failedProducts: string[] = [];
+
+    for (const productId of selectedProducts) {
+      try {
+        const success = await deleteProduct(productId);
+        if (success) {
+          successCount++;
+        } else {
+          failedCount++;
+          failedProducts.push(productId);
+        }
+      } catch (error: any) {
+        console.error(`Failed to delete product ${productId}:`, error);
+        failedCount++;
+        failedProducts.push(productId);
+      }
+    }
+
+    // Reload products to get fresh data
+    await loadProducts();
+    setSelectedProducts(new Set());
+    setDeleting(false);
+
+    if (failedCount === 0) {
+      toast.success(`✅ Successfully deleted ${successCount} product(s)!`);
+    } else {
+      toast.warning(`Deleted ${successCount} product(s), ${failedCount} failed`);
     }
   };
 
@@ -336,6 +407,38 @@ export default function AdminProducts() {
         </Button>
       </div>
 
+      {/* Bulk Selection Info Bar */}
+      {selectedProducts.size > 0 && (
+        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <CheckSquare className="w-5 h-5 text-blue-600" />
+            <span className="font-medium text-blue-800">
+              {selectedProducts.size} product{selectedProducts.size > 1 ? 's' : ''} selected
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearSelection}
+              className="gap-2"
+            >
+              <X className="w-4 h-4" />
+              Clear
+            </Button>
+            <Button
+              onClick={handleBulkDelete}
+              disabled={deleting}
+              className="gap-2 bg-red-600 hover:bg-red-700 text-white"
+              size="sm"
+            >
+              <Trash2 className="w-4 h-4" />
+              {deleting ? 'Deleting...' : `Delete ${selectedProducts.size} Product${selectedProducts.size > 1 ? 's' : ''}`}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <Card>
         <CardContent className="pt-6">
@@ -390,6 +493,12 @@ export default function AdminProducts() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold w-12">
+                      <Checkbox
+                        checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
+                        onCheckedChange={selectAllProducts}
+                      />
+                    </th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Product</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Category</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Price</th>
@@ -400,7 +509,16 @@ export default function AdminProducts() {
                 </thead>
                 <tbody>
                   {filteredProducts.map((product) => (
-                    <tr key={product.id} className="border-b hover:bg-gray-50">
+                    <tr 
+                      key={product.id} 
+                      className={`border-b hover:bg-gray-50 ${selectedProducts.has(product.id) ? 'bg-blue-50' : ''}`}
+                    >
+                      <td className="px-6 py-4">
+                        <Checkbox
+                          checked={selectedProducts.has(product.id)}
+                          onCheckedChange={() => toggleSelectProduct(product.id)}
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <img

@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download, Trash2, X, Checkbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { deleteProduct } from '@/services/productService';
+import { Checkbox as UICheckbox } from '@/components/ui/checkbox';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v';
@@ -28,13 +30,31 @@ interface UploadProgress {
   currentName: string;
 }
 
+interface UploadedProduct {
+  id: string;
+  name: string;
+  brand: string;
+  image?: string;
+  price: number;
+}
+
 export default function BulkProductUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [products, setProducts] = useState<ExcelProduct[]>([]);
-  const [results, setResults] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
+  const [uploadedProducts, setUploadedProducts] = useState<UploadedProduct[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [results, setResults] = useState<{
+    success: number;
+    failed: number;
+    errors: string[];
+    imageErrors?: string[];
+    productsWithMissingImages?: string[];
+    uploadedProductIds?: string[];
+  } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -99,33 +119,53 @@ export default function BulkProductUpload() {
     const fileName = `${cleanBrand}-${productNum}-${imageNumber}.jpg`;
     const key = `products/${fileName}`;
 
+    // Get presigned URL
     const presignResponse = await fetch(`${API_URL}/admin/generate-upload-url`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key, contentType: 'image/jpeg' }),
     });
 
-    if (!presignResponse.ok) throw new Error('Failed to get upload URL');
+    if (!presignResponse.ok) {
+      const errorText = await presignResponse.text().catch(() => '');
+      throw new Error(`Failed to get upload URL (${presignResponse.status}): ${errorText}`);
+    }
 
     const { uploadUrl } = await presignResponse.json();
 
+    if (!uploadUrl) {
+      throw new Error('No upload URL received from server');
+    }
+
+    // Download image from source URL
     const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) throw new Error(`Failed to download image from ${imageUrl}`);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download image from ${imageUrl} (HTTP ${imageResponse.status})`);
+    }
 
     const imageBlob = await imageResponse.blob();
 
+    // Verify it's actually an image
+    if (!imageBlob.type.startsWith('image/')) {
+      throw new Error(`Downloaded file is not an image: ${imageBlob.type}`);
+    }
+
+    // Upload to S3
     const uploadResponse = await fetch(uploadUrl, {
       method: 'PUT',
       body: imageBlob,
       headers: { 'Content-Type': 'image/jpeg' },
     });
 
-    if (!uploadResponse.ok) throw new Error('Failed to upload to S3');
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text().catch(() => '');
+      throw new Error(`Failed to upload to S3 (${uploadResponse.status}): ${errorText}`);
+    }
 
     return `https://${S3_BUCKET}.s3.us-east-1.amazonaws.com/${key}`;
   };
 
-  const createProduct = async (product: ExcelProduct & { allImages?: string[] }): Promise<boolean> => {
+  const createProduct = async (product: ExcelProduct & { allImages?: string[] }): Promise<{ id: string; name: string; brand: string; image?: string; price: number }> => {
     const images = product.allImages && product.allImages.length > 0
       ? product.allImages
       : [product.frontImageUrl];
@@ -160,7 +200,16 @@ export default function BulkProductUpload() {
       throw new Error(errorData.message || `HTTP ${response.status}`);
     }
 
-    return true;
+    const result = await response.json();
+    const productId = result.id || result.body?.id || `product-${Date.now()}`;
+    
+    return {
+      id: productId,
+      name: product.name,
+      brand: product.brand,
+      image: product.frontImageUrl,
+      price: product.price,
+    };
   };
 
   const handleUpload = async () => {
@@ -174,6 +223,10 @@ export default function BulkProductUpload() {
     setResults(null);
 
     const errors: string[] = [];
+    const imageErrors: string[] = [];
+    const productsWithMissingImages: string[] = [];
+    const uploadedProductIds: string[] = [];
+    const newUploadedProducts: UploadedProduct[] = [];
 
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
@@ -183,28 +236,41 @@ export default function BulkProductUpload() {
       try {
         let frontImageUrl = product.frontImageUrl;
         const allImages: string[] = [];
+        let hasAtLeastOneImage = false;
+        let missingImageCount = 0;
 
-        // Upload front image (image 1)
+        // Upload front image (image 1) - REQUIRED
         if (product.frontImageUrl && product.frontImageUrl.startsWith('http')) {
           try {
             frontImageUrl = await uploadImageToS3(product.frontImageUrl, product.brand, productNumber, '1');
             allImages.push(frontImageUrl);
-          } catch (e) {
-            console.warn(`Image 1 failed for ${product.name}`);
+            hasAtLeastOneImage = true;
+          } catch (e: any) {
+            const errorMsg = `Front image failed for "${product.name}": ${e.message}`;
+            console.error(errorMsg);
+            imageErrors.push(errorMsg);
+            // Front image is required - skip this product if it fails
+            throw new Error(`Front image upload failed: ${e.message}`);
           }
+        } else {
+          throw new Error('Front image URL is missing or invalid');
         }
 
-        // Upload hover image (image 2)
+        // Upload hover image (image 2) - OPTIONAL
         if (product.hoverImageUrl && product.hoverImageUrl.startsWith('http')) {
           try {
             const hoverUrl = await uploadImageToS3(product.hoverImageUrl, product.brand, productNumber, '2');
             allImages.push(hoverUrl);
-          } catch (e) {
-            console.warn(`Image 2 failed for ${product.name}`);
+          } catch (e: any) {
+            const warnMsg = `Hover image failed for "${product.name}": ${e.message}`;
+            console.warn(warnMsg);
+            imageErrors.push(warnMsg);
+            missingImageCount++;
+            // Continue without hover image
           }
         }
 
-        // Upload extra images (images 3, 4, 5)
+        // Upload extra images (images 3, 4, 5) - OPTIONAL
         const extraImages = [product.image3, product.image4, product.image5].filter(Boolean);
         for (let j = 0; j < extraImages.length; j++) {
           const imgUrl = extraImages[j];
@@ -212,13 +278,28 @@ export default function BulkProductUpload() {
             try {
               const uploadedUrl = await uploadImageToS3(imgUrl, product.brand, productNumber, String(j + 3));
               allImages.push(uploadedUrl);
-            } catch (e) {
-              console.warn(`Image ${j + 3} failed for ${product.name}`);
+            } catch (e: any) {
+              const warnMsg = `Image ${j + 3} failed for "${product.name}": ${e.message}`;
+              console.warn(warnMsg);
+              imageErrors.push(warnMsg);
+              missingImageCount++;
+              // Continue without this image
             }
           }
         }
 
-        await createProduct({ ...product, frontImageUrl, allImages });
+        if (!hasAtLeastOneImage) {
+          throw new Error('No images available for this product');
+        }
+
+        // Track products with missing images
+        if (missingImageCount > 0) {
+          productsWithMissingImages.push(`${product.name} (missing ${missingImageCount} image(s), has ${allImages.length} image(s))`);
+        }
+
+        const uploadedProduct = await createProduct({ ...product, frontImageUrl, allImages });
+        uploadedProductIds.push(uploadedProduct.id);
+        newUploadedProducts.push(uploadedProduct);
         setProgress(prev => prev ? { ...prev, uploaded: prev.uploaded + 1 } : null);
       } catch (error: any) {
         errors.push(`${product.name}: ${error.message}`);
@@ -240,12 +321,16 @@ export default function BulkProductUpload() {
       success: products.length - errors.length,
       failed: errors.length,
       errors,
+      imageErrors: imageErrors.length > 0 ? imageErrors : undefined,
+      productsWithMissingImages: productsWithMissingImages.length > 0 ? productsWithMissingImages : undefined,
     });
 
     setUploading(false);
 
-    if (errors.length === 0) {
+    if (errors.length === 0 && imageErrors.length === 0) {
       toast.success(`✅ Successfully uploaded ${products.length} products!`);
+    } else if (errors.length === 0) {
+      toast.success(`✅ Uploaded ${products.length} products with ${imageErrors.length} image warning(s)`);
     } else {
       toast.warning(`Uploaded ${products.length - errors.length} products, ${errors.length} failed`);
     }
@@ -408,11 +493,42 @@ export default function BulkProductUpload() {
 
             {results.errors.length > 0 && (
               <div className="mt-4">
-                <p className="font-medium text-sm mb-2">Errors:</p>
+                <p className="font-medium text-sm mb-2">❌ Product Errors:</p>
                 <div className="max-h-48 overflow-y-auto space-y-1">
                   {results.errors.map((error, index) => (
                     <p key={index} className="text-sm text-red-600 bg-red-50 p-2 rounded">
                       {error}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {results.imageErrors && results.imageErrors.length > 0 && (
+              <div className="mt-4">
+                <p className="font-medium text-sm mb-2">⚠️ Image Upload Warnings ({results.imageErrors.length}):</p>
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {results.imageErrors.slice(0, 10).map((error, index) => (
+                    <p key={index} className="text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
+                      {error}
+                    </p>
+                  ))}
+                  {results.imageErrors.length > 10 && (
+                    <p className="text-sm text-gray-600 italic">
+                      ...and {results.imageErrors.length - 10} more image errors
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {results.productsWithMissingImages && results.productsWithMissingImages.length > 0 && (
+              <div className="mt-4">
+                <p className="font-medium text-sm mb-2">📷 Products with Partial Images ({results.productsWithMissingImages.length}):</p>
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {results.productsWithMissingImages.map((product, index) => (
+                    <p key={index} className="text-sm text-orange-600 bg-orange-50 p-2 rounded">
+                      {product}
                     </p>
                   ))}
                 </div>

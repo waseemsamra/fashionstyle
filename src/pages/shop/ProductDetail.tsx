@@ -25,6 +25,7 @@ export default function ProductDetail() {
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [sizeGuideUnit, setSizeGuideUnit] = useState<'inch' | 'cm'>('cm');
   const [sizeGuideTab, setSizeGuideTab] = useState<'size' | 'measuring' | 'how-to-measure'>('size');
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const productId = getProductIdFromSlug(slug);
   const { data: product, isLoading, error } = useProduct(productId);
@@ -34,14 +35,35 @@ export default function ProductDetail() {
     window.scrollTo(0, 0);
   }, [slug]);
 
+  // Reset selected image when product changes
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [product]);
+
+  // Get all product images
+  const allImages = product?.images && product.images.length > 0 
+    ? product.images 
+    : product?.image 
+      ? [product.image] 
+      : [];
+
   // Show minimal loading state without spinner
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
         <div className="container-custom py-8">
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Image placeholder */}
-            <div className="aspect-[3/4] bg-beige-100 rounded-lg" />
+            {/* Image gallery placeholder */}
+            <div className="flex gap-4">
+              {/* Thumbnail placeholders */}
+              <div className="flex flex-col gap-3 w-20 flex-shrink-0">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="aspect-square bg-beige-100 rounded-lg" />
+                ))}
+              </div>
+              {/* Main image placeholder */}
+              <div className="flex-1 aspect-[3/4] bg-beige-100 rounded-lg" />
+            </div>
             {/* Content placeholder */}
             <div className="space-y-4 py-8">
               <div className="h-8 bg-beige-100 rounded w-3/4" />
@@ -123,14 +145,65 @@ export default function ProductDetail() {
         </Button>
 
         <div className="grid md:grid-cols-2 gap-8 bg-white rounded-lg shadow-lg p-8">
+          {/* Image Gallery Section */}
           <div>
-            <LazyImage
-              src={product.image}
-              alt={product.name}
-              productName={product.name}
-              productId={product.id}
-              className="w-full rounded-lg"
-            />
+            <div className="flex gap-4">
+              {/* Thumbnails - Left Side */}
+              {allImages.length > 1 && (
+                <div className="flex flex-col gap-3 w-20 flex-shrink-0">
+                  {allImages.map((image: string, index: number) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                        selectedImageIndex === index
+                          ? 'border-gold ring-2 ring-gold/30'
+                          : 'border-gray-200 hover:border-gray-400'
+                      }`}
+                    >
+                      <LazyImage
+                        src={image}
+                        alt={`${product.name} - Image ${index + 1}`}
+                        productName={product.name}
+                        productId={product.id}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Main Image - Right Side */}
+              <div className="flex-1">
+                <div className="aspect-[3/4] rounded-lg overflow-hidden bg-beige-100">
+                  <LazyImage
+                    src={allImages[selectedImageIndex] || product.image}
+                    alt={product.name}
+                    productName={product.name}
+                    productId={product.id}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                
+                {/* Image indicators */}
+                {allImages.length > 1 && (
+                  <div className="flex gap-2 mt-3 justify-center">
+                    {allImages.map((_: string, index: number) => (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedImageIndex(index)}
+                        className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                          selectedImageIndex === index
+                            ? 'bg-gold w-6'
+                            : 'bg-gray-300 hover:bg-gray-400'
+                        }`}
+                        aria-label={`View image ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -268,9 +341,9 @@ export default function ProductDetail() {
             </div>
 
             <div className="space-y-3">
-              <VirtualTryOn 
-                productImage={product.image} 
-                productName={product.name} 
+              <VirtualTryOn
+                productImage={allImages[selectedImageIndex] || product.image}
+                productName={product.name}
               />
               
               <Button
