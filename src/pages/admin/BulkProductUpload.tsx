@@ -1,13 +1,11 @@
 import { useState } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download, Trash2, X, Checkbox } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Loader2, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
-import { deleteProduct } from '@/services/productService';
-import { Checkbox as UICheckbox } from '@/components/ui/checkbox';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v';
@@ -30,30 +28,18 @@ interface UploadProgress {
   currentName: string;
 }
 
-interface UploadedProduct {
-  id: string;
-  name: string;
-  brand: string;
-  image?: string;
-  price: number;
-}
-
 export default function BulkProductUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [products, setProducts] = useState<ExcelProduct[]>([]);
-  const [uploadedProducts, setUploadedProducts] = useState<UploadedProduct[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [results, setResults] = useState<{
     success: number;
     failed: number;
     errors: string[];
     imageErrors?: string[];
     productsWithMissingImages?: string[];
-    uploadedProductIds?: string[];
   } | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +151,7 @@ export default function BulkProductUpload() {
     return `https://${S3_BUCKET}.s3.us-east-1.amazonaws.com/${key}`;
   };
 
-  const createProduct = async (product: ExcelProduct & { allImages?: string[] }): Promise<{ id: string; name: string; brand: string; image?: string; price: number }> => {
+  const createProduct = async (product: ExcelProduct & { allImages?: string[] }): Promise<void> => {
     const images = product.allImages && product.allImages.length > 0
       ? product.allImages
       : [product.frontImageUrl];
@@ -199,17 +185,6 @@ export default function BulkProductUpload() {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `HTTP ${response.status}`);
     }
-
-    const result = await response.json();
-    const productId = result.id || result.body?.id || `product-${Date.now()}`;
-    
-    return {
-      id: productId,
-      name: product.name,
-      brand: product.brand,
-      image: product.frontImageUrl,
-      price: product.price,
-    };
   };
 
   const handleUpload = async () => {
@@ -225,8 +200,6 @@ export default function BulkProductUpload() {
     const errors: string[] = [];
     const imageErrors: string[] = [];
     const productsWithMissingImages: string[] = [];
-    const uploadedProductIds: string[] = [];
-    const newUploadedProducts: UploadedProduct[] = [];
 
     for (let i = 0; i < products.length; i++) {
       const product = products[i];
@@ -297,9 +270,7 @@ export default function BulkProductUpload() {
           productsWithMissingImages.push(`${product.name} (missing ${missingImageCount} image(s), has ${allImages.length} image(s))`);
         }
 
-        const uploadedProduct = await createProduct({ ...product, frontImageUrl, allImages });
-        uploadedProductIds.push(uploadedProduct.id);
-        newUploadedProducts.push(uploadedProduct);
+        await createProduct({ ...product, frontImageUrl, allImages });
         setProgress(prev => prev ? { ...prev, uploaded: prev.uploaded + 1 } : null);
       } catch (error: any) {
         errors.push(`${product.name}: ${error.message}`);
