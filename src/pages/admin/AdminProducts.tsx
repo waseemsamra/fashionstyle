@@ -257,21 +257,49 @@ export default function AdminProducts() {
     let successCount = 0;
     let failedCount = 0;
     const failedProducts: string[] = [];
+    const errorMessages: string[] = [];
 
-    for (const productId of selectedProducts) {
+    console.log(`🗑️ Starting bulk deletion of ${selectedProducts.size} products...`);
+    toast.info(`Starting deletion of ${selectedProducts.size} products...`);
+
+    const selectedArray = Array.from(selectedProducts);
+    for (let i = 0; i < selectedArray.length; i++) {
+      const productId = selectedArray[i];
+      console.log(`🗑️ [${i + 1}/${selectedArray.length}] Deleting product: ${productId}`);
+      
       try {
         const success = await deleteProduct(productId);
         if (success) {
           successCount++;
+          console.log(`✅ [${i + 1}/${selectedArray.length}] Deleted successfully`);
         } else {
           failedCount++;
           failedProducts.push(productId);
+          const errorMsg = `Product ${i + 1} failed: ${productId}`;
+          errorMessages.push(errorMsg);
+          console.error(`❌ [${i + 1}/${selectedArray.length}] ${errorMsg}`);
         }
       } catch (error: any) {
-        console.error(`Failed to delete product ${productId}:`, error);
+        console.error(`❌ [${i + 1}/${selectedArray.length}] Error deleting ${productId}:`, error);
+        console.error(`Error details:`, error.message);
+        console.error(`Full error:`, JSON.stringify(error, null, 2));
+        
         failedCount++;
         failedProducts.push(productId);
+        errorMessages.push(`${productId}: ${error.message}`);
       }
+
+      // Update progress every 5 products
+      if ((i + 1) % 5 === 0) {
+        toast.info(`Deleting... ${i + 1}/${selectedArray.length} (${successCount} success, ${failedCount} failed)`);
+      }
+    }
+
+    console.log(`✅ Bulk deletion complete:`);
+    console.log(`   - Success: ${successCount}`);
+    console.log(`   - Failed: ${failedCount}`);
+    if (errorMessages.length > 0) {
+      console.error(`Failed products:`, errorMessages);
     }
 
     // Reload products to get fresh data
@@ -282,7 +310,14 @@ export default function AdminProducts() {
     if (failedCount === 0) {
       toast.success(`✅ Successfully deleted ${successCount} product(s)!`);
     } else {
-      toast.warning(`Deleted ${successCount} product(s), ${failedCount} failed`);
+      toast.error(`❌ Delete failed: ${successCount} deleted, ${failedCount} failed. Check console for details.`);
+      console.error('═══════════════════════════════════════');
+      console.error('DELETE OPERATION FAILED');
+      console.error('═══════════════════════════════════════');
+      console.error(`Success: ${successCount}, Failed: ${failedCount}`);
+      console.error('Failed product IDs:', failedProducts);
+      console.error('Error messages:', errorMessages);
+      console.error('═══════════════════════════════════════');
     }
   };
 

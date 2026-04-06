@@ -47,9 +47,23 @@ export const apiRequest = async (
       throw new Error(errorData.message || `API Error: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log(`✅ API Response:`, data);
-    return data;
+    // Handle 204 No Content (common for DELETE operations)
+    if (response.status === 204) {
+      console.log(`✅ API Response: 204 No Content (operation successful)`);
+      return { success: true };
+    }
+
+    // Only try to parse JSON if there's a body
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await response.json();
+      console.log(`✅ API Response:`, data);
+      return data;
+    }
+
+    // Return success for other successful responses without JSON body
+    console.log(`✅ API Response: ${response.status} ${response.statusText}`);
+    return { success: true, status: response.status };
   } catch (error: any) {
     // Re-throw CORS/network errors so calling code can handle them
     if (error.name === 'TypeError' && error.message === 'Failed to fetch') {

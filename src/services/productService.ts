@@ -131,11 +131,12 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
   try {
     console.log('🗑️ Deleting product:', productId);
 
-    await productsApi.delete(productId);
-    console.log('✅ Product deleted');
-    return true;
+    const result = await productsApi.delete(productId);
+    console.log('✅ Product deleted successfully:', result);
+    return result?.success === true;
   } catch (error: any) {
     console.error('❌ Failed to delete product:', error.message);
+    console.error('Error details:', error);
     return false;
   }
 };
