@@ -422,19 +422,40 @@ export default function BulkProductUpload() {
         </Card>
       )}
 
-      {/* Upload Button */}
-      {products.length > 0 && !uploading && (
-        <div className="flex justify-end">
+      {/* Action Buttons */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-lg border shadow-sm sticky bottom-0 z-10">
+        <div>
+          {products.length > 0 && (
+            <span className="text-sm font-medium text-gray-700">
+              {uploading ? 'Uploading...' : `${products.length} products parsed`}
+            </span>
+          )}
+        </div>
+        <div className="flex gap-3">
+          {products.length > 0 && !uploading && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setFile(null);
+                setProducts([]);
+                setResults(null);
+                setProgress(null);
+              }}
+              className="gap-2"
+            >
+              Clear
+            </Button>
+          )}
           <Button
             onClick={handleUpload}
             className="bg-gold hover:bg-gold/90 gap-2 min-w-[200px]"
-            disabled={uploading}
+            disabled={products.length === 0 || uploading}
           >
             <Upload className="w-4 h-4" />
-            Upload {products.length} Products
+            {uploading ? 'Uploading...' : `Upload ${products.length > 0 ? products.length : ''} Products`}
           </Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
