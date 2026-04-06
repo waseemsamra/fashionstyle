@@ -40,6 +40,12 @@ export const getAllProducts = async (): Promise<Product[]> => {
     console.log('✅ Products response received');
     console.log('📊 Raw response:', response);
 
+    // Handle null/undefined responses (CORS or network errors)
+    if (!response) {
+      console.warn('⚠️ No response from products API');
+      return [];
+    }
+
     // Handle different response formats
     let products = [];
     if (Array.isArray(response)) {
@@ -51,12 +57,12 @@ export const getAllProducts = async (): Promise<Product[]> => {
     } else if (response.data && Array.isArray(response.data)) {
       products = response.data;
     } else if (response.body) {
-      const body = typeof response.body === 'string' 
-        ? JSON.parse(response.body) 
+      const body = typeof response.body === 'string'
+        ? JSON.parse(response.body)
         : response.body;
       products = body.items || body.products || body.data || [];
     }
-    
+
     console.log('✅ Extracted', products.length, 'products');
 
     return products;
