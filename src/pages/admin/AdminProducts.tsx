@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import ProductForm from '@/components/admin/ProductForm';
 import { getAllProducts, deleteProduct, createProduct, updateProduct } from '@/services/productService';
 import { brandService } from '@/services/brandService';
+import { getProductImage, handleImageError } from '@/utils/productImage';
 
 interface Product {
   id: string;
@@ -385,9 +386,10 @@ export default function AdminProducts() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <img
-                            src={product.image || '/placeholder.png'}
+                            src={getProductImage(product)}
                             alt={product.name}
                             className="w-12 h-12 object-cover rounded"
+                            onError={(e) => handleImageError(e, product.name)}
                           />
                           <div>
                             <p className="font-medium">{product.name}</p>

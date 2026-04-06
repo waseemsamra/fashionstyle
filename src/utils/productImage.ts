@@ -2,20 +2,27 @@
 const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com';
 
 // Helper function to get product image - S3 ONLY for production
-export const getProductImage = (product: { image?: string; name?: string; id?: string | number; category?: string }): string => {
+export const getProductImage = (product: { image?: string; images?: string[]; name?: string; id?: string | number; category?: string }): string => {
   // Priority 1: Use image URL from API (already a valid S3 URL)
   if (product.image && product.image.startsWith('http')) {
     return product.image;
   }
 
-  // Priority 2: Build S3 URL from product ID
+  // Priority 2: Check images array
+  if (product.images && product.images.length > 0) {
+    const firstImage = product.images[0];
+    if (firstImage && firstImage.startsWith('http')) {
+      return firstImage;
+    }
+  }
+
+  // Priority 3: Build S3 URL from product ID
   if (product.id) {
     return `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/${product.id}.jpg`;
   }
 
-  // Production: Return empty string if no S3 image available
-  // (This will trigger onError handler in components)
-  return '';
+  // Fallback: return placeholder
+  return `https://via.placeholder.com/300x400/f5f5dc/333333?text=${encodeURIComponent(product.name || 'No Image')}`;
 };
 
 // Helper function to handle image error
