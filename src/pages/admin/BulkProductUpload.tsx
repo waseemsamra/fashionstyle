@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { uploadImageWithFallback } from '@/services/imageDownload';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v';
@@ -34,6 +35,7 @@ export default function BulkProductUpload() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [products, setProducts] = useState<ExcelProduct[]>([]);
+  const [useOriginalUrls, setUseOriginalUrls] = useState(true); // Default: use original URLs for redirect URLs
   const [results, setResults] = useState<{
     success: number;
     failed: number;
@@ -71,15 +73,23 @@ export default function BulkProductUpload() {
         return;
       }
 
+      // Helper function to convert redirect URLs to direct URLs
+      const convertToDirectUrl = (url: string): string => {
+        if (!url) return '';
+        // Convert go.sanaullastore.com to sanaullastore.com
+        return url.replace('https://go.sanaullastore.com', 'https://sanaullastore.com')
+                  .replace('http://go.sanaullastore.com', 'https://sanaullastore.com');
+      };
+
       // Map excel columns: Brand, Front-pic, Hover-pic, product_title, price
       const mappedProducts: ExcelProduct[] = jsonData.map((row: any) => ({
         name: row['product_title'] || row['Product Title'] || row['product title'] || row['name'] || '',
         brand: row['Brand'] || row['brand'] || '',
-        frontImageUrl: row['Front-pic'] || row['Front pic'] || row['frontPic'] || row['image'] || '',
-        hoverImageUrl: row['Hover-pic'] || row['Hover pic'] || row['hoverPic'] || '',
-        image3: row['Image 3'] || row['image 3'] || '',
-        image4: row['Image 4'] || row['image 4'] || '',
-        image5: row['Image 5'] || row['image 5'] || '',
+        frontImageUrl: convertToDirectUrl(row['Front-pic'] || row['Front pic'] || row['frontPic'] || row['image'] || ''),
+        hoverImageUrl: convertToDirectUrl(row['Hover-pic'] || row['Hover pic'] || row['hoverPic'] || ''),
+        image3: convertToDirectUrl(row['Image 3'] || row['image 3'] || ''),
+        image4: convertToDirectUrl(row['Image 4'] || row['image 4'] || ''),
+        image5: convertToDirectUrl(row['Image 5'] || row['image 5'] || ''),
         price: parseFloat(row['price'] || row['Price'] || 0),
       }));
 
@@ -123,32 +133,82 @@ export default function BulkProductUpload() {
       throw new Error('No upload URL received from server');
     }
 
-    // Download image from source URL
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to download image from ${imageUrl} (HTTP ${imageResponse.status})`);
+    // Clean and validate URL
+    let cleanUrl = imageUrl.trim();
+    
+    // Remove any trailing commas or spaces
+    cleanUrl = cleanUrl.replace(/[,;\s]+$/, '');
+    
+    // Add https:// if protocol is missing
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+      cleanUrl = 'https://' + cleanUrl;
     }
 
-    const imageBlob = await imageResponse.blob();
-
-    // Verify it's actually an image
-    if (!imageBlob.type.startsWith('image/')) {
-      throw new Error(`Downloaded file is not an image: ${imageBlob.type}`);
+    // Validate URL format
+    try {
+      new URL(cleanUrl);
+    } catch (e) {
+      throw new Error(`Invalid URL format: "${imageUrl}"`);
     }
 
-    // Upload to S3
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'PUT',
-      body: imageBlob,
-      headers: { 'Content-Type': 'image/jpeg' },
-    });
+    // Download image from source URL with retry
+    let lastError: Error | null = null;
+    const maxRetries = 2;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📥 Attempt ${attempt}/${maxRetries}: ${cleanUrl}`);
+        
+        const imageResponse = await fetch(cleanUrl, {
+          method: 'GET',
+          mode: 'cors',
+          headers: {
+            'Accept': 'image/*,*/*;q=0.8',
+          },
+        });
+        
+        if (!imageResponse.ok) {
+          throw new Error(`HTTP ${imageResponse.status} - ${imageResponse.statusText}`);
+        }
 
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text().catch(() => '');
-      throw new Error(`Failed to upload to S3 (${uploadResponse.status}): ${errorText}`);
+        const imageBlob = await imageResponse.blob();
+
+        // Check blob size (must be at least 100 bytes to be a valid image)
+        if (imageBlob.size < 100) {
+          throw new Error(`Invalid image: ${imageBlob.size} bytes (likely a placeholder or error page)`);
+        }
+
+        // Warn if content type is not image but size is OK
+        if (!imageBlob.type.startsWith('image/') && !imageBlob.type.startsWith('application/octet-stream')) {
+          console.warn(`⚠️ Non-image content-type: ${imageBlob.type}, but size OK (${imageBlob.size} bytes)`);
+        }
+
+        // Upload to S3
+        console.log(`📤 Uploading: ${key} (${imageBlob.size} bytes)`);
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'PUT',
+          body: imageBlob,
+          headers: { 'Content-Type': 'image/jpeg' },
+        });
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text().catch(() => '');
+          throw new Error(`S3 upload failed: ${uploadResponse.status}`);
+        }
+
+        console.log(`✅ Uploaded: ${key}`);
+        return `https://${S3_BUCKET}.s3.us-east-1.amazonaws.com/${key}`;
+      } catch (error: any) {
+        lastError = error;
+        console.error(`❌ Attempt ${attempt} failed: ${error.message}`);
+        
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        }
+      }
     }
 
-    return `https://${S3_BUCKET}.s3.us-east-1.amazonaws.com/${key}`;
+    throw lastError || new Error(`Failed after ${maxRetries} attempts`);
   };
 
   const createProduct = async (product: ExcelProduct & { allImages?: string[] }): Promise<void> => {
@@ -215,14 +275,18 @@ export default function BulkProductUpload() {
         // Upload front image (image 1) - REQUIRED
         if (product.frontImageUrl && product.frontImageUrl.startsWith('http')) {
           try {
-            frontImageUrl = await uploadImageToS3(product.frontImageUrl, product.brand, productNumber, '1');
+            frontImageUrl = await uploadImageWithFallback(
+              product.frontImageUrl,
+              product.brand,
+              productNumber,
+              '1'
+            );
             allImages.push(frontImageUrl);
             hasAtLeastOneImage = true;
           } catch (e: any) {
             const errorMsg = `Front image failed for "${product.name}": ${e.message}`;
             console.error(errorMsg);
             imageErrors.push(errorMsg);
-            // Front image is required - skip this product if it fails
             throw new Error(`Front image upload failed: ${e.message}`);
           }
         } else {
@@ -232,14 +296,18 @@ export default function BulkProductUpload() {
         // Upload hover image (image 2) - OPTIONAL
         if (product.hoverImageUrl && product.hoverImageUrl.startsWith('http')) {
           try {
-            const hoverUrl = await uploadImageToS3(product.hoverImageUrl, product.brand, productNumber, '2');
+            const hoverUrl = await uploadImageWithFallback(
+              product.hoverImageUrl,
+              product.brand,
+              productNumber,
+              '2'
+            );
             allImages.push(hoverUrl);
           } catch (e: any) {
             const warnMsg = `Hover image failed for "${product.name}": ${e.message}`;
             console.warn(warnMsg);
             imageErrors.push(warnMsg);
             missingImageCount++;
-            // Continue without hover image
           }
         }
 
@@ -249,14 +317,18 @@ export default function BulkProductUpload() {
           const imgUrl = extraImages[j];
           if (imgUrl && imgUrl.startsWith('http')) {
             try {
-              const uploadedUrl = await uploadImageToS3(imgUrl, product.brand, productNumber, String(j + 3));
+              const uploadedUrl = await uploadImageWithFallback(
+                imgUrl,
+                product.brand,
+                productNumber,
+                String(j + 3)
+              );
               allImages.push(uploadedUrl);
             } catch (e: any) {
               const warnMsg = `Image ${j + 3} failed for "${product.name}": ${e.message}`;
               console.warn(warnMsg);
               imageErrors.push(warnMsg);
               missingImageCount++;
-              // Continue without this image
             }
           }
         }
