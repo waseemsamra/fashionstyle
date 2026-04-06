@@ -48,6 +48,7 @@ const Users = lazy(() => import('@/pages/admin/Users'));
 const Profile = lazy(() => import('@/pages/admin/Profile'));
 const AdminOrders = lazy(() => import('@/pages/admin/Orders'));
 const AdminOrderDetails = lazy(() => import('@/pages/admin/OrderDetails'));
+const BulkProductUpload = lazy(() => import('@/pages/admin/BulkProductUpload'));
 const Settings = lazy(() => import('@/pages/admin/Settings'));
 const DeliveryManagement = lazy(() => import('@/pages/admin/DeliveryManagement'));
 
@@ -296,6 +297,7 @@ function Layout() {
               <Route path="delivery" element={<DeliveryManagement />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="settings/bulk-upload" element={<BulkProductUpload />} />
             </Route>
           </Routes>
         </Suspense>

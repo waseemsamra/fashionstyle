@@ -1,14 +1,16 @@
 import { useState } from 'react';
-import { 
-  Palette, 
-  Shirt, 
-  Ruler, 
-  Heart, 
-  Star, 
+import { Link, useLocation } from 'react-router-dom';
+import {
+  Palette,
+  Shirt,
+  Ruler,
+  Heart,
+  Star,
   Users,
   Settings as SettingsIcon,
   DollarSign,
-  Truck
+  Truck,
+  Upload
 } from 'lucide-react';
 import SimpleSettings from '@/components/admin/SimpleSettings';
 import StoreSettings from '@/pages/admin/StoreSettings';
@@ -16,6 +18,7 @@ import GeneralSettings from '@/pages/admin/GeneralSettings';
 import DeliveryManagement from '@/pages/admin/DeliveryManagement';
 
 export default function Settings() {
+  const location = useLocation();
   const [activeSection, setActiveSection] = useState('store');
 
   const sections = [
@@ -147,6 +150,18 @@ export default function Settings() {
               </button>
             );
           })}
+          
+          <Link
+            to="/admin/settings/bulk-upload"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg ${
+              location.pathname === '/admin/settings/bulk-upload'
+                ? 'bg-gold text-white'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <Upload className="w-5 h-5" />
+            Bulk Product Upload
+          </Link>
         </nav>
       </div>
 
