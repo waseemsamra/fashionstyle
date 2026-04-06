@@ -25,32 +25,39 @@ export const apiRequest = async (
 
   console.log(`🌐 API Request: ${method} ${endpoint}`);
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${idToken}`,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    console.error(`❌ API Error ${response.status}:`, errorData);
-    
-    // Handle 401 Unauthorized - token might be expired
-    if (response.status === 401) {
-      console.error('❌ Authentication failed. Token may be expired.');
-      throw new Error('Session expired. Please log in again.');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error(`❌ API Error ${response.status}:`, errorData);
+
+      if (response.status === 401) {
+        console.error('❌ Authentication failed. Token may be expired.');
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      throw new Error(errorData.message || `API Error: ${response.status}`);
     }
-    
-    throw new Error(errorData.message || `API Error: ${response.status}`);
+
+    const data = await response.json();
+    console.log(`✅ API Response:`, data);
+    return data;
+  } catch (error: any) {
+    // Handle CORS/network errors gracefully
+    if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+      console.warn(`⚠️ API request failed (CORS or network): ${endpoint}`);
+      return null; // Return null instead of throwing
+    }
+    throw error;
   }
-
-  const data = await response.json();
-  console.log(`✅ API Response:`, data);
-
-  return data;
 };
 
 // Product endpoints
