@@ -65,7 +65,7 @@ export const productsApi = {
     apiRequest('/products', 'POST', product),
 
   update: (id: string, product: any) =>
-    apiRequest(`/products/${id}`, 'PUT', product),
+    apiRequest('/products', 'POST', { ...product, id }),
 
   delete: (id: string) =>
     apiRequest(`/products/${id}`, 'DELETE'),
