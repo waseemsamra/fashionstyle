@@ -149,10 +149,10 @@ export default function ProductForm({
         sku: initialData.sku || '',
         sizes: initialData.sizes || [],
         colors: initialData.colors || [],
-        materials: initialData.materials || [],
-        patterns: initialData.patterns || [],
-        occasions: initialData.occasions || [],
-        genders: initialData.genders || [],
+        materials: initialData.materials || initialData.Materials || [],
+        patterns: initialData.patterns || initialData.Patterns || [],
+        occasions: initialData.occasions || initialData.Occasions || [],
+        genders: initialData.genders || initialData.Genders || [],
       };
       console.log('🔵 Resetting form with:', values);
       reset(values);

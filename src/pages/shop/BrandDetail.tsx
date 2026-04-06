@@ -34,24 +34,34 @@ export default function BrandDetailPage() {
       setLoading(true);
       try {
         // Fetch brands to find current brand
+        console.log('🔍 Fetching brands for slug:', slug);
         const brandsRes = await fetch(`${API_URL}/admin/brands`);
         const brandsData = await brandsRes.json();
+        console.log('📦 Brands data:', brandsData);
         const allBrands = brandsData.brands || brandsData.items || [];
-        
-        const foundBrand = allBrands.find((b: Brand) => 
-          b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === slug
-        );
+
+        const foundBrand = allBrands.find((b: Brand) => {
+          const brandSlug = b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+          console.log(`  Checking brand: "${b.name}" -> slug: "${brandSlug}" vs "${slug}"`);
+          return brandSlug === slug;
+        });
+        console.log('✅ Found brand:', foundBrand);
         setBrand(foundBrand || null);
 
         // Fetch products and filter by brand
+        console.log('🔍 Fetching products...');
         const productsRes = await fetch(`${API_URL}/products?limit=500`);
         const productsData = await productsRes.json();
+        console.log('📦 Products data:', productsData);
         const allProducts = productsData.products || productsData.items || [];
-        
+
         if (foundBrand) {
-          const brandProducts = allProducts.filter((p: Product) => 
-            p.brand && p.brand.toLowerCase() === foundBrand.name.toLowerCase()
-          );
+          const brandProducts = allProducts.filter((p: Product) => {
+            const match = p.brand && p.brand.toLowerCase() === foundBrand.name.toLowerCase();
+            if (match) console.log(`  ✅ Product match: ${p.name} (brand: ${p.brand})`);
+            return match;
+          });
+          console.log(`✅ Found ${brandProducts.length} products for brand:`, foundBrand.name);
           setProducts(brandProducts);
         }
       } catch (error) {
