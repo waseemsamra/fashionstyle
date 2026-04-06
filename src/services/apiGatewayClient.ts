@@ -51,10 +51,10 @@ export const apiRequest = async (
     console.log(`✅ API Response:`, data);
     return data;
   } catch (error: any) {
-    // Handle CORS/network errors gracefully
+    // Re-throw CORS/network errors so calling code can handle them
     if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
       console.warn(`⚠️ API request failed (CORS or network): ${endpoint}`);
-      return null; // Return null instead of throwing
+      throw error; // Re-throw instead of returning null
     }
     throw error;
   }
