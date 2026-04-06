@@ -62,7 +62,7 @@ export const apiRequest = async (
 
 // Product endpoints
 export const productsApi = {
-  getAll: (limit = 100, page = 1) =>
+  getAll: (_limit = 100, _page = 1) =>
     apiRequest(`/products`),
 
   getById: (id: string) =>
@@ -80,7 +80,7 @@ export const productsApi = {
 
 // Brand endpoints
 export const brandsApi = {
-  getAll: (limit = 500, featured?: boolean) => {
+  getAll: (_limit = 500, _featured?: boolean) => {
     return apiRequest(`/admin/brands`);
   },
 
