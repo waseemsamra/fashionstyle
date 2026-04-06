@@ -146,7 +146,7 @@ export default function ProductForm({
         image: initialData.image || '',
         images: initialData.images || [],
         stock: Number(initialData.stock) || 0,
-        sku: initialData.sku || '',
+        sku: initialData.sku || initialData.SKU || '',
         sizes: initialData.sizes || [],
         colors: initialData.colors || [],
         materials: initialData.materials || initialData.Materials || [],
