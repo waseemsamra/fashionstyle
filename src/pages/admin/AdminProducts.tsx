@@ -23,6 +23,10 @@ interface Product {
   description?: string;
   sizes?: string[];
   colors?: string[];
+  materials?: string[];
+  patterns?: string[];
+  occasions?: string[];
+  genders?: string[];
   active?: boolean;
 }
 
@@ -111,7 +115,7 @@ export default function AdminProducts() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [brands, setBrands] = useState<any[]>([]);
-  const [categories] = useState(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [sizes] = useState(DEFAULT_SIZES);
   const [colors] = useState(DEFAULT_COLORS);
   const [materials] = useState(DEFAULT_MATERIALS);
@@ -172,6 +176,20 @@ export default function AdminProducts() {
       console.log('📦 Products data:', products);
 
       setProducts(products);
+
+      // Extract unique categories from products and add to dropdown
+      const existingCategories = new Set(DEFAULT_CATEGORIES.map(c => c.name));
+      const extraCategories: { id: string; name: string }[] = [];
+      products.forEach(p => {
+        if (p.category && !existingCategories.has(p.category)) {
+          existingCategories.add(p.category);
+          extraCategories.push({ id: `cat-${p.category}`, name: p.category });
+        }
+      });
+      if (extraCategories.length > 0) {
+        setCategories([...DEFAULT_CATEGORIES, ...extraCategories]);
+        console.log('📂 Added extra categories:', extraCategories);
+      }
 
       if (products.length > 0) {
         toast.success(`Loaded ${products.length} products`);
