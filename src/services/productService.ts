@@ -129,14 +129,34 @@ export const updateProduct = async (product: Product): Promise<Product> => {
  */
 export const deleteProduct = async (productId: string): Promise<boolean> => {
   try {
-    console.log('🗑️ Deleting product:', productId);
+    console.log('🗑️ Attempting to delete product:', productId);
 
     const result = await productsApi.delete(productId);
-    console.log('✅ Product deleted successfully:', result);
-    return result?.success === true;
+    
+    // 204 = success, 404 = already deleted (treat as success)
+    if (result?.success) {
+      if (result.status === 404) {
+        console.log('⚠️ Product', productId, 'not found (may already be deleted)');
+      } else {
+        console.log('✅ Product deleted successfully:', productId);
+      }
+      return true;
+    }
+    
+    console.error('❌ Delete did not return success for:', productId);
+    return false;
   } catch (error: any) {
-    console.error('❌ Failed to delete product:', error.message);
-    console.error('Error details:', error);
+    // Network/CORS errors
+    console.error('❌ Failed to delete product:', productId);
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Error name:', error.name);
+    
+    // Check if this is a 404 that got caught as an error
+    if (error.message?.includes('404')) {
+      console.log('⚠️ Product', productId, 'not found (404) - treating as success');
+      return true;
+    }
+    
     return false;
   }
 };

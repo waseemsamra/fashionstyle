@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, Edit, Trash2, CheckSquare, X } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, CheckSquare, X, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -125,6 +125,8 @@ export default function AdminProducts() {
   const [genders] = useState(DEFAULT_GENDERS);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(50);
 
   useEffect(() => {
     // Load products and brands on mount
@@ -161,11 +163,11 @@ export default function AdminProducts() {
     setLoading(true);
     try {
       console.log('📦 Loading products from backend API...');
-      
+
       // Check authentication first
       const token = localStorage.getItem('jwt_token') || localStorage.getItem('idToken');
       console.log('🔑 Auth token present:', !!token);
-      
+
       if (!token) {
         console.warn('⚠️ No authentication token found');
         toast.error('Please log in to view products');
@@ -202,7 +204,7 @@ export default function AdminProducts() {
     } catch (error: any) {
       console.error('❌ Failed to load products:', error);
       console.error('❌ Error details:', error.response?.data);
-      
+
       // Handle authentication errors
       if (error.message.includes('Session expired') || error.message.includes('log in')) {
         toast.error('Session expired. Please log in again.');
@@ -211,11 +213,18 @@ export default function AdminProducts() {
       } else {
         toast.error('Failed to load products. Please try again.');
       }
-      
+
       setProducts([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    console.log('🔄 Refreshing product list...');
+    toast.info('Refreshing products...');
+    setSelectedProducts(new Set()); // Clear selection
+    await loadProducts();
   };
 
   // Bulk selection functions
@@ -232,10 +241,10 @@ export default function AdminProducts() {
   };
 
   const selectAllProducts = () => {
-    if (selectedProducts.size === filteredProducts.length) {
+    if (selectedProducts.size === paginatedProducts.length) {
       setSelectedProducts(new Set());
     } else {
-      setSelectedProducts(new Set(filteredProducts.map(p => p.id)));
+      setSelectedProducts(new Set(paginatedProducts.map(p => p.id)));
     }
   };
 
@@ -302,22 +311,40 @@ export default function AdminProducts() {
       console.error(`Failed products:`, errorMessages);
     }
 
-    // Reload products to get fresh data
-    await loadProducts();
-    setSelectedProducts(new Set());
-    setDeleting(false);
-
     if (failedCount === 0) {
       toast.success(`✅ Successfully deleted ${successCount} product(s)!`);
+      
+      // Auto-refresh the product list after successful deletion
+      await loadProducts();
+      setSelectedProducts(new Set());
+      setDeleting(false);
+    } else if (successCount > 0) {
+      // Some succeeded, some failed
+      toast.warning(`⚠️ Deleted ${successCount} product(s), ${failedCount} failed. Refresh to see updated list.`, {
+        duration: 5000,
+      });
+      
+      console.warn('⚠️ Some deletations failed:');
+      console.warn('Failed product IDs:', failedProducts);
+      console.warn('Error messages:', errorMessages);
+      
+      // Still refresh to show what was deleted
+      await loadProducts();
+      setSelectedProducts(new Set());
+      setDeleting(false);
     } else {
-      toast.error(`❌ Delete failed: ${successCount} deleted, ${failedCount} failed. Check console for details.`);
+      // All failed
+      toast.error(`❌ Delete failed for all ${failedCount} product(s). Check console for details.`);
+      
       console.error('═══════════════════════════════════════');
       console.error('DELETE OPERATION FAILED');
       console.error('═══════════════════════════════════════');
-      console.error(`Success: ${successCount}, Failed: ${failedCount}`);
+      console.error(`Failed: ${failedCount}`);
       console.error('Failed product IDs:', failedProducts);
       console.error('Error messages:', errorMessages);
       console.error('═══════════════════════════════════════');
+      
+      setDeleting(false);
     }
   };
 
@@ -405,6 +432,65 @@ export default function AdminProducts() {
     return matchesSearch && matchesCategory;
   });
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterCategory]);
+
+  // Reset to page 1 when products change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [products.length]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setSelectedProducts(new Set()); // Clear selection on page change
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Generate page numbers to show
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 7;
+    
+    if (totalPages <= maxVisible) {
+      // Show all pages
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Always show first page
+      pages.push(1);
+      
+      if (currentPage > 3) {
+        pages.push('...');
+      }
+      
+      // Show pages around current page
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (currentPage < totalPages - 2) {
+        pages.push('...');
+      }
+      
+      // Always show last page
+      pages.push(totalPages);
+    }
+    
+    return pages;
+  };
+
   // Debug logging for empty results
   useEffect(() => {
     if (products.length > 0 && filteredProducts.length === 0) {
@@ -434,12 +520,25 @@ export default function AdminProducts() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Products Management</h1>
-          <p className="text-gray-600 mt-1">Manage your product catalog</p>
+          <p className="text-gray-600 mt-1">
+            Manage your product catalog • {products.length} product{products.length !== 1 ? 's' : ''} loaded
+          </p>
         </div>
-        <Button onClick={handleAddProduct} className="bg-gold hover:bg-gold/90">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Product
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleRefresh} 
+            variant="outline"
+            className="gap-2"
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={handleAddProduct} className="bg-gold hover:bg-gold/90">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {/* Bulk Selection Info Bar */}
@@ -530,7 +629,7 @@ export default function AdminProducts() {
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold w-12">
                       <Checkbox
-                        checked={filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length}
+                        checked={paginatedProducts.length > 0 && selectedProducts.size === paginatedProducts.length}
                         onCheckedChange={selectAllProducts}
                       />
                     </th>
@@ -543,7 +642,7 @@ export default function AdminProducts() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredProducts.map((product) => (
+                  {paginatedProducts.map((product) => (
                     <tr 
                       key={product.id} 
                       className={`border-b hover:bg-gray-50 ${selectedProducts.has(product.id) ? 'bg-blue-50' : ''}`}
@@ -609,6 +708,78 @@ export default function AdminProducts() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {filteredProducts.length > 0 && (
+            <div className="px-6 py-4 border-t bg-gray-50">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {/* Info */}
+                <div className="text-sm text-gray-600">
+                  Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                  <span className="font-medium">{Math.min(endIndex, filteredProducts.length)}</span> of{' '}
+                  <span className="font-medium">{filteredProducts.length}</span> products
+                </div>
+
+                {/* Page Size Info */}
+                <div className="text-sm text-gray-500">
+                  {itemsPerPage} per page
+                </div>
+
+                {/* Pagination Buttons */}
+                <div className="flex items-center gap-2">
+                  {/* Previous Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="gap-1"
+                  >
+                    ‹ Prev
+                  </Button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {getPageNumbers().map((page, index) => (
+                      page === '...' ? (
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="px-2 py-1 text-gray-400"
+                        >
+                          ...
+                        </span>
+                      ) : (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handlePageChange(page as number)}
+                          className={`min-w-[40px] ${
+                            currentPage === page
+                              ? 'bg-gold hover:bg-gold/90 text-white'
+                              : ''
+                          }`}
+                        >
+                          {page}
+                        </Button>
+                      )
+                    ))}
+                  </div>
+
+                  {/* Next Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="gap-1"
+                  >
+                    Next ›
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>

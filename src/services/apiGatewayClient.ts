@@ -50,7 +50,13 @@ export const apiRequest = async (
     // Handle 204 No Content (common for DELETE operations)
     if (response.status === 204) {
       console.log(`✅ API Response: 204 No Content (operation successful)`);
-      return { success: true };
+      return { success: true, status: 204 };
+    }
+
+    // Handle 404 Not Found (for DELETE, treat as success - already deleted)
+    if (response.status === 404) {
+      console.log(`⚠️ API Response: 404 Not Found (resource may already be deleted)`);
+      return { success: true, status: 404, notFound: true };
     }
 
     // Only try to parse JSON if there's a body
