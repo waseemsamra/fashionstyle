@@ -17,71 +17,51 @@ interface Product {
   description?: string;
 }
 
-interface Brand {
-  id: string;
-  name: string;
-  description?: string;
-}
-
 export default function BrandDetailPage() {
   const { slug } = useParams();
-  const [brand, setBrand] = useState<Brand | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [brandName, setBrandName] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Convert slug back to brand name
+  const slugToName = (s: string) => 
+    s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProducts = async () => {
       setLoading(true);
       try {
-        // Fetch brands to find current brand
-        console.log('🔍 Fetching brands for slug:', slug);
-        const brandsRes = await fetch(`${API_URL}/admin/brands`);
-        console.log('📦 Brands response status:', brandsRes.status);
-        
-        if (!brandsRes.ok) {
-          console.error('❌ Brands API failed:', brandsRes.status);
-          setLoading(false);
-          return;
-        }
-        
-        const brandsData = await brandsRes.json();
-        console.log('📦 Brands data keys:', Object.keys(brandsData));
-        console.log('📦 Brands data:', brandsData);
-        const allBrands = brandsData.brands || brandsData.items || [];
-        console.log(`📦 Extracted ${allBrands.length} brands`);
+        // Extract brand name from slug
+        const name = slugToName(slug || '');
+        setBrandName(name);
+        console.log('🔍 Looking for brand:', name, 'from slug:', slug);
 
-        const foundBrand = allBrands.find((b: Brand) => {
-          const brandSlug = b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-          console.log(`  Checking brand: "${b.name}" -> slug: "${brandSlug}" vs "${slug}"`);
-          return brandSlug === slug;
-        });
-        console.log('✅ Found brand:', foundBrand);
-        setBrand(foundBrand || null);
-
-        // Fetch products and filter by brand
-        console.log('🔍 Fetching products...');
-        const productsRes = await fetch(`${API_URL}/products?limit=500`);
+        // Fetch products filtered by brand on server-side
+        console.log('🔍 Fetching products for brand:', name);
+        const productsRes = await fetch(`${API_URL}/products?limit=500&brand=${encodeURIComponent(name)}`);
         const productsData = await productsRes.json();
-        console.log('📦 Products data:', productsData);
+        console.log('📦 Products response:', productsData);
         const allProducts = productsData.products || productsData.items || [];
+        console.log(`📦 Products from API: ${allProducts.length}`);
 
-        if (foundBrand) {
-          const brandProducts = allProducts.filter((p: Product) => {
-            const match = p.brand && p.brand.toLowerCase() === foundBrand.name.toLowerCase();
-            if (match) console.log(`  ✅ Product match: ${p.name} (brand: ${p.brand})`);
-            return match;
-          });
-          console.log(`✅ Found ${brandProducts.length} products for brand:`, foundBrand.name);
-          setProducts(brandProducts);
-        }
+        // Additional client-side filter in case API doesn't support brand filter
+        const brandProducts = allProducts.filter((p: Product) => {
+          if (!p.brand) return false;
+          const pBrand = p.brand.toLowerCase().trim();
+          const targetBrand = name.toLowerCase().trim();
+          return pBrand === targetBrand || pBrand.includes(targetBrand) || targetBrand.includes(pBrand);
+        });
+
+        console.log(`✅ Found ${brandProducts.length} products for "${name}"`);
+        setProducts(brandProducts);
       } catch (error) {
-        console.error('Failed to fetch brand data:', error);
+        console.error('Failed to fetch products:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchProducts();
   }, [slug]);
 
   if (loading) {
@@ -92,7 +72,7 @@ export default function BrandDetailPage() {
     );
   }
 
-  if (!brand) {
+  if (!brandName) {
     return (
       <div className="min-h-screen flex justify-center items-center">
         <p className="text-gray-500">Brand not found</p>
@@ -111,10 +91,7 @@ export default function BrandDetailPage() {
 
         {/* Brand Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-2">{brand.name}</h1>
-          {brand.description && (
-            <p className="text-gray-600 max-w-2xl mx-auto">{brand.description}</p>
-          )}
+          <h1 className="text-4xl font-bold mb-2">{brandName}</h1>
           <p className="text-sm text-gray-500 mt-2">{products.length} Products</p>
         </div>
 
