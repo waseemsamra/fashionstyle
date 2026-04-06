@@ -32,7 +32,7 @@ class BrandService {
 
     try {
       console.log('🏷️ Fetching ALL brands from API Gateway...');
-      
+
       const response = await brandsApi.getAll(options?.limit || 500, options?.featured);
       console.log('📦 Raw brands response:', response);
 
@@ -40,25 +40,25 @@ class BrandService {
       let items = [];
       if (Array.isArray(response)) {
         items = response;
-      } else if (response.items && Array.isArray(response.items)) {
-        items = response.items;
       } else if (response.brands && Array.isArray(response.brands)) {
         items = response.brands;
+      } else if (response.items && Array.isArray(response.items)) {
+        items = response.items;
       } else if (response.data && Array.isArray(response.data)) {
         items = response.data;
       } else if (response.body) {
         const body = typeof response.body === 'string' ? JSON.parse(response.body) : response.body;
-        items = body.items || body.brands || body.data || [];
+        items = body.brands || body.items || body.data || [];
       }
 
-      console.log('📦 Extracted items:', items.length);
+      if (!response || items.length === 0) {
+        console.log('⚠️ No brands found in response');
+        return [];
+      }
 
       const brands = items.map(this.transformBrand);
 
       console.log('✅ Brands fetched:', brands.length, 'brands');
-      if (brands.length > 0) {
-        console.log('✅ First brand:', brands[0].name);
-      }
 
       // Cache the results
       this.cachedBrands = brands;
@@ -67,7 +67,7 @@ class BrandService {
       return brands;
     } catch (error: any) {
       console.error('❌ Brands fetch error:', error.name, error.message);
-      throw error;
+      return []; // Return empty array instead of throwing
     }
   }
 

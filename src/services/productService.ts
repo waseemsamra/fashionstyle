@@ -68,7 +68,7 @@ export const getAllProducts = async (): Promise<Product[]> => {
     return products;
   } catch (error: any) {
     console.error('❌ Failed to fetch products:', error.message);
-    throw error;
+    return []; // Return empty array instead of throwing
   }
 };
 

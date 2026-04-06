@@ -63,7 +63,7 @@ export const apiRequest = async (
 // Product endpoints
 export const productsApi = {
   getAll: (limit = 100, page = 1) =>
-    apiRequest(`/products?limit=${limit}&page=${page}`),
+    apiRequest(`/products`),
 
   getById: (id: string) =>
     apiRequest(`/products/${id}`),
@@ -81,13 +81,11 @@ export const productsApi = {
 // Brand endpoints
 export const brandsApi = {
   getAll: (limit = 500, featured?: boolean) => {
-    const params = new URLSearchParams({ limit: limit.toString() });
-    if (featured) params.append('featured', 'true');
-    return apiRequest(`/brands/v2?${params.toString()}`);
+    return apiRequest(`/admin/brands`);
   },
-  
-  getById: (id: string) => 
-    apiRequest(`/brands/v2/${id}`),
+
+  getById: (id: string) =>
+    apiRequest(`/admin/brands/${id}`),
 };
 
 // Order endpoints
