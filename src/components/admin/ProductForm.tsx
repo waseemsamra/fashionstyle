@@ -135,8 +135,9 @@ export default function ProductForm({
   });
 
   useEffect(() => {
+    console.log('🔵 ProductForm useEffect - initialData:', initialData, 'open:', open);
     if (initialData && open) {
-      reset({
+      const values = {
         name: initialData.name || '',
         description: initialData.description || '',
         price: Number(initialData.price) || 0,
@@ -152,7 +153,9 @@ export default function ProductForm({
         patterns: initialData.patterns || [],
         occasions: initialData.occasions || [],
         genders: initialData.genders || [],
-      });
+      };
+      console.log('🔵 Resetting form with:', values);
+      reset(values);
     } else if (!initialData && open) {
       reset({
         name: '',

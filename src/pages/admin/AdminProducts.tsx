@@ -446,6 +446,7 @@ export default function AdminProducts() {
       {/* Product Form Modal */}
       {showFormModal && (
         <ProductForm
+          key={editingProduct?.id || 'new'}
           open={showFormModal}
           onOpenChange={setShowFormModal}
           onSubmit={handleSaveProduct}
