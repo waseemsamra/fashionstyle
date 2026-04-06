@@ -18,7 +18,7 @@ interface Product {
 }
 
 export default function BrandDetailPage() {
-  const { slug } = useParams();
+  const { name: slug } = useParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [brandName, setBrandName] = useState('');
   const [loading, setLoading] = useState(true);
