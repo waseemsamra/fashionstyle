@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -176,12 +177,22 @@ export default function ProductForm({
   const watchedValues = watch();
 
   const handleFormSubmit = async (data: ProductFormData) => {
+    // Check for validation errors first
+    if (Object.keys(errors).length > 0) {
+      const firstError = Object.values(errors)[0];
+      toast.error(firstError?.message || 'Please fill in all required fields');
+      console.log('❌ Validation errors:', errors);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await onSubmit(data);
+      toast.success(initialData ? '✅ Product updated successfully!' : '✅ Product created successfully!');
       onOpenChange(false);
-    } catch (error) {
-      console.error('Form submission error:', error);
+    } catch (error: any) {
+      console.error('❌ Form submission error:', error);
+      toast.error(error?.message || '❌ Failed to save product. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -803,14 +814,17 @@ export default function ProductForm({
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
             className="min-w-[120px]"
           >
             Cancel
           </Button>
           <Button
-            onClick={handleSubmit(handleFormSubmit)}
-            disabled={isSubmitting}
+            type="button"
+            onClick={handleSubmit(handleFormSubmit, (errs) => {
+              // Show first validation error as toast
+              const firstError = Object.values(errs)[0];
+              toast.error(firstError?.message || 'Please fill in all required fields');
+            })}
             className="min-w-[120px] bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80"
           >
             {isSubmitting ? (
