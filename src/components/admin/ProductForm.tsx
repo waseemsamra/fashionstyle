@@ -810,7 +810,7 @@ export default function ProductForm({
           </Button>
           <Button
             onClick={handleSubmit(handleFormSubmit)}
-            disabled={isSubmitting || !isDirty}
+            disabled={isSubmitting}
             className="min-w-[120px] bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80"
           >
             {isSubmitting ? (
