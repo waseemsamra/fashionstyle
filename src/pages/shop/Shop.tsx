@@ -50,11 +50,6 @@ export default function Shop() {
     ...(brandsData?.map((b: Brand) => b.name).filter(Boolean) || []),
   ];
 
-  const hasRatingData = allProducts.some((p) => typeof p?.rating === 'number');
-  const hasStatusData = allProducts.some(
-    (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
-  );
-
   // Use React Query with caching
   const { data: productsData, isLoading, error } = useProducts();
 
