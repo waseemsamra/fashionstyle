@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartSync } from '@/components/cart/CartSync';
+import AIChat from '@/components/AIChat';
 import { userService } from '@/services/userService';
 import Navigation from '@/components/layout/Navigation';
 import Footer from '@/components/layout/Footer';
@@ -305,6 +306,7 @@ function Layout() {
       {!isAdminRoute && !isAuthOnlyRoute && <Footer />}
       <Toaster position="bottom-right" richColors />
       <CartSync />
+      <AIChat />
     </div>
   );
 }
