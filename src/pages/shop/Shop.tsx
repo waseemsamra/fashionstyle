@@ -340,7 +340,7 @@ export default function Shop() {
                 <div className="text-6xl mb-4">🛍️</div>
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">No Products Found</h3>
                 <p className="text-gray-500 mb-6">
-                  {allProducts.length === 0 
+                  {allProducts.length === 0
                     ? "We're currently loading our collection. Please refresh the page."
                     : "Try adjusting your filters to see more results."}
                 </p>
@@ -351,6 +351,7 @@ export default function Shop() {
                 )}
               </div>
             ) : (
+              <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedProducts.map((product) => (
                 <div
@@ -499,6 +500,8 @@ export default function Shop() {
                   Page {currentPage} of {totalPages}
                 </p>
               </div>
+            )}
+            </>
             )}
           </div>
         </div>
