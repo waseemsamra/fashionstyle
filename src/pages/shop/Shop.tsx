@@ -120,16 +120,6 @@ export default function Shop() {
     (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
   );
 
-  const resetFilters = () => {
-    setFilters({
-      category: 'all',
-      priceRange: 'all',
-      rating: 'all',
-      status: 'all',
-      brand: 'all',
-    });
-  };
-
   const goToPage = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
