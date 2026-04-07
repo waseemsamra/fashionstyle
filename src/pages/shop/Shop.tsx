@@ -500,7 +500,6 @@ export default function Shop() {
                 </p>
               </div>
             )}
-            )}
           </div>
         </div>
       </div>
