@@ -1,8 +1,10 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link as RouterLink } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, ShoppingBag } from 'lucide-react';
 import { getProductImage, handleImageError } from '@/utils/productImage';
+import { useBrands } from '@/hooks/useBrands';
+import type { Brand } from '@/services/brandsService';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
@@ -20,12 +22,36 @@ interface Product {
 export default function BrandDetailPage() {
   const { name: slug } = useParams();
   const [products, setProducts] = useState<Product[]>([]);
-  const [brandName, setBrandName] = useState('');
+  const [brandData, setBrandData] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
+  const { brands: allBrands } = useBrands();
 
   // Convert slug back to brand name
-  const slugToName = (s: string) => 
+  const slugToName = (s: string) =>
     s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Find brand data from all brands
+  useEffect(() => {
+    if (allBrands && allBrands.length > 0 && slug) {
+      const brandName = slugToName(slug);
+      const found = allBrands.find(b => b.slug === slug || b.name.toLowerCase() === brandName.toLowerCase());
+      if (found) {
+        setBrandData(found);
+      } else {
+        // Fallback: create minimal brand data
+        setBrandData({
+          id: '',
+          name: brandName,
+          slug: slug,
+          description: `Explore our collection of ${brandName} products`,
+          logo: '',
+          coverImage: '',
+          productCount: 0,
+          isFeatured: false,
+        });
+      }
+    }
+  }, [allBrands, slug]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -33,7 +59,19 @@ export default function BrandDetailPage() {
       try {
         // Extract brand name from slug
         const name = slugToName(slug || '');
-        setBrandName(name);
+        if (!brandData) {
+          setBrandData({
+            id: '',
+            name,
+            slug: slug || '',
+            description: `Explore our collection of ${name} products`,
+            logo: '',
+            coverImage: '',
+            productCount: 0,
+            isFeatured: false,
+          });
+        }
+
         console.log('🔍 Looking for brand:', name, 'from slug:', slug);
 
         // Fetch products filtered by brand on server-side
@@ -64,7 +102,7 @@ export default function BrandDetailPage() {
     fetchProducts();
   }, [slug]);
 
-  if (loading) {
+  if (loading || !brandData) {
     return (
       <div className="min-h-screen flex justify-center items-center">
         <Loader2 className="w-8 h-8 animate-spin text-gold" />
@@ -72,28 +110,64 @@ export default function BrandDetailPage() {
     );
   }
 
-  if (!brandName) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <p className="text-gray-500">Brand not found</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-white py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <div className="relative h-[400px] md:h-[500px] overflow-hidden">
+        {/* Background Image */}
+        {brandData.coverImage ? (
+          <img
+            src={brandData.coverImage}
+            alt={brandData.name}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900" />
+        )}
+
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/50" />
+
+        {/* Content */}
+        <div className="relative h-full flex flex-col items-center justify-center text-white px-4">
+          {/* Logo */}
+          {brandData.logo && (
+            <img
+              src={brandData.logo}
+              alt={brandData.name}
+              className="w-24 h-24 object-contain mb-6 rounded-full bg-white/10 p-4 backdrop-blur-sm"
+            />
+          )}
+
+          {/* Brand Name */}
+          <h1 className="text-5xl md:text-6xl font-bold mb-4 text-center">
+            {brandData.name}
+          </h1>
+
+          {/* Description */}
+          {brandData.description && (
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl text-center mb-6">
+              {brandData.description}
+            </p>
+          )}
+
+          {/* Product Count */}
+          <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-6 py-3 rounded-full">
+            <ShoppingBag className="w-5 h-5" />
+            <span className="font-medium">
+              {products.length} {products.length === 1 ? 'Product' : 'Products'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Products Section */}
+      <div className="container mx-auto px-4 py-12">
         {/* Back button */}
-        <Link to="/brands" className="inline-flex items-center gap-2 text-gray-600 hover:text-gold mb-8">
+        <RouterLink to="/brands" className="inline-flex items-center gap-2 text-gray-600 hover:text-gold mb-8">
           <ArrowLeft className="w-4 h-4" />
           Back to Brands
-        </Link>
-
-        {/* Brand Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-2">{brandName}</h1>
-          <p className="text-sm text-gray-500 mt-2">{products.length} Products</p>
-        </div>
+        </RouterLink>
 
         {/* Products Grid */}
         {products.length === 0 ? (
