@@ -363,6 +363,7 @@ export default function AIChat() {
 
       const res = await fetch(url);
       const data = await res.json();
+      console.log(`📦 API returned: ${data.count || data.products?.length || 0} products`);
       return parseResponseData(toolCall.name, data);
     } catch (error) {
       return { text: `❌ Sorry, I couldn't fetch that data. Error: ${(error as Error).message}`, structured: { type: null } };

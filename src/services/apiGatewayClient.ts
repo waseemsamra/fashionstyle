@@ -82,8 +82,18 @@ export const apiRequest = async (
 
 // Product endpoints
 export const productsApi = {
-  getAll: (_limit = 100, _page = 1) =>
-    apiRequest(`/products`),
+  getAll: (filters?: { limit?: number; page?: number; brand?: string; category?: string; search?: string; isActive?: boolean }) => {
+    const params = new URLSearchParams();
+    if (filters?.limit) params.append('limit', String(filters.limit));
+    if (filters?.page) params.append('page', String(filters.page));
+    if (filters?.brand) params.append('brand', filters.brand);
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.isActive !== undefined) params.append('isActive', String(filters.isActive));
+    
+    const queryString = params.toString();
+    return apiRequest(`/products${queryString ? `?${queryString}` : ''}`);
+  },
 
   getById: (id: string) =>
     apiRequest(`/products/${id}`),
