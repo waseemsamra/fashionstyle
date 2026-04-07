@@ -65,33 +65,7 @@ export default function Shop() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
-          <p className="text-gray-600">Loading products...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error) {
-    console.error('Shop error:', error);
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">😕</div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">Failed to Load Products</h3>
-          <p className="text-gray-500 mb-6">Please try refreshing the page</p>
-          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-        </div>
-      </div>
-    );
-  }
-
+  // ALL HOOKS MUST BE CALLED BEFORE EARLY RETURNS
   const filteredProducts = useMemo(() => {
     return allProducts.filter((product) => {
       const productPrice = Number(product.price ?? 0);
@@ -141,6 +115,21 @@ export default function Shop() {
     setCurrentPage(1);
   }, [filters]);
 
+  const hasRatingData = allProducts.some((p) => typeof p?.rating === 'number');
+  const hasStatusData = allProducts.some(
+    (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
+  );
+
+  const resetFilters = () => {
+    setFilters({
+      category: 'all',
+      priceRange: 'all',
+      rating: 'all',
+      status: 'all',
+      brand: 'all',
+    });
+  };
+
   const goToPage = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -154,10 +143,32 @@ export default function Shop() {
     if (currentPage < totalPages) goToPage(currentPage + 1);
   };
 
-  const hasRatingData = allProducts.some((p) => typeof p?.rating === 'number');
-  const hasStatusData = allProducts.some(
-    (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
-  );
+  // NOW we can do early returns
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    console.error('Shop error:', error);
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">😕</div>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">Failed to Load Products</h3>
+          <p className="text-gray-500 mb-6">Please try refreshing the page</p>
+          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+        </div>
+      </div>
+    );
+  }
 
   const resetFilters = () => {
     setFilters({
