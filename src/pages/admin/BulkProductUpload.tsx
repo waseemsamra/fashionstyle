@@ -13,13 +13,28 @@ const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-17738
 
 interface ExcelProduct {
   name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  category: string;
   brand: string;
-  frontImageUrl: string;
-  hoverImageUrl?: string;
+  sku: string;
+  stock: number;
+  image1: string;
+  image2?: string;
   image3?: string;
   image4?: string;
   image5?: string;
-  price: number;
+  sizes: string;
+  colors: string;
+  materials: string;
+  patterns: string;
+  occasions: string;
+  genders: string;
+  isFeatured: boolean;
+  isNew: boolean;
+  isSale: boolean;
+  tags: string;
 }
 
 interface UploadProgress {
@@ -35,7 +50,6 @@ export default function BulkProductUpload() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [products, setProducts] = useState<ExcelProduct[]>([]);
-  const [useOriginalUrls, setUseOriginalUrls] = useState(true); // Default: use original URLs for redirect URLs
   const [results, setResults] = useState<{
     success: number;
     failed: number;
@@ -73,30 +87,54 @@ export default function BulkProductUpload() {
         return;
       }
 
-      // Helper function to convert redirect URLs to direct URLs
-      const convertToDirectUrl = (url: string): string => {
-        if (!url) return '';
-        // Convert go.sanaullastore.com to sanaullastore.com
-        return url.replace('https://go.sanaullastore.com', 'https://sanaullastore.com')
-                  .replace('http://go.sanaullastore.com', 'https://sanaullastore.com');
-      };
+      // Map excel columns to all product fields
+      const mappedProducts: ExcelProduct[] = jsonData.map((row: any) => {
+        // Helper to safely get and trim string values
+        const getStr = (val: any): string => (val ? String(val).trim() : '');
+        const getNum = (val: any): number => {
+          const parsed = parseFloat(val);
+          return isNaN(parsed) ? 0 : parsed;
+        };
+        const getBool = (val: any): boolean => {
+          if (typeof val === 'boolean') return val;
+          if (typeof val === 'string') {
+            const lower = val.toLowerCase().trim();
+            return lower === 'true' || lower === 'yes' || lower === '1';
+          }
+          return false;
+        };
 
-      // Map excel columns: Brand, Front-pic, Hover-pic, product_title, price
-      const mappedProducts: ExcelProduct[] = jsonData.map((row: any) => ({
-        name: row['product_title'] || row['Product Title'] || row['product title'] || row['name'] || '',
-        brand: row['Brand'] || row['brand'] || '',
-        frontImageUrl: convertToDirectUrl(row['Front-pic'] || row['Front pic'] || row['frontPic'] || row['image'] || ''),
-        hoverImageUrl: convertToDirectUrl(row['Hover-pic'] || row['Hover pic'] || row['hoverPic'] || ''),
-        image3: convertToDirectUrl(row['Image 3'] || row['image 3'] || ''),
-        image4: convertToDirectUrl(row['Image 4'] || row['image 4'] || ''),
-        image5: convertToDirectUrl(row['Image 5'] || row['image 5'] || ''),
-        price: parseFloat(row['price'] || row['Price'] || 0),
-      }));
+        return {
+          name: getStr(row['Product Title'] || row['product_title'] || row['name']),
+          description: getStr(row['Description'] || row['description']),
+          price: getNum(row['Price'] || row['price']),
+          originalPrice: row['Original Price'] || row['originalPrice'] || row['Compare Price'] ? getNum(row['Original Price'] || row['originalPrice'] || row['Compare Price']) : undefined,
+          category: getStr(row['Category'] || row['category']),
+          brand: getStr(row['Brand'] || row['brand']),
+          sku: getStr(row['SKU'] || row['sku']),
+          stock: getNum(row['Stock'] || row['stock'] || row['Inventory'] || row['inventory']),
+          image1: getStr(row['Image 1'] || row['image1'] || row['Image1']),
+          image2: getStr(row['Image 2'] || row['image2'] || row['Image2']) || undefined,
+          image3: getStr(row['Image 3'] || row['image3'] || row['Image3']) || undefined,
+          image4: getStr(row['Image 4'] || row['image4'] || row['Image4']) || undefined,
+          image5: getStr(row['Image 5'] || row['image5'] || row['Image5']) || undefined,
+          sizes: getStr(row['Sizes'] || row['sizes']),
+          colors: getStr(row['Colors'] || row['colors']),
+          materials: getStr(row['Materials'] || row['materials']),
+          patterns: getStr(row['Patterns'] || row['patterns']),
+          occasions: getStr(row['Occasions'] || row['occasions']),
+          genders: getStr(row['Genders'] || row['genders']),
+          isFeatured: getBool(row['Featured'] || row['isFeatured'] || row['featured']),
+          isNew: getBool(row['New'] || row['isNew'] || row['new'] || row['Is New']),
+          isSale: getBool(row['Sale'] || row['isSale'] || row['sale'] || row['On Sale']),
+          tags: getStr(row['Tags'] || row['tags']),
+        };
+      });
 
-      const validProducts = mappedProducts.filter(p => p.name && p.brand);
+      const validProducts = mappedProducts.filter(p => p.name && p.image1);
 
       if (validProducts.length === 0) {
-        toast.error('No valid products found. Required: Brand, Front pic, Product Title, Price');
+        toast.error('No valid products found. Required: Product Title, Image 1');
       } else {
         setProducts(validProducts);
         toast.success(`Found ${validProducts.length} products in Excel file`);
@@ -109,125 +147,36 @@ export default function BulkProductUpload() {
     }
   };
 
-  const uploadImageToS3 = async (imageUrl: string, brand: string, productNumber: number, imageNumber: string): Promise<string> => {
-    const cleanBrand = brand.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-    const productNum = String(productNumber).padStart(4, '0');
-    const fileName = `${cleanBrand}-${productNum}-${imageNumber}.jpg`;
-    const key = `products/${fileName}`;
-
-    // Get presigned URL
-    const presignResponse = await fetch(`${API_URL}/admin/generate-upload-url`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key, contentType: 'image/jpeg' }),
-    });
-
-    if (!presignResponse.ok) {
-      const errorText = await presignResponse.text().catch(() => '');
-      throw new Error(`Failed to get upload URL (${presignResponse.status}): ${errorText}`);
-    }
-
-    const { uploadUrl } = await presignResponse.json();
-
-    if (!uploadUrl) {
-      throw new Error('No upload URL received from server');
-    }
-
-    // Clean and validate URL
-    let cleanUrl = imageUrl.trim();
-    
-    // Remove any trailing commas or spaces
-    cleanUrl = cleanUrl.replace(/[,;\s]+$/, '');
-    
-    // Add https:// if protocol is missing
-    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
-      cleanUrl = 'https://' + cleanUrl;
-    }
-
-    // Validate URL format
-    try {
-      new URL(cleanUrl);
-    } catch (e) {
-      throw new Error(`Invalid URL format: "${imageUrl}"`);
-    }
-
-    // Download image from source URL with retry
-    let lastError: Error | null = null;
-    const maxRetries = 2;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`📥 Attempt ${attempt}/${maxRetries}: ${cleanUrl}`);
-        
-        const imageResponse = await fetch(cleanUrl, {
-          method: 'GET',
-          mode: 'cors',
-          headers: {
-            'Accept': 'image/*,*/*;q=0.8',
-          },
-        });
-        
-        if (!imageResponse.ok) {
-          throw new Error(`HTTP ${imageResponse.status} - ${imageResponse.statusText}`);
-        }
-
-        const imageBlob = await imageResponse.blob();
-
-        // Check blob size (must be at least 100 bytes to be a valid image)
-        if (imageBlob.size < 100) {
-          throw new Error(`Invalid image: ${imageBlob.size} bytes (likely a placeholder or error page)`);
-        }
-
-        // Warn if content type is not image but size is OK
-        if (!imageBlob.type.startsWith('image/') && !imageBlob.type.startsWith('application/octet-stream')) {
-          console.warn(`⚠️ Non-image content-type: ${imageBlob.type}, but size OK (${imageBlob.size} bytes)`);
-        }
-
-        // Upload to S3
-        console.log(`📤 Uploading: ${key} (${imageBlob.size} bytes)`);
-        const uploadResponse = await fetch(uploadUrl, {
-          method: 'PUT',
-          body: imageBlob,
-          headers: { 'Content-Type': 'image/jpeg' },
-        });
-
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text().catch(() => '');
-          throw new Error(`S3 upload failed: ${uploadResponse.status}`);
-        }
-
-        console.log(`✅ Uploaded: ${key}`);
-        return `https://${S3_BUCKET}.s3.us-east-1.amazonaws.com/${key}`;
-      } catch (error: any) {
-        lastError = error;
-        console.error(`❌ Attempt ${attempt} failed: ${error.message}`);
-        
-        if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
-        }
-      }
-    }
-
-    throw lastError || new Error(`Failed after ${maxRetries} attempts`);
-  };
-
-  const createProduct = async (product: ExcelProduct & { allImages?: string[] }): Promise<void> => {
+  const createProduct = async (product: ExcelProduct & { allImages?: string[]; image1Url?: string }): Promise<void> => {
     const images = product.allImages && product.allImages.length > 0
       ? product.allImages
-      : [product.frontImageUrl];
+      : [product.image1];
+
+    // Parse comma-separated strings into arrays
+    const parseArray = (str: string): string[] => 
+      str ? str.split(',').map(s => s.trim()).filter(Boolean) : [];
 
     const productData = {
       name: product.name,
-      brand: product.brand,
-      category: '',
+      description: product.description || product.name,
       price: product.price,
-      stock: 0,
-      sku: `SKU-${Date.now()}`,
-      description: product.name,
-      image: product.frontImageUrl,
+      originalPrice: product.originalPrice,
+      category: product.category || '',
+      brand: product.brand || '',
+      image: product.image1Url || product.image1,
       images,
-      sizes: ['One Size'],
-      colors: [],
+      stock: product.stock || 0,
+      sku: product.sku || `SKU-${Date.now()}`,
+      sizes: parseArray(product.sizes).length > 0 ? parseArray(product.sizes) : ['One Size'],
+      colors: parseArray(product.colors),
+      materials: parseArray(product.materials),
+      patterns: parseArray(product.patterns),
+      occasions: parseArray(product.occasions),
+      genders: parseArray(product.genders),
+      isFeatured: product.isFeatured || false,
+      isNew: product.isNew || false,
+      isSale: product.isSale || false,
+      tags: parseArray(product.tags),
       isActive: true,
     };
 
@@ -267,51 +216,51 @@ export default function BulkProductUpload() {
       setProgress(prev => prev ? { ...prev, currentName: product.name } : null);
 
       try {
-        let frontImageUrl = product.frontImageUrl;
+        let image1Url = product.image1;
         const allImages: string[] = [];
         let hasAtLeastOneImage = false;
         let missingImageCount = 0;
 
-        // Upload front image (image 1) - REQUIRED
-        if (product.frontImageUrl && product.frontImageUrl.startsWith('http')) {
+        // Upload Image 1 - REQUIRED
+        if (product.image1 && product.image1.startsWith('http')) {
           try {
-            frontImageUrl = await uploadImageWithFallback(
-              product.frontImageUrl,
+            image1Url = await uploadImageWithFallback(
+              product.image1,
               product.brand,
               productNumber,
               '1'
             );
-            allImages.push(frontImageUrl);
+            allImages.push(image1Url);
             hasAtLeastOneImage = true;
           } catch (e: any) {
-            const errorMsg = `Front image failed for "${product.name}": ${e.message}`;
+            const errorMsg = `Image 1 failed for "${product.name}": ${e.message}`;
             console.error(errorMsg);
             imageErrors.push(errorMsg);
-            throw new Error(`Front image upload failed: ${e.message}`);
+            throw new Error(`Image 1 upload failed: ${e.message}`);
           }
         } else {
-          throw new Error('Front image URL is missing or invalid');
+          throw new Error('Image 1 URL is missing or invalid');
         }
 
-        // Upload hover image (image 2) - OPTIONAL
-        if (product.hoverImageUrl && product.hoverImageUrl.startsWith('http')) {
+        // Upload Image 2 - OPTIONAL
+        if (product.image2 && product.image2.startsWith('http')) {
           try {
-            const hoverUrl = await uploadImageWithFallback(
-              product.hoverImageUrl,
+            const imageUrl = await uploadImageWithFallback(
+              product.image2,
               product.brand,
               productNumber,
               '2'
             );
-            allImages.push(hoverUrl);
+            allImages.push(imageUrl);
           } catch (e: any) {
-            const warnMsg = `Hover image failed for "${product.name}": ${e.message}`;
+            const warnMsg = `Image 2 failed for "${product.name}": ${e.message}`;
             console.warn(warnMsg);
             imageErrors.push(warnMsg);
             missingImageCount++;
           }
         }
 
-        // Upload extra images (images 3, 4, 5) - OPTIONAL
+        // Upload extra images (Images 3, 4, 5) - OPTIONAL
         const extraImages = [product.image3, product.image4, product.image5].filter(Boolean);
         for (let j = 0; j < extraImages.length; j++) {
           const imgUrl = extraImages[j];
@@ -342,7 +291,7 @@ export default function BulkProductUpload() {
           productsWithMissingImages.push(`${product.name} (missing ${missingImageCount} image(s), has ${allImages.length} image(s))`);
         }
 
-        await createProduct({ ...product, frontImageUrl, allImages });
+        await createProduct({ ...product, image1Url: image1Url, allImages });
         setProgress(prev => prev ? { ...prev, uploaded: prev.uploaded + 1 } : null);
       } catch (error: any) {
         errors.push(`${product.name}: ${error.message}`);
@@ -382,14 +331,29 @@ export default function BulkProductUpload() {
   const downloadTemplate = () => {
     const templateData = [
       {
-        'Brand': 'Gul Ahmed',
-        'Front pic': 'https://example.com/front-image.jpg',
-        'Hover-pic': 'https://example.com/hover-image.jpg',
-        'Image 3': '',
-        'Image 4': '',
-        'Image 5': '',
         'Product Title': 'Embroidered Lawn Suit',
+        'Description': 'Beautiful embroidered lawn suit with chiffon dupatta',
         'Price': 89,
+        'Original Price': 120,
+        'Category': 'Bridal Wear',
+        'Brand': 'Gul Ahmed',
+        'SKU': 'GA-LAWN-001',
+        'Stock': 50,
+        'Image 1': 'https://example.com/image-1.jpg',
+        'Image 2': 'https://example.com/image-2.jpg',
+        'Image 3': 'https://example.com/image-3.jpg',
+        'Image 4': 'https://example.com/image-4.jpg',
+        'Image 5': 'https://example.com/image-5.jpg',
+        'Sizes': 'XS,S,M,L,XL',
+        'Colors': 'Red,Gold,Green',
+        'Materials': 'Cotton,Chiffon',
+        'Patterns': 'Embroidered,Floral',
+        'Occasions': 'Wedding,Festive',
+        'Genders': 'Women',
+        'Featured': 'true',
+        'New': 'true',
+        'Sale': 'false',
+        'Tags': 'lawn,summer,embroidered',
       }
     ];
 
@@ -434,7 +398,7 @@ export default function BulkProductUpload() {
             Step 2: Upload Excel File
           </CardTitle>
           <CardDescription>
-            Required: Brand, Front pic, Product Title, Price. Optional: Hover-pic, Image 3, Image 4, Image 5
+            Required: Product Title, Image 1. Optional: Description, Price, Category, Brand, SKU, Stock, Images 2-5, Sizes, Colors, Materials, Patterns, Occasions, Genders, Featured, New, Sale, Tags
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
