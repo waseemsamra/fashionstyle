@@ -20,5 +20,14 @@
       "Bash(npm install *)"
     ]
   },
+  "mcpServers": {
+    "fashion-style": {
+      "command": "node",
+      "args": ["--experimental-vm-modules", "mcp-server.js"],
+      "env": {
+        "VITE_API_URL": "https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod"
+      }
+    }
+  },
   "$version": 3
 }
