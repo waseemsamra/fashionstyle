@@ -190,12 +190,12 @@ export default function Navigation() {
             <span className={`font-playfair text-2xl md:text-3xl font-semibold tracking-tight transition-colors duration-300 ${
               isScrolled ? 'text-black' : 'text-white'
             }`}>
-              Noor
+              Armas
             </span>
             <span className={`font-dancing text-lg md:text-xl transition-colors duration-300 ${
               isScrolled ? 'text-gold' : 'text-white/90'
             }`}>
-              by Faisal
+              by Samras
             </span>
           </a>
 

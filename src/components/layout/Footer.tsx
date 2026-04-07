@@ -69,8 +69,8 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-2">
             <a href="#home" className="inline-block mb-6">
-              <span className="font-playfair text-2xl font-semibold">Noor</span>
-              <span className="font-dancing text-xl text-gold ml-1">by Faisal</span>
+              <span className="font-playfair text-2xl font-semibold">Armas</span>
+              <span className="font-dancing text-xl text-gold ml-1">by Samras</span>
             </a>
             <p className="text-gray-600 text-sm leading-relaxed mb-6 max-w-xs">
               Bringing the finest Pakistani fashion to the world. 
@@ -89,7 +89,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600">
                 <Mail className="w-4 h-4 text-gold" />
-                <span>hello@noorfashion.com</span>
+                <span>hello@armasfashion.com</span>
               </div>
             </div>
           </div>
@@ -170,7 +170,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Copyright */}
             <p className="text-sm text-gray-500 text-center md:text-left">
-              © 2024 Noor by Faisal. All rights reserved.
+              © 2024 Armas by Samras. All rights reserved.
             </p>
 
             {/* Social Links */}

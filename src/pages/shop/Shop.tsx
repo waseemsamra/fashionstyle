@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { SlidersHorizontal, X, ShoppingBag, Star } from 'lucide-react';
+import { SlidersHorizontal, X, ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProducts } from '@/hooks/useProducts';
 import { useBrands } from '@/hooks/useBrands';
@@ -9,10 +9,13 @@ import type { Brand } from '@/services/brandsService';
 import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
 
+const ITEMS_PER_PAGE = 50;
+
 export default function Shop() {
   const navigate = useNavigate();
   const [showFilters, setShowFilters] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     category: 'all',
     priceRange: 'all',
@@ -94,41 +97,72 @@ export default function Shop() {
     );
   }
 
-  const filteredProducts = allProducts.filter((product) => {
-    const productPrice = Number(product.price ?? 0);
-    const productRating = typeof product.rating === 'number' ? product.rating : null;
+  const filteredProducts = useMemo(() => {
+    return allProducts.filter((product) => {
+      const productPrice = Number(product.price ?? 0);
+      const productRating = typeof product.rating === 'number' ? product.rating : null;
 
-    if (
-      filters.category !== 'all' &&
-      normalize(product.category) !== normalize(filters.category)
-    ) {
-      return false;
-    }
+      if (
+        filters.category !== 'all' &&
+        normalize(product.category) !== normalize(filters.category)
+      ) {
+        return false;
+      }
 
-    if (
-      filters.brand !== 'all' &&
-      normalize(product.brand) !== normalize(filters.brand)
-    ) {
-      return false;
-    }
+      if (
+        filters.brand !== 'all' &&
+        normalize(product.brand) !== normalize(filters.brand)
+      ) {
+        return false;
+      }
 
-    if (filters.priceRange === 'under50' && productPrice >= 50) return false;
-    if (filters.priceRange === '50-100' && (productPrice < 50 || productPrice > 100)) return false;
-    if (filters.priceRange === '100-200' && (productPrice < 100 || productPrice > 200)) return false;
-    if (filters.priceRange === 'over200' && productPrice <= 200) return false;
+      if (filters.priceRange === 'under50' && productPrice >= 50) return false;
+      if (filters.priceRange === '50-100' && (productPrice < 50 || productPrice > 100)) return false;
+      if (filters.priceRange === '100-200' && (productPrice < 100 || productPrice > 200)) return false;
+      if (filters.priceRange === 'over200' && productPrice <= 200) return false;
 
-    if (
-      filters.rating !== 'all' &&
-      (productRating === null || productRating < Number(filters.rating))
-    ) {
-      return false;
-    }
+      if (
+        filters.rating !== 'all' &&
+        (productRating === null || productRating < Number(filters.rating))
+      ) {
+        return false;
+      }
 
-    if (filters.status === 'new' && product.isNew !== true) return false;
-    if (filters.status === 'sale' && product.isSale !== true) return false;
+      if (filters.status === 'new' && product.isNew !== true) return false;
+      if (filters.status === 'sale' && product.isSale !== true) return false;
 
-    return true;
-  });
+      return true;
+    });
+  }, [allProducts, filters]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) goToPage(currentPage - 1);
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) goToPage(currentPage + 1);
+  };
+
+  const hasRatingData = allProducts.some((p) => typeof p?.rating === 'number');
+  const hasStatusData = allProducts.some(
+    (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
+  );
 
   const resetFilters = () => {
     setFilters({
@@ -296,8 +330,8 @@ export default function Shop() {
           {/* Products Grid */}
           <div className="flex-1">
             <p className="text-gray-600 mb-6">
-              {filteredProducts.length > 0 
-                ? `Showing ${filteredProducts.length} of ${allProducts.length} products`
+              {filteredProducts.length > 0
+                ? `Showing ${startIndex + 1}-${Math.min(endIndex, filteredProducts.length)} of ${filteredProducts.length} products`
                 : 'No products found'}
             </p>
             
@@ -318,7 +352,7 @@ export default function Shop() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => (
+              {paginatedProducts.map((product) => (
                 <div
                   key={product.id}
                   className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition"
@@ -392,6 +426,80 @@ export default function Shop() {
                 </div>
               ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex flex-col items-center gap-4">
+                <div className="flex items-center gap-2">
+                  {/* Previous Button */}
+                  <button
+                    onClick={goToPreviousPage}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gold"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Previous</span>
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Show first page, last page, current page, and pages around current
+                      const showPage =
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1);
+
+                      const showEllipsis =
+                        (page === currentPage - 2 && page > 1) ||
+                        (page === currentPage + 2 && page < totalPages);
+
+                      if (!showPage && !showEllipsis) return null;
+
+                      if (showEllipsis) {
+                        return (
+                          <span
+                            key={`ellipsis-${page}`}
+                            className="px-2 py-2 text-gray-500"
+                          >
+                            ...
+                          </span>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => goToPage(page)}
+                          className={`min-w-[40px] h-10 rounded-lg text-sm font-medium transition-colors ${
+                            page === currentPage
+                              ? 'bg-gold text-white hover:bg-gold/90'
+                              : 'border border-gray-300 hover:bg-gray-50 hover:border-gold'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Next Button */}
+                  <button
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gold"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Page Info */}
+                <p className="text-sm text-gray-500">
+                  Page {currentPage} of {totalPages}
+                </p>
+              </div>
+            )}
             )}
           </div>
         </div>
