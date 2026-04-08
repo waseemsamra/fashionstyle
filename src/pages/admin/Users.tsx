@@ -128,12 +128,17 @@ export default function Users() {
     }
   };
 
-  const handleEdit = (user: User) => {
+  const handleEdit = (user: any) => {
+    // Map backend 'id' field to frontend 'userId'
+    const userId = user.id || user.userId || user.PK?.replace('USER#', '') || user.email || '';
+    
+    console.log('📝 Editing user:', { userId, user });
+    
     setEditingUser({
-      userId: user.userId,
-      cognitoSub: user.cognitoSub,
+      userId: userId,
+      cognitoSub: user.cognitoSub || user.cognito_sub || '',
       email: user.email || '',
-      name: user.name || `${user.firstName} ${user.lastName}`.trim() || '',
+      name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || '',
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       role: user.role || 'customer',
@@ -144,7 +149,7 @@ export default function Users() {
       city: user.city || '',
       postalCode: user.postalCode || '',
       enabled: user.enabled !== false,
-      cognitoStatus: user.cognitoStatus || user.status,
+      cognitoStatus: user.cognitoStatus || user.cognito_status || user.status,
     });
     setShowModal(true);
   };
@@ -460,6 +465,9 @@ export default function Users() {
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-2xl font-bold text-gray-900">
                 {editingUser.userId ? '✏️ Edit User' : '➕ Add New User'}
+                {!editingUser.userId && editingUser.email && (
+                  <span className="text-xs text-gray-400 ml-2">(Editing: {editingUser.email})</span>
+                )}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
