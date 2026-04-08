@@ -174,15 +174,12 @@ export default function Users() {
   const handleSave = async () => {
     if (!editingUser) return;
 
-    // LOGIC FIX: 
-    // 1. If First/Last name are entered, combine them.
-    // 2. Otherwise, use the single Name field.
-    // 3. If nothing, use email as fallback.
-    const hasTypedName = editingUser.firstName || editingUser.lastName;
-    
-    const fullName = hasTypedName 
-      ? `${editingUser.firstName || ''} ${editingUser.lastName || ''}`.trim()
-      : (editingUser.name || editingUser.email || '');
+    const fullName = editingUser.name?.trim() || editingUser.email;
+
+    if (!fullName) {
+      toast.error('Name is required');
+      return;
+    }
 
     try {
       const token = localStorage.getItem('jwt_token');
@@ -191,25 +188,11 @@ export default function Users() {
         return;
       }
 
-      const userData = {
-        name: fullName,
-        email: editingUser.email,
-        firstName: editingUser.firstName,
-        lastName: editingUser.lastName,
-        contact: editingUser.contact,
-        phone: editingUser.phone,
-        address: editingUser.address,
-        city: editingUser.city,
-        postalCode: editingUser.postalCode,
-        role: editingUser.role?.toLowerCase() || 'customer',
-        status: editingUser.status?.toLowerCase() || 'active',
-      };
-
       if (editingUser.userId) {
         // Update existing user
         const url = `${API_URL}/admin/users/${editingUser.userId}`;
 
-        // Match the successful curl test payload structure
+        // Payload matches backend structure
         const payload = {
           name: fullName,
           phone: editingUser.phone,
@@ -510,28 +493,16 @@ export default function Users() {
             </div>
 
             <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                  <input
-                    type="text"
-                    value={editingUser.firstName || ''}
-                    onChange={(e) => setEditingUser({ ...editingUser, firstName: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
-                    placeholder="John"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                  <input
-                    type="text"
-                    value={editingUser.lastName || ''}
-                    onChange={(e) => setEditingUser({ ...editingUser, lastName: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
-                    placeholder="Doe"
-                  />
-                </div>
+              {/* Full Name Input (Matches Backend) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={editingUser.name || ''}
+                  onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gold focus:border-transparent"
+                  placeholder="John Doe"
+                />
               </div>
 
               {/* Email */}
