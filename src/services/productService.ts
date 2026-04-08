@@ -36,7 +36,7 @@ export const getAllProducts = async (): Promise<Product[]> => {
   try {
     console.log('📦 Fetching ALL products from API Gateway...');
 
-    const response = await productsApi.getAll(100, 1);
+    const response = await productsApi.getAll({ limit: 100, page: 1 });
     console.log('✅ Products response received');
     console.log('📊 Raw response:', response);
 
