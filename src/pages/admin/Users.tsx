@@ -174,6 +174,9 @@ export default function Users() {
   const handleSave = async () => {
     if (!editingUser) return;
 
+    // Construct name from firstName + lastName if not set
+    const fullName = editingUser.name || `${editingUser.firstName || ''} ${editingUser.lastName || ''}`.trim();
+
     try {
       const token = localStorage.getItem('jwt_token');
       if (!token) {
@@ -182,7 +185,7 @@ export default function Users() {
       }
 
       const userData = {
-        name: editingUser.name,
+        name: fullName,
         email: editingUser.email,
         firstName: editingUser.firstName,
         lastName: editingUser.lastName,
@@ -198,24 +201,31 @@ export default function Users() {
       if (editingUser.userId) {
         // Update existing user
         console.log('📝 Updating user:', editingUser.userId);
+        console.log('📦 Payload:', { userId: editingUser.userId, ...userData });
+        
         const response = await fetch(`${API_URL}/admin/users/${editingUser.userId}`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(userData),
+          body: JSON.stringify({ userId: editingUser.userId, ...userData }),
         });
 
+        console.log('📊 Response status:', response.status);
+        const responseData = await response.json().catch(() => ({}));
+        console.log('📦 Response body:', responseData);
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to update user');
+          throw new Error(responseData.message || `Failed to update user (HTTP ${response.status})`);
         }
 
-        toast.success('User updated successfully!');
+        toast.success(`User "${fullName}" updated successfully!`);
       } else {
         // Create new user
         console.log('➕ Creating new user');
+        console.log('📦 Payload:', userData);
+        
         const response = await fetch(`${API_URL}/admin/users`, {
           method: 'POST',
           headers: {
@@ -225,12 +235,15 @@ export default function Users() {
           body: JSON.stringify(userData),
         });
 
+        console.log('📊 Response status:', response.status);
+        const responseData = await response.json().catch(() => ({}));
+        console.log('📦 Response body:', responseData);
+
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to create user');
+          throw new Error(responseData.message || `Failed to create user (HTTP ${response.status})`);
         }
 
-        toast.success('User created successfully!');
+        toast.success(`User "${fullName}" created successfully!`);
       }
 
       setShowModal(false);
