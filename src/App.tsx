@@ -52,6 +52,8 @@ const AdminOrderDetails = lazy(() => import('@/pages/admin/OrderDetails'));
 const BulkProductUpload = lazy(() => import('@/pages/admin/BulkProductUpload'));
 const Settings = lazy(() => import('@/pages/admin/Settings'));
 const DeliveryManagement = lazy(() => import('@/pages/admin/DeliveryManagement'));
+const AdminVendors = lazy(() => import('@/pages/admin/AdminVendors'));
+const VendorDetail = lazy(() => import('@/pages/admin/VendorDetail'));
 
 function Layout() {
   const location = useLocation();
@@ -299,6 +301,8 @@ function Layout() {
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
               <Route path="settings/bulk-upload" element={<BulkProductUpload />} />
+              <Route path="vendors" element={<AdminVendors />} />
+              <Route path="vendors/:id" element={<VendorDetail />} />
             </Route>
           </Routes>
         </Suspense>
