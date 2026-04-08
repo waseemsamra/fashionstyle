@@ -225,16 +225,23 @@ export default function Users() {
         toast.success(`User "${fullName}" updated successfully!`);
       } else {
         // Create new user
+        const payload = {
+          name: fullName,
+          email: editingUser.email,
+          phone: editingUser.phone,
+          role: editingUser.role?.toLowerCase() || 'customer',
+          status: editingUser.status?.toLowerCase() || 'active',
+        };
+
         console.log('➕ Creating new user');
-        console.log('📦 Payload:', userData);
-        
+        console.log('📦 Payload:', payload);
+
         const response = await fetch(`${API_URL}/admin/users`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(userData),
+          body: JSON.stringify(payload),
         });
 
         console.log('📊 Response status:', response.status);
