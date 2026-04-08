@@ -18,36 +18,39 @@ export const downloadAndUploadImage = async (
   cleanUrl = cleanUrl.replace('https://go.sanaullastore.com', 'https://sanaullastore.com')
                      .replace('http://go.sanaullastore.com', 'https://sanaullastore.com');
 
-  console.log(`📥 Downloading via backend: ${cleanUrl}`);
+  console.log(`📥 Downloading image: ${cleanUrl}`);
   console.log(`📤 S3 Key: ${s3Key}`);
 
   const token = localStorage.getItem('jwt_token');
-  
-  const response = await fetch(`${API_URL}/download-image`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: JSON.stringify({
-      imageUrl: cleanUrl,
-      s3Key: s3Key
-    }),
-  });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.error || `HTTP ${response.status}`);
+  // Try backend first (if CORS is enabled)
+  try {
+    const response = await fetch(`${API_URL}/download-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({
+        imageUrl: cleanUrl,
+        s3Key: s3Key
+      }),
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        console.log(`✅ Successfully uploaded via backend: ${result.imageUrl}`);
+        return result.imageUrl;
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Backend download failed, using direct fetch');
   }
 
-  const result = await response.json();
-  
-  if (!result.success) {
-    throw new Error(result.error || 'Upload failed');
-  }
-
-  console.log(`✅ Successfully uploaded: ${result.imageUrl}`);
-  return result.imageUrl;
+  // Fallback: Direct browser fetch → S3 presigned URL
+  console.log('🔄 Using direct browser upload fallback...');
+  return await uploadViaPresignedUrl(cleanUrl, brand, productNumber, imageNumber);
 };
 
 // Fallback: Try backend first, then S3 upload if that fails
