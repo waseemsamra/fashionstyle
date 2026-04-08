@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus, Search, Edit, Trash2, Eye, Mail, Phone, MapPin,
-  TrendingUp, Package, DollarSign, Star, AlertCircle,
-  CheckCircle, XCircle, Pause, RefreshCw, Filter, Download, Upload
+  CheckCircle, XCircle, Pause, RefreshCw, ShoppingBag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -138,7 +137,7 @@ export default function AdminVendors() {
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-blue-100 rounded-lg">
-              <Package className="w-5 h-5 text-blue-600" />
+              <ShoppingBag className="w-5 h-5 text-blue-600" />
             </div>
             <div>
               <p className="text-2xl font-bold">{stats.total}</p>
@@ -236,7 +235,7 @@ export default function AdminVendors() {
         </div>
       ) : vendors.length === 0 ? (
         <div className="bg-white p-12 text-center rounded-lg border">
-          <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <ShoppingBag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-700 mb-2">No Vendors Found</h3>
           <p className="text-gray-500 mb-6">Add your first vendor to get started</p>
           <Button onClick={() => setShowForm(true)} className="bg-gold hover:bg-gold/90 text-white gap-2">

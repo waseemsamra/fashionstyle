@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Upload, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { vendorApi, type Vendor } from '@/services/vendorManagement';

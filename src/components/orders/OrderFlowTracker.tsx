@@ -1,4 +1,4 @@
-import { getOrderConfig, type OrderStatus, type OrderTimelineEvent, canTransition } from '@/services/orderManagement';
+import { getOrderConfig, type OrderStatus, type OrderTimelineEvent, canTransition, ORDER_STATUS_FLOW } from '@/services/orderManagement';
 
 interface OrderFlowTrackerProps {
   currentStatus: OrderStatus;
@@ -96,7 +96,7 @@ export default function OrderFlowTracker({ currentStatus, timeline, onStatusChan
               const stepColors = STATUS_COLORS[step];
               const isCompleted = index < currentIndex;
               const isCurrent = index === currentIndex;
-              const isUpcoming = index > currentIndex;
+              // isUpcoming is intentionally unused (future use)
 
               return (
                 <div key={step} className="flex flex-col items-center relative z-10 flex-1">
@@ -171,7 +171,7 @@ export default function OrderFlowTracker({ currentStatus, timeline, onStatusChan
         <div>
           <h4 className="text-sm font-semibold text-gray-700 mb-3">Update Status</h4>
           <div className="flex flex-wrap gap-2">
-            {config.next.map((nextStatus) => {
+            {config.next.map((nextStatus: OrderStatus) => {
               const nextConfig = getOrderConfig(nextStatus);
               const nextColors = STATUS_COLORS[nextStatus] || STATUS_COLORS.pending;
 
@@ -187,9 +187,9 @@ export default function OrderFlowTracker({ currentStatus, timeline, onStatusChan
             })}
 
             {/* Cancel option if not already cancelled */}
-            {currentStatus !== 'cancelled' && canTransition(currentStatus, 'cancelled') && (
+            {(currentStatus !== 'cancelled' && currentStatus !== 'returned') && canTransition(currentStatus, 'cancelled') && (
               <button
-                onClick={() => onStatusChange('cancelled')}
+                onClick={() => onStatusChange('cancelled' as OrderStatus)}
                 className="px-4 py-2 rounded-lg text-sm font-medium transition-all border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"
               >
                 🚫 Cancel Order

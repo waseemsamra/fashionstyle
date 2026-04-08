@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { vendorApi, type Vendor } from '@/services/vendorManagement';
-import OrderFlowTracker from '@/components/orders/OrderFlowTracker';
 
 export default function AdminVendorDetail() {
   const { id } = useParams();

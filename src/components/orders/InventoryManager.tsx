@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, TrendingDown, TrendingUp, AlertTriangle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -179,7 +179,7 @@ export function LowStockAlerts() {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useState(() => {
+  useEffect(() => {
     orderManagementApi.getLowStockAlerts(10)
       .then(data => setAlerts(data.products || []))
       .catch(() => setAlerts([]))

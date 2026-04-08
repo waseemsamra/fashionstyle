@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, X, Send, Loader2, Bot, User, Copy, Check, ShoppingBag, Tag, Lightbulb, History, TrendingUp, Brain, RefreshCw } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Bot, User, Copy, Check, ShoppingBag, Tag, Lightbulb, History, Brain } from 'lucide-react';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 // ===== TYPES =====
@@ -75,7 +75,6 @@ const STORAGE_KEYS = {
 class AIChatEngine {
   private learnedPrefs: LearnedPreference[] = [];
   private context: ConversationContext = { turnCount: 0, recentTopics: [] };
-  private brandList: string[] = [];
 
   constructor() {
     this.loadLearnedData();

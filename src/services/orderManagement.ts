@@ -195,8 +195,8 @@ export const orderManagementApi = {
     
     // Validate status transition
     const currentStatus = order.status as OrderStatus;
-    const allowedNext = ORDER_STATUS_FLOW[currentStatus].next;
-    
+    const allowedNext: OrderStatus[] = ORDER_STATUS_FLOW[currentStatus].next as unknown as OrderStatus[];
+
     if (!allowedNext.includes(newStatus)) {
       throw new Error(`Cannot transition from ${currentStatus} to ${newStatus}. Allowed: ${allowedNext.join(', ')}`);
     }
@@ -336,15 +336,20 @@ export const getStatusConfig = (status: OrderStatus) => {
     label: status,
     color: 'gray',
     icon: '❓',
-    next: [],
+    next: [] as OrderStatus[],
     description: 'Unknown status',
   };
 };
 
+// Alias for compatibility
+export const getOrderConfig = getStatusConfig;
+
 export const canTransition = (from: OrderStatus, to: OrderStatus): boolean => {
-  return ORDER_STATUS_FLOW[from].next.includes(to);
+  const nextStatuses: readonly OrderStatus[] = ORDER_STATUS_FLOW[from].next as unknown as readonly OrderStatus[];
+  return nextStatuses.includes(to);
 };
 
 export const getNextPossibleStatuses = (currentStatus: OrderStatus): OrderStatus[] => {
-  return [...ORDER_STATUS_FLOW[currentStatus].next];
+  const nextStatuses = ORDER_STATUS_FLOW[currentStatus].next as unknown as OrderStatus[];
+  return [...nextStatuses];
 };
