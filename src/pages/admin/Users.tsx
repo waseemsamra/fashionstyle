@@ -201,7 +201,7 @@ export default function Users() {
       if (editingUser.userId) {
         // Update existing user
         console.log('📝 Updating user:', editingUser.userId);
-        console.log('📦 Payload:', { userId: editingUser.userId, ...userData });
+        console.log('📦 Payload:', { id: editingUser.userId, ...userData });
         
         const response = await fetch(`${API_URL}/admin/users/${editingUser.userId}`, {
           method: 'PUT',
@@ -209,7 +209,7 @@ export default function Users() {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ userId: editingUser.userId, ...userData }),
+          body: JSON.stringify({ id: editingUser.userId, ...userData }),
         });
 
         console.log('📊 Response status:', response.status);
