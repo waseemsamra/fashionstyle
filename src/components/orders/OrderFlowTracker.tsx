@@ -1,4 +1,4 @@
-import { getOrderConfig, type OrderStatus, type OrderTimelineEvent, canTransition, ORDER_STATUS_FLOW } from '@/services/orderManagement';
+import { getOrderConfig, type OrderStatus, type OrderTimelineEvent, canTransition } from '@/services/orderManagement';
 
 interface OrderFlowTrackerProps {
   currentStatus: OrderStatus;
@@ -187,7 +187,7 @@ export default function OrderFlowTracker({ currentStatus, timeline, onStatusChan
             })}
 
             {/* Cancel option if not already cancelled */}
-            {(currentStatus !== 'cancelled' && currentStatus !== 'returned') && canTransition(currentStatus, 'cancelled') && (
+            {!(currentStatus as string).match(/cancelled|returned/) && canTransition(currentStatus, 'cancelled' as OrderStatus) && (
               <button
                 onClick={() => onStatusChange('cancelled' as OrderStatus)}
                 className="px-4 py-2 rounded-lg text-sm font-medium transition-all border border-red-300 bg-red-50 text-red-700 hover:bg-red-100"

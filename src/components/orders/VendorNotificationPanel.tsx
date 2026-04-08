@@ -125,7 +125,7 @@ export default function VendorNotificationPanel({ order, onStatusUpdate }: Vendo
       {/* Actions */}
       <div className="flex gap-2">
         {/* Notify Vendor */}
-        {(order.status === 'confirmed' as boolean) && order.vendorEmail && (
+        {((order.status as string) === 'confirmed') && order.vendorEmail && (
           <Button
             onClick={handleNotifyVendor}
             disabled={isNotifying}
