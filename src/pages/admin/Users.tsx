@@ -174,8 +174,15 @@ export default function Users() {
   const handleSave = async () => {
     if (!editingUser) return;
 
-    // Construct name from firstName + lastName if not set
-    const fullName = editingUser.name || `${editingUser.firstName || ''} ${editingUser.lastName || ''}`.trim();
+    // LOGIC FIX: 
+    // 1. If First/Last name are entered, combine them.
+    // 2. Otherwise, use the single Name field.
+    // 3. If nothing, use email as fallback.
+    const hasTypedName = editingUser.firstName || editingUser.lastName;
+    
+    const fullName = hasTypedName 
+      ? `${editingUser.firstName || ''} ${editingUser.lastName || ''}`.trim()
+      : (editingUser.name || editingUser.email || '');
 
     try {
       const token = localStorage.getItem('jwt_token');
@@ -200,23 +207,35 @@ export default function Users() {
 
       if (editingUser.userId) {
         // Update existing user
-        console.log('📝 Updating user:', editingUser.userId);
-        console.log('📦 Payload:', { id: editingUser.userId, ...userData });
-        
-        const response = await fetch(`${API_URL}/admin/users/${editingUser.userId}`, {
+        const url = `${API_URL}/admin/users/${editingUser.userId}`;
+
+        // Match the successful curl test payload structure
+        const payload = {
+          name: fullName,
+          phone: editingUser.phone,
+          role: editingUser.role?.toLowerCase() || 'customer',
+          status: editingUser.status?.toLowerCase() || 'active',
+          address: editingUser.address,
+          city: editingUser.city,
+        };
+
+        console.log('📝 PUT Request URL:', url);
+        console.log('📦 Payload:', JSON.stringify(payload, null, 2));
+
+        const response = await fetch(url, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ id: editingUser.userId, ...userData }),
+          body: JSON.stringify(payload),
         });
 
         console.log('📊 Response status:', response.status);
         const responseData = await response.json().catch(() => ({}));
-        console.log('📦 Response body:', responseData);
+        console.log('📦 Response body:', JSON.stringify(responseData, null, 2));
 
         if (!response.ok) {
+          console.error('❌ Update failed:', responseData);
           throw new Error(responseData.message || `Failed to update user (HTTP ${response.status})`);
         }
 
