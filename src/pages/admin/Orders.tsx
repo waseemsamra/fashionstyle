@@ -95,28 +95,25 @@ export default function AdminOrders() {
       const response = await api.getAllOrders(token);
       console.log('📋 Admin Orders: Raw response:', response);
 
-      if (response && response.orders) {
-        console.log('📋 Admin Orders: Total orders from API:', response.orders.length);
-        response.orders.forEach((order: any, idx: number) => {
-          console.log(`📋 Order ${idx + 1}:`, order.orderId, 'Status:', order.status, 'Email:', order.email);
-        });
+      // Backend returns { items: [...], total: N }
+      const rawOrders = response?.orders || response?.items || [];
+      console.log('📋 Admin Orders: Total orders from API:', rawOrders.length);
+      rawOrders.forEach((order: any, idx: number) => {
+        console.log(`📋 Order ${idx + 1}:`, order.id || order.orderId, 'Status:', order.status, 'Email:', order.email);
+      });
 
-        const ordersList = response.orders.map((order: Order) => ({
-          ...order,
-          total: order.totalPrice || order.total || 0
-        }));
+      const processedOrders = rawOrders.map((order: any) => ({
+        ...order,
+        orderId: order.orderId || order.id,
+        total: order.totalPrice || order.total || 0,
+        itemCount: order.items?.length || order.itemCount || 0,
+      }));
 
-        setOrders(ordersList);
-        setAllOrders(ordersList);
-        console.log(`📋 Admin Orders: Loaded ${ordersList.length} orders to state`);
+      setOrders(processedOrders);
+      setAllOrders(processedOrders);
+      console.log(`📋 Admin Orders: Loaded ${processedOrders.length} orders to state`);
 
-        if (ordersList.length === 0) {
-          toast.info('No orders found');
-        }
-      } else {
-        setOrders([]);
-        setAllOrders([]);
-        console.log('📋 Admin Orders: No orders in response');
+      if (processedOrders.length === 0) {
         toast.info('No orders found');
       }
     } catch (err: any) {
@@ -334,10 +331,12 @@ export default function AdminOrders() {
               >
                 <option value="all">All Statuses</option>
                 <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
                 <option value="processing">Processing</option>
-                <option value="ready-to-pickup">Ready to Pickup</option>
-                <option value="on-delivery">On Delivery</option>
+                <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="returned">Returned</option>
               </select>
             </div>
           </div>

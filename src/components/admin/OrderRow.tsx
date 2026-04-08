@@ -47,20 +47,18 @@ interface OrderRowProps {
 
 const statusConfig: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800', icon: Clock },
+  confirmed: { label: 'Confirmed', color: 'bg-green-100 text-green-800', icon: CheckCircle },
   processing: { label: 'Processing', color: 'bg-blue-100 text-blue-800', icon: Package },
-  'ready-to-pickup': { label: 'Ready to Pickup', color: 'bg-purple-100 text-purple-800', icon: CheckCircle },
-  'on-delivery': { label: 'On Delivery', color: 'bg-orange-100 text-orange-800', icon: Truck },
-  delivered: { label: 'Delivered', color: 'bg-green-100 text-green-800', icon: CheckCircle },
   shipped: { label: 'Shipped', color: 'bg-indigo-100 text-indigo-800', icon: Truck },
+  delivered: { label: 'Delivered', color: 'bg-green-100 text-green-800', icon: CheckCircle },
   cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800', icon: XCircle },
+  returned: { label: 'Returned', color: 'bg-gray-100 text-gray-800', icon: XCircle },
 };
 
 // Normalize status to lowercase and handle variations
 const normalizeStatus = (status: string): string => {
+  if (!status) return 'pending';
   const normalized = status.toLowerCase().replace(/\s+/g, '-');
-  // Map common variations
-  if (normalized === 'ready-to-pickup' || normalized === 'ready-for-delivery') return 'ready-to-pickup';
-  if (normalized === 'on-delivery' || normalized === 'out-for-delivery') return 'on-delivery';
   return normalized;
 };
 
