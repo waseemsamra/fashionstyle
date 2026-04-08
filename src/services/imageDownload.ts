@@ -58,11 +58,16 @@ export const uploadImageWithFallback = async (
   imageNumber: string
 ): Promise<string> => {
   try {
-    // Try backend download first
-    return await downloadAndUploadImage(imageUrl, brand, productNumber, imageNumber);
+    // Try backend download first with timeout
+    return await Promise.race([
+      downloadAndUploadImage(imageUrl, brand, productNumber, imageNumber),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Backend upload timeout (15s)')), 15000)
+      ),
+    ]);
   } catch (backendError: any) {
     console.warn(`⚠️ Backend download failed, trying S3 presigned upload: ${backendError.message}`);
-    
+
     // Fallback to original S3 presigned URL method
     return await uploadViaPresignedUrl(imageUrl, brand, productNumber, imageNumber);
   }

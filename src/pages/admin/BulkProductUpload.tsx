@@ -297,7 +297,8 @@ export default function BulkProductUpload() {
         setProgress(prev => prev ? { ...prev, failed: prev.failed + 1 } : null);
       }
 
-      if (i < products.length - 1) await new Promise(r => setTimeout(r, 300));
+      // Minimal delay to avoid rate limiting (reduced from 300ms to 50ms)
+      if (i < products.length - 1) await new Promise(r => setTimeout(r, 50));
     }
 
     const finalProgress = {
