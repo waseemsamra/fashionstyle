@@ -10,7 +10,8 @@ import {
   Settings as SettingsIcon,
   DollarSign,
   Truck,
-  Upload
+  Upload,
+  Store
 } from 'lucide-react';
 import SimpleSettings from '@/components/admin/SimpleSettings';
 import StoreSettings from '@/pages/admin/StoreSettings';
@@ -161,6 +162,14 @@ export default function Settings() {
           >
             <Upload className="w-5 h-5" />
             Bulk Product Upload
+          </Link>
+
+          <Link
+            to="/admin/vendors"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100"
+          >
+            <Store className="w-5 h-5" />
+            Vendor Management
           </Link>
         </nav>
       </div>
