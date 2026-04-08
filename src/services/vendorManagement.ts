@@ -133,7 +133,7 @@ export const vendorApi = {
 
   // ===== UPDATE =====
   updateVendor: async (id: string, updates: Partial<Vendor>) => {
-    return apiRequest(`/admin/vendors/${id}`, 'PATCH', updates);
+    return apiRequest(`/admin/vendors/${id}`, 'PUT', updates);
   },
 
   // ===== DELETE =====
@@ -180,8 +180,9 @@ export const vendorApi = {
 
   // ===== BULK ACTIONS =====
   bulkUpdateStatus: async (vendorIds: string[], status: Vendor['status']) => {
-    return apiRequest('/admin/vendors/bulk-status', 'POST', {
+    return apiRequest('/admin/vendors/bulk', 'POST', {
       vendorIds,
+      action: 'updateStatus',
       status,
       updatedAt: new Date().toISOString(),
     });
