@@ -362,16 +362,16 @@ app.get('/health', (req, res) => {
 app.use('/ai-tryon', require('./routes/aiTryOn'));
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log('');
     console.log('🚀 ============================================');
     console.log('🚀 OAuth Backend Server Started');
     console.log('🚀 ============================================');
     console.log(`📍 Port: ${PORT}`);
-    console.log(`📍 Login: http://localhost:${PORT}/auth/login`);
-    console.log(`📍 Callback: http://localhost:${PORT}/auth/callback`);
-    console.log(`🤖 AI Try-On: http://localhost:${PORT}/ai-tryon`);
-    console.log(`📍 Health: http://localhost:${PORT}/health`);
+    console.log(`📍 Login: http://0.0.0.0:${PORT}/auth/login`);
+    console.log(`📍 Callback: http://0.0.0.0:${PORT}/auth/callback`);
+    console.log(`🤖 AI Try-On: http://0.0.0.0:${PORT}/ai-tryon`);
+    console.log(`📍 Health: http://0.0.0.0:${PORT}/health`);
     console.log('🚀 ============================================');
     console.log('');
 });
