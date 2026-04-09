@@ -21,7 +21,8 @@
       "Bash(node *)",
       "WebSearch",
       "WebFetch(github.com)",
-      "WebFetch(genlook.app)"
+      "WebFetch(genlook.app)",
+      "Bash(git rm *)"
     ]
   },
   "mcpServers": {
