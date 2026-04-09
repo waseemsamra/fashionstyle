@@ -1,17 +1,11 @@
 /**
  * AI Virtual Try-On Service
- * Uses Hugging Face Inference API with IDM-VTON model
- * FREE tier: 5,000 requests/month
+ * Uses your backend Lambda which proxies to Hugging Face API
+ * This avoids CORS issues by calling your own Lambda
  */
 
-const HUGGING_FACE_API_KEY = import.meta.env.VITE_HUGGING_FACE_API_KEY;
-const HUGGING_FACE_API_URL = 'https://api-inference.huggingface.co/models';
-
-// Primary model: IDM-VTON (best quality)
-const VTON_MODELS = {
-  primary: 'yisol/IDM-VTON',
-  fallback: 'levihsu/OOTDiffusion',
-};
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const AI_TRYON_ENDPOINT = `${API_BASE_URL}/ai-tryon`;
 
 interface TryOnResult {
   success: boolean;
@@ -42,17 +36,13 @@ export async function performVirtualTryOn(
   const startTime = Date.now();
 
   try {
-    if (!HUGGING_FACE_API_KEY) {
-      throw new Error('Hugging Face API key not configured. Add VITE_HUGGING_FACE_API_KEY to .env');
-    }
-
     onProgress?.({
       status: 'uploading',
       message: 'Preparing images for AI processing...',
       progress: 10,
     });
 
-    // Convert images to base64 if they're File objects
+    // Convert images to base64
     const [userPhotoBase64, garmentBase64] = await Promise.all([
       convertToBase64(userPhoto),
       convertToBase64(garmentImage),
@@ -64,98 +54,48 @@ export async function performVirtualTryOn(
       progress: 30,
     });
 
-    // Try primary model first
-    let result = await tryWithModel(
-      VTON_MODELS.primary,
-      userPhotoBase64,
-      garmentBase64,
-      garmentDescription
-    );
+    // Call our Lambda endpoint (handles Hugging Face API)
+    const response = await fetch(AI_TRYON_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userPhoto: userPhotoBase64,
+        garmentImage: garmentBase64,
+        garmentDescription: garmentDescription || 'clothing item',
+      }),
+    });
 
-    // If primary fails, try fallback
-    if (!result.success && result.error?.includes('error')) {
-      console.warn('Primary model failed, trying fallback...');
-      onProgress?.({
-        status: 'processing',
-        message: 'Trying alternative AI model...',
-        progress: 50,
-      });
-
-      result = await tryWithModel(
-        VTON_MODELS.fallback,
-        userPhotoBase64,
-        garmentBase64,
-        garmentDescription
-      );
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Server error: ${response.status}`);
     }
 
-    if (result.success) {
+    const result = await response.json();
+
+    if (result.success && result.imageUrl) {
       onProgress?.({
         status: 'complete',
         message: 'AI try-on complete!',
         progress: 100,
       });
 
-      result.processingTime = Date.now() - startTime;
+      trackAPIUsage();
+      return {
+        success: true,
+        imageUrl: result.imageUrl,
+        processingTime: Date.now() - startTime,
+      };
+    } else {
+      throw new Error(result.error || 'AI processing failed');
     }
-
-    return result;
   } catch (error) {
     console.error('Virtual try-on failed:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
       processingTime: Date.now() - startTime,
-    };
-  }
-}
-
-/**
- * Try virtual try-on with a specific model
- */
-async function tryWithModel(
-  modelId: string,
-  userPhotoBase64: string,
-  garmentBase64: string,
-  garmentDescription?: string
-): Promise<TryOnResult> {
-  try {
-    const response = await fetch(`${HUGGING_FACE_API_URL}/${modelId}`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${HUGGING_FACE_API_KEY}`,
-        'Content-Type': 'application/json',
-        'x-wait-for-model': 'true',
-      },
-      body: JSON.stringify({
-        inputs: {
-          human_img: userPhotoBase64,
-          garm_img: garmentBase64,
-          garment_des: garmentDescription || 'clothing item',
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `API error: ${response.status} ${response.statusText}`
-      );
-    }
-
-    // Model returns image blob
-    const blob = await response.blob();
-    const imageUrl = URL.createObjectURL(blob);
-
-    return {
-      success: true,
-      imageUrl,
-    };
-  } catch (error) {
-    console.error(`Model ${modelId} failed:`, error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Model processing failed',
     };
   }
 }
@@ -184,10 +124,10 @@ async function convertToBase64(input: string | File): Promise<string> {
 }
 
 /**
- * Check if Hugging Face API is configured
+ * Check if AI try-on is configured (always true since we use Lambda)
  */
 export function isAIConfigured(): boolean {
-  return !!HUGGING_FACE_API_KEY;
+  return true; // Lambda handles API key server-side
 }
 
 /**

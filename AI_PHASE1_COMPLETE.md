@@ -262,6 +262,24 @@ npm run dev
 
 ## 📝 Maintenance Notes
 
+### ⚠️ IMPORTANT: CORS Issue Fixed!
+
+**Problem**: Hugging Face API blocks direct browser requests (CORS error)
+
+**Solution**: Route through AWS Lambda backend
+
+**Files Changed**:
+- `lambda-ai-tryon.js` - Lambda function to proxy requests
+- `src/services/aiTryOnService.ts` - Updated to call Lambda endpoint
+
+**Deployment Required**:
+1. Deploy `lambda-ai-tryon.js` to AWS Lambda
+2. Add `HUGGING_FACE_API_KEY` to Lambda environment variables
+3. Add `/ai-tryon` endpoint to API Gateway
+4. Rebuild and deploy frontend
+
+**See**: `DEPLOY_AI_TRYON_LAMBDA.md` for full deployment guide
+
 ### Monitor API Usage
 ```bash
 # Check localStorage for usage
