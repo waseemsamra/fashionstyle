@@ -303,6 +303,61 @@ export default function VirtualTryOn({ productImage, productName }: VirtualTryOn
             </TabsContent>
           </Tabs>
 
+          {/* Photo Preview Before AI Processing */}
+          {mode === 'ai' && userPhoto && productImage && !isAIProcessing && !aiResult && !aiError && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-sm font-medium text-gray-700 mb-3">✅ Photos Ready for AI Processing</p>
+              </div>
+              
+              {/* Photo Preview Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* User Photo */}
+                <div className="relative">
+                  <p className="text-xs font-medium text-gray-600 mb-2 text-center">Your Photo</p>
+                  <div className="relative aspect-[3/4] rounded-lg overflow-hidden border-2 border-purple-300 shadow-md">
+                    <img
+                      src={userPhoto}
+                      alt="Your photo"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2">
+                      <Badge className="bg-purple-600 text-white text-xs">
+                        Source
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Product Image */}
+                <div className="relative">
+                  <p className="text-xs font-medium text-gray-600 mb-2 text-center">Product Image</p>
+                  <div className="relative aspect-[3/4] rounded-lg overflow-hidden border-2 border-pink-300 shadow-md">
+                    <img
+                      src={productImage}
+                      alt={productName || 'Product'}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2">
+                      <Badge className="bg-pink-600 text-white text-xs">
+                        Garment
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow Indicator */}
+              <div className="flex items-center justify-center gap-2 text-purple-600">
+                <div className="flex-1 h-px bg-purple-300"></div>
+                <Sparkles className="w-5 h-5" />
+                <span className="text-sm font-medium">AI Will Combine</span>
+                <Sparkles className="w-5 h-5" />
+                <div className="flex-1 h-px bg-purple-300"></div>
+              </div>
+            </div>
+          )}
+
           {/* AI Try-On Processing */}
           {mode === 'ai' && userPhoto && productImage && (
             <div className="space-y-4">
