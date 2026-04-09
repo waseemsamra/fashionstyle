@@ -1,14 +1,12 @@
 /**
  * AI Virtual Try-On Service
- * Uses CORS proxy to call Hugging Face API directly from browser
- * This is a quick fix - later migrate to Lambda for production
+ * Calls your backend which proxies to Hugging Face API
+ * Backend can be deployed to Render.com, Railway, or AWS
  */
 
-const HUGGING_FACE_API_KEY = import.meta.env.VITE_HUGGING_FACE_API_KEY;
-const HUGGING_FACE_API_URL = 'https://api-inference.huggingface.co/models';
-
-// CORS proxy to bypass browser restrictions
-const CORS_PROXY = 'https://corsproxy.io/?';
+// Backend URL (set in Amplify env vars or defaults to localhost for dev)
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const AI_TRYON_ENDPOINT = `${BACKEND_URL}/ai-tryon`;
 
 interface TryOnResult {
   success: boolean;
@@ -39,10 +37,6 @@ export async function performVirtualTryOn(
   const startTime = Date.now();
 
   try {
-    if (!HUGGING_FACE_API_KEY) {
-      throw new Error('Hugging Face API key not configured. Add VITE_HUGGING_FACE_API_KEY to .env and Amplify');
-    }
-
     onProgress?.({
       status: 'uploading',
       message: 'Preparing images for AI processing...',
@@ -61,32 +55,27 @@ export async function performVirtualTryOn(
       progress: 30,
     });
 
-    // Try primary model first
-    let result = await tryWithModel(
-      'yisol/IDM-VTON',
-      userPhotoBase64,
-      garmentBase64,
-      garmentDescription
-    );
+    // Call backend endpoint
+    const response = await fetch(AI_TRYON_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userPhoto: userPhotoBase64,
+        garmentImage: garmentBase64,
+        garmentDescription: garmentDescription || 'clothing item',
+      }),
+    });
 
-    // If primary fails, try fallback
-    if (!result.success) {
-      console.warn('Primary model failed, trying fallback...');
-      onProgress?.({
-        status: 'processing',
-        message: 'Trying alternative AI model...',
-        progress: 50,
-      });
-
-      result = await tryWithModel(
-        'levihsu/OOTDiffusion',
-        userPhotoBase64,
-        garmentBase64,
-        garmentDescription
-      );
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Server error: ${response.status}`);
     }
 
-    if (result.success) {
+    const result = await response.json();
+
+    if (result.success && result.imageUrl) {
       onProgress?.({
         status: 'complete',
         message: 'AI try-on complete!',
@@ -108,59 +97,6 @@ export async function performVirtualTryOn(
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
       processingTime: Date.now() - startTime,
-    };
-  }
-}
-
-/**
- * Try virtual try-on with a specific model (via CORS proxy)
- */
-async function tryWithModel(
-  modelId: string,
-  userPhotoBase64: string,
-  garmentBase64: string,
-  garmentDescription?: string
-): Promise<TryOnResult> {
-  try {
-    // Use CORS proxy to bypass browser restrictions
-    const proxyUrl = `${CORS_PROXY}${encodeURIComponent(HUGGING_FACE_API_URL + '/' + modelId)}`;
-
-    const response = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${HUGGING_FACE_API_KEY}`,
-        'Content-Type': 'application/json',
-        'x-wait-for-model': 'true',
-      },
-      body: JSON.stringify({
-        inputs: {
-          human_img: userPhotoBase64,
-          garm_img: garmentBase64,
-          garment_des: garmentDescription || 'clothing item',
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `API error: ${response.status} ${response.statusText}`
-      );
-    }
-
-    // Model returns image as blob
-    const blob = await response.blob();
-    const imageUrl = URL.createObjectURL(blob);
-
-    return {
-      success: true,
-      imageUrl,
-    };
-  } catch (error) {
-    console.error(`Model ${modelId} failed:`, error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Model processing failed',
     };
   }
 }
