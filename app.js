@@ -358,6 +358,9 @@ app.get('/health', (req, res) => {
     });
 });
 
+// AI Virtual Try-On (Proxy to Hugging Face API)
+app.use('/ai-tryon', require('./routes/aiTryOn'));
+
 // Start server
 app.listen(PORT, () => {
     console.log('');
@@ -367,6 +370,7 @@ app.listen(PORT, () => {
     console.log(`📍 Port: ${PORT}`);
     console.log(`📍 Login: http://localhost:${PORT}/auth/login`);
     console.log(`📍 Callback: http://localhost:${PORT}/auth/callback`);
+    console.log(`🤖 AI Try-On: http://localhost:${PORT}/ai-tryon`);
     console.log(`📍 Health: http://localhost:${PORT}/health`);
     console.log('🚀 ============================================');
     console.log('');

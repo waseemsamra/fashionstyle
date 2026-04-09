@@ -39,7 +39,10 @@
 - ✅ Trending occasions (auto-detected by season)
 
 ### Files Created
-- `src/services/aiTryOnService.ts` - AI try-on service
+- `src/services/aiTryOnService.ts` - AI try-on service (frontend)
+- `routes/aiTryOn.js` - Backend route (proxies to Hugging Face)
+- `app.js` - Updated with AI route
+- `.env` - Added Hugging Face API key (backend + frontend)
 - `src/services/outfitCombinationService.ts` - Outfit matching service
 - `src/services/occasionShoppingService.ts` - Occasion filtering service
 - `src/components/features/OutfitCombination.tsx` - Outfit suggestions component
@@ -51,15 +54,20 @@
 - `src/pages/shop/ProductDetail.tsx` - Integrated outfit combinations
 - `src/App.tsx` - Added route
 - `src/components/layout/Navigation.tsx` - Added nav link
-- `.env` - Hugging Face API token
+
+### Backend Integration ✅
+- ✅ Route added to `app.js`: `/ai-tryon`
+- ✅ Backend route created: `routes/aiTryOn.js`
+- ✅ Environment variable added: `HUGGING_FACE_API_KEY`
+- ✅ CORS issues resolved (server-side proxy)
 
 ### Next Steps
 1. ✅ Get Hugging Face Access Token (done)
 2. ✅ Integrate API into VirtualTryOn component (done)
-3. ✅ Test with product catalog (build successful)
-4. ⏳ Launch & monitor usage (ready for deployment)
+3. ✅ Backend route created and integrated (done)
+4. ⏳ Deploy to Amplify with env variable (ready)
 
-**See**: `AI_PHASE1_COMPLETE.md` for full documentation
+**See**: `AI_PHASE1_COMPLETE.md` and `DEPLOY_BACKEND_AI_TRYON.md` for full documentation
 
 ---
 
