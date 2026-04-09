@@ -55,10 +55,7 @@ export async function performVirtualTryOn(
       progress: 30,
     });
 
-    // Call backend endpoint with timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
-
+    // Call backend endpoint (no timeout - let it process)
     const response = await fetch(AI_TRYON_ENDPOINT, {
       method: 'POST',
       headers: {
@@ -69,10 +66,7 @@ export async function performVirtualTryOn(
         garmentImage: garmentBase64,
         garmentDescription: garmentDescription || 'clothing item',
       }),
-      signal: controller.signal,
     });
-
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
