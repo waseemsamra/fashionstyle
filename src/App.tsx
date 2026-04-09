@@ -35,6 +35,7 @@ const Login = lazy(() => import('@/pages/user/Login'));
 const UserDashboard = lazy(() => import('@/pages/user/UserDashboard'));
 const OrderDetails = lazy(() => import('@/pages/user/OrderDetails'));
 const VirtualTryOnPage = lazy(() => import('@/pages/VirtualTryOnPage'));
+const OccasionShoppingPage = lazy(() => import('@/pages/OccasionShoppingPage'));
 const SearchPage = lazy(() => import('@/pages/search/SearchPage'));
 const WishlistPage = lazy(() => import('@/pages/wishlist/WishlistPage'));
 const ProfilePage = lazy(() => import('@/components/profile/ProfilePage'));
@@ -285,6 +286,7 @@ function Layout() {
             <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/orders/:orderId" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
             <Route path="/try-on" element={<VirtualTryOnPage />} />
+            <Route path="/shop-by-occasion" element={<OccasionShoppingPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Dashboard minimal />} />

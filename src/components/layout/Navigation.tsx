@@ -170,6 +170,7 @@ export default function Navigation() {
     { name: 'Brands', href: '/brands' },
     { name: 'Collection', href: '/#featured' },
     { name: 'Virtual Try-On', href: '/try-on' },
+    { name: 'Shop by Occasion', href: '/shop-by-occasion' },
     { name: 'New Arrivals', href: '/#new-arrivals' },
     { name: 'About', href: '/#about' },
   ];

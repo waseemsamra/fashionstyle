@@ -1,17 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, X, RotateCcw, Download } from 'lucide-react';
+import { Upload, X, RotateCcw, Download, Sparkles, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { performVirtualTryOn, isAIConfigured, trackAPIUsage } from '@/services/aiTryOnService';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 interface VirtualTryOnProps {
   productImage?: string;
   productName?: string;
 }
 
+type TryOnMode = 'manual' | 'ai';
+
 export default function VirtualTryOn({ productImage, productName }: VirtualTryOnProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mode, setMode] = useState<TryOnMode>('manual');
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
   const [overlayImage, setOverlayImage] = useState<string | null>(null);
   const [overlayPosition, setOverlayPosition] = useState({ x: 50, y: 50 });
@@ -19,8 +25,17 @@ export default function VirtualTryOn({ productImage, productName }: VirtualTryOn
   const [overlayRotation, setOverlayRotation] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  
+  // AI Try-On state
+  const [isAIProcessing, setIsAIProcessing] = useState(false);
+  const [aiProgress, setAIProgress] = useState(0);
+  const [aiProgressMessage, setAIProgressMessage] = useState('');
+  const [aiResult, setAIResult] = useState<string | null>(null);
+  const [aiError, setAIError] = useState<string | null>(null);
+  
   const canvasRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const aiEnabled = isAIConfigured();
 
   // Load product image as overlay when dialog opens
   useEffect(() => {
@@ -154,7 +169,44 @@ export default function VirtualTryOn({ productImage, productName }: VirtualTryOn
   const clearAll = () => {
     setUserPhoto(null);
     setOverlayImage(null);
+    setAIResult(null);
+    setAIError(null);
     resetOverlay();
+  };
+
+  const handleAITryOn = async () => {
+    if (!userPhoto || !productImage) {
+      setAIError('Please upload both your photo and select a product');
+      return;
+    }
+
+    setIsAIProcessing(true);
+    setAIProgress(0);
+    setAIError(null);
+    setAIResult(null);
+
+    try {
+      const result = await performVirtualTryOn(
+        userPhoto,
+        productImage,
+        productName || 'clothing item',
+        (progress) => {
+          setAIProgress(progress.progress || 0);
+          setAIProgressMessage(progress.message);
+        }
+      );
+
+      if (result.success && result.imageUrl) {
+        setAIResult(result.imageUrl);
+        trackAPIUsage();
+      } else {
+        setAIError(result.error || 'AI processing failed. Please try again.');
+      }
+    } catch (error) {
+      setAIError(error instanceof Error ? error.message : 'Unknown error occurred');
+    } finally {
+      setIsAIProcessing(false);
+    }
   };
 
   return (
@@ -171,18 +223,48 @@ export default function VirtualTryOn({ productImage, productName }: VirtualTryOn
       </DialogTrigger>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-playfair">
+          <DialogTitle className="text-2xl font-playfair flex items-center gap-2">
             Virtual Try-On
+            {aiEnabled && (
+              <Badge variant="secondary" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                <Sparkles className="w-3 h-3 mr-1" />
+                AI Powered
+              </Badge>
+            )}
             {productName && <span className="text-sm font-normal text-gray-600 ml-2">- {productName}</span>}
           </DialogTitle>
         </DialogHeader>
 
         <div className="mt-4 space-y-4">
+          {/* Mode Selector */}
+          {aiEnabled && (
+            <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
+              <Button
+                variant={mode === 'ai' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1"
+                onClick={() => setMode('ai')}
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                AI Try-On (Automatic)
+              </Button>
+              <Button
+                variant={mode === 'manual' ? 'default' : 'ghost'}
+                size="sm"
+                className="flex-1"
+                onClick={() => setMode('manual')}
+              >
+                Manual Positioning
+              </Button>
+            </div>
+          )}
           {/* Instructions */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              <strong>How to use:</strong> Upload your photo, then adjust the clothing overlay by dragging, 
-              resizing, or rotating it to fit perfectly.
+              <strong>How to use {mode === 'ai' ? 'AI Try-On' : 'Manual Mode'}:</strong>
+              {mode === 'ai'
+                ? ' Upload your photo and AI will automatically place the clothing on you. Takes 10-30 seconds.'
+                : ' Upload your photo, then adjust the clothing overlay by dragging, resizing, or rotating it to fit perfectly.'}
             </p>
           </div>
 
@@ -221,8 +303,86 @@ export default function VirtualTryOn({ productImage, productName }: VirtualTryOn
             </TabsContent>
           </Tabs>
 
+          {/* AI Try-On Processing */}
+          {mode === 'ai' && userPhoto && productImage && (
+            <div className="space-y-4">
+              {!isAIProcessing && !aiResult && !aiError && (
+                <Button
+                  onClick={handleAITryOn}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white h-12"
+                  size="lg"
+                >
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Generate AI Try-On
+                </Button>
+              )}
+
+              {isAIProcessing && (
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <div className="relative inline-block">
+                      <div className="animate-spin rounded-full h-20 w-20 border-4 border-purple-500 border-t-transparent"></div>
+                      <Sparkles className="w-8 h-8 text-purple-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    <p className="mt-4 text-lg font-medium text-gray-700">{aiProgressMessage}</p>
+                    <Progress value={aiProgress} className="mt-2" />
+                    <p className="text-sm text-gray-500 mt-2">This usually takes 10-30 seconds</p>
+                  </div>
+                </div>
+              )}
+
+              {aiResult && (
+                <div className="space-y-4">
+                  <div className="relative w-full aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden">
+                    <img
+                      src={aiResult}
+                      alt="AI Try-On Result"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.download = `ai-try-on-${Date.now()}.png`;
+                        link.href = aiResult;
+                        link.click();
+                      }}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Save Result
+                    </Button>
+                    <Button
+                      onClick={handleAITryOn}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Try Again
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {aiError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-800 font-medium">❌ {aiError}</p>
+                  <Button
+                    onClick={handleAITryOn}
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Canvas Area */}
-          {userPhoto && (
+          {userPhoto && mode === 'manual' && (
             <div className="space-y-4">
               <div
                 ref={canvasRef}

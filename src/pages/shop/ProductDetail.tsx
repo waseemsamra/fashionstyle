@@ -8,6 +8,8 @@ import { useAddToCart } from '@/hooks/useCart';
 import { getProductIdFromSlug } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
 import VirtualTryOn from '@/components/features/VirtualTryOn';
+import OutfitCombination from '@/components/features/OutfitCombination';
+import { getAllProducts, type Product } from '@/services/productService';
 
 // Helper function to create brand slug from brand name
 const createBrandSlug = (brandName: string): string => {
@@ -30,10 +32,24 @@ export default function ProductDetail() {
   const productId = getProductIdFromSlug(slug);
   const { data: product, isLoading, error } = useProduct(productId);
   const addToCart = useAddToCart();
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [slug]);
+
+  // Fetch related products for outfit combinations
+  useEffect(() => {
+    if (product) {
+      getAllProducts().then((allProducts: Product[]) => {
+        const filtered = allProducts.filter((p: Product) => 
+          p.id !== product.id && 
+          (p.category === product.category || p.brand === product.brand)
+        ).slice(0, 15);
+        setRelatedProducts(filtered);
+      }).catch((err: any) => console.error('Error fetching related products:', err));
+    }
+  }, [product]);
 
   // Reset selected image when product changes
   useEffect(() => {
@@ -345,7 +361,7 @@ export default function ProductDetail() {
                 productImage={allImages[selectedImageIndex] || product.image}
                 productName={product.name}
               />
-              
+
               <Button
                 onClick={handleAddToCart}
                 className="w-full"
@@ -355,6 +371,48 @@ export default function ProductDetail() {
                 Add to Cart
               </Button>
             </div>
+
+            {/* AI Outfit Combinations */}
+            {relatedProducts.length > 0 && (
+              <div className="mt-8 pt-8 border-t">
+                <OutfitCombination
+                  selectedProduct={{
+                    id: product.id,
+                    name: product.name,
+                    category: product.category || '',
+                    price: product.price,
+                    image: product.image || '',
+                    brand: product.brand || '',
+                    colors: product.colors || [],
+                    tags: product.tags || [],
+                  }}
+                  allProducts={relatedProducts.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    category: p.category || '',
+                    price: p.price,
+                    image: p.image || '',
+                    brand: p.brand || '',
+                    colors: p.colors || [],
+                    tags: p.tags || [],
+                  }))}
+                  onAddToCart={(items) => {
+                    items.forEach(item => {
+                      addToCart.mutate({
+                        product: {
+                          id: item.id,
+                          name: item.name,
+                          price: item.price,
+                          image: item.image,
+                        },
+                        quantity: 1,
+                      });
+                    });
+                    toast.success(`Added ${items.length} items to cart!`);
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

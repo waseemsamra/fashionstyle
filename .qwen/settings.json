@@ -17,13 +17,20 @@
       "Bash(echo *)",
       "Bash(head *)",
       "Bash(true)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(node *)",
+      "WebSearch",
+      "WebFetch(github.com)",
+      "WebFetch(genlook.app)"
     ]
   },
   "mcpServers": {
     "fashion-style": {
       "command": "node",
-      "args": ["--experimental-vm-modules", "mcp-server.js"],
+      "args": [
+        "--experimental-vm-modules",
+        "mcp-server.js"
+      ],
       "env": {
         "VITE_API_URL": "https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod"
       }
