@@ -381,7 +381,17 @@ export default function VirtualTryOn({ productImage, productName }: VirtualTryOn
                     </div>
                     <p className="mt-4 text-lg font-medium text-gray-700">{aiProgressMessage}</p>
                     <Progress value={aiProgress} className="mt-2" />
-                    <p className="text-sm text-gray-500 mt-2">This usually takes 10-30 seconds</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      {aiProgress < 50 ? 'Uploading to backend...' : 
+                       aiProgress < 80 ? 'AI is processing (this takes 10-30 seconds)...' : 
+                       'Almost done...'}
+                    </p>
+                    <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 max-w-md mx-auto">
+                      <p className="text-xs text-yellow-800">
+                        💡 <strong>Note:</strong> First time may take longer as AI model loads. 
+                        If this fails, backend may not be running.
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
