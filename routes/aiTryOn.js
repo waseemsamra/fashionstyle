@@ -4,7 +4,8 @@
  * This proxies requests to Hugging Face API (avoids CORS issues)
  */
 
-const express = require('express');
+import express from 'express';
+
 const router = express.Router();
 
 const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
@@ -117,4 +118,4 @@ async function tryWithModel(modelId, userPhoto, garmentImage, garmentDescription
   }
 }
 
-module.exports = router;
+export default router;

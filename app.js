@@ -1,8 +1,15 @@
-const express = require('express');
-const session = require('express-session');
-const { Issuer, generators } = require('openid-client');
-const path = require('path');
-require('dotenv').config();
+import express from 'express';
+import session from 'express-session';
+import { Issuer, generators } from 'openid-client';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import aiTryOnRoute from './routes/aiTryOn.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -359,7 +366,7 @@ app.get('/health', (req, res) => {
 });
 
 // AI Virtual Try-On (Proxy to Hugging Face API)
-app.use('/ai-tryon', require('./routes/aiTryOn'));
+app.use('/ai-tryon', aiTryOnRoute);
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
