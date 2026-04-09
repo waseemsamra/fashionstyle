@@ -22,7 +22,10 @@
       "WebSearch",
       "WebFetch(github.com)",
       "WebFetch(genlook.app)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(tr *)",
+      "Bash(then *)",
+      "Bash(fi)"
     ]
   },
   "mcpServers": {
