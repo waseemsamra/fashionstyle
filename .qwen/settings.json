@@ -25,7 +25,11 @@
       "Bash(git rm *)",
       "Bash(tr *)",
       "Bash(then *)",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(pkill *)",
+      "Bash(chmod *)",
+      "Bash(zip *)",
+      "Bash(unzip *)"
     ]
   },
   "mcpServers": {

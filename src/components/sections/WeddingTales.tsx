@@ -3,42 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
-import { api } from '@/services/api';
+import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 export default function WeddingTales() {
   const navigate = useNavigate();
-  const [products, setProducts] = useState<any[]>([]);
+  const { toggleWishlist } = useToggleWishlist();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const { toggleWishlist } = useToggleWishlist();
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = await api.listProducts();
-        let productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
-        
-        // First try to load products with isWeddingTales flag
-        let wedding = productsArray.filter((p: any) => p.isWeddingTales);
-        
-        // If no products have the flag, fall back to category filtering
-        if (wedding.length === 0) {
-          wedding = productsArray.filter((p: any) => 
-            p.category?.toLowerCase().includes('bridal') || 
-            p.category?.toLowerCase().includes('wedding') ||
-            p.occasions?.some((o: any) => o.toLowerCase().includes('wedding'))
-          );
-        }
-        
-        setProducts(wedding.slice(0, 20));
-      } catch (error) {
-        setProducts([]);
-      }
-    };
-    loadProducts();
-  }, []);
+  // THE FORMULA: Fetch ONLY collection products - NO scanning!
+  const { products, loading } = useCollection('weddingTales');
 
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;
@@ -69,6 +45,23 @@ export default function WeddingTales() {
     toggleWishlist({ productId: product.id, product });
     toast.success(`Toggled ${product.name} in wishlist`);
   };
+
+  if (loading) {
+    return (
+      <section className="section-padding bg-beige-100">
+        <div className="container-custom">
+          <div className="text-center mb-12">
+            <span className="text-gold text-sm font-medium tracking-wider uppercase mb-2 block">Bridal Collection</span>
+            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-semibold text-black mb-4">Wedding Tales</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">Loading...</p>
+          </div>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (products.length === 0) return null;
 

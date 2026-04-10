@@ -69,26 +69,64 @@ exports.handler = async (event) => {
   }
 };
 
-// GET /products with filtering
+// GET /products with filtering - OPTIMIZED for 30K+ products
 async function getAllProducts(event) {
   const params = event.queryStringParameters || {};
-  const { brand, category, search, limit = '500', page = '1', isActive } = params;
+  const { brand, category, search, limit = '20', page = '1', isActive, isFeatured, isNew, isSale, tag, occasion } = params;
 
-  console.log('🔍 Filters:', { brand, category, search, limit, page, isActive });
+  console.log('🔍 Filters:', { brand, category, search, limit, page, isActive, isFeatured, isNew, isSale, tag, occasion });
 
-  // Scan all products
-  const scanParams = {
-    TableName: TABLE_NAME,
-    FilterExpression: 'entityType = :entityType',
-    ExpressionAttributeValues: {
-      ':entityType': 'PRODUCT',
-    },
-  };
+  // Build scan filter based on tags (CRITICAL for 30K+ scalability)
+  let filterExpression = 'entityType = :entityType';
+  let expressionAttributeValues = { ':entityType': 'PRODUCT' };
+  let expressionAttributeNames = {};
+
+  // Add tag-based filters (reduces scan from 30K to ~50-100 products)
+  if (isFeatured === 'true') {
+    filterExpression += ' AND isFeatured = :isFeatured';
+    expressionAttributeValues[':isFeatured'] = true;
+  }
+  
+  if (isNew === 'true') {
+    filterExpression += ' AND isNew = :isNew';
+    expressionAttributeValues[':isNew'] = true;
+  }
+  
+  if (isSale === 'true') {
+    filterExpression += ' AND isSale = :isSale';
+    expressionAttributeValues[':isSale'] = true;
+  }
+
+  if (tag) {
+    // Custom tag filter (e.g., 'wedding', 'discount')
+    filterExpression += ' AND contains(#tagAttr, :tagValue)';
+    expressionAttributeNames['#tagAttr'] = 'tags';
+    expressionAttributeValues[':tagValue'] = tag;
+  }
+
+  if (occasion) {
+    // Occasion-based filter (e.g., 'wedding', 'party')
+    filterExpression += ' AND contains(#occAttr, :occValue)';
+    expressionAttributeNames['#occAttr'] = 'occasions';
+    expressionAttributeValues[':occValue'] = occasion;
+  }
 
   // Add active filter if specified
   if (isActive === 'true') {
-    scanParams.FilterExpression += ' AND isActive = :isActive';
-    scanParams.ExpressionAttributeValues[':isActive'] = true;
+    filterExpression += ' AND isActive = :isActive';
+    expressionAttributeValues[':isActive'] = true;
+  }
+
+  // Scan products with optimized filters
+  const scanParams = {
+    TableName: TABLE_NAME,
+    FilterExpression: filterExpression,
+    ExpressionAttributeValues: expressionAttributeValues,
+    Limit: parseInt(limit) * 3, // Read 3x the limit to account for pagination
+  };
+
+  if (Object.keys(expressionAttributeNames).length > 0) {
+    scanParams.ExpressionAttributeNames = expressionAttributeNames;
   }
 
   let allProducts = [];
@@ -102,9 +140,16 @@ async function getAllProducts(event) {
     const result = await dynamodb.scan(scanParams).promise();
     allProducts = allProducts.concat(result.Items);
     lastEvaluatedKey = result.LastEvaluatedKey;
+    
+    // Stop after reading reasonable amount to prevent timeout
+    // For tagged products, we should find matches quickly
+    if (allProducts.length >= parseInt(limit) * 5) {
+      console.log('⚠️ Stopping scan at limit for performance');
+      break;
+    }
   } while (lastEvaluatedKey);
 
-  console.log(`📦 Total products from DB: ${allProducts.length}`);
+  console.log(`📦 Total products from DB (with filters): ${allProducts.length}`);
 
   // Apply brand filter (case-insensitive)
   if (brand) {

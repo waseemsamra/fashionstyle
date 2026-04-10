@@ -23,19 +23,22 @@ export default function DesignersDiscountCMS() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await api.listProducts();
+      // Load ALL products for admin selection (this is admin CMS, acceptable)
+      const data = await api.listProducts({ limit: 500 });
       const productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
-      
+
       // Get all unique brands
       const uniqueBrands = [...new Set(productsArray.map((p: any) => p.brand).filter(Boolean))] as string[];
       setAllBrands(uniqueBrands);
       setProducts(productsArray);
-      
-      // Get currently selected brands and products
+
+      // Get currently selected designers discount products
       const discountProducts = productsArray.filter((p: any) => p.isDesignersDiscount);
       const selectedBrandSet = new Set(discountProducts.map((p: any) => p.brand) as string[]);
       setSelectedBrands([...selectedBrandSet]);
       setSelectedProductIds(discountProducts.map((p: any) => p.id));
+      
+      console.log('✅ Loaded', productsArray.length, 'products,', discountProducts.length, 'discount items');
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -70,45 +73,82 @@ export default function DesignersDiscountCMS() {
   const handleSave = async () => {
     try {
       setSaving(true);
+      console.log('📝 Starting save with', selectedProductIds.length, 'products from', selectedBrands.length, 'brands');
+
+      const token = localStorage.getItem('jwt_token');
       
-      // Save to localStorage immediately (works without Lambda)
+      // Save to localStorage immediately (works without backend)
       localStorage.setItem('designersDiscountProducts', JSON.stringify(selectedProductIds));
       console.log('💾 Saved to localStorage:', selectedProductIds);
-      
-      const token = localStorage.getItem('jwt_token');
-      if (!token) {
-        alert('✅ Saved locally! Please login to save to backend.');
-        return;
-      }
-      
-      console.log('📝 Starting save with', selectedProductIds.length, 'products from', selectedBrands.length, 'brands');
-      
-      // Update all products in backend
-      const updatePromises = products.map(async (product: any) => {
+
+      // Update all selected products in backend with isDesignersDiscount flag
+      const productsToUpdate = products.filter((p: any) => 
+        selectedProductIds.includes(p.id) || p.isDesignersDiscount  // Update newly selected OR previously selected
+      );
+
+      console.log('🔄 Updating', productsToUpdate.length, 'products in backend...');
+
+      // Batch update products sequentially to avoid overwhelming the API
+      let successCount = 0;
+      let failCount = 0;
+      const totalToUpdate = productsToUpdate.filter((p: any) => p.isDesignersDiscount !== selectedProductIds.includes(p.id)).length;
+
+      for (let i = 0; i < productsToUpdate.length; i++) {
+        const product = productsToUpdate[i];
         const shouldFlag = selectedProductIds.includes(product.id);
+        
+        // Only update if the flag is changing
         if (product.isDesignersDiscount !== shouldFlag) {
           try {
-            await fetch(`https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/products/${product.id}`, {
-              method: 'PUT',
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod'}/products`, {
+              method: 'POST',  // Lambda uses POST for create/update
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                ...(token && { 'Authorization': `Bearer ${token}` })
               },
               body: JSON.stringify({
-                ...product,
-                isDesignersDiscount: shouldFlag
+                id: product.id,
+                name: product.name,
+                description: product.description || '',
+                price: product.price,
+                originalPrice: product.originalPrice,
+                category: product.category,
+                brand: product.brand,
+                image: product.image,
+                images: product.images || [],
+                stock: product.stock || 0,
+                sku: product.sku || '',
+                sizes: product.sizes || [],
+                colors: product.colors || [],
+                materials: product.materials || [],
+                patterns: product.patterns || [],
+                occasions: product.occasions || [],
+                genders: product.genders || [],
+                isActive: product.isActive !== undefined ? product.isActive : true,
+                isFeatured: product.isFeatured || false,
+                isNew: product.isNew || false,
+                isSale: product.isSale || false,
+                isDesignersDiscount: shouldFlag,  // ← Set the flag
+                tags: product.tags || [],
               })
             });
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+
+            successCount++;
+            console.log(`✅ Updated ${successCount}/${totalToUpdate}: ${product.name}`);
           } catch (err) {
-            console.error('Failed to update product:', product.id);
+            console.error('❌ Failed to update product:', product.id, err);
+            failCount++;
           }
         }
-      });
+      }
+
+      console.log(`✅ Save complete: ${successCount} succeeded, ${failCount} failed`);
+      alert(`✅ Successfully saved ${selectedProductIds.length} products to Designers On Discount!\n${successCount} updated in backend, ${failCount} failed.`);
       
-      await Promise.all(updatePromises);
-      
-      alert(`✅ Successfully saved ${selectedProductIds.length} products to Designers On Discount!`);
-      console.log('✅ Designers Discount updated:', selectedProductIds);
     } catch (error: any) {
       console.error('Failed to save designers discount:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));

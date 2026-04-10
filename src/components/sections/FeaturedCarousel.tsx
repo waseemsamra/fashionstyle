@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
-import { api } from '@/services/api';
+import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 import { featuredProducts as localFeaturedProducts } from '@/data/products';
@@ -11,58 +11,25 @@ import { featuredProducts as localFeaturedProducts } from '@/data/products';
 export default function FeaturedCarousel() {
   const navigate = useNavigate();
   const { toggleWishlist } = useToggleWishlist();
-  const [products, setProducts] = useState<any[]>([]);
+  
+  // THE FORMULA: Fetch ONLY collection products - NO scanning!
+  const { products: collectionProducts, loading } = useCollection('featuredCollection');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = await api.listProducts();
-        let productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
-        
-        // Filter featured products or use first 8
-        const featured = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
-        let displayProducts = featured.length > 0 ? featured : productsArray.slice(0, 8);
-        
-        // If API returns no products, use local fallback
-        if (displayProducts.length === 0) {
-          console.log('Using local featured products as fallback');
-          displayProducts = localFeaturedProducts.map(p => ({
-            ...p,
-            id: p.id,
-            name: p.name,
-            price: p.price,
-            originalPrice: p.originalPrice,
-            category: p.category,
-            isNew: p.isNew,
-            isSale: p.isSale,
-            rating: p.rating,
-            image: p.image,
-          }));
-        }
-        
-        setProducts(displayProducts);
-      } catch (error) {
-        console.error('Failed to load products from API, using local data:', error);
-        // Fallback to local products
-        const displayProducts = localFeaturedProducts.map(p => ({
-          ...p,
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          originalPrice: p.originalPrice,
-          category: p.category,
-          isNew: p.isNew,
-          isSale: p.isSale,
-          rating: p.rating,
-          image: p.image,
-        }));
-        setProducts(displayProducts);
-      }
-    };
-    loadProducts();
-  }, []);
+  // Use collection products, fallback to local data
+  const products = collectionProducts.length > 0 ? collectionProducts : localFeaturedProducts.map(p => ({
+    ...p,
+    id: String(p.id),
+    name: p.name,
+    price: p.price,
+    originalPrice: p.originalPrice,
+    category: p.category,
+    isNew: p.isNew,
+    isSale: p.isSale,
+    rating: p.rating,
+    image: p.image,
+  }));
 
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;
@@ -92,6 +59,23 @@ export default function FeaturedCarousel() {
     }
     toggleWishlist({ productId: product.id, product });
   };
+
+  if (loading) {
+    return (
+      <section className="section-padding bg-beige-100">
+        <div className="container-custom">
+          <div className="text-center mb-12">
+            <span className="text-gold text-sm font-medium tracking-wider uppercase mb-2 block">Curated Selection</span>
+            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-semibold text-black mb-4">Featured Collection</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">Loading...</p>
+          </div>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (products.length === 0) return null;
 

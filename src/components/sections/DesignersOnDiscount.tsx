@@ -3,50 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
-import { api } from '@/services/api';
+import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 export default function DesignersOnDiscount() {
   const navigate = useNavigate();
   const { toggleWishlist } = useToggleWishlist();
-  const [products, setProducts] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = await api.listProducts();
-        let productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
-        
-        // First try to load products with isDesignersDiscount flag
-        let discount = productsArray.filter((p: any) => p.isDesignersDiscount);
-        
-        // If no flagged products, check localStorage (for testing before Lambda deployed)
-        if (discount.length === 0) {
-          const savedProductIds = localStorage.getItem('designersDiscountProducts');
-          if (savedProductIds) {
-            const ids = JSON.parse(savedProductIds);
-            discount = productsArray.filter((p: any) => ids.includes(p.id));
-          }
-        }
-        
-        // If still no products, fall back to sale products
-        if (discount.length === 0) {
-          discount = productsArray.filter((p: any) => p.isSale || p.originalPrice).slice(0, 20);
-        }
-        
-        setProducts(discount.slice(0, 20));
-      } catch (error) {
-        setProducts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadProducts();
-  }, []);
+  // THE FORMULA: Fetch ONLY collection products - NO scanning!
+  const { products, loading } = useCollection('designersDiscount');
 
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;
@@ -97,7 +65,7 @@ export default function DesignersOnDiscount() {
           </button>
         </div>
 
-        {isLoading ? (
+        {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
             <p className="text-gray-600">Loading discounted brands...</p>

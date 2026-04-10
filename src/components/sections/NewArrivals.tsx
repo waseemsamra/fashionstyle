@@ -2,41 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import { api } from '@/services/api';
+import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 export default function NewArrivals() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [products, setProducts] = useState<any[]>([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        console.log('📦 Loading new arrivals products...');
-        const data = await api.listProducts();
-        console.log('📦 Raw API response:', data);
-        
-        let productsArray = [];
-        if (Array.isArray(data)) {
-          productsArray = data;
-        } else if (data && data.items && Array.isArray(data.items)) {
-          productsArray = data.items;
-        }
-        
-        console.log('✅ New arrivals products loaded:', productsArray.length);
-        console.log('Products:', productsArray.map((p: any) => p.name));
-        setProducts(productsArray.slice(0, 4));
-      } catch (error) {
-        console.error('❌ Failed to load new arrivals products:', error);
-        setProducts([]);
-      }
-    };
-    
-    loadProducts();
-  }, []);
+  // THE FORMULA: Fetch ONLY collection products - NO scanning!
+  const { products: allProducts, loading } = useCollection('newArrivals');
+  const products = allProducts.slice(0, 4); // Show only first 4
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -59,6 +36,19 @@ export default function NewArrivals() {
   const handleAddToCart = (_product: any) => {
     toast.info('Add to cart coming soon');
   };
+
+  if (loading) {
+    return (
+      <section id="new-arrivals" ref={sectionRef} className="section-padding bg-beige-100">
+        <div className="container-custom">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading new arrivals...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="new-arrivals" ref={sectionRef} className="section-padding bg-beige-100">
