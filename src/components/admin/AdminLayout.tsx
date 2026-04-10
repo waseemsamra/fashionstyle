@@ -138,7 +138,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       subItems: [
         { id: 'featured', label: 'Featured Collection', icon: Star, path: '/admin/featured' },
         { id: 'wedding', label: 'Wedding Tales', icon: Heart, path: '/admin/wedding-tales' },
-        { id: 'designers', label: 'Designers Discount', icon: ShoppingBag, path: '/admin/designers-discount' }
+        { id: 'designers', label: 'Designers Discount', icon: ShoppingBag, path: '/admin/designers-discount' },
+        { id: 'summer', label: 'Summer Sale', icon: Tag, path: '/admin/summer-sale' }
       ]
     },
     { id: 'products', label: 'Products', icon: Package, path: resolveMenuPath('products') },

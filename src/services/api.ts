@@ -212,6 +212,8 @@ export const api = {
     metadata?: any;
   }) {
     try {
+      console.log(`💾 Saving collection ${name}:`, data);
+      
       const response = await fetch(`${API_URL}/collections/${name}`, {
         method: 'POST',
         headers: {
@@ -219,10 +221,19 @@ export const api = {
         },
         body: JSON.stringify(data),
       });
+
+      console.log(`📡 Response status:`, response.status);
       
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) {
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Save failed:`, errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log(`✅ Save successful:`, result);
+      return result;
+    } catch (error: any) {
       console.error(`❌ API Error (saveCollection ${name}):`, error);
       throw error;
     }
