@@ -37,13 +37,23 @@ export default function CollectionManager({
       setLoading(true);
       // Load all products for selection (admin only - acceptable)
       const data = await api.listProducts({ limit: 500 });
-      const productsArray = Array.isArray(data) ? data : (data.items || data.products || []);
+      console.log('📦 CollectionManager - API response:', data);
+      console.log('📦 Is array?', Array.isArray(data));
+      console.log('📦 Has items?', data?.items);
+      
+      const productsArray = Array.isArray(data) ? data : (data?.items || data?.products || []);
+      console.log('📦 Products array:', productsArray.length, 'products');
+      console.log('📦 First product:', productsArray[0]);
+      
       setAllProducts(productsArray);
 
       // Load existing collection
       const existingCollection = await api.getCollection(collectionId);
-      setSelectedIds(existingCollection.products.map((p: any) => p.id));
+      console.log('📦 Existing collection:', existingCollection);
+      console.log('📦 Existing product IDs:', existingCollection.products.map((p: any) => p.id));
       
+      setSelectedIds(existingCollection.products.map((p: any) => p.id));
+
       console.log(`✅ Loaded ${productsArray.length} products, ${existingCollection.products.length} in collection`);
     } catch (error) {
       console.error('Failed to load data:', error);
