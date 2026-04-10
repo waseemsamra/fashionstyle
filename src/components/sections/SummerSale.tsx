@@ -13,7 +13,7 @@ export default function SummerSale() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  // THE FORMULA: fetch ONLY collection products - NO scanning!
+  // THE FORMULA: Fetch ONLY collection products - NO scanning!
   const { products, loading } = useCollection('summerSale');
 
   useEffect(() => {
@@ -48,16 +48,16 @@ export default function SummerSale() {
   const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
 
   return (
-    <section className="section-padding bg-white">
+    <section className="section-padding bg-beige-100">
       <div className="container-custom">
         {/* Header: Title Left, View All Right */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-1">Summer Savings</span>
+            <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-1">Seasonal Deals</span>
             <h2 className="font-playfair text-3xl md:text-4xl font-semibold text-black">Summer Sale</h2>
           </div>
           <button
-            onClick={() => navigate('/shop')}
+            onClick={() => navigate('/shop?sale=true')}
             className="text-gold font-medium hover:text-gold/80 transition-colors flex items-center gap-2"
           >
             View All
@@ -73,7 +73,7 @@ export default function SummerSale() {
         ) : products.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600">
-              No summer sale products found yet. Please add products in Admin → Summer Sale.
+              No summer sale products yet. Please add products in Admin → Summer Sale.
             </p>
           </div>
         ) : (
