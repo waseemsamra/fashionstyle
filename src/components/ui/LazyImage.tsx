@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { getProductImage } from '@/utils/productImage';
 
 interface LazyImageProps {
   src?: string;
@@ -7,6 +8,7 @@ interface LazyImageProps {
   productName?: string;
   productId?: string | number;
   onLoad?: () => void;
+  onError?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
 }
 
 export default function LazyImage({
@@ -16,27 +18,33 @@ export default function LazyImage({
   productName,
   productId,
   onLoad,
+  onError,
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Generate the image URL - S3 ONLY for production
+  // Generate the image URL - Uses CloudFront CDN if configured
   useEffect(() => {
     let imageUrl = '';
-    
+
     if (src && src.startsWith('http')) {
-      // If src is provided and is a full URL (from API), use it directly
-      imageUrl = src;
+      // Use getProductImage to convert S3 URLs to CloudFront CDN URLs
+      const mockProduct: any = { image: src, id: productId, name: productName };
+      imageUrl = getProductImage(mockProduct);
     } else if (productId) {
-      // Generate S3 image URL from product ID
-      imageUrl = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/${productId}.jpg`;
+      // Generate CDN image URL from product ID
+      const mockProduct: any = { id: productId, name: productName };
+      imageUrl = getProductImage(mockProduct);
     }
-    // Production mode: No Unsplash fallbacks, no placeholders
-    // If no image, onError will handle it
-    
-    console.log('🖼️ LazyImage:', { src: src ? src.substring(0, 50) : 'none', productId, imageUrl: imageUrl.substring(0, 50) });
+
+    console.log('🖼️ LazyImage:', { 
+      src: src ? src.substring(0, 50) : 'none', 
+      productId, 
+      imageUrl: imageUrl.substring(0, 60),
+      isCDN: imageUrl.includes('cloudfront.net')
+    });
     setImgSrc(imageUrl);
   }, [src, productName, productId]);
 
@@ -67,8 +75,9 @@ export default function LazyImage({
     onLoad?.();
   };
 
-  const handleError = () => {
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     console.error('❌ Image failed to load:', imgSrc);
+    onError?.(e);
     // Production: Hide image on error (no fallbacks)
     setImgSrc('');
     setIsLoaded(true);
