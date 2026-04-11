@@ -45,9 +45,29 @@ exports.handler = async (event) => {
 /**
  * GET /categories - Get all categories with product counts
  * Efficient: Only scans category field, not full products
+ * Caches results for 5 minutes to avoid repeated scans
  */
+let cachedCategories = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 async function getCategories() {
-  console.log('📊 Fetching categories...');
+  // Return cached data if still valid
+  const now = Date.now();
+  if (cachedCategories && (now - cacheTimestamp) < CACHE_DURATION) {
+    console.log('⚡ Returning cached categories');
+    return {
+      statusCode: 200,
+      headers: { ...CORS_HEADERS, 'Cache-Control': 'public, max-age=300' },
+      body: JSON.stringify({
+        categories: cachedCategories,
+        total: cachedCategories.length,
+        cached: true,
+      }),
+    };
+  }
+
+  console.log('📊 Scanning products for categories...');
 
   // Scan ONLY the category field - much faster than full product scan
   const command = new ScanCommand({
@@ -85,16 +105,18 @@ async function getCategories() {
   console.log(`📊 Scanned ${totalScanned} items, found ${Object.keys(categoryCounts).length} categories`);
 
   // Convert to array and sort by count
-  const categories = Object.entries(categoryCounts)
+  cachedCategories = Object.entries(categoryCounts)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count);
 
+  cacheTimestamp = now;
+
   return {
     statusCode: 200,
-    headers: CORS_HEADERS,
+    headers: { ...CORS_HEADERS, 'Cache-Control': 'public, max-age=300' },
     body: JSON.stringify({
-      categories,
-      total: categories.length,
+      categories: cachedCategories,
+      total: cachedCategories.length,
       scanned: totalScanned,
     }),
   };

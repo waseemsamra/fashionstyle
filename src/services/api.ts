@@ -1,4 +1,6 @@
 // services/api.ts
+import { cache, CACHE_KEYS, getCollectionCacheKey } from './cache';
+
 const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 // API Client with all methods for backwards compatibility
@@ -118,6 +120,23 @@ export const api = {
     [key: string]: any;
   }) {
     try {
+      // Check cache first for unfiltered requests
+      const hasFilters = filters && (filters.isFeatured || filters.isNew || filters.isSale || filters.tag || filters.occasion || filters.brand || filters.category);
+      
+      if (!hasFilters) {
+        const cached = cache.get<any[]>(CACHE_KEYS.PRODUCTS);
+        if (cached) {
+          console.log('⚡ Products from cache');
+          return {
+            items: cached,
+            products: cached,
+            data: cached,
+            count: cached.length,
+            total: cached.length,
+          };
+        }
+      }
+
       // Build query string with filters
       const queryParams = new URLSearchParams();
       if (filters?.limit) queryParams.append('limit', String(filters.limit));
@@ -145,18 +164,24 @@ export const api = {
       
       const response = await fetch(url, {
         credentials: 'omit',
-        cache: 'force-cache', // Use browser caching
+        cache: 'force-cache',
       });
       
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
+      const products = data.items || data.products || [];
+
+      // Cache unfiltered products for 5 minutes
+      if (!hasFilters && products.length > 0) {
+        cache.set(CACHE_KEYS.PRODUCTS, products, 5 * 60 * 1000);
+      }
       
       return {
-        items: data.items || data.products || [],
-        products: data.items || data.products || [],
-        data: data.items || data.products || [],
-        count: data.count || 0,
-        total: data.total || 0,
+        items: products,
+        products,
+        data: products,
+        count: data.count || products.length,
+        total: data.total || products.length,
         nextToken: data.nextToken,
         lastEvaluatedKey: data.lastEvaluatedKey,
         LastEvaluatedKey: data.LastEvaluatedKey,
@@ -164,6 +189,18 @@ export const api = {
       };
     } catch (error) {
       console.error('❌ API Error (listProducts):', error);
+      // Return cached data on error if available
+      const cached = cache.get<any[]>(CACHE_KEYS.PRODUCTS);
+      if (cached) {
+        console.log('⚠️ Returning cached products due to API error');
+        return {
+          items: cached,
+          products: cached,
+          data: cached,
+          count: cached.length,
+          total: cached.length,
+        };
+      }
       return {
         items: [],
         products: [],
@@ -183,6 +220,14 @@ export const api = {
   // Get collection with all its products (FAST - direct fetch)
   async getCollection(name: string) {
     try {
+      // Check cache first
+      const cacheKey = getCollectionCacheKey(name);
+      const cached = cache.get<any>(cacheKey);
+      if (cached) {
+        console.log(`⚡ Collection ${name} from cache`);
+        return cached;
+      }
+
       const response = await fetch(`${API_URL}/collections/${name}`, {
         credentials: 'omit',
       });
@@ -193,13 +238,25 @@ export const api = {
       }
       
       const data = await response.json();
-      return {
+      const result = {
         collection: data.collection || null,
         products: data.products || [],
         count: data.count || 0,
       };
+
+      // Cache collection for 5 minutes
+      cache.set(cacheKey, result, 5 * 60 * 1000);
+
+      return result;
     } catch (error) {
       console.error(`❌ API Error (getCollection ${name}):`, error);
+      // Try cache on error
+      const cacheKey = getCollectionCacheKey(name);
+      const cached = cache.get<any>(cacheKey);
+      if (cached) {
+        console.log(`⚠️ Returning cached collection ${name} due to error`);
+        return cached;
+      }
       return { collection: null, products: [], count: 0 };
     }
   },
@@ -232,6 +289,14 @@ export const api = {
       
       const result = await response.json();
       console.log(`✅ Save successful:`, result);
+
+      // Clear collection cache after successful save
+      const cacheKey = getCollectionCacheKey(name);
+      cache.remove(cacheKey);
+
+      // Also clear products cache since it may have changed
+      cache.remove(CACHE_KEYS.PRODUCTS);
+      
       return result;
     } catch (error: any) {
       console.error(`❌ API Error (saveCollection ${name}):`, error);

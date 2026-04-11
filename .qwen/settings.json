@@ -31,7 +31,8 @@
       "Bash(zip *)",
       "Bash(unzip *)",
       "Bash(./fix-cors-working.sh)",
-      "Bash(sed *)"
+      "Bash(sed *)",
+      "Bash(ls *)"
     ]
   },
   "mcpServers": {
