@@ -115,6 +115,11 @@ export default function AdminProducts() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [filterBrand, setFilterBrand] = useState('all');
+
+  // Extract unique categories and brands from products
+  const uniqueCategories = Array.from(new Set(products.map(p => p.category).filter(Boolean))) as string[];
+  const uniqueBrands = Array.from(new Set(products.map(p => p.brand).filter(Boolean))) as string[];
   const [brands, setBrands] = useState<any[]>([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [sizes] = useState(DEFAULT_SIZES);
@@ -427,9 +432,12 @@ export default function AdminProducts() {
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
+    const matchesCategory = filterCategory === 'all' || 
+      (product.category && product.category.toLowerCase() === filterCategory.toLowerCase());
+    const matchesBrand = filterBrand === 'all' || 
+      (product.brand && product.brand.toLowerCase() === filterBrand.toLowerCase());
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesBrand;
   });
 
   // Pagination logic
@@ -592,11 +600,23 @@ export default function AdminProducts() {
                 onChange={(e) => setFilterCategory(e.target.value)}
                 className="w-full p-2 border rounded-lg"
               >
-                <option value="all">All Categories</option>
-                <option value="Casual">Casual</option>
-                <option value="Formal">Formal</option>
-                <option value="Bridal">Bridal</option>
-                <option value="Casual Wear">Casual Wear</option>
+                <option value="all">All Categories ({products.length})</option>
+                {uniqueCategories.sort().map(cat => (
+                  <option key={cat} value={cat}>{cat} ({products.filter(p => p.category === cat).length})</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Filter by Brand</Label>
+              <select
+                value={filterBrand}
+                onChange={(e) => setFilterBrand(e.target.value)}
+                className="w-full p-2 border rounded-lg"
+              >
+                <option value="all">All Brands ({products.length})</option>
+                {uniqueBrands.sort().map(brand => (
+                  <option key={brand} value={brand}>{brand} ({products.filter(p => p.brand === brand).length})</option>
+                ))}
               </select>
             </div>
           </div>
