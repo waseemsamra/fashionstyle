@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
-import { api } from '@/services/api';
 
 const CATEGORY_IMAGES: Record<string, string> = {
   'Bridal Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-bridal.jpg',
@@ -31,37 +30,27 @@ export default function Categories() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        console.log('📦 Loading categories...');
-        const data = await api.listProducts({ limit: 1000 });
-        console.log('📦 API response type:', Array.isArray(data) ? 'array' : typeof data);
+        console.log('📦 Loading categories from API...');
         
-        const productsArray = Array.isArray(data) ? data : (data.items || data.products || []);
-        console.log('📦 Products array:', productsArray.length, 'items');
-        
-        // Count products by category
-        const categoryCounts: Record<string, number> = {};
-        productsArray.forEach((p: any) => {
-          const cat = p.category || p.Category || 'Uncategorized';
-          if (cat) {
-            categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
-          }
+        // Fetch categories directly from efficient endpoint (NOT all products)
+        const response = await fetch('https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/categories', {
+          cache: 'no-cache'
         });
-
-        console.log('📊 Category counts:', categoryCounts);
-
-        // Build categories array
-        const cats = Object.entries(categoryCounts)
-          .map(([name, count]) => ({
-            name,
-            image: CATEGORY_IMAGES[name] || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
-            description: CATEGORY_DESCRIPTIONS[name] || 'Browse products',
-            itemCount: count,
+        const data = await response.json();
+        
+        console.log('📊 Categories API response:', data);
+        
+        const cats = (data.categories || [])
+          .map((cat: any) => ({
+            name: cat.name,
+            image: CATEGORY_IMAGES[cat.name] || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
+            description: CATEGORY_DESCRIPTIONS[cat.name] || 'Browse products',
+            itemCount: cat.count,
           }))
-          .filter(c => c.itemCount > 0)
-          .sort((a, b) => b.itemCount - a.itemCount)
+          .filter((c: any) => c.itemCount > 0)
           .slice(0, 8);
 
-        console.log('📋 Final categories:', cats.length, cats.map(c => `${c.name}(${c.itemCount})`));
+        console.log('📋 Final categories:', cats.map((c: any) => `${c.name}(${c.itemCount})`).join(', '));
         setCategories(cats);
       } catch (error) {
         console.error('Failed to load categories:', error);
