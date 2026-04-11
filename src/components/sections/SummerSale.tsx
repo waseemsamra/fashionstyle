@@ -47,6 +47,27 @@ export default function SummerSale() {
 
   const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
 
+  console.log('🏠 SummerSale render - loading:', loading, 'products:', products.length);
+
+  if (loading) {
+    return (
+      <section className="section-padding bg-beige-100">
+        <div className="container-custom">
+          <div className="text-center mb-8">
+            <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-1">Seasonal Deals</span>
+            <h2 className="font-playfair text-3xl md:text-4xl font-semibold text-black">Summer Sale</h2>
+          </div>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
+            <p className="text-gray-600">Loading summer sale products...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) return null;
+
   return (
     <section className="section-padding bg-beige-100">
       <div className="container-custom">
