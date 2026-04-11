@@ -31,15 +31,23 @@ export default function Categories() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
+        console.log('📦 Loading categories...');
         const data = await api.listProducts({ limit: 1000 });
+        console.log('📦 API response type:', Array.isArray(data) ? 'array' : typeof data);
+        
         const productsArray = Array.isArray(data) ? data : (data.items || data.products || []);
+        console.log('📦 Products array:', productsArray.length, 'items');
         
         // Count products by category
         const categoryCounts: Record<string, number> = {};
         productsArray.forEach((p: any) => {
-          const cat = p.category || 'Uncategorized';
-          categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+          const cat = p.category || p.Category || 'Uncategorized';
+          if (cat) {
+            categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+          }
         });
+
+        console.log('📊 Category counts:', categoryCounts);
 
         // Build categories array
         const cats = Object.entries(categoryCounts)
@@ -53,6 +61,7 @@ export default function Categories() {
           .sort((a, b) => b.itemCount - a.itemCount)
           .slice(0, 8);
 
+        console.log('📋 Final categories:', cats.length, cats.map(c => `${c.name}(${c.itemCount})`));
         setCategories(cats);
       } catch (error) {
         console.error('Failed to load categories:', error);
