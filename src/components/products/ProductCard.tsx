@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { toCDNUrl } from '@/utils/productImage';import { Link } from 'react-router-dom';
 import { ShoppingCart, Star } from 'lucide-react';
 import { WishlistButton } from '@/components/wishlist/WishlistButton';
 import LazyImage from '@/components/ui/LazyImage';
@@ -41,7 +41,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
         <Link to={getProductUrl(product)} className="block">
           <div className="aspect-square relative overflow-hidden bg-gray-100">
             <LazyImage
-              src={product.image}
+              src={toCDNUrl(product.image)}
               alt={product.name}
               productName={product.name}
               productId={product.id}
@@ -102,7 +102,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
         <Link to={getProductUrl(product)} className="block">
           <div className="aspect-square relative overflow-hidden bg-gray-100">
             <LazyImage
-              src={product.image}
+              src={toCDNUrl(product.image)}
               alt={product.name}
               productName={product.name}
               productId={product.id}
@@ -197,7 +197,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
       <Link to={getProductUrl(product)} className="block">
         <div className="aspect-square relative overflow-hidden bg-gray-100">
           <LazyImage
-            src={product.image}
+            src={toCDNUrl(product.image)}
             alt={product.name}
             productName={product.name}
             productId={product.id}

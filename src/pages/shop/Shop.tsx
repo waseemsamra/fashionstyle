@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { toCDNUrl } from '@/utils/productImage';import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, X, ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -414,7 +414,7 @@ export default function Shop() {
                     onClick={() => navigate(getProductUrl(product))}
                   >
                     <LazyImage
-                      src={product.image}
+                      src={toCDNUrl(product.image)}
                       alt={product.name}
                       productName={product.name}
                       productId={product.id}

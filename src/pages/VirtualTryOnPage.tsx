@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { toCDNUrl } from '@/utils/productImage';import { useState, useRef } from 'react';
 import { Upload, X, RotateCcw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -282,7 +282,7 @@ export default function VirtualTryOnPage() {
               { name: 'Cotton Kurti', price: 59, image: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/product-4.jpg' },
             ].map((product, index) => (
               <div key={index} className="bg-white rounded-lg shadow overflow-hidden">
-                <img src={product.image} alt={product.name} className="w-full h-48 object-cover" />
+                <img src={toCDNUrl(product.image)} alt={product.name} className="w-full h-48 object-cover" />
                 <div className="p-4">
                   <h3 className="font-medium text-sm mb-2">{product.name}</h3>
                   <p className="text-gold font-bold">${product.price}</p>

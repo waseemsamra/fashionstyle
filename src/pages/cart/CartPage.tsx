@@ -1,4 +1,4 @@
-import { useCart, useUpdateCartItem, useRemoveFromCart, useClearCart, useCartTotals } from '@/hooks/useCart';
+import { toCDNUrl } from '@/utils/productImage';import { useCart, useUpdateCartItem, useRemoveFromCart, useClearCart, useCartTotals } from '@/hooks/useCart';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, AlertCircle, Truck, Shield, CreditCard } from 'lucide-react';
@@ -69,7 +69,7 @@ export default function CartPage() {
                   {/* Product Image */}
                   <Link to={`/product/${item.productId}`} className="w-24 h-24 flex-shrink-0">
                     <img
-                      src={item.image}
+                      src={toCDNUrl(item.image)}
                       alt={item.name}
                       className="w-full h-full object-cover rounded"
                     />

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { toCDNUrl } from '@/utils/productImage';import { Link } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,7 @@ export function ProductGrid({ products, columns = 4 }: ProductGridProps) {
           <Link to={`/product/${product.id}`}>
             <div className="aspect-square relative overflow-hidden bg-gray-100">
               <LazyImage
-                src={product.image}
+                src={toCDNUrl(product.image)}
                 alt={product.name}
                 productName={product.name}
                 productId={product.id}

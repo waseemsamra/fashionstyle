@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sparkles, ShoppingCart, ChevronRight, Star, Package } from 'lucide-react';
+import { getProductImage } from '@/utils/productImage';
 import {
   generateOutfitCombinations,
   type Product,
@@ -86,7 +87,7 @@ export default function OutfitCombination({
               >
                 <div className="aspect-square relative">
                   <img
-                    src={item.image}
+                    src={getProductImage(item)}
                     alt={item.name}
                     className="w-full h-full object-cover"
                   />

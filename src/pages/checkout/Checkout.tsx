@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { toCDNUrl } from '@/utils/productImage';import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
@@ -374,7 +374,7 @@ export default function Checkout() {
                   {items.map((item: any) => (
                     <div key={item.id} className="flex gap-3">
                       <img
-                        src={item.image}
+                        src={toCDNUrl(item.image)}
                         alt={item.name}
                         className="w-16 h-20 object-cover rounded"
                       />

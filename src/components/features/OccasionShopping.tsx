@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { toCDNUrl } from '@/utils/productImage';import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -202,7 +202,7 @@ export default function OccasionShopping({
                         onClick={() => onViewProduct?.(item.id)}
                       >
                         <LazyImage
-                          src={item.image}
+                          src={toCDNUrl(item.image)}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
@@ -250,7 +250,7 @@ export default function OccasionShopping({
               >
                 <div className="aspect-square relative">
                   <LazyImage
-                    src={product.image}
+                    src={toCDNUrl(product.image)}
                     alt={product.name}
                     className="w-full h-full object-cover"
                   />

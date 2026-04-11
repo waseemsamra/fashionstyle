@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { toCDNUrl } from '@/utils/productImage';import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { ShoppingBag, Menu, X, Search, User } from 'lucide-react';
@@ -313,7 +313,7 @@ export default function Navigation() {
                             className="flex gap-4 p-3 bg-beige-50 rounded-lg"
                           >
                             <img
-                              src={item.image}
+                              src={toCDNUrl(item.image)}
                               alt={item.name}
                               className="w-20 h-24 object-cover rounded-md"
                             />

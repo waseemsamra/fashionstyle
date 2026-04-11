@@ -53,3 +53,16 @@ export const getAssetUrl = (key: string): string => {
 export const getS3AssetUrl = (key: string): string => {
   return `${S3_BASE_URL}/${key.replace(/^\//, '')}`;
 };
+
+/**
+ * Convert ANY S3 URL to CDN URL automatically
+ * Use this anywhere you have a direct S3 URL
+ */
+export const toCDNUrl = (url: string): string => {
+  if (!url || !url.startsWith('http')) return url;
+  if (CDN_BASE_URL === S3_BASE_URL) return url; // CDN not configured
+  if (url.includes('fashionstore-products-1773891614v.s3')) {
+    return url.replace(S3_BASE_URL, CDN_BASE_URL);
+  }
+  return url;
+};

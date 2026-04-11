@@ -32,7 +32,20 @@
       "Bash(unzip *)",
       "Bash(./fix-cors-working.sh)",
       "Bash(sed *)",
-      "Bash(ls *)"
+      "Bash(ls *)",
+      "Bash(cat)",
+      "Bash(\"src/pages/shop/shop.tsx\")",
+      "Bash(\"src/pages/shop/productdetail.tsx\")",
+      "Bash(\"src/components/products/productcard.tsx\")",
+      "Bash(\"src/pages/wishlist/wishlistpage.tsx\")",
+      "Bash(\"src/pages/cart/cartpage.tsx\")",
+      "Bash(\"src/pages/checkout/checkout.tsx\")",
+      "Bash(\"src/components/layout/navigation.tsx\")",
+      "Bash(\"src/components/search/productgrid.tsx\")",
+      "Bash(\"src/components/features/occasionshopping.tsx\")",
+      "Bash(\"src/pages/virtualtryonpage.tsx\")",
+      "Bash(script)",
+      "Bash(bash *)"
     ]
   },
   "mcpServers": {
