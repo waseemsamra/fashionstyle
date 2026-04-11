@@ -7,20 +7,26 @@ const { DynamoDBDocumentClient, GetCommand, PutCommand, DeleteCommand, ScanComma
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
 const dynamodb = DynamoDBDocumentClient.from(client);
-const TABLE_NAME = process.env.TABLE_NAME || 'fashionstore-data';
+
+// Collections stored in fashionstore-data table
+const COLLECTIONS_TABLE = process.env.COLLECTIONS_TABLE || 'fashionstore-data';
+
+// Products stored in products-prod table with simple {id} key
+const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || 'products-prod';
 
 // CORS headers
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
+  'Access-Control-Max-Age': '86400',
   'Content-Type': 'application/json',
 };
 
 exports.handler = async (event) => {
   console.log('Collections Handler:', event.path, event.httpMethod);
 
-  // Handle CORS preflight
+  // Handle OPTIONS preflight request
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -79,7 +85,7 @@ exports.handler = async (event) => {
  */
 async function getAllCollections() {
   const command = new ScanCommand({
-    TableName: TABLE_NAME,
+    TableName: COLLECTIONS_TABLE,
     FilterExpression: 'entityType = :entityType',
     ExpressionAttributeValues: {
       ':entityType': 'COLLECTION'
@@ -111,14 +117,14 @@ async function getAllCollections() {
 
 /**
  * GET /collections/:name - Get collection with product details
- * SUPER FAST: Direct GetItem + BatchGetItem
+ * Fetches products from products-prod table
  */
 async function getCollection(collectionName) {
   console.log(`🔍 Getting collection: ${collectionName}`);
 
   // Step 1: Get collection metadata
   const command = new GetCommand({
-    TableName: TABLE_NAME,
+    TableName: COLLECTIONS_TABLE,
     Key: {
       PK: `COLLECTION#${collectionName}`,
       SK: `COLLECTION#${collectionName}`
@@ -131,7 +137,7 @@ async function getCollection(collectionName) {
     return {
       statusCode: 404,
       headers: CORS_HEADERS,
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         message: 'Collection not found',
         collection: collectionName,
         products: []
@@ -154,7 +160,7 @@ async function getCollection(collectionName) {
     };
   }
 
-  // Step 3: Batch get all products (up to 100 at once)
+  // Step 3: Batch get all products from products-prod table
   const products = await batchGetProducts(productIds);
 
   return {
@@ -180,7 +186,7 @@ async function saveCollection(collectionName, event) {
 
   // Check if collection exists
   const existingCommand = new GetCommand({
-    TableName: TABLE_NAME,
+    TableName: COLLECTIONS_TABLE,
     Key: {
       PK: `COLLECTION#${collectionName}`,
       SK: `COLLECTION#${collectionName}`
@@ -203,7 +209,7 @@ async function saveCollection(collectionName, event) {
   };
 
   const putCommand = new PutCommand({
-    TableName: TABLE_NAME,
+    TableName: COLLECTIONS_TABLE,
     Item: collectionData
   });
 
@@ -229,7 +235,7 @@ async function deleteCollection(collectionName) {
   console.log(`🗑️ Deleting collection: ${collectionName}`);
 
   const command = new DeleteCommand({
-    TableName: TABLE_NAME,
+    TableName: COLLECTIONS_TABLE,
     Key: {
       PK: `COLLECTION#${collectionName}`,
       SK: `COLLECTION#${collectionName}`
@@ -246,33 +252,33 @@ async function deleteCollection(collectionName) {
 }
 
 /**
- * Batch get products by IDs (up to 100 at once)
- * This is SUPER FAST - single API call for all products
+ * Batch get products by IDs from products-prod table
+ * Uses simple {id} key structure (not PK/SK)
  */
 async function batchGetProducts(productIds) {
   if (productIds.length === 0) return [];
 
   const products = [];
-  
+
   // BatchGetItem can handle up to 100 items at once
   for (let i = 0; i < productIds.length; i += 100) {
     const batch = productIds.slice(i, i + 100);
-    
+
+    console.log(`📦 Batch ${Math.floor(i/100) + 1}: Fetching ${batch.length} products from ${PRODUCTS_TABLE}`);
+
     const command = new BatchGetCommand({
       RequestItems: {
-        [TABLE_NAME]: {
-          Keys: batch.map(id => ({
-            PK: `PROD#${id}`,
-            SK: `PROD#${id}`
-          }))
+        [PRODUCTS_TABLE]: {
+          Keys: batch.map(id => ({ id }))  // Simple {id} key structure
         }
       }
     });
 
     const result = await dynamodb.send(command);
-    products.push(...result.Responses[TABLE_NAME]);
-    
-    console.log(`📦 Batch ${Math.floor(i/100) + 1}: Retrieved ${result.Responses[TABLE_NAME].length} products`);
+    const batchProducts = result.Responses[PRODUCTS_TABLE] || [];
+    products.push(...batchProducts);
+
+    console.log(`📦 Batch ${Math.floor(i/100) + 1}: Retrieved ${batchProducts.length} products`);
   }
 
   return products;

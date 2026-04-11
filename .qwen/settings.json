@@ -29,7 +29,9 @@
       "Bash(pkill *)",
       "Bash(chmod *)",
       "Bash(zip *)",
-      "Bash(unzip *)"
+      "Bash(unzip *)",
+      "Bash(./fix-cors-working.sh)",
+      "Bash(sed *)"
     ]
   },
   "mcpServers": {

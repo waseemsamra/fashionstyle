@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, X, ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useProducts } from '@/hooks/useProducts';
 import { useBrands } from '@/hooks/useBrands';
+import { useCollection } from '@/hooks/useCollection';
 import type { Brand } from '@/services/brandsService';
 import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
@@ -13,6 +14,7 @@ const ITEMS_PER_PAGE = 50;
 
 export default function Shop() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,9 +26,18 @@ export default function Shop() {
     brand: 'all',
   });
 
+  // Check if we're filtering by sale - use collection instead of all products
+  const isSaleFilter = searchParams.get('sale') === 'true';
+  const { products: saleProducts, loading: saleLoading } = useCollection('summerSale');
+  const { data: allProductsData, isLoading: isLoadingAll, error } = useProducts();
+
+  // Use sale products if filter is active, otherwise use all products
+  const isLoadingProducts = isSaleFilter ? saleLoading : isLoadingAll;
+  const productsSource = isSaleFilter ? saleProducts : allProductsData;
+
   // Fetch brands from API using hook
   const { brands: brandsData } = useBrands();
-  
+
   const normalize = (value: unknown) =>
     String(value ?? '')
       .trim()
@@ -50,15 +61,13 @@ export default function Shop() {
     ...(brandsData?.map((b: Brand) => b.name).filter(Boolean) || []),
   ];
 
-  // Use React Query with caching
-  const { data: productsData, isLoading, error } = useProducts();
-
+  // Sync products from the right source (collections or all products)
   useEffect(() => {
-    console.log('Shop: productsData changed:', productsData?.length);
-    if (productsData && Array.isArray(productsData)) {
-      setAllProducts(productsData);
+    if (productsSource && Array.isArray(productsSource)) {
+      console.log(`Shop: Using ${isSaleFilter ? 'sale collection' : 'all products'} (${productsSource.length} items)`);
+      setAllProducts(productsSource);
     }
-  }, [productsData]);
+  }, [productsSource, isSaleFilter]);
 
   useEffect(() => {
     // Ensure the Shop page always starts at top when navigated to
@@ -134,7 +143,7 @@ export default function Shop() {
   };
 
   // NOW we can do early returns
-  if (isLoading) {
+  if (isLoadingProducts) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -171,12 +180,37 @@ export default function Shop() {
   };
 
   return (
-    <div className="min-h-screen bg-beige-100 py-12">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-beige-100">
+      {/* Hero Section for Sale */}
+      {filters.status === 'sale' && (
+        <section className="relative bg-gradient-to-r from-gold/20 via-gold/10 to-transparent py-16 mb-8">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl">
+              <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-2">Special Offers</span>
+              <h1 className="font-playfair text-4xl md:text-5xl font-bold text-black mb-4">Summer Sale</h1>
+              <p className="text-gray-600 text-lg mb-6">Discover amazing discounts on our exclusive summer collection. Limited-time offers on your favorite designer pieces.</p>
+              <button
+                onClick={() => {
+                  setFilters(prev => ({ ...prev, status: 'all' }));
+                  navigate('/shop');
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full hover:bg-gold transition-colors"
+              >
+                View All Products
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Shop All Products</h1>
-          <Button 
-            onClick={() => setShowFilters(!showFilters)} 
+          <h1 className="text-3xl font-bold">
+            {filters.status === 'sale' ? 'All Products' : 'Shop All Products'}
+          </h1>
+          <Button
+            onClick={() => setShowFilters(!showFilters)}
             variant="outline"
             className="hover:bg-gold hover:text-white hover:border-gold transition-colors"
           >
