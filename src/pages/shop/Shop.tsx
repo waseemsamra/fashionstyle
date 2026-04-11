@@ -69,6 +69,27 @@ export default function Shop() {
     }
   }, [productsSource, isSaleFilter]);
 
+  // Read URL parameters to set filters (e.g., ?category=Bridal Wear, ?sale=true, ?brand=XYZ)
+  useEffect(() => {
+    const category = searchParams.get('category');
+    const brand = searchParams.get('brand');
+    const sale = searchParams.get('sale');
+    const priceRange = searchParams.get('priceRange');
+
+    const updates: any = {};
+    if (category) updates.category = decodeURIComponent(category);
+    if (brand) updates.brand = decodeURIComponent(brand);
+    if (sale === 'true') updates.status = 'sale';
+    if (priceRange && ['under50', '50-100', '100-200', 'over200'].includes(priceRange)) {
+      updates.priceRange = priceRange;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      setFilters(prev => ({ ...prev, ...updates }));
+      console.log('📍 Applied URL filters:', updates);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     // Ensure the Shop page always starts at top when navigated to
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
