@@ -2,7 +2,7 @@ import { toCDNUrl } from '@/utils/productImage';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { SlidersHorizontal, X, ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { SlidersHorizontal, X, ShoppingBag, Star, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBrands } from '@/hooks/useBrands';
 import { useCollection } from '@/hooks/useCollection';
@@ -11,7 +11,7 @@ import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
 // import { FixedSizeList as List } from 'react-window'; // Temporarily disabled
 
-const ITEMS_PER_PAGE = 50;
+// const ITEMS_PER_PAGE = 50; // Not needed - showing all products in grid
 const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 // Infinite scroll hook - loads more products when user scrolls to bottom
@@ -145,14 +145,13 @@ export default function Shop() {
     ...(brandsData?.map((b: Brand) => b.name).filter(Boolean) || []),
   ], [brandsData]);
 
-  // Fetch products for current page from server (50 per page)
-  const fetchProductsPage = useCallback(async (page: number) => {
+  // Fetch ALL products from server and display in grid
+  const fetchAllProducts = useCallback(async () => {
     setIsLoadingProducts(true);
     setError(null);
     try {
-      console.log(`📦 Fetching shop page ${page}...`);
-      
-      let url: string;
+      console.log(`📦 Fetching ALL products...`);
+
       if (isSaleFilter) {
         // For sale filter, use collection products (already loaded)
         setAllProducts(saleProducts || []);
@@ -160,28 +159,66 @@ export default function Shop() {
         setIsLoadingProducts(false);
         return;
       }
-      
-      // Build query with filters
+
+      // Fetch first page to get total count
       const params = new URLSearchParams();
-      params.append('limit', String(ITEMS_PER_PAGE));
-      params.append('page', String(page));
+      params.append('limit', '1');
+      params.append('page', '1');
       if (filters.category !== 'all') params.append('category', filters.category);
       if (filters.brand !== 'all') params.append('brand', filters.brand);
       if (filters.status === 'sale') params.append('isSale', 'true');
       if (filters.status === 'new') params.append('isNew', 'true');
-      
-      url = `${API_URL}/products?${params.toString()}`;
-      console.log('📡 Fetching:', url);
-      
-      const response = await fetch(url, { cache: 'force-cache' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      
-      const items = data.items || [];
-      console.log(`📦 Page ${page}: received ${items.length} products (total: ${data.total})`);
-      
-      setAllProducts(items);
-      setTotalProducts(data.total || items.length);
+
+      const firstUrl = `${API_URL}/products?${params.toString()}`;
+      const firstResponse = await fetch(firstUrl, { cache: 'force-cache' });
+      if (!firstResponse.ok) throw new Error(`HTTP ${firstResponse.status}`);
+      const firstData = await firstResponse.json();
+
+      const total = firstData.total || firstData.count || 0;
+      console.log(`📊 Total products available: ${total}`);
+      setTotalProducts(total);
+
+      if (total === 0) {
+        setAllProducts([]);
+        setIsLoadingProducts(false);
+        return;
+      }
+
+      // Now fetch ALL products in one request (Lambda supports up to 500 per page, so batch if needed)
+      const allProducts: any[] = [];
+      let page = 1;
+      const limit = 500;
+      let hasMore = true;
+
+      while (hasMore) {
+        const batchParams = new URLSearchParams();
+        batchParams.append('limit', String(limit));
+        batchParams.append('page', String(page));
+        if (filters.category !== 'all') batchParams.append('category', filters.category);
+        if (filters.brand !== 'all') batchParams.append('brand', filters.brand);
+        if (filters.status === 'sale') batchParams.append('isSale', 'true');
+        if (filters.status === 'new') batchParams.append('isNew', 'true');
+
+        const batchUrl = `${API_URL}/products?${batchParams.toString()}`;
+        console.log(`📡 Fetching page ${page}...`);
+
+        const response = await fetch(batchUrl, { cache: 'force-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+
+        const items = data.items || [];
+        allProducts.push(...items);
+        console.log(`📦 Page ${page}: got ${items.length} products (total so far: ${allProducts.length})`);
+
+        if (items.length < limit || allProducts.length >= total) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
+
+      console.log(`✅ Fetched ${allProducts.length} products total`);
+      setAllProducts(allProducts);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
@@ -190,10 +227,10 @@ export default function Shop() {
     }
   }, [isSaleFilter, saleProducts, filters.category, filters.brand, filters.status]);
 
-  // Fetch products when page or filters change
+  // Fetch products when filters change
   useEffect(() => {
-    fetchProductsPage(currentPage);
-  }, [fetchProductsPage, currentPage]);
+    fetchAllProducts();
+  }, [fetchAllProducts]);
 
   // Read URL parameters to set filters
   useEffect(() => {
@@ -221,27 +258,13 @@ export default function Shop() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [currentPage]);
 
-  const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
-
-  // allProducts is already paginated from server
+  // allProducts contains ALL products - displayed in grid
   const paginatedProducts = allProducts;
 
   const hasRatingData = allProducts.some((p) => typeof p?.rating === 'number');
   const hasStatusData = allProducts.some(
     (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
   );
-
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 1) goToPage(currentPage - 1);
-  };
-
-  const goToNextPage = () => {
-    if (currentPage < totalPages) goToPage(currentPage + 1);
-  };
 
   // Loading state
   if (isLoadingProducts) {
@@ -278,7 +301,6 @@ export default function Shop() {
       status: 'all',
       brand: 'all',
     });
-    setCurrentPage(1);
   };
 
   return (
@@ -463,7 +485,7 @@ export default function Shop() {
           <div className="flex-1">
             <p className="text-gray-600 mb-6">
               {paginatedProducts.length > 0
-                ? `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1}-${Math.min(currentPage * ITEMS_PER_PAGE, totalProducts)} of ${totalProducts} products (Page ${currentPage} of ${totalPages || 1})`
+                ? `Showing ${paginatedProducts.length} of ${totalProducts} products`
                 : 'No products found'}
             </p>
 
@@ -485,7 +507,7 @@ export default function Shop() {
             ) : (
               <>
               {/* Product Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {paginatedProducts.map((product) => (
                 <div
                   key={product.id}
@@ -561,80 +583,6 @@ export default function Shop() {
               ))}
             </div>
               </>
-            )}
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-12 flex flex-col items-center gap-4">
-                <div className="flex items-center gap-2">
-                  {/* Previous Button */}
-                  <button
-                    onClick={goToPreviousPage}
-                    disabled={currentPage === 1}
-                    className="flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gold"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    <span className="hidden sm:inline">Previous</span>
-                  </button>
-
-                  {/* Page Numbers */}
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                      // Show first page, last page, current page, and pages around current
-                      const showPage =
-                        page === 1 ||
-                        page === totalPages ||
-                        (page >= currentPage - 1 && page <= currentPage + 1);
-
-                      const showEllipsis =
-                        (page === currentPage - 2 && page > 1) ||
-                        (page === currentPage + 2 && page < totalPages);
-
-                      if (!showPage && !showEllipsis) return null;
-
-                      if (showEllipsis) {
-                        return (
-                          <span
-                            key={`ellipsis-${page}`}
-                            className="px-2 py-2 text-gray-500"
-                          >
-                            ...
-                          </span>
-                        );
-                      }
-
-                      return (
-                        <button
-                          key={page}
-                          onClick={() => goToPage(page)}
-                          className={`min-w-[40px] h-10 rounded-lg text-sm font-medium transition-colors ${
-                            page === currentPage
-                              ? 'bg-gold text-white hover:bg-gold/90'
-                              : 'border border-gray-300 hover:bg-gray-50 hover:border-gold'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    onClick={goToNextPage}
-                    disabled={currentPage === totalPages}
-                    className="flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 hover:border-gold"
-                  >
-                    <span className="hidden sm:inline">Next</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Page Info */}
-                <p className="text-sm text-gray-500">
-                  Page {currentPage} of {totalPages}
-                </p>
-              </div>
             )}
           </div>
         </div>
