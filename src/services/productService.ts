@@ -30,42 +30,54 @@ export interface Product {
 }
 
 /**
- * Get all products via API Gateway
+ * Get all products via API Gateway - fetches ALL pages
  */
 export const getAllProducts = async (): Promise<Product[]> => {
   try {
     console.log('📦 Fetching ALL products from API Gateway...');
 
-    const response = await productsApi.getAll({ limit: 100, page: 1 });
-    console.log('✅ Products response received');
-    console.log('📊 Raw response:', response);
+    const allProducts: Product[] = [];
+    let page = 1;
+    const limit = 500;
+    let hasMore = true;
 
-    // Handle null/undefined responses (CORS or network errors)
-    if (!response) {
-      console.warn('⚠️ No response from products API');
-      return [];
+    while (hasMore) {
+      const response = await productsApi.getAll({ limit, page });
+      console.log(`📦 Page ${page}: received ${response?.items?.length || 0} products`);
+
+      // Handle null/undefined responses
+      if (!response) {
+        console.warn('⚠️ No response from products API');
+        break;
+      }
+
+      // Handle different response formats
+      let products = [];
+      if (Array.isArray(response)) {
+        products = response;
+      } else if (response.items && Array.isArray(response.items)) {
+        products = response.items;
+      } else if (response.products && Array.isArray(response.products)) {
+        products = response.products;
+      } else if (response.data && Array.isArray(response.data)) {
+        products = response.data;
+      }
+
+      if (products.length === 0) {
+        hasMore = false;
+      } else {
+        allProducts.push(...products);
+        // Check if we got fewer products than limit (meaning we're on last page)
+        if (products.length < limit) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
     }
 
-    // Handle different response formats
-    let products = [];
-    if (Array.isArray(response)) {
-      products = response;
-    } else if (response.items && Array.isArray(response.items)) {
-      products = response.items;
-    } else if (response.products && Array.isArray(response.products)) {
-      products = response.products;
-    } else if (response.data && Array.isArray(response.data)) {
-      products = response.data;
-    } else if (response.body) {
-      const body = typeof response.body === 'string'
-        ? JSON.parse(response.body)
-        : response.body;
-      products = body.items || body.products || body.data || [];
-    }
-
-    console.log('✅ Extracted', products.length, 'products');
-
-    return products;
+    console.log(`✅ Total products fetched: ${allProducts.length}`);
+    return allProducts;
   } catch (error: any) {
     console.error('❌ Failed to fetch products:', error.message);
     return []; // Return empty array instead of throwing
