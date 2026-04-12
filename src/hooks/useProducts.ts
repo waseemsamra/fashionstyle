@@ -5,16 +5,15 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.
 
 async function fetchAllProducts(): Promise<any[]> {
   const allProducts: any[] = [];
-  let nextToken: string | undefined;
+  let page = 1;
+  const limit = 500; // Fetch 500 per page to minimize API calls
+  let hasMore = true;
 
   do {
-    const url = nextToken
-      ? `${API_URL}/products?nextToken=${encodeURIComponent(nextToken)}`
-      : `${API_URL}/products`;
-
+    const url = `${API_URL}/products?limit=${limit}&page=${page}`;
     console.log('📡 Fetching products from:', url);
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Unknown error');
       console.error('❌ API Error:', response.status, errorText);
@@ -22,10 +21,18 @@ async function fetchAllProducts(): Promise<any[]> {
     }
 
     const data = await response.json();
-    console.log('📦 Got', data.items?.length || 0, 'products, nextToken:', !!data.nextToken);
-    allProducts.push(...(data.items || []));
-    nextToken = data.nextToken;
-  } while (nextToken);
+    const items = data.items || [];
+    console.log('📦 Got', items.length, 'products from page', page);
+    
+    allProducts.push(...items);
+    
+    // If we got fewer items than limit, we're on the last page
+    if (items.length < limit) {
+      hasMore = false;
+    } else {
+      page++;
+    }
+  } while (hasMore);
 
   console.log('✅ Total products fetched:', allProducts.length);
   return allProducts;
