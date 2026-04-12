@@ -5,8 +5,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.
 
 async function fetchAllProducts(): Promise<any[]> {
   const allProducts: any[] = [];
+  const seenIds = new Set<string>();
   let page = 1;
-  const limit = 500; // Fetch 500 per page to minimize API calls
+  const limit = 500;
+  const MAX_PAGES = 10; // Safety limit: max 5000 products
   let hasMore = true;
 
   do {
@@ -24,17 +26,25 @@ async function fetchAllProducts(): Promise<any[]> {
     const items = data.items || [];
     console.log('📦 Got', items.length, 'products from page', page);
     
-    allProducts.push(...items);
+    // Filter out duplicates to detect when Lambda returns same page
+    const newItems = items.filter(item => !seenIds.has(item.id));
+    newItems.forEach(item => seenIds.add(item.id));
+    allProducts.push(...newItems);
     
-    // If we got fewer items than limit, we're on the last page
-    if (items.length < limit) {
+    console.log(`📊 Total unique products so far: ${allProducts.length}`);
+    
+    // Stop if: no items, fewer items than limit, hit max pages, or got duplicates (same page repeated)
+    if (items.length === 0 || items.length < limit || newItems.length === 0 || page >= MAX_PAGES) {
       hasMore = false;
+      if (newItems.length === 0) {
+        console.log('⚠️ Stopping: Lambda returned duplicate products (same page)');
+      }
     } else {
       page++;
     }
   } while (hasMore);
 
-  console.log('✅ Total products fetched:', allProducts.length);
+  console.log('✅ Total unique products fetched:', allProducts.length);
   return allProducts;
 }
 
