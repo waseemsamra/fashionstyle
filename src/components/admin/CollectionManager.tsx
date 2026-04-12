@@ -35,16 +35,15 @@ export default function CollectionManager({
   const loadProducts = async () => {
     try {
       setLoading(true);
-      // Load all products for selection (admin only - acceptable)
-      const data = await api.listProducts({ limit: 500 });
+      // Load ALL products for admin selection - bypass cache to get fresh data
+      const data = await api.listProducts({ limit: 1000, _bypassCache: true });
       console.log('📦 CollectionManager - API response:', data);
       console.log('📦 Is array?', Array.isArray(data));
       console.log('📦 Has items?', data?.items);
-      
+
       const productsArray = Array.isArray(data) ? data : (data?.items || data?.products || []);
       console.log('📦 Products array:', productsArray.length, 'products');
-      console.log('📦 First product:', productsArray[0]);
-      
+
       setAllProducts(productsArray);
 
       // Load existing collection

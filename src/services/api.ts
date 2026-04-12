@@ -120,9 +120,9 @@ export const api = {
     [key: string]: any;
   }) {
     try {
-      // Check cache first for unfiltered requests
-      const hasFilters = filters && (filters.isFeatured || filters.isNew || filters.isSale || filters.tag || filters.occasion || filters.brand || filters.category);
-      
+      // Check cache first for unfiltered requests (unless bypass requested)
+      const hasFilters = filters && (filters.isFeatured || filters.isNew || filters.isSale || filters.tag || filters.occasion || filters.brand || filters.category || filters._bypassCache);
+
       if (!hasFilters) {
         const cached = cache.get<any[]>(CACHE_KEYS.PRODUCTS);
         if (cached) {
