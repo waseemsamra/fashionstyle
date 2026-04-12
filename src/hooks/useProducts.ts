@@ -83,14 +83,8 @@ export const useProducts = () => {
   return useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const response = await fetch(`${API_URL}/products`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.items || [];
+      // Use fetchAllProducts to get ALL products with pagination
+      return await fetchAllProducts();
     },
     staleTime: 5 * 60 * 1000,
   });
