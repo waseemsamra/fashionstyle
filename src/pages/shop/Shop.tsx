@@ -9,9 +9,100 @@ import { useCollection } from '@/hooks/useCollection';
 import type { Brand } from '@/services/brandsService';
 import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
+// import { FixedSizeList as List } from 'react-window'; // Temporarily disabled
 
 const ITEMS_PER_PAGE = 50;
 const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+
+// Infinite scroll hook - loads more products when user scrolls to bottom
+// Currently unused but available for future infinite scroll mode
+/*
+function useInfiniteProducts(isSaleFilter: boolean, saleProducts: any[], filters: any) {
+  const [products, setProducts] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const observerRef = useRef<HTMLDivElement>(null);
+
+  // Reset when filters change
+  useEffect(() => {
+    setProducts([]);
+    setPage(1);
+    setHasMore(true);
+    setError(null);
+  }, [filters.category, filters.brand, filters.status, filters.priceRange]);
+
+  // Load products for current page
+  useEffect(() => {
+    if (isSaleFilter) {
+      setProducts(saleProducts || []);
+      setTotalProducts(saleProducts?.length || 0);
+      setHasMore(false);
+      setIsLoading(false);
+      return;
+    }
+
+    const loadPage = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams();
+        params.append('limit', String(ITEMS_PER_PAGE));
+        params.append('page', String(page));
+        if (filters.category !== 'all') params.append('category', filters.category);
+        if (filters.brand !== 'all') params.append('brand', filters.brand);
+        if (filters.status === 'sale') params.append('isSale', 'true');
+        if (filters.status === 'new') params.append('isNew', 'true');
+
+        const url = `${API_URL}/products?${params.toString()}`;
+        console.log(`📡 Fetching shop page ${page}:`, url);
+
+        const response = await fetch(url, { cache: 'force-cache' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+
+        const items = data.items || [];
+        console.log(`📦 Page ${page}: received ${items.length} products (total available: ${data.total})`);
+
+        setProducts(prev => page === 1 ? items : [...prev, ...items]);
+        setTotalProducts(data.total || 0);
+
+        // If we got fewer items than limit, no more pages
+        if (items.length < ITEMS_PER_PAGE) {
+          setHasMore(false);
+        }
+      } catch (err) {
+        console.error('❌ Failed to fetch products:', err);
+        setError(err as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPage();
+  }, [isSaleFilter, saleProducts, page, filters.category, filters.brand, filters.status]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+          console.log('📜 Load more triggered - page', page + 1);
+          setPage(prev => prev + 1);
+        }
+      },
+      { rootMargin: '200px' } // Start loading 200px before reaching bottom
+    );
+
+    if (observerRef.current) observer.observe(observerRef.current);
+    return () => observer.disconnect();
+  }, [hasMore, isLoading, page]);
+
+  return { products, totalProducts, isLoading, hasMore, error, loadMoreRef: observerRef, setPage };
+}
+*/
 
 export default function Shop() {
   const navigate = useNavigate();
@@ -393,6 +484,7 @@ export default function Shop() {
               </div>
             ) : (
               <>
+              {/* Product Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedProducts.map((product) => (
                 <div
@@ -468,6 +560,8 @@ export default function Shop() {
                 </div>
               ))}
             </div>
+              </>
+            )}
 
             {/* Pagination */}
             {totalPages > 1 && (
@@ -542,11 +636,25 @@ export default function Shop() {
                 </p>
               </div>
             )}
-            </>
-            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+/* 
+// Virtualized Product Grid Component - for future use with 40K+ products
+// Requires: npm install react-window
+function VirtualizedProductGrid({ 
+  products, 
+  onProductClick, 
+  onAddToCart 
+}: { 
+  products: any[]; 
+  onProductClick: (product: any) => void;
+  onAddToCart: () => void;
+}) {
+  // Implementation ready when react-window is properly installed
+}
+*/
