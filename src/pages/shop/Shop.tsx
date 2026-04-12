@@ -1,9 +1,9 @@
-import { toCDNUrl } from '@/utils/productImage';import { useState, useEffect, useMemo } from 'react';
+import { toCDNUrl } from '@/utils/productImage';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { SlidersHorizontal, X, ShoppingBag, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
-import { useProducts } from '@/hooks/useProducts';
 import { useBrands } from '@/hooks/useBrands';
 import { useCollection } from '@/hooks/useCollection';
 import type { Brand } from '@/services/brandsService';
@@ -11,6 +11,7 @@ import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
 
 const ITEMS_PER_PAGE = 50;
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 export default function Shop() {
   const navigate = useNavigate();
@@ -18,6 +19,9 @@ export default function Shop() {
   const [showFilters, setShowFilters] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [filters, setFilters] = useState({
     category: 'all',
     priceRange: 'all',
@@ -28,23 +32,12 @@ export default function Shop() {
 
   // Check if we're filtering by sale - use collection instead of all products
   const isSaleFilter = searchParams.get('sale') === 'true';
-  const { products: saleProducts, loading: saleLoading } = useCollection('summerSale');
-  const { data: allProductsData, isLoading: isLoadingAll, error } = useProducts();
-
-  // Use sale products if filter is active, otherwise use all products
-  const isLoadingProducts = isSaleFilter ? saleLoading : isLoadingAll;
-  const productsSource = isSaleFilter ? saleProducts : allProductsData;
+  const { products: saleProducts, loading: _saleLoading } = useCollection('summerSale');
 
   // Fetch brands from API using hook
   const { brands: brandsData } = useBrands();
 
-  const normalize = (value: unknown) =>
-    String(value ?? '')
-      .trim()
-      .replace(/\s+/g, ' ')
-      .toLowerCase();
-
-  const categories = [
+  const categories = useMemo(() => [
     'all',
     ...Array.from(
       new Set(
@@ -53,23 +46,65 @@ export default function Shop() {
           .filter(Boolean)
       )
     ),
-  ];
+  ], [allProducts]);
 
   // Use brands from API hook instead of extracting from products
-  const brands = [
+  const brands = useMemo(() => [
     'all',
     ...(brandsData?.map((b: Brand) => b.name).filter(Boolean) || []),
-  ];
+  ], [brandsData]);
 
-  // Sync products from the right source (collections or all products)
-  useEffect(() => {
-    if (productsSource && Array.isArray(productsSource)) {
-      console.log(`Shop: Using ${isSaleFilter ? 'sale collection' : 'all products'} (${productsSource.length} items)`);
-      setAllProducts(productsSource);
+  // Fetch products for current page from server (50 per page)
+  const fetchProductsPage = useCallback(async (page: number) => {
+    setIsLoadingProducts(true);
+    setError(null);
+    try {
+      console.log(`📦 Fetching shop page ${page}...`);
+      
+      let url: string;
+      if (isSaleFilter) {
+        // For sale filter, use collection products (already loaded)
+        setAllProducts(saleProducts || []);
+        setTotalProducts(saleProducts?.length || 0);
+        setIsLoadingProducts(false);
+        return;
+      }
+      
+      // Build query with filters
+      const params = new URLSearchParams();
+      params.append('limit', String(ITEMS_PER_PAGE));
+      params.append('page', String(page));
+      if (filters.category !== 'all') params.append('category', filters.category);
+      if (filters.brand !== 'all') params.append('brand', filters.brand);
+      if (filters.status === 'sale') params.append('isSale', 'true');
+      if (filters.status === 'new') params.append('isNew', 'true');
+      
+      url = `${API_URL}/products?${params.toString()}`;
+      console.log('📡 Fetching:', url);
+      
+      const response = await fetch(url, { cache: 'force-cache' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      
+      const items = data.items || [];
+      console.log(`📦 Page ${page}: received ${items.length} products (total: ${data.total})`);
+      
+      setAllProducts(items);
+      setTotalProducts(data.total || items.length);
+    } catch (err) {
+      console.error('❌ Failed to fetch products:', err);
+      setError(err as Error);
+    } finally {
+      setIsLoadingProducts(false);
     }
-  }, [productsSource, isSaleFilter]);
+  }, [isSaleFilter, saleProducts, filters.category, filters.brand, filters.status]);
 
-  // Read URL parameters to set filters (e.g., ?category=Bridal Wear, ?sale=true, ?brand=XYZ)
+  // Fetch products when page or filters change
+  useEffect(() => {
+    fetchProductsPage(currentPage);
+  }, [fetchProductsPage, currentPage]);
+
+  // Read URL parameters to set filters
   useEffect(() => {
     const category = searchParams.get('category');
     const brand = searchParams.get('brand');
@@ -86,64 +121,19 @@ export default function Shop() {
 
     if (Object.keys(updates).length > 0) {
       setFilters(prev => ({ ...prev, ...updates }));
+      setCurrentPage(1); // Reset to page 1 when filters change
       console.log('📍 Applied URL filters:', updates);
     }
   }, [searchParams]);
 
   useEffect(() => {
-    // Ensure the Shop page always starts at top when navigated to
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, []);
+  }, [currentPage]);
 
-  // ALL HOOKS MUST BE CALLED BEFORE EARLY RETURNS
-  const filteredProducts = useMemo(() => {
-    return allProducts.filter((product) => {
-      const productPrice = Number(product.price ?? 0);
-      const productRating = typeof product.rating === 'number' ? product.rating : null;
+  const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
 
-      if (
-        filters.category !== 'all' &&
-        normalize(product.category) !== normalize(filters.category)
-      ) {
-        return false;
-      }
-
-      if (
-        filters.brand !== 'all' &&
-        normalize(product.brand) !== normalize(filters.brand)
-      ) {
-        return false;
-      }
-
-      if (filters.priceRange === 'under50' && productPrice >= 50) return false;
-      if (filters.priceRange === '50-100' && (productPrice < 50 || productPrice > 100)) return false;
-      if (filters.priceRange === '100-200' && (productPrice < 100 || productPrice > 200)) return false;
-      if (filters.priceRange === 'over200' && productPrice <= 200) return false;
-
-      if (
-        filters.rating !== 'all' &&
-        (productRating === null || productRating < Number(filters.rating))
-      ) {
-        return false;
-      }
-
-      if (filters.status === 'new' && product.isNew !== true) return false;
-      if (filters.status === 'sale' && product.isSale !== true) return false;
-
-      return true;
-    });
-  }, [allProducts, filters]);
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
+  // allProducts is already paginated from server
+  const paginatedProducts = allProducts;
 
   const hasRatingData = allProducts.some((p) => typeof p?.rating === 'number');
   const hasStatusData = allProducts.some(
@@ -152,7 +142,6 @@ export default function Shop() {
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const goToPreviousPage = () => {
@@ -163,7 +152,7 @@ export default function Shop() {
     if (currentPage < totalPages) goToPage(currentPage + 1);
   };
 
-  // NOW we can do early returns
+  // Loading state
   if (isLoadingProducts) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -175,7 +164,7 @@ export default function Shop() {
     );
   }
 
-  // Show error state
+  // Error state
   if (error) {
     console.error('Shop error:', error);
     return (
@@ -198,6 +187,7 @@ export default function Shop() {
       status: 'all',
       brand: 'all',
     });
+    setCurrentPage(1);
   };
 
   return (
@@ -381,12 +371,12 @@ export default function Shop() {
           {/* Products Grid */}
           <div className="flex-1">
             <p className="text-gray-600 mb-6">
-              {filteredProducts.length > 0
-                ? `Showing ${startIndex + 1}-${Math.min(endIndex, filteredProducts.length)} of ${filteredProducts.length} products`
+              {paginatedProducts.length > 0
+                ? `Showing ${(currentPage - 1) * ITEMS_PER_PAGE + 1}-${Math.min(currentPage * ITEMS_PER_PAGE, totalProducts)} of ${totalProducts} products (Page ${currentPage} of ${totalPages || 1})`
                 : 'No products found'}
             </p>
-            
-            {filteredProducts.length === 0 ? (
+
+            {paginatedProducts.length === 0 ? (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">🛍️</div>
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">No Products Found</h3>

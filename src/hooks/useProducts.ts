@@ -27,8 +27,8 @@ async function fetchAllProducts(): Promise<any[]> {
     console.log('📦 Got', items.length, 'products from page', page);
     
     // Filter out duplicates to detect when Lambda returns same page
-    const newItems = items.filter(item => !seenIds.has(item.id));
-    newItems.forEach(item => seenIds.add(item.id));
+    const newItems = items.filter((item: { id: string }) => !seenIds.has(item.id));
+    newItems.forEach((item: { id: string }) => seenIds.add(item.id));
     allProducts.push(...newItems);
     
     console.log(`📊 Total unique products so far: ${allProducts.length}`);
