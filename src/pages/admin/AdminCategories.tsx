@@ -1,16 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, X, Save, Search, ArrowLeft } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Search, ArrowLeft, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import LazyImage from '@/components/ui/LazyImage';
+import { getProductUrl } from '@/utils/productUrl';
+import { toCDNUrl } from '@/utils/productImage';
 
 const API_URL = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
 
 interface Category {
   name: string;
-  productCount: number;
-  products: any[];
+  count: number;
+  products?: any[];
 }
 
 export default function AdminCategories() {
@@ -23,6 +26,7 @@ export default function AdminCategories() {
   const [newName, setNewName] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [viewingCategory, setViewingCategory] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -31,29 +35,27 @@ export default function AdminCategories() {
   const loadData = async () => {
     try {
       setLoading(true);
-      console.log('📦 Loading products for categories...');
+      console.log('📦 Loading categories and products...');
 
-      const response = await fetch(`${API_URL}/products?limit=2000`);
-      const data = await response.json();
-      const products = data.items || [];
+      // Fetch categories from the dedicated endpoint
+      const [categoriesRes, productsRes] = await Promise.all([
+        fetch(`${API_URL}/categories`),
+        fetch(`${API_URL}/products?limit=2000`),
+      ]);
+
+      const categoriesData = await categoriesRes.json();
+      const productsData = await productsRes.json();
+      
+      const products = productsData.items || [];
       setAllProducts(products);
 
-      // Extract unique categories with product counts
-      const categoryMap: Record<string, any[]> = {};
-      products.forEach((p: any) => {
-        if (p.category) {
-          if (!categoryMap[p.category]) {
-            categoryMap[p.category] = [];
-          }
-          categoryMap[p.category].push(p);
-        }
-      });
-
-      const cats: Category[] = Object.entries(categoryMap).map(([name, products]) => ({
-        name,
-        productCount: products.length,
-        products,
-      })).sort((a, b) => b.productCount - a.productCount);
+      // Use categories from the dedicated endpoint
+      const cats: Category[] = (categoriesData.categories || categoriesData.items || [])
+        .map((cat: any) => ({
+          name: cat.name,
+          count: cat.count || 0,
+        }))
+        .sort((a: Category, b: Category) => b.count - a.count);
 
       setCategories(cats);
       console.log(`✅ Loaded ${cats.length} categories from ${products.length} products`);
@@ -72,6 +74,10 @@ export default function AdminCategories() {
     );
   }, [categories, searchTerm]);
 
+  const getProductsInCategory = (categoryName: string) => {
+    return allProducts.filter(p => p.category === categoryName);
+  };
+
   const handleRenameCategory = async (oldName: string) => {
     if (!newName || newName === oldName) {
       setEditingCategory(null);
@@ -79,26 +85,18 @@ export default function AdminCategories() {
     }
 
     try {
-      // Find all products with the old category
       const productsToUpdate = allProducts.filter(p => p.category === oldName);
-      
       console.log(`🔄 Renaming "${oldName}" to "${newName}" (${productsToUpdate.length} products)`);
 
-      // Update each product
       let updated = 0;
       for (const product of productsToUpdate) {
         const response = await fetch(`${API_URL}/products`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...product,
-            category: newName,
-          }),
+          body: JSON.stringify({ ...product, category: newName }),
         });
 
-        if (response.ok) {
-          updated++;
-        }
+        if (response.ok) updated++;
       }
 
       console.log(`✅ Renamed ${updated}/${productsToUpdate.length} products`);
@@ -106,7 +104,7 @@ export default function AdminCategories() {
       
       setEditingCategory(null);
       setNewName('');
-      loadData(); // Reload
+      loadData();
     } catch (error) {
       console.error('❌ Failed to rename category:', error);
       toast.error('Failed to rename category');
@@ -128,20 +126,15 @@ export default function AdminCategories() {
         const response = await fetch(`${API_URL}/products`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...product,
-            category: '', // Remove category
-          }),
+          body: JSON.stringify({ ...product, category: '' }),
         });
 
-        if (response.ok) {
-          updated++;
-        }
+        if (response.ok) updated++;
       }
 
       console.log(`✅ Removed category from ${updated} products`);
       toast.success(`Removed "${categoryName}" from ${updated} products`);
-      loadData(); // Reload
+      loadData();
     } catch (error) {
       console.error('❌ Failed to delete category:', error);
       toast.error('Failed to delete category');
@@ -154,7 +147,6 @@ export default function AdminCategories() {
       return;
     }
 
-    // Check if category already exists
     if (categories.some(cat => cat.name.toLowerCase() === newCategoryName.trim().toLowerCase())) {
       toast.error('Category already exists');
       return;
@@ -221,53 +213,63 @@ export default function AdminCategories() {
             </thead>
             <tbody className="divide-y">
               {filteredCategories.map((category) => (
-                <tr key={category.name} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    {editingCategory === category.name ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={newName}
-                          onChange={(e) => setNewName(e.target.value)}
-                          placeholder="New category name"
-                          className="max-w-xs"
-                          autoFocus
-                        />
-                        <Button size="sm" onClick={() => handleRenameCategory(category.name)}>
-                          <Save className="w-4 h-4" />
+                  <tr key={category.name} className="hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      {editingCategory === category.name ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            placeholder="New category name"
+                            className="max-w-xs"
+                            autoFocus
+                            onKeyDown={(e) => e.key === 'Enter' && handleRenameCategory(category.name)}
+                          />
+                          <Button size="sm" onClick={() => handleRenameCategory(category.name)}>
+                            <Save className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => { setEditingCategory(null); setNewName(''); }}>
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="font-medium">{category.name}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gold/10 text-gold">
+                          {category.count} products
+                        </span>
+                        <button
+                          onClick={() => setViewingCategory(category.name)}
+                          className="p-1 hover:bg-gray-100 rounded"
+                          title="View products"
+                        >
+                          <Eye className="w-4 h-4 text-gray-500" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setEditingCategory(category.name); setNewName(category.name); }}
+                        >
+                          <Edit className="w-4 h-4 mr-1" /> Rename
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => { setEditingCategory(null); setNewName(''); }}>
-                          <X className="w-4 h-4" />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 hover:bg-red-50 hover:border-red-200"
+                          onClick={() => handleDeleteCategory(category.name)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" /> Delete
                         </Button>
                       </div>
-                    ) : (
-                      <span className="font-medium">{category.name}</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gold/10 text-gold">
-                      {category.productCount} products
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => { setEditingCategory(category.name); setNewName(category.name); }}
-                      >
-                        <Edit className="w-4 h-4 mr-1" /> Rename
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 hover:bg-red-50 hover:border-red-200"
-                        onClick={() => handleDeleteCategory(category.name)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" /> Delete
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
               ))}
             </tbody>
           </table>
@@ -279,6 +281,53 @@ export default function AdminCategories() {
           )}
         </div>
       </div>
+
+      {/* View Products Modal */}
+      {viewingCategory && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold">{viewingCategory} ({getProductsInCategory(viewingCategory).length} products)</h2>
+              <button onClick={() => setViewingCategory(null)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {getProductsInCategory(viewingCategory).map((product: any) => (
+                  <div
+                    key={product.id}
+                    className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
+                    onClick={() => navigate(getProductUrl(product))}
+                  >
+                    <div className="relative aspect-[3/4] overflow-hidden bg-beige-50">
+                      <LazyImage
+                        src={toCDNUrl(product.image)}
+                        alt={product.name}
+                        productName={product.name}
+                        productId={product.id}
+                        className="w-full h-full"
+                      />
+                      <div className="absolute top-2 left-2 flex gap-1">
+                        {product.isNew && <span className="px-2 py-0.5 bg-black text-white text-xs rounded">New</span>}
+                        {product.isSale && <span className="px-2 py-0.5 bg-red-500 text-white text-xs rounded">Sale</span>}
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <p className="text-xs text-gray-500 mb-1">{product.brand}</p>
+                      <h4 className="font-medium text-sm line-clamp-2">{product.name}</h4>
+                      <p className="font-semibold text-gold mt-1">${product.price}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {getProductsInCategory(viewingCategory).length === 0 && (
+                <div className="text-center py-8 text-gray-500">No products in this category</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Category Modal */}
       {showAddModal && (
@@ -299,6 +348,7 @@ export default function AdminCategories() {
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   placeholder="e.g., Summer Collection"
                   autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
                 />
               </div>
 
