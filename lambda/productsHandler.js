@@ -76,13 +76,17 @@ async function getAllProducts(event) {
 
   console.log('🔍 Filters:', { brand, category, search, limit, page });
 
-  // Scan a large batch of products
+  // Scan products - scan ALL when filtering by category to get accurate results
+  const scanLimit = category && category !== 'all' ? 5000 : 2000;
+  
   const scanParams = {
     TableName: TABLE_NAME,
     FilterExpression: 'entityType = :entityType',
     ExpressionAttributeValues: { ':entityType': 'PRODUCT' },
-    Limit: 2000, // Scan up to 2000 items
+    Limit: scanLimit,
   };
+
+  console.log(`📡 Scanning up to ${scanLimit} products (category filter: ${category || 'none'})`);
 
   let allProducts = [];
   let lastEvaluatedKey = null;

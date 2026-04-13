@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, X, Save, Search, ArrowLeft, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Search, ArrowLeft, Eye, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -13,6 +13,8 @@ const API_URL = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
 interface Category {
   name: string;
   count: number;
+  image?: string;
+  description?: string;
   products?: any[];
 }
 
@@ -23,7 +25,9 @@ export default function AdminCategories() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [newName, setNewName] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editImage, setEditImage] = useState('');
+  const [editDescription, setEditDescription] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [viewingCategory, setViewingCategory] = useState<string | null>(null);
@@ -49,11 +53,13 @@ export default function AdminCategories() {
       const products = productsData.items || [];
       setAllProducts(products);
 
-      // Use categories from the dedicated endpoint
+      // Use categories from the dedicated endpoint with images
       const cats: Category[] = (categoriesData.categories || categoriesData.items || [])
         .map((cat: any) => ({
           name: cat.name,
           count: cat.count || 0,
+          image: cat.image || '',
+          description: cat.description || `${cat.count || 0} products`,
         }))
         .sort((a: Category, b: Category) => b.count - a.count);
 
@@ -78,39 +84,56 @@ export default function AdminCategories() {
     return allProducts.filter(p => p.category === categoryName);
   };
 
-  const handleRenameCategory = async (oldName: string) => {
-    if (!newName || newName === oldName) {
-      setEditingCategory(null);
+  const handleSaveCategory = async (oldName: string) => {
+    if (!editName) {
+      toast.error('Category name is required');
       return;
     }
 
     try {
-      const productsToUpdate = allProducts.filter(p => p.category === oldName);
-      console.log(`🔄 Renaming "${oldName}" to "${newName}" (${productsToUpdate.length} products)`);
+      // Save category metadata (image, description)
+      const saveRes = await fetch(`${API_URL}/categories`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName,
+          image: editImage,
+          description: editDescription,
+        }),
+      });
 
-      let updated = 0;
-      for (const product of productsToUpdate) {
-        const response = await fetch(`${API_URL}/products`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...product, category: newName }),
-        });
+      if (!saveRes.ok) throw new Error('Failed to save category');
 
-        if (response.ok) updated++;
+      // If name changed, update all products
+      if (editName !== oldName) {
+        const productsToUpdate = allProducts.filter(p => p.category === oldName);
+        console.log(`🔄 Renaming "${oldName}" to "${editName}" (${productsToUpdate.length} products)`);
+
+        let updated = 0;
+        for (const product of productsToUpdate) {
+          const response = await fetch(`${API_URL}/products`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...product, category: editName }),
+          });
+          if (response.ok) updated++;
+        }
+        console.log(`✅ Renamed ${updated}/${productsToUpdate.length} products`);
+        toast.success(`Renamed ${updated} products and updated category image`);
+      } else {
+        toast.success('Category updated');
       }
 
-      console.log(`✅ Renamed ${updated}/${productsToUpdate.length} products`);
-      toast.success(`Renamed ${updated} products from "${oldName}" to "${newName}"`);
-      
       setEditingCategory(null);
-      setNewName('');
+      setEditName('');
+      setEditImage('');
+      setEditDescription('');
       loadData();
     } catch (error) {
-      console.error('❌ Failed to rename category:', error);
-      toast.error('Failed to rename category');
+      console.error('❌ Failed to save category:', error);
+      toast.error('Failed to save category');
     }
   };
-
   const handleDeleteCategory = async (categoryName: string) => {
     const productsInCategory = allProducts.filter(p => p.category === categoryName);
     
@@ -216,24 +239,56 @@ export default function AdminCategories() {
                   <tr key={category.name} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       {editingCategory === category.name ? (
-                        <div className="flex items-center gap-2">
-                          <Input
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            placeholder="New category name"
-                            className="max-w-xs"
-                            autoFocus
-                            onKeyDown={(e) => e.key === 'Enter' && handleRenameCategory(category.name)}
-                          />
-                          <Button size="sm" onClick={() => handleRenameCategory(category.name)}>
-                            <Save className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => { setEditingCategory(null); setNewName(''); }}>
-                            <X className="w-4 h-4" />
-                          </Button>
+                        <div className="flex items-center gap-3">
+                          <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                            {editImage ? (
+                              <img src={editImage} alt={category.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <Package className="w-6 h-6" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 space-y-2">
+                            <Input
+                              value={editName}
+                              onChange={(e) => setEditName(e.target.value)}
+                              placeholder="Category name"
+                              className="max-w-xs"
+                              autoFocus
+                            />
+                            <Input
+                              value={editImage}
+                              onChange={(e) => setEditImage(e.target.value)}
+                              placeholder="Image URL (S3 or external)"
+                              className="max-w-xs text-xs"
+                            />
+                            <Input
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                              placeholder="Description"
+                              className="max-w-xs text-xs"
+                            />
+                          </div>
                         </div>
                       ) : (
-                        <span className="font-medium">{category.name}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                            {category.image ? (
+                              <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <Package className="w-5 h-5" />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <span className="font-medium">{category.name}</span>
+                            {category.description && (
+                              <p className="text-xs text-gray-500">{category.description}</p>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -252,21 +307,46 @@ export default function AdminCategories() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => { setEditingCategory(category.name); setNewName(category.name); }}
-                        >
-                          <Edit className="w-4 h-4 mr-1" /> Rename
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-red-600 hover:bg-red-50 hover:border-red-200"
-                          onClick={() => handleDeleteCategory(category.name)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" /> Delete
-                        </Button>
+                        {editingCategory === category.name ? (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => handleSaveCategory(category.name)}
+                            >
+                              <Save className="w-4 h-4 mr-1" /> Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => { setEditingCategory(null); }}
+                            >
+                              <X className="w-4 h-4" /> Cancel
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingCategory(category.name);
+                                setEditName(category.name);
+                                setEditImage(category.image || '');
+                                setEditDescription(category.description || '');
+                              }}
+                            >
+                              <Edit className="w-4 h-4 mr-1" /> Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:bg-red-50 hover:border-red-200"
+                              onClick={() => handleDeleteCategory(category.name)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" /> Delete
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

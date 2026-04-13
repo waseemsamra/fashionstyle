@@ -113,7 +113,7 @@ export default function Shop() {
       let products = data.items || [];
       const total = data.total || 0;
 
-      console.log(`📊 Raw API response: ${products.length} products`);
+      console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
       if (products.length > 0) {
         console.log('📊 First 3 products:', products.slice(0, 3).map((p: any) => ({
           name: p.name,
@@ -122,11 +122,8 @@ export default function Shop() {
         })));
       }
 
-      // Filter by category client-side (fallback if API doesn't filter)
-      if (filters.category && filters.category !== 'all') {
-        products = products.filter((p: any) => p.category === filters.category);
-        console.log(`📂 Filtered by category "${filters.category}": ${products.length} products`);
-      }
+      // NOTE: Category filtering is now done server-side by the API
+      // Do NOT filter client-side - it would reduce the count incorrectly
 
       // Filter by brands client-side if multiple brands selected
       if (filters.brands.length > 0) {
@@ -151,8 +148,9 @@ export default function Shop() {
         });
       }
 
-      // If we filtered client-side, calculate actual total
-      const hasClientFilters = filters.brands.length > 0 || filters.priceRange !== 'all' || (filters.category && filters.category !== 'all');
+      // If we filtered client-side (brands or price), calculate actual total
+      // Category filtering is done server-side, so total is already accurate
+      const hasClientFilters = filters.brands.length > 0 || filters.priceRange !== 'all';
       const actualTotal = hasClientFilters ? products.length : total;
 
       setAllProducts(products);
