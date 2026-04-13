@@ -85,8 +85,8 @@ export default function BrandDetailPage() {
         console.log('🏷️ Unique brands in database:', uniqueBrands.slice(0, 20));
         
         // Check if target brand exists
-        const brandExists = uniqueBrands.some((b: string) => 
-          b.toLowerCase().trim() === name.toLowerCase().trim()
+        const brandExists = uniqueBrands.some((b: unknown) =>
+          typeof b === 'string' && b.toLowerCase().trim() === name.toLowerCase().trim()
         );
         console.log('🏷️ Target brand exists:', brandExists, '(looking for:', name, ')');
 

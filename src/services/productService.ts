@@ -34,6 +34,7 @@ export interface Product {
  * Fetches in batches and calls onProgress callback
  */
 export const loadAllProducts = async (
+  filters?: { brand?: string; category?: string; isSale?: boolean; isNew?: boolean },
   onProgress?: (loaded: number, total: number, hasMore: boolean) => void
 ): Promise<Product[]> => {
   let allProducts: Product[] = [];
@@ -43,31 +44,50 @@ export const loadAllProducts = async (
   let totalProducts = 0;
 
   try {
+    // Build query params for first request
+    const firstParams = new URLSearchParams();
+    firstParams.append('limit', '1');
+    firstParams.append('page', '1');
+    if (filters?.brand) firstParams.append('brand', filters.brand);
+    if (filters?.category) firstParams.append('category', filters.category);
+    if (filters?.isSale) firstParams.append('isSale', 'true');
+    if (filters?.isNew) firstParams.append('isNew', 'true');
+
     // First request to get total count
     const firstResponse = await fetch(
-      `${import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod'}/products?limit=1&page=1`
+      `${import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod'}/products?${firstParams.toString()}`
     );
     const firstData = await firstResponse.json();
     totalProducts = firstData.total || firstData.count || 0;
+
+    console.log(`📊 Total products available (with filters): ${totalProducts}`);
 
     if (totalProducts === 0) {
       return [];
     }
 
-    // Now fetch all products in batches
+    // Now fetch all products in batches with filters
     while (hasMore) {
-      const url = `${import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod'}/products?limit=${limit}&page=${page}`;
-      
+      const params = new URLSearchParams();
+      params.append('limit', String(limit));
+      params.append('page', String(page));
+      if (filters?.brand) params.append('brand', filters.brand);
+      if (filters?.category) params.append('category', filters.category);
+      if (filters?.isSale) params.append('isSale', 'true');
+      if (filters?.isNew) params.append('isNew', 'true');
+
+      const url = `${import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod'}/products?${params.toString()}`;
+
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
-      
+
       const data = await response.json();
       const items: Product[] = data.items || [];
-      
+
       allProducts = [...allProducts, ...items];
-      
+
       // Check if we have more pages
       hasMore = items.length === limit && allProducts.length < totalProducts;
       page++;

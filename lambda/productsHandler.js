@@ -106,13 +106,12 @@ async function getAllProducts(event) {
   else if (brand) {
     console.log('🏷️ Filtering by brand:', brand);
     
-    // Use basic scan without brand filter in DynamoDB (contains is case-sensitive)
-    // We'll do case-insensitive filtering client-side
+    // Scan all products with generous limit
     const scanParams = {
       TableName: TABLE_NAME,
       FilterExpression: 'entityType = :entityType',
       ExpressionAttributeValues: { ':entityType': 'PRODUCT' },
-      Limit: 1000, // Scan more products to find brand matches
+      Limit: 5000, // Scan up to 5000 items to find brand matches
     };
 
     let lastEvaluatedKey = null;
@@ -125,7 +124,6 @@ async function getAllProducts(event) {
       const filtered = result.Items.filter(p => {
         if (!p.brand) return false;
         const pBrand = p.brand.toLowerCase().trim();
-        // Match if brand name matches exactly or contains the search term
         return pBrand === brandLower || 
                pBrand.includes(brandLower) || 
                brandLower.includes(pBrand) ||
@@ -134,9 +132,8 @@ async function getAllProducts(event) {
       allProducts = allProducts.concat(filtered);
       
       lastEvaluatedKey = result.LastEvaluatedKey;
-      // Stop after finding reasonable amount or scanned enough
-      if (allProducts.length >= 100 || (result.Items.length === 0 && !lastEvaluatedKey)) break;
-    } while (lastEvaluatedKey && allProducts.length < 100);
+      // Continue scanning until we've checked everything or found enough
+    } while (lastEvaluatedKey && allProducts.length < 500);
     
     console.log(`🏷️ Brand filter returned ${allProducts.length} products for "${brand}"`);
   } else {

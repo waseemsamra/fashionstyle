@@ -2,7 +2,7 @@ import { toCDNUrl } from '@/utils/productImage';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { SlidersHorizontal, X, ShoppingBag, Star, ChevronRight } from 'lucide-react';
+import { X, ShoppingBag, Star, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBrands } from '@/hooks/useBrands';
 import { useCollection } from '@/hooks/useCollection';
@@ -107,7 +107,6 @@ function useInfiniteProducts(isSaleFilter: boolean, saleProducts: any[], filters
 export default function Shop() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [showFilters, setShowFilters] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [currentPage, _setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -164,41 +163,23 @@ export default function Shop() {
       // Import and use loadAllProducts from productService
       const { loadAllProducts } = await import('@/services/productService');
       
-      // Pass filters to loadAllProducts (it needs to know brand/category/etc)
-      // For now, the API will handle filtering based on URL params
-      const products = await loadAllProducts((loaded, total, _hasMore) => {
+      // Build filters object to pass to API
+      const apiFilters: any = {};
+      if (filters.brand && filters.brand !== 'all') apiFilters.brand = filters.brand;
+      if (filters.category && filters.category !== 'all') apiFilters.category = filters.category;
+      if (filters.status === 'sale') apiFilters.isSale = true;
+      if (filters.status === 'new') apiFilters.isNew = true;
+      
+      // Pass filters to loadAllProducts - API will handle filtering server-side
+      const products = await loadAllProducts(apiFilters, (loaded, total, _hasMore) => {
         setLoadingProgress({ loaded, total });
         console.log(`📊 Progress: ${loaded}/${total} (${Math.round(loaded / total * 100)}%)`);
       });
       
-      // Apply client-side filters for brand/category if needed
-      let filteredProducts = products;
-      if (filters.brand && filters.brand !== 'all') {
-        const brandLower = filters.brand.toLowerCase();
-        filteredProducts = products.filter(p => 
-          p.brand && p.brand.toLowerCase().includes(brandLower)
-        );
-        console.log(`🏷️ Filtered by brand "${filters.brand}": ${filteredProducts.length} products`);
-      }
-      if (filters.category && filters.category !== 'all') {
-        const catLower = filters.category.toLowerCase();
-        filteredProducts = filteredProducts.filter(p => 
-          p.category && p.category.toLowerCase() === catLower
-        );
-        console.log(`📂 Filtered by category "${filters.category}": ${filteredProducts.length} products`);
-      }
-      if (filters.status === 'sale') {
-        filteredProducts = filteredProducts.filter(p => p.isSale || p.originalPrice);
-        console.log(`💰 Filtered by sale: ${filteredProducts.length} products`);
-      }
-      if (filters.status === 'new') {
-        filteredProducts = filteredProducts.filter(p => p.isNew);
-        console.log(`✨ Filtered by new: ${filteredProducts.length} products`);
-      }
-
-      setAllProducts(filteredProducts);
-      setTotalProducts(filteredProducts.length);
-      console.log(`✅ Loaded ${filteredProducts.length} products total`);
+      // Products are already filtered by the API - no client-side filtering needed
+      setAllProducts(products);
+      setTotalProducts(products.length);
+      console.log(`✅ Loaded ${products.length} products total`);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
@@ -239,11 +220,6 @@ export default function Shop() {
 
   // allProducts contains ALL products - displayed in grid
   const paginatedProducts = allProducts;
-
-  const hasRatingData = allProducts.some((p) => typeof p?.rating === 'number');
-  const hasStatusData = allProducts.some(
-    (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
-  );
 
   // Loading state with progress bar
   if (isLoadingProducts) {
@@ -301,7 +277,7 @@ export default function Shop() {
   };
 
   return (
-    <div className="min-h-screen bg-beige-100">
+    <div className="min-h-screen bg-beige-100 pt-24 pb-8">
       {/* Hero Section for Sale */}
       {filters.status === 'sale' && (
         <section className="relative bg-gradient-to-r from-gold/20 via-gold/10 to-transparent py-16 mb-8">
@@ -326,158 +302,55 @@ export default function Shop() {
       )}
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">
-            {filters.status === 'sale' ? 'All Products' : 'Shop All Products'}
-          </h1>
-          <Button
-            onClick={() => setShowFilters(!showFilters)}
-            variant="outline"
-            className="hover:bg-gold hover:text-white hover:border-gold transition-colors"
-          >
-            <SlidersHorizontal className="w-4 h-4 mr-2" />
-            Filters
-          </Button>
+        {/* Header with title */}
+        <h1 className="text-3xl font-bold mb-6">
+          {filters.status === 'sale' ? 'All Products' : 'Shop All Products'}
+        </h1>
+
+        {/* Inline Filters Bar - Always visible at top */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
+              <select value={filters.category} onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+                <option value="all">All Categories</option>
+                {categories.filter(c => c !== 'all').map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Brand</label>
+              <select value={filters.brand} onChange={(e) => setFilters(prev => ({ ...prev, brand: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+                <option value="all">All Brands</option>
+                {brands.filter(b => b !== 'all').slice(0, 50).map(brand => (<option key={brand} value={brand}>{brand}</option>))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+              <select value={filters.status} onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+                <option value="all">All Products</option>
+                <option value="new">New Arrivals</option>
+                <option value="sale">On Sale</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Price</label>
+              <select value={filters.priceRange} onChange={(e) => setFilters(prev => ({ ...prev, priceRange: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+                <option value="all">All Prices</option>
+                <option value="under50">Under $50</option>
+                <option value="50-100">$50 - $100</option>
+                <option value="100-200">$100 - $200</option>
+                <option value="over200">Over $200</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <Button onClick={resetFilters} variant="outline" className="w-full h-10 text-sm hover:bg-gray-50 hover:border-gold">
+                <X className="w-4 h-4 mr-1" /> Reset
+              </Button>
+            </div>
+          </div>
         </div>
 
-        <div className="relative flex gap-8">
-          {/* Filters Sidebar */}
-          {showFilters && (
-            <>
-              <div
-                className="fixed inset-0 bg-black/50 z-40"
-                onClick={() => setShowFilters(false)}
-              />
-              <div className="fixed top-0 left-0 bottom-0 z-50 w-80 bg-white shadow-2xl overflow-y-auto">
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold">Filters</h2>
-                    <button onClick={() => setShowFilters(false)} className="p-2 hover:bg-gray-100 rounded">
-                      <X className="w-6 h-6" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-6">
-                    {/* Category Filter */}
-                    <div>
-                      <h3 className="font-semibold mb-3">Category</h3>
-                      <div className="space-y-2">
-                        {categories.map((cat) => (
-                          <label key={cat} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="category"
-                              checked={filters.category === cat}
-                              onChange={() => setFilters((prev) => ({ ...prev, category: cat }))}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm">{cat === 'all' ? 'All Categories' : cat}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Price Range Filter */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-semibold mb-3">Price Range</h3>
-                      <div className="space-y-2">
-                        {[
-                          { value: 'all', label: 'All Prices' },
-                          { value: 'under50', label: 'Under $50' },
-                          { value: '50-100', label: '$50 - $100' },
-                          { value: '100-200', label: '$100 - $200' },
-                          { value: 'over200', label: 'Over $200' },
-                        ].map((range) => (
-                          <label key={range.value} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="priceRange"
-                              checked={filters.priceRange === range.value}
-                              onChange={() => setFilters((prev) => ({ ...prev, priceRange: range.value }))}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm">{range.label}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                    {hasRatingData && (
-                      <div className="border-t pt-6">
-                        <h3 className="font-semibold mb-3">Rating</h3>
-                        <div className="space-y-2">
-                          {['all', '4', '4.5'].map((rating) => (
-                            <label key={rating} className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="rating"
-                                checked={filters.rating === rating}
-                                onChange={() => setFilters((prev) => ({ ...prev, rating }))}
-                                className="w-4 h-4"
-                              />
-                              <span className="text-sm">
-                                {rating === 'all' ? 'All Ratings' : `${rating}+ Stars`}
-                              </span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {hasStatusData && (
-                      <div className="border-t pt-6">
-                        <h3 className="font-semibold mb-3">Status</h3>
-                        <div className="space-y-2">
-                          {[
-                            { value: 'all', label: 'All Items' },
-                            { value: 'new', label: 'New Arrivals' },
-                            { value: 'sale', label: 'On Sale' },
-                          ].map((status) => (
-                            <label key={status.value} className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="status"
-                                checked={filters.status === status.value}
-                                onChange={() =>
-                                  setFilters((prev) => ({ ...prev, status: status.value }))
-                                }
-                                className="w-4 h-4"
-                              />
-                              <span className="text-sm">{status.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Brand Filter */}
-                    <div className="border-t pt-6">
-                      <h3 className="font-semibold mb-3">Brand</h3>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {brands.map((brand) => (
-                          <label key={brand} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="brand"
-                              checked={filters.brand === brand}
-                              onChange={() => setFilters((prev) => ({ ...prev, brand }))}
-                              className="w-4 h-4"
-                            />
-                            <span className="text-sm">{brand}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Button onClick={resetFilters} variant="outline" className="w-full">
-                      Reset Filters
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
+        <div className="relative">
           {/* Products Grid */}
           <div className="flex-1">
             <p className="text-gray-600 mb-6">
