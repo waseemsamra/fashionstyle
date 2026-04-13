@@ -69,178 +69,72 @@ exports.handler = async (event) => {
   }
 };
 
-// GET /products with filtering - OPTIMIZED with GSIs for 30K+ products
+// GET /products with filtering - FIXED to properly filter by category and brand
 async function getAllProducts(event) {
   const params = event.queryStringParameters || {};
   const { brand, category, search, limit = '50', page = '1', isActive, isFeatured, isNew, isSale, tag, occasion } = params;
 
-  console.log('🔍 Filters:', { brand, category, search, limit, page, isActive, isFeatured, isNew, isSale, tag, occasion });
+  console.log('🔍 Filters:', { brand, category, search, limit, page });
+
+  // Scan a large batch of products
+  const scanParams = {
+    TableName: TABLE_NAME,
+    FilterExpression: 'entityType = :entityType',
+    ExpressionAttributeValues: { ':entityType': 'PRODUCT' },
+    Limit: 2000, // Scan up to 2000 items
+  };
 
   let allProducts = [];
+  let lastEvaluatedKey = null;
 
-  // ⚡ USE GSI: category-index for fast category queries (10-40x faster than scan)
-  if (category && category !== 'all') {
-    console.log('⚡ Using category-index GSI for fast query');
-
-    // Always fetch enough to get accurate total count
-    // Limit should be at least 500 for accurate totals
-    const queryLimit = Math.max(500, parseInt(limit) * 10);
+  do {
+    if (lastEvaluatedKey) scanParams.ExclusiveStartKey = lastEvaluatedKey;
+    const result = await dynamodb.scan(scanParams).promise();
     
-    const queryParams = {
-      TableName: TABLE_NAME,
-      IndexName: 'category-index',
-      KeyConditionExpression: '#cat = :catVal AND entityType = :entityType',
-      ExpressionAttributeNames: { '#cat': 'category' },
-      ExpressionAttributeValues: { ':catVal': category, ':entityType': 'PRODUCT' },
-      Limit: queryLimit,
-    };
-
-    let lastEvaluatedKey = null;
-    do {
-      if (lastEvaluatedKey) queryParams.ExclusiveStartKey = lastEvaluatedKey;
-      const result = await dynamodb.query(queryParams).promise();
-      allProducts = allProducts.concat(result.Items);
-      lastEvaluatedKey = result.LastEvaluatedKey;
-      // Stop after we've scanned 5000 items or found 1000 products
-      if (allProducts.length >= 1000 || result.ScannedCount >= 5000) break;
-    } while (lastEvaluatedKey);
-
-    console.log(`⚡ Category query returned ${allProducts.length} products for "${category}"`);
-  }
-  // ⚡ USE brand filter (client-side after scan since no brand GSI)
-  else if (brand) {
-    console.log('🏷️ Filtering by brand:', brand);
-
-    // Scan all products with generous limit
-    const scanParams = {
-      TableName: TABLE_NAME,
-      FilterExpression: 'entityType = :entityType',
-      ExpressionAttributeValues: { ':entityType': 'PRODUCT' },
-      Limit: 5000, // Scan up to 5000 items to find brand matches
-    };
-
-    let lastEvaluatedKey = null;
-    do {
-      if (lastEvaluatedKey) scanParams.ExclusiveStartKey = lastEvaluatedKey;
-      const result = await dynamodb.scan(scanParams).promise();
-      
-      // Client-side case-insensitive brand filter
+    // Apply category and brand filters CLIENT-SIDE for 100% accuracy
+    let filtered = result.Items;
+    
+    if (category && category !== 'all') {
+      filtered = filtered.filter(p => p.category === category);
+    }
+    
+    if (brand) {
       const brandLower = brand.toLowerCase().trim();
-      const filtered = result.Items.filter(p => {
-        if (!p.brand) return false;
-        const pBrand = p.brand.toLowerCase().trim();
-        return pBrand === brandLower || 
-               pBrand.includes(brandLower) || 
-               brandLower.includes(pBrand) ||
-               pBrand.replace(/\s+/g, '') === brandLower.replace(/\s+/g, '');
-      });
-      allProducts = allProducts.concat(filtered);
-      
-      lastEvaluatedKey = result.LastEvaluatedKey;
-      // Continue scanning until we've checked everything or found enough
-    } while (lastEvaluatedKey && allProducts.length < 1000);
+      filtered = filtered.filter(p => 
+        p.brand && p.brand.toLowerCase().trim() === brandLower
+      );
+    }
     
-    console.log(`🏷️ Brand filter returned ${allProducts.length} products for "${brand}"`);
-  } else {
-    // Fallback to scan with filters for unfiltered requests
-    console.log('📡 Using filtered scan');
+    if (isFeatured === 'true') filtered = filtered.filter(p => p.isFeatured);
+    if (isNew === 'true') filtered = filtered.filter(p => p.isNew);
+    if (isSale === 'true') filtered = filtered.filter(p => p.isSale);
+    if (isActive === 'true') filtered = filtered.filter(p => p.isActive);
     
-    let filterExpression = 'entityType = :entityType';
-    let expressionAttributeValues = { ':entityType': 'PRODUCT' };
-    let expressionAttributeNames = {};
-
-    // Add GSI-friendly filters
-    if (isFeatured === 'true') {
-      filterExpression += ' AND isFeatured = :isFeatured';
-      expressionAttributeValues[':isFeatured'] = true;
-    }
-    if (isNew === 'true') {
-      filterExpression += ' AND isNew = :isNew';
-      expressionAttributeValues[':isNew'] = true;
-    }
-    if (isSale === 'true') {
-      filterExpression += ' AND isSale = :isSale';
-      expressionAttributeValues[':isSale'] = true;
-    }
-    if (isActive === 'true') {
-      filterExpression += ' AND isActive = :isActive';
-      expressionAttributeValues[':isActive'] = true;
-    }
-    if (tag) {
-      filterExpression += ' AND contains(#tagAttr, :tagValue)';
-      expressionAttributeNames['#tagAttr'] = 'tags';
-      expressionAttributeValues[':tagValue'] = tag;
-    }
-    if (occasion) {
-      filterExpression += ' AND contains(#occAttr, :occValue)';
-      expressionAttributeNames['#occAttr'] = 'occasions';
-      expressionAttributeValues[':occValue'] = occasion;
-    }
-
-    const scanParams = {
-      TableName: TABLE_NAME,
-      FilterExpression: filterExpression,
-      ExpressionAttributeValues: expressionAttributeValues,
-      Limit: parseInt(limit) * 3,
-    };
+    allProducts = allProducts.concat(filtered);
+    lastEvaluatedKey = result.LastEvaluatedKey;
     
-    if (Object.keys(expressionAttributeNames).length > 0) {
-      scanParams.ExpressionAttributeNames = expressionAttributeNames;
-    }
+    // Stop if we have enough products or scanned everything
+    if (allProducts.length >= 1000 || !lastEvaluatedKey) break;
+  } while (lastEvaluatedKey);
 
-    let lastEvaluatedKey = null;
-    do {
-      if (lastEvaluatedKey) scanParams.ExclusiveStartKey = lastEvaluatedKey;
-      const result = await dynamodb.scan(scanParams).promise();
-      allProducts = allProducts.concat(result.Items);
-      lastEvaluatedKey = result.LastEvaluatedKey;
-      if (allProducts.length >= parseInt(limit) * 5) break;
-    } while (lastEvaluatedKey);
-    
-    console.log(`📦 Scan returned ${allProducts.length} products`);
-  }
+  console.log(`📦 After filtering: ${allProducts.length} products (category: ${category}, brand: ${brand})`);
 
-  console.log(`📦 Total products from DB (with filters): ${allProducts.length}`);
-
-  // Apply brand filter (case-insensitive)
-  if (brand) {
-    const brandLower = brand.toLowerCase().trim();
-    const beforeFilter = allProducts.length;
-    allProducts = allProducts.filter(p => {
-      if (!p.brand) return false;
-      const pBrand = p.brand.toLowerCase().trim();
-      return pBrand === brandLower || 
-             pBrand.includes(brandLower) || 
-             brandLower.includes(pBrand) ||
-             pBrand.replace(/\s+/g, '') === brandLower.replace(/\s+/g, '');
+  // Log sample products for debugging
+  if (allProducts.length > 0) {
+    console.log('📦 Sample products:');
+    allProducts.slice(0, 3).forEach(p => {
+      console.log(`  - ${p.name} | Category: "${p.category}" | Brand: "${p.brand}"`);
     });
-    console.log(`🔍 After brand filter "${brand}": ${allProducts.length}/${beforeFilter}`);
-  }
-
-  // Apply category filter
-  if (category && category !== 'all') {
-    const categoryLower = category.toLowerCase().trim();
-    const beforeFilter = allProducts.length;
-    allProducts = allProducts.filter(p => {
-      if (!p.category) return false;
-      return p.category.toLowerCase().trim() === categoryLower;
-    });
-    console.log(`🔍 After category filter "${category}": ${allProducts.length}/${beforeFilter}`);
   }
 
   // Apply search filter
   if (search) {
-    const searchLower = search.toLowerCase().trim();
-    const beforeFilter = allProducts.length;
-    allProducts = allProducts.filter(p => {
-      const name = (p.name || '').toLowerCase();
-      const description = (p.description || '').toLowerCase();
-      const brand = (p.brand || '').toLowerCase();
-      return name.includes(searchLower) || 
-             description.includes(searchLower) || 
-             brand.includes(searchLower);
-    });
-    console.log(`🔍 After search filter "${search}": ${allProducts.length}/${beforeFilter}`);
+    const searchLower = search.toLowerCase();
+    allProducts = allProducts.filter(p => 
+      (p.name && p.name.toLowerCase().includes(searchLower)) ||
+      (p.description && p.description.toLowerCase().includes(searchLower)) ||
+      (p.brand && p.brand.toLowerCase().includes(searchLower))
+    );
   }
 
   // Pagination
@@ -249,13 +143,14 @@ async function getAllProducts(event) {
   const startIndex = (pageNum - 1) * limitNum;
   const paginatedProducts = allProducts.slice(startIndex, startIndex + limitNum);
 
-  console.log(`✅ Returning ${paginatedProducts.length} products (page ${pageNum}, limit ${limitNum})`);
+  console.log(`✅ Returning ${paginatedProducts.length} products (page ${pageNum}, limit ${limitNum}, total: ${allProducts.length})`);
 
   return {
     statusCode: 200,
     headers: CORS_HEADERS,
     body: JSON.stringify({
       products: paginatedProducts,
+      items: paginatedProducts,
       count: paginatedProducts.length,
       total: allProducts.length,
       page: pageNum,
