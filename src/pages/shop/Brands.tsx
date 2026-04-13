@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = import.meta.env.VITE_API_URL || 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
 const BRANDS_API_URL = `${API_URL}/admin/brands`;
 
 interface Brand {

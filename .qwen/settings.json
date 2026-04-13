@@ -45,7 +45,8 @@
       "Bash(\"src/components/features/occasionshopping.tsx\")",
       "Bash(\"src/pages/virtualtryonpage.tsx\")",
       "Bash(script)",
-      "Bash(bash *)"
+      "Bash(bash *)",
+      "Bash(find *)"
     ]
   },
   "mcpServers": {

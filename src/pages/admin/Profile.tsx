@@ -41,7 +41,7 @@ export default function Profile() {
         
         // Try to load profile from API
         try {
-          const response = await fetch(`https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/users/${email.replace(/[^a-zA-Z0-9]/g, '-')}/profile`, {
+          const response = await fetch(`https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com/users/${email.replace(/[^a-zA-Z0-9]/g, '-')}/profile`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -79,7 +79,7 @@ export default function Profile() {
     setError('');
     try {
       const token = localStorage.getItem('jwt_token') || '';
-      const response = await fetch(`https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/users/${user.userId}/profile`, {
+      const response = await fetch(`https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com/users/${user.userId}/profile`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

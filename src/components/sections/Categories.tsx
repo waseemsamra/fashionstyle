@@ -33,7 +33,7 @@ export default function Categories() {
         console.log('📦 Loading categories from API...');
         
         // Fetch categories directly from efficient endpoint (NOT all products)
-        const response = await fetch('https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/categories', {
+        const response = await fetch('https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com/categories', {
           cache: 'no-cache'
         });
         const data = await response.json();

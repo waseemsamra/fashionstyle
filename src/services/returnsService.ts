@@ -110,7 +110,7 @@ export const REFUND_METHODS = {
   BANK_TRANSFER: 'bank_transfer'
 };
 
-const API_BASE = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const API_BASE = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
 
 class ReturnsService {
   async getReturnReasons(): Promise<Record<string, string>> {

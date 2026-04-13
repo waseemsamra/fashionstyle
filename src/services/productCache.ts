@@ -1,6 +1,6 @@
 // services/productCache.ts - Centralized product caching to prevent redundant API calls
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = import.meta.env.VITE_API_URL || 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
 
 interface CacheEntry {
   data: any[];

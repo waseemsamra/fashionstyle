@@ -26,7 +26,7 @@ export interface AuthResponse {
 }
 
 class AuthService {
-  private baseUrl = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+  private baseUrl = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
   private refreshTimeout?: ReturnType<typeof setTimeout>;
 
   async login(email: string, password: string): Promise<AuthResponse> {
