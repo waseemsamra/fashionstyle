@@ -106,19 +106,13 @@ async function getAllProducts(event) {
   else if (brand) {
     console.log('🏷️ Filtering by brand:', brand);
     
-    let filterExpression = 'entityType = :entityType AND contains(#brandAttr, :brandVal)';
-    let expressionAttributeValues = { 
-      ':entityType': 'PRODUCT',
-      ':brandVal': brand.toLowerCase()
-    };
-    let expressionAttributeNames = { '#brandAttr': 'brand' };
-
+    // Use basic scan without brand filter in DynamoDB (contains is case-sensitive)
+    // We'll do case-insensitive filtering client-side
     const scanParams = {
       TableName: TABLE_NAME,
-      FilterExpression: filterExpression,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ExpressionAttributeNames: expressionAttributeNames,
-      Limit: parseInt(limit) * 5,
+      FilterExpression: 'entityType = :entityType',
+      ExpressionAttributeValues: { ':entityType': 'PRODUCT' },
+      Limit: 1000, // Scan more products to find brand matches
     };
 
     let lastEvaluatedKey = null;
@@ -126,18 +120,25 @@ async function getAllProducts(event) {
       if (lastEvaluatedKey) scanParams.ExclusiveStartKey = lastEvaluatedKey;
       const result = await dynamodb.scan(scanParams).promise();
       
-      // Additional client-side case-insensitive filter
-      const brandLower = brand.toLowerCase();
-      const filtered = result.Items.filter(p => 
-        p.brand && p.brand.toLowerCase().includes(brandLower)
-      );
+      // Client-side case-insensitive brand filter
+      const brandLower = brand.toLowerCase().trim();
+      const filtered = result.Items.filter(p => {
+        if (!p.brand) return false;
+        const pBrand = p.brand.toLowerCase().trim();
+        // Match if brand name matches exactly or contains the search term
+        return pBrand === brandLower || 
+               pBrand.includes(brandLower) || 
+               brandLower.includes(pBrand) ||
+               pBrand.replace(/\s+/g, '') === brandLower.replace(/\s+/g, '');
+      });
       allProducts = allProducts.concat(filtered);
       
       lastEvaluatedKey = result.LastEvaluatedKey;
-      if (allProducts.length >= parseInt(limit) * 2) break;
-    } while (lastEvaluatedKey);
+      // Stop after finding reasonable amount or scanned enough
+      if (allProducts.length >= 100 || (result.Items.length === 0 && !lastEvaluatedKey)) break;
+    } while (lastEvaluatedKey && allProducts.length < 100);
     
-    console.log(`🏷️ Brand filter returned ${allProducts.length} products`);
+    console.log(`🏷️ Brand filter returned ${allProducts.length} products for "${brand}"`);
   } else {
     // Fallback to scan with filters for unfiltered requests
     console.log('📡 Using filtered scan');

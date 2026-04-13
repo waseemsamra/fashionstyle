@@ -74,6 +74,22 @@ export default function BrandDetailPage() {
 
         console.log('🔍 Looking for brand:', name, 'from slug:', slug);
 
+        // Fetch ALL products first to check what brands exist
+        console.log('📡 Fetching all products to check brands...');
+        const allRes = await fetch(`${API_URL}/products?limit=100`);
+        const allData = await allRes.json();
+        const allProds = allData.items || allData.products || [];
+        
+        // Log unique brands
+        const uniqueBrands = [...new Set(allProds.map((p: any) => p.brand).filter(Boolean))];
+        console.log('🏷️ Unique brands in database:', uniqueBrands.slice(0, 20));
+        
+        // Check if target brand exists
+        const brandExists = uniqueBrands.some((b: string) => 
+          b.toLowerCase().trim() === name.toLowerCase().trim()
+        );
+        console.log('🏷️ Target brand exists:', brandExists, '(looking for:', name, ')');
+
         // Fetch products filtered by brand on server-side
         console.log('🔍 Fetching products for brand:', name);
         const productsRes = await fetch(`${API_URL}/products?limit=500&brand=${encodeURIComponent(name)}`);
@@ -81,6 +97,14 @@ export default function BrandDetailPage() {
         console.log('📦 Products response:', productsData);
         const allProducts = productsData.products || productsData.items || [];
         console.log(`📦 Products from API: ${allProducts.length}`);
+        
+        // Log what brands the returned products have
+        if (allProducts.length > 0) {
+          console.log('📦 First 5 products from API response:');
+          allProducts.slice(0, 5).forEach((p: any) => {
+            console.log(`  - ${p.name} | Brand: "${p.brand}"`);
+          });
+        }
 
         // Additional client-side filter in case API doesn't support brand filter
         const brandProducts = allProducts.filter((p: Product) => {
