@@ -101,6 +101,43 @@ async function getAllProducts(event) {
     } while (lastEvaluatedKey);
     
     console.log(`⚡ Category query returned ${allProducts.length} products (10-40x faster than scan)`);
+  } 
+  // ⚡ USE brand filter (client-side after scan since no brand GSI)
+  else if (brand) {
+    console.log('🏷️ Filtering by brand:', brand);
+    
+    let filterExpression = 'entityType = :entityType AND contains(#brandAttr, :brandVal)';
+    let expressionAttributeValues = { 
+      ':entityType': 'PRODUCT',
+      ':brandVal': brand.toLowerCase()
+    };
+    let expressionAttributeNames = { '#brandAttr': 'brand' };
+
+    const scanParams = {
+      TableName: TABLE_NAME,
+      FilterExpression: filterExpression,
+      ExpressionAttributeValues: expressionAttributeValues,
+      ExpressionAttributeNames: expressionAttributeNames,
+      Limit: parseInt(limit) * 5,
+    };
+
+    let lastEvaluatedKey = null;
+    do {
+      if (lastEvaluatedKey) scanParams.ExclusiveStartKey = lastEvaluatedKey;
+      const result = await dynamodb.scan(scanParams).promise();
+      
+      // Additional client-side case-insensitive filter
+      const brandLower = brand.toLowerCase();
+      const filtered = result.Items.filter(p => 
+        p.brand && p.brand.toLowerCase().includes(brandLower)
+      );
+      allProducts = allProducts.concat(filtered);
+      
+      lastEvaluatedKey = result.LastEvaluatedKey;
+      if (allProducts.length >= parseInt(limit) * 2) break;
+    } while (lastEvaluatedKey);
+    
+    console.log(`🏷️ Brand filter returned ${allProducts.length} products`);
   } else {
     // Fallback to scan with filters for unfiltered requests
     console.log('📡 Using filtered scan');

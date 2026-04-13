@@ -109,7 +109,7 @@ export default function Shop() {
   const [searchParams] = useSearchParams();
   const [showFilters, setShowFilters] = useState(false);
   const [allProducts, setAllProducts] = useState<any[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, _setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
@@ -164,21 +164,48 @@ export default function Shop() {
       // Import and use loadAllProducts from productService
       const { loadAllProducts } = await import('@/services/productService');
       
+      // Pass filters to loadAllProducts (it needs to know brand/category/etc)
+      // For now, the API will handle filtering based on URL params
       const products = await loadAllProducts((loaded, total, _hasMore) => {
         setLoadingProgress({ loaded, total });
         console.log(`📊 Progress: ${loaded}/${total} (${Math.round(loaded / total * 100)}%)`);
       });
+      
+      // Apply client-side filters for brand/category if needed
+      let filteredProducts = products;
+      if (filters.brand && filters.brand !== 'all') {
+        const brandLower = filters.brand.toLowerCase();
+        filteredProducts = products.filter(p => 
+          p.brand && p.brand.toLowerCase().includes(brandLower)
+        );
+        console.log(`🏷️ Filtered by brand "${filters.brand}": ${filteredProducts.length} products`);
+      }
+      if (filters.category && filters.category !== 'all') {
+        const catLower = filters.category.toLowerCase();
+        filteredProducts = filteredProducts.filter(p => 
+          p.category && p.category.toLowerCase() === catLower
+        );
+        console.log(`📂 Filtered by category "${filters.category}": ${filteredProducts.length} products`);
+      }
+      if (filters.status === 'sale') {
+        filteredProducts = filteredProducts.filter(p => p.isSale || p.originalPrice);
+        console.log(`💰 Filtered by sale: ${filteredProducts.length} products`);
+      }
+      if (filters.status === 'new') {
+        filteredProducts = filteredProducts.filter(p => p.isNew);
+        console.log(`✨ Filtered by new: ${filteredProducts.length} products`);
+      }
 
-      setAllProducts(products);
-      setTotalProducts(products.length);
-      console.log(`✅ Loaded ${products.length} products total`);
+      setAllProducts(filteredProducts);
+      setTotalProducts(filteredProducts.length);
+      console.log(`✅ Loaded ${filteredProducts.length} products total`);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
     } finally {
       setIsLoadingProducts(false);
     }
-  }, [isSaleFilter, saleProducts]);
+  }, [isSaleFilter, saleProducts, filters.brand, filters.category, filters.status]);
 
   // Fetch products when filters change
   useEffect(() => {
@@ -202,7 +229,6 @@ export default function Shop() {
 
     if (Object.keys(updates).length > 0) {
       setFilters(prev => ({ ...prev, ...updates }));
-      setCurrentPage(1); // Reset to page 1 when filters change
       console.log('📍 Applied URL filters:', updates);
     }
   }, [searchParams]);
