@@ -108,10 +108,31 @@ export const productsApi = {
     apiRequest(`/products/${id}`, 'DELETE'),
 };
 
-// Brand endpoints
+// Brand endpoints (PUBLIC - no auth required)
 export const brandsApi = {
-  getAll: (_limit = 500, _featured?: boolean) => {
-    return apiRequest(`/admin/brands`);
+  getAll: async (_limit = 500, _featured?: boolean) => {
+    try {
+      console.log('🌐 API Request: GET /admin/brands (public)');
+      
+      const response = await fetch(`${API_BASE_URL}/admin/brands`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // NO Authorization header - brands are public
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Brands response:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Brands fetch error:', error);
+      return { brands: [] };
+    }
   },
 
   getById: (id: string) =>
