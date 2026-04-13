@@ -77,10 +77,14 @@ async function getAllProducts(event) {
   console.log('🔍 Filters:', { brand, category, search, limit, page, isActive, isFeatured, isNew, isSale, tag, occasion });
 
   let allProducts = [];
-  
+
   // ⚡ USE GSI: category-index for fast category queries (10-40x faster than scan)
   if (category && category !== 'all') {
     console.log('⚡ Using category-index GSI for fast query');
+
+    // Always fetch enough to get accurate total count
+    // Limit should be at least 500 for accurate totals
+    const queryLimit = Math.max(500, parseInt(limit) * 10);
     
     const queryParams = {
       TableName: TABLE_NAME,
@@ -88,24 +92,25 @@ async function getAllProducts(event) {
       KeyConditionExpression: '#cat = :catVal AND entityType = :entityType',
       ExpressionAttributeNames: { '#cat': 'category' },
       ExpressionAttributeValues: { ':catVal': category, ':entityType': 'PRODUCT' },
-      Limit: parseInt(limit) * 3,
+      Limit: queryLimit,
     };
-    
+
     let lastEvaluatedKey = null;
     do {
       if (lastEvaluatedKey) queryParams.ExclusiveStartKey = lastEvaluatedKey;
       const result = await dynamodb.query(queryParams).promise();
       allProducts = allProducts.concat(result.Items);
       lastEvaluatedKey = result.LastEvaluatedKey;
-      if (allProducts.length >= parseInt(limit) * 2) break;
+      // Stop after we've scanned 5000 items or found 1000 products
+      if (allProducts.length >= 1000 || result.ScannedCount >= 5000) break;
     } while (lastEvaluatedKey);
-    
-    console.log(`⚡ Category query returned ${allProducts.length} products (10-40x faster than scan)`);
-  } 
+
+    console.log(`⚡ Category query returned ${allProducts.length} products for "${category}"`);
+  }
   // ⚡ USE brand filter (client-side after scan since no brand GSI)
   else if (brand) {
     console.log('🏷️ Filtering by brand:', brand);
-    
+
     // Scan all products with generous limit
     const scanParams = {
       TableName: TABLE_NAME,
@@ -133,7 +138,7 @@ async function getAllProducts(event) {
       
       lastEvaluatedKey = result.LastEvaluatedKey;
       // Continue scanning until we've checked everything or found enough
-    } while (lastEvaluatedKey && allProducts.length < 500);
+    } while (lastEvaluatedKey && allProducts.length < 1000);
     
     console.log(`🏷️ Brand filter returned ${allProducts.length} products for "${brand}"`);
   } else {
