@@ -1,155 +1,82 @@
 import { toCDNUrl } from '@/utils/productImage';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { X, ShoppingBag, Star, ChevronRight } from 'lucide-react';
+import { X, ShoppingBag, Star, ChevronRight, ChevronDown, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBrands } from '@/hooks/useBrands';
 import { useCollection } from '@/hooks/useCollection';
 import type { Brand } from '@/services/brandsService';
 import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
-// import { FixedSizeList as List } from 'react-window'; // Temporarily disabled
 
-// const ITEMS_PER_PAGE = 50; // Not needed - showing all products in grid
-// const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod'; // Not needed - using productService
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
-// Infinite scroll hook - loads more products when user scrolls to bottom
-// Currently unused but available for future infinite scroll mode
-/*
-function useInfiniteProducts(isSaleFilter: boolean, saleProducts: any[], filters: any) {
-  const [products, setProducts] = useState<any[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasMore, setHasMore] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const observerRef = useRef<HTMLDivElement>(null);
-
-  // Reset when filters change
-  useEffect(() => {
-    setProducts([]);
-    setPage(1);
-    setHasMore(true);
-    setError(null);
-  }, [filters.category, filters.brand, filters.status, filters.priceRange]);
-
-  // Load products for current page
-  useEffect(() => {
-    if (isSaleFilter) {
-      setProducts(saleProducts || []);
-      setTotalProducts(saleProducts?.length || 0);
-      setHasMore(false);
-      setIsLoading(false);
-      return;
-    }
-
-    const loadPage = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const params = new URLSearchParams();
-        params.append('limit', String(ITEMS_PER_PAGE));
-        params.append('page', String(page));
-        if (filters.category !== 'all') params.append('category', filters.category);
-        if (filters.brand !== 'all') params.append('brand', filters.brand);
-        if (filters.status === 'sale') params.append('isSale', 'true');
-        if (filters.status === 'new') params.append('isNew', 'true');
-
-        const url = `${API_URL}/products?${params.toString()}`;
-        console.log(`📡 Fetching shop page ${page}:`, url);
-
-        const response = await fetch(url, { cache: 'force-cache' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-
-        const items = data.items || [];
-        console.log(`📦 Page ${page}: received ${items.length} products (total available: ${data.total})`);
-
-        setProducts(prev => page === 1 ? items : [...prev, ...items]);
-        setTotalProducts(data.total || 0);
-
-        // If we got fewer items than limit, no more pages
-        if (items.length < ITEMS_PER_PAGE) {
-          setHasMore(false);
-        }
-      } catch (err) {
-        console.error('❌ Failed to fetch products:', err);
-        setError(err as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadPage();
-  }, [isSaleFilter, saleProducts, page, filters.category, filters.brand, filters.status]);
-
-  // Intersection Observer for infinite scroll
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
-          console.log('📜 Load more triggered - page', page + 1);
-          setPage(prev => prev + 1);
-        }
-      },
-      { rootMargin: '200px' } // Start loading 200px before reaching bottom
-    );
-
-    if (observerRef.current) observer.observe(observerRef.current);
-    return () => observer.disconnect();
-  }, [hasMore, isLoading, page]);
-
-  return { products, totalProducts, isLoading, hasMore, error, loadMoreRef: observerRef, setPage };
+// Fetch categories directly from API
+async function fetchCategories(): Promise<{name: string, count: number}[]> {
+  try {
+    const res = await fetch(`${API_URL}/categories`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.categories || [];
+  } catch {
+    return [];
+  }
 }
-*/
 
 export default function Shop() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [allProducts, setAllProducts] = useState<any[]>([]);
-  const [currentPage, _setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
-  const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
+  const [_loadingProgress, _setLoadingProgress] = useState({ loaded: 0, total: 0 });
   const [error, setError] = useState<Error | null>(null);
   const [filters, setFilters] = useState({
     category: 'all',
     priceRange: 'all',
     rating: 'all',
     status: 'all',
-    brand: 'all',
+    brands: [] as string[], // Multi-select brands
   });
+  const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
+  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
+  const brandDropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if we're filtering by sale - use collection instead of all products
   const isSaleFilter = searchParams.get('sale') === 'true';
   const { products: saleProducts, loading: _saleLoading } = useCollection('summerSale');
 
   // Fetch brands from API using hook
-  const { brands: brandsData } = useBrands();
+  const { brands: brandsData, loading: brandsLoading } = useBrands();
+  const brands = useMemo(() => 
+    brandsData?.map((b: Brand) => b.name).filter(Boolean) || [],
+  [brandsData]);
 
-  const categories = useMemo(() => [
-    'all',
-    ...Array.from(
-      new Set(
-        allProducts
-          .map((p) => p?.category)
-          .filter(Boolean)
-      )
-    ),
-  ], [allProducts]);
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories().then(cats => {
+      setCategories(cats);
+      console.log('📂 Loaded categories:', cats.length);
+    });
+  }, []);
 
-  // Use brands from API hook instead of extracting from products
-  const brands = useMemo(() => [
-    'all',
-    ...(brandsData?.map((b: Brand) => b.name).filter(Boolean) || []),
-  ], [brandsData]);
+  // Close brand dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (brandDropdownRef.current && !brandDropdownRef.current.contains(e.target as Node)) {
+        setShowBrandDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  // Fetch ALL products from server and display in grid with progress
-  const fetchAllProducts = useCallback(async () => {
+  // Fetch products with filters
+  const fetchProducts = useCallback(async () => {
     setIsLoadingProducts(true);
     setError(null);
-    
+
     if (isSaleFilter) {
       setAllProducts(saleProducts || []);
       setTotalProducts(saleProducts?.length || 0);
@@ -158,40 +85,70 @@ export default function Shop() {
     }
 
     try {
-      console.log('📦 Loading all products with progress tracking...');
+      console.log('📦 Fetching products with filters:', filters);
 
-      // Import and use loadAllProducts from productService
-      const { loadAllProducts } = await import('@/services/productService');
+      // Build query params
+      const params = new URLSearchParams();
+      params.append('limit', '500');
+      params.append('page', '1');
       
-      // Build filters object to pass to API
-      const apiFilters: any = {};
-      if (filters.brand && filters.brand !== 'all') apiFilters.brand = filters.brand;
-      if (filters.category && filters.category !== 'all') apiFilters.category = filters.category;
-      if (filters.status === 'sale') apiFilters.isSale = true;
-      if (filters.status === 'new') apiFilters.isNew = true;
+      if (filters.category && filters.category !== 'all') {
+        params.append('category', filters.category);
+      }
+      if (filters.brands.length > 0) {
+        // For multiple brands, we'll fetch and filter client-side
+        params.append('limit', '1000');
+      }
+      if (filters.status === 'sale') params.append('isSale', 'true');
+      if (filters.status === 'new') params.append('isNew', 'true');
+
+      const url = `${API_URL}/products?${params.toString()}`;
+      console.log('📡 Fetching:', url);
+
+      const response = await fetch(url, { cache: 'force-cache' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+
+      let products = data.items || [];
       
-      // Pass filters to loadAllProducts - API will handle filtering server-side
-      const products = await loadAllProducts(apiFilters, (loaded, total, _hasMore) => {
-        setLoadingProgress({ loaded, total });
-        console.log(`📊 Progress: ${loaded}/${total} (${Math.round(loaded / total * 100)}%)`);
-      });
-      
-      // Products are already filtered by the API - no client-side filtering needed
+      // Filter by brands client-side if multiple brands selected
+      if (filters.brands.length > 0) {
+        const brandLower = filters.brands.map(b => b.toLowerCase());
+        products = products.filter((p: any) => 
+          p.brand && brandLower.includes(p.brand.toLowerCase())
+        );
+        console.log(`🏷️ Filtered by ${filters.brands.length} brands: ${products.length} products`);
+      }
+
+      // Filter by price range client-side
+      if (filters.priceRange !== 'all') {
+        products = products.filter((p: any) => {
+          const price = Number(p.price) || 0;
+          switch (filters.priceRange) {
+            case 'under50': return price < 50;
+            case '50-100': return price >= 50 && price <= 100;
+            case '100-200': return price >= 100 && price <= 200;
+            case 'over200': return price > 200;
+            default: return true;
+          }
+        });
+      }
+
       setAllProducts(products);
       setTotalProducts(products.length);
-      console.log(`✅ Loaded ${products.length} products total`);
+      console.log(`✅ Loaded ${products.length} products`);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
     } finally {
       setIsLoadingProducts(false);
     }
-  }, [isSaleFilter, saleProducts, filters.brand, filters.category, filters.status]);
+  }, [isSaleFilter, saleProducts, filters.category, filters.brands, filters.status, filters.priceRange]);
 
-  // Fetch products when filters change
+  // Auto-fetch when filters change (NO page reload needed!)
   useEffect(() => {
-    fetchAllProducts();
-  }, [fetchAllProducts]);
+    fetchProducts();
+  }, [fetchProducts]);
 
   // Read URL parameters to set filters
   useEffect(() => {
@@ -202,7 +159,7 @@ export default function Shop() {
 
     const updates: any = {};
     if (category) updates.category = decodeURIComponent(category);
-    if (brand) updates.brand = decodeURIComponent(brand);
+    if (brand) updates.brands = [decodeURIComponent(brand)];
     if (sale === 'true') updates.status = 'sale';
     if (priceRange && ['under50', '50-100', '100-200', 'over200'].includes(priceRange)) {
       updates.priceRange = priceRange;
@@ -214,28 +171,40 @@ export default function Shop() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [currentPage]);
+  const resetFilters = () => {
+    setFilters({
+      category: 'all',
+      priceRange: 'all',
+      rating: 'all',
+      status: 'all',
+      brands: [],
+    });
+  };
 
-  // allProducts contains ALL products - displayed in grid
-  const paginatedProducts = allProducts;
+  const toggleBrand = (brand: string) => {
+    setFilters(prev => ({
+      ...prev,
+      brands: prev.brands.includes(brand)
+        ? prev.brands.filter(b => b !== brand)
+        : [...prev.brands, brand],
+    }));
+  };
 
   // Loading state with progress bar
   if (isLoadingProducts) {
-    const progressPercent = loadingProgress.total > 0 
-      ? Math.round((loadingProgress.loaded / loadingProgress.total) * 100) 
+    const progressPercent = _loadingProgress.total > 0 
+      ? Math.round((_loadingProgress.loaded / _loadingProgress.total) * 100) 
       : 0;
     
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center pt-24">
         <div className="text-center">
           <div className="mb-4">
             <div className="text-6xl mb-4">🛍️</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">Loading Products...</h3>
-            {loadingProgress.total > 0 && (
+            {_loadingProgress.total > 0 && (
               <p className="text-gray-500 mb-4">
-                {loadingProgress.loaded} of {loadingProgress.total} products ({progressPercent}%)
+                {_loadingProgress.loaded} of {_loadingProgress.total} products ({progressPercent}%)
               </p>
             )}
           </div>
@@ -253,9 +222,8 @@ export default function Shop() {
 
   // Error state
   if (error) {
-    console.error('Shop error:', error);
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center pt-24">
         <div className="text-center">
           <div className="text-6xl mb-4">😕</div>
           <h3 className="text-xl font-semibold text-gray-700 mb-2">Failed to Load Products</h3>
@@ -266,16 +234,6 @@ export default function Shop() {
     );
   }
 
-  const resetFilters = () => {
-    setFilters({
-      category: 'all',
-      priceRange: 'all',
-      rating: 'all',
-      status: 'all',
-      brand: 'all',
-    });
-  };
-
   return (
     <div className="min-h-screen bg-beige-100 pt-24 pb-8">
       {/* Hero Section for Sale */}
@@ -285,24 +243,20 @@ export default function Shop() {
             <div className="max-w-3xl">
               <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-2">Special Offers</span>
               <h1 className="font-playfair text-4xl md:text-5xl font-bold text-black mb-4">Summer Sale</h1>
-              <p className="text-gray-600 text-lg mb-6">Discover amazing discounts on our exclusive summer collection. Limited-time offers on your favorite designer pieces.</p>
+              <p className="text-gray-600 text-lg mb-6">Discover amazing discounts on our exclusive summer collection.</p>
               <button
-                onClick={() => {
-                  setFilters(prev => ({ ...prev, status: 'all' }));
-                  navigate('/shop');
-                }}
+                onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full hover:bg-gold transition-colors"
               >
-                View All Products
-                <ChevronRight className="w-4 h-4" />
+                View All Products <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
         </section>
       )}
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Header with title */}
+      <div className="container mx-auto px-4">
+        {/* Header */}
         <h1 className="text-3xl font-bold mb-6">
           {filters.status === 'sale' ? 'All Products' : 'Shop All Products'}
         </h1>
@@ -310,31 +264,95 @@ export default function Shop() {
         {/* Inline Filters Bar - Always visible at top */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {/* Category Filter */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
-              <select value={filters.category} onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
-                <option value="all">All Categories</option>
-                {categories.filter(c => c !== 'all').map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+              <select
+                value={filters.category}
+                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50"
+              >
+                <option value="all">All Categories ({totalProducts})</option>
+                {categories.map(cat => (
+                  <option key={cat.name} value={cat.name}>
+                    {cat.name} ({cat.count})
+                  </option>
+                ))}
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Brand</label>
-              <select value={filters.brand} onChange={(e) => setFilters(prev => ({ ...prev, brand: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
-                <option value="all">All Brands</option>
-                {brands.filter(b => b !== 'all').slice(0, 50).map(brand => (<option key={brand} value={brand}>{brand}</option>))}
-              </select>
+
+            {/* Multi-Select Brand Filter */}
+            <div ref={brandDropdownRef} className="relative">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                Brands ({filters.brands.length} selected)
+              </label>
+              <button
+                onClick={() => setShowBrandDropdown(!showBrandDropdown)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-left flex items-center justify-between focus:outline-none focus:border-gold/50 bg-white hover:border-gold/50 transition"
+              >
+                <span className="truncate">
+                  {filters.brands.length === 0 ? 'All Brands' : filters.brands.join(', ')}
+                </span>
+                <ChevronDown className="w-4 h-4 flex-shrink-0 ml-1" />
+              </button>
+              
+              {showBrandDropdown && (
+                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                  <div className="p-2 border-b border-gray-100">
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={filters.brands.length === 0}
+                        onChange={() => setFilters(prev => ({ ...prev, brands: [] }))}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm font-medium">All Brands</span>
+                    </label>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {brandsLoading ? (
+                      <div className="p-4 text-center text-sm text-gray-500">Loading brands...</div>
+                    ) : (
+                      brands.map(brand => (
+                        <label key={brand} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2">
+                          <input
+                            type="checkbox"
+                            checked={filters.brands.includes(brand)}
+                            onChange={() => toggleBrand(brand)}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                          <span className="text-sm">{brand}</span>
+                          {filters.brands.includes(brand) && <Check className="w-3 h-3 ml-auto text-gold" />}
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Status Filter */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-              <select value={filters.status} onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+              <select
+                value={filters.status}
+                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50"
+              >
                 <option value="all">All Products</option>
                 <option value="new">New Arrivals</option>
                 <option value="sale">On Sale</option>
               </select>
             </div>
+
+            {/* Price Range Filter */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Price</label>
-              <select value={filters.priceRange} onChange={(e) => setFilters(prev => ({ ...prev, priceRange: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+              <select
+                value={filters.priceRange}
+                onChange={(e) => setFilters(prev => ({ ...prev, priceRange: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50"
+              >
                 <option value="all">All Prices</option>
                 <option value="under50">Under $50</option>
                 <option value="50-100">$50 - $100</option>
@@ -342,8 +360,14 @@ export default function Shop() {
                 <option value="over200">Over $200</option>
               </select>
             </div>
+
+            {/* Reset Button */}
             <div className="flex items-end">
-              <Button onClick={resetFilters} variant="outline" className="w-full h-10 text-sm hover:bg-gray-50 hover:border-gold">
+              <Button
+                onClick={resetFilters}
+                variant="outline"
+                className="w-full h-10 text-sm hover:bg-gray-50 hover:border-gold"
+              >
                 <X className="w-4 h-4 mr-1" /> Reset
               </Button>
             </div>
@@ -354,105 +378,77 @@ export default function Shop() {
           {/* Products Grid */}
           <div className="flex-1">
             <p className="text-gray-600 mb-6">
-              {paginatedProducts.length > 0
-                ? `Showing ${paginatedProducts.length} of ${totalProducts} products`
+              {allProducts.length > 0
+                ? `Showing ${allProducts.length} of ${totalProducts} products`
                 : 'No products found'}
             </p>
 
-            {paginatedProducts.length === 0 ? (
+            {allProducts.length === 0 ? (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">🛍️</div>
                 <h3 className="text-xl font-semibold text-gray-700 mb-2">No Products Found</h3>
-                <p className="text-gray-500 mb-6">
-                  {allProducts.length === 0
-                    ? "We're currently loading our collection. Please refresh the page."
-                    : "Try adjusting your filters to see more results."}
-                </p>
-                {allProducts.length > 0 && (
-                  <Button onClick={resetFilters} variant="outline">
-                    Reset Filters
-                  </Button>
-                )}
+                <p className="text-gray-500 mb-6">Try adjusting your filters to see more results.</p>
+                <Button onClick={resetFilters} variant="outline">Reset Filters</Button>
               </div>
             ) : (
-              <>
-              {/* Product Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {paginatedProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition"
-                >
+                {allProducts.map((product) => (
                   <div
-                    className="relative aspect-[3/4] overflow-hidden cursor-pointer"
-                    onClick={() => navigate(getProductUrl(product))}
+                    key={product.id}
+                    className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition"
                   >
-                    <LazyImage
-                      src={toCDNUrl(product.image)}
-                      alt={product.name}
-                      productName={product.name}
-                      productId={product.id}
-                      className="w-full h-full"
-                    />
-                    <div className="absolute top-3 left-3 flex flex-col gap-2">
-                      {product.isNew && (
-                        <span className="px-3 py-1 bg-black text-white text-xs font-medium rounded-full">
-                          New
-                        </span>
-                      )}
-                      {product.isSale && (
-                        <span className="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-full">
-                          Sale
-                        </span>
-                      )}
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toast.info('Add to cart coming soon');
-                        }}
-                        className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
-                      >
-                        <ShoppingBag className="w-4 h-4" />
-                        Add to Cart
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
-                    <h3
+                    <div
+                      className="relative aspect-[3/4] overflow-hidden cursor-pointer"
                       onClick={() => navigate(getProductUrl(product))}
-                      className="font-semibold text-lg mb-2 cursor-pointer hover:text-gold transition"
                     >
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center gap-1 mb-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-3 h-3 ${
-                            i < Math.floor(product.rating || 0)
-                              ? 'text-gold fill-gold'
-                              : 'text-gray-300'
-                          }`}
-                        />
-                      ))}
-                      <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
+                      <LazyImage
+                        src={toCDNUrl(product.image)}
+                        alt={product.name}
+                        productName={product.name}
+                        productId={product.id}
+                        className="w-full h-full"
+                      />
+                      <div className="absolute top-3 left-3 flex flex-col gap-2">
+                        {product.isNew && (
+                          <span className="px-3 py-1 bg-black text-white text-xs font-medium rounded-full">New</span>
+                        )}
+                        {product.isSale && (
+                          <span className="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-full">Sale</span>
+                        )}
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toast.info('Add to cart coming soon'); }}
+                          className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
+                        >
+                          <ShoppingBag className="w-4 h-4" /> Add to Cart
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-lg">${product.price}</span>
-                      {product.originalPrice && (
-                        <span className="text-gray-400 line-through text-sm">
-                          ${product.originalPrice}
-                        </span>
-                      )}
+                    <div className="p-4">
+                      <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
+                      <h3
+                        onClick={() => navigate(getProductUrl(product))}
+                        className="font-semibold text-lg mb-2 cursor-pointer hover:text-gold transition"
+                      >
+                        {product.name}
+                      </h3>
+                      <div className="flex items-center gap-1 mb-2">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />
+                        ))}
+                        <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-lg">${product.price}</span>
+                        {product.originalPrice && (
+                          <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-              </>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -460,19 +456,3 @@ export default function Shop() {
     </div>
   );
 }
-
-/* 
-// Virtualized Product Grid Component - for future use with 40K+ products
-// Requires: npm install react-window
-function VirtualizedProductGrid({ 
-  products, 
-  onProductClick, 
-  onAddToCart 
-}: { 
-  products: any[]; 
-  onProductClick: (product: any) => void;
-  onAddToCart: () => void;
-}) {
-  // Implementation ready when react-window is properly installed
-}
-*/
