@@ -1,6 +1,6 @@
 // services/brandService.ts
-// Brands API is on the OLD endpoint (new API doesn't have brands endpoint)
-const BRANDS_API_URL = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+// Use NEW API - extract brands from products
+const API_URL = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
 
 export interface Brand {
   id: string;
@@ -32,31 +32,34 @@ class BrandService {
     }
 
     try {
-      console.log('🏷️ Fetching ALL brands from OLD API (brands not on new API)...');
+      console.log('🏷️ Fetching brands from NEW API (extracted from products)...');
 
-      // Brands only exist on the OLD API
-      const response = await fetch(`${BRANDS_API_URL}/admin/brands`);
+      // Fetch products and extract unique brands
+      const response = await fetch(`${API_URL}/products?limit=1000`);
       const data = await response.json();
-      console.log('📦 Raw brands response:', data);
+      const products = data.items || [];
 
-      // Handle different response structures
-      let items = [];
-      if (Array.isArray(data)) {
-        items = data;
-      } else if (data.brands && Array.isArray(data.brands)) {
-        items = data.brands;
-      } else if (data.items && Array.isArray(data.items)) {
-        items = data.items;
-      }
+      // Extract unique brands with product counts
+      const brandMap: Record<string, number> = {};
+      products.forEach((p: any) => {
+        if (p.brand) {
+          brandMap[p.brand] = (brandMap[p.brand] || 0) + 1;
+        }
+      });
 
-      if (!response || items.length === 0) {
-        console.log('⚠️ No brands found in response');
-        return [];
-      }
+      // Convert to Brand objects
+      const brands: Brand[] = Object.entries(brandMap).map(([name, count]) => ({
+        id: `brand-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        description: `${name} collection`,
+        logo: '',
+        coverImage: '',
+        productCount: count,
+        isFeatured: false,
+      })).sort((a, b) => a.name.localeCompare(b.name));
 
-      const brands = items.map(this.transformBrand);
-
-      console.log('✅ Brands fetched:', brands.length, 'brands');
+      console.log(`✅ Extracted ${brands.length} unique brands from ${products.length} products`);
 
       // Cache the results
       this.cachedBrands = brands;
@@ -65,30 +68,9 @@ class BrandService {
       return brands;
     } catch (error: any) {
       console.error('❌ Brands fetch error:', error.name, error.message);
-      return []; // Return empty array instead of throwing
+      return [];
     }
   }
-
-  private transformBrand = (data: any): Brand => {
-    return {
-      id: data.id || data.PK || '',
-      name: data.name || '',
-      slug: data.slug || this.createSlug(data.name),
-      description: data.description || '',
-      logo: data.logo || 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/default-logo.png',
-      coverImage: data.coverImage || data.cover || 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/brands/default-cover.jpg',
-      productCount: data.productCount || 0,
-      isFeatured: Boolean(data.isFeatured),
-      products: data.products || []
-    };
-  };
-
-  private createSlug = (name: string): string => {
-    if (!name) return '';
-    return name.toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-  };
 
   // Clear cache (useful for admin updates)
   clearCache() {

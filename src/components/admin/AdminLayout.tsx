@@ -144,6 +144,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       ]
     },
     { id: 'products', label: 'Products', icon: Package, path: resolveMenuPath('products') },
+    { id: 'categories', label: 'Categories', icon: Tag, path: '/admin/categories' },
     { id: 'orders', label: 'Orders', icon: ShoppingCart, path: '/admin/orders' },
     { id: 'delivery', label: 'Delivery Management', icon: Truck, path: '/admin/delivery' },
     { id: 'customers', label: 'Customers', icon: UsersIcon, path: resolveMenuPath('customers') },

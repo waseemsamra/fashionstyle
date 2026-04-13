@@ -56,7 +56,7 @@ const DeliveryManagement = lazy(() => import('@/pages/admin/DeliveryManagement')
 const AdminVendors = lazy(() => import('@/pages/admin/AdminVendors'));
 const VendorDetail = lazy(() => import('@/pages/admin/VendorDetail'));
 const SummerSale = lazy(() => import('@/pages/admin/SummerSale'));
-const AdminNewArrivals = lazy(() => import('@/pages/admin/NewArrivals'));
+const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'));const AdminNewArrivals = lazy(() => import('@/pages/admin/NewArrivals'));
 function Layout() {
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -307,7 +307,8 @@ function Layout() {
               <Route path="vendors" element={<AdminVendors />} />
               <Route path="vendors/:id" element={<VendorDetail />} />
               <Route path="summer-sale" element={<SummerSale />} />
-              <Route path="new-arrivals" element={<AdminNewArrivals />} />            </Route>
+              <Route path="new-arrivals" element={<AdminNewArrivals />} />
+              <Route path="categories" element={<AdminCategories />} />            </Route>
           </Routes>
         </Suspense>
       </main>
