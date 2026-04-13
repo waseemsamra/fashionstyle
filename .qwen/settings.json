@@ -46,7 +46,8 @@
       "Bash(\"src/pages/virtualtryonpage.tsx\")",
       "Bash(script)",
       "Bash(bash *)",
-      "Bash(find *)"
+      "Bash(find *)",
+      "Bash(git checkout *)"
     ]
   },
   "mcpServers": {
