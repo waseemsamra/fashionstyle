@@ -8,7 +8,6 @@ const CATEGORY_IMAGES: Record<string, string> = {
   'Formal Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-formal.jpg',
   'Accessories': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-accessories.jpg',
   'Festive Collection': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-festive.jpg',
-  'Uncategorized': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
 };
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
@@ -17,7 +16,6 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Formal Wear': 'Special occasion dresses',
   'Accessories': 'Complete your look',
   'Festive Collection': 'Celebrate in style',
-  'Uncategorized': 'Browse all products',
 };
 
 export default function Categories() {
@@ -30,27 +28,38 @@ export default function Categories() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        console.log('📦 Loading categories from API...');
-        
-        // Fetch categories directly from efficient endpoint (NOT all products)
-        const response = await fetch('https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com/categories', {
-          cache: 'no-cache'
+        console.log('📦 Loading categories from products...');
+
+        // Fetch products to calculate categories dynamically
+        const response = await fetch('https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com/products?limit=1000', {
+          cache: 'force-cache'
         });
         const data = await response.json();
-        
-        console.log('📊 Categories API response:', data);
-        
-        const cats = (data.categories || [])
-          .map((cat: any) => ({
-            name: cat.name,
-            image: CATEGORY_IMAGES[cat.name] || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
-            description: CATEGORY_DESCRIPTIONS[cat.name] || 'Browse products',
-            itemCount: cat.count,
+        const products = data.items || [];
+
+        // Calculate category counts
+        const categoryCounts: Record<string, number> = {};
+        products.forEach((p: any) => {
+          if (p.category) {
+            categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
+          }
+        });
+
+        console.log('📊 Category counts:', categoryCounts);
+
+        // Build categories array with images and descriptions
+        const cats = Object.entries(categoryCounts)
+          .map(([name, count]) => ({
+            name,
+            image: CATEGORY_IMAGES[name] || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
+            description: CATEGORY_DESCRIPTIONS[name] || `${count} products`,
+            itemCount: count,
           }))
-          .filter((c: any) => c.itemCount > 0)
+          .filter(c => c.itemCount > 0)
+          .sort((a, b) => b.itemCount - a.itemCount)
           .slice(0, 8);
 
-        console.log('📋 Final categories:', cats.map((c: any) => `${c.name}(${c.itemCount})`).join(', '));
+        console.log('📋 Final categories:', cats.map(c => `${c.name}(${c.itemCount})`).join(', '));
         setCategories(cats);
       } catch (error) {
         console.error('Failed to load categories:', error);

@@ -1,5 +1,6 @@
 // services/brandService.ts
-import { brandsApi } from './apiGatewayClient';
+// Brands API is on the OLD endpoint (new API doesn't have brands endpoint)
+const BRANDS_API_URL = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 export interface Brand {
   id: string;
@@ -23,7 +24,7 @@ class BrandService {
   private cacheTime: number = 5 * 60 * 1000; // 5 minutes
   private lastFetch: number = 0;
 
-  async getAllBrands(options?: { featured?: boolean; limit?: number }): Promise<Brand[]> {
+  async getAllBrands(_options?: { featured?: boolean; limit?: number }): Promise<Brand[]> {
     // Check cache first
     if (this.cachedBrands && Date.now() - this.lastFetch < this.cacheTime) {
       console.log('📦 Using cached brands');
@@ -31,24 +32,21 @@ class BrandService {
     }
 
     try {
-      console.log('🏷️ Fetching ALL brands from API Gateway...');
+      console.log('🏷️ Fetching ALL brands from OLD API (brands not on new API)...');
 
-      const response = await brandsApi.getAll(options?.limit || 500, options?.featured);
-      console.log('📦 Raw brands response:', response);
+      // Brands only exist on the OLD API
+      const response = await fetch(`${BRANDS_API_URL}/admin/brands`);
+      const data = await response.json();
+      console.log('📦 Raw brands response:', data);
 
       // Handle different response structures
       let items = [];
-      if (Array.isArray(response)) {
-        items = response;
-      } else if (response.brands && Array.isArray(response.brands)) {
-        items = response.brands;
-      } else if (response.items && Array.isArray(response.items)) {
-        items = response.items;
-      } else if (response.data && Array.isArray(response.data)) {
-        items = response.data;
-      } else if (response.body) {
-        const body = typeof response.body === 'string' ? JSON.parse(response.body) : response.body;
-        items = body.brands || body.items || body.data || [];
+      if (Array.isArray(data)) {
+        items = data;
+      } else if (data.brands && Array.isArray(data.brands)) {
+        items = data.brands;
+      } else if (data.items && Array.isArray(data.items)) {
+        items = data.items;
       }
 
       if (!response || items.length === 0) {
