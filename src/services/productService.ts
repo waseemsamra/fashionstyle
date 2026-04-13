@@ -30,59 +30,68 @@ export interface Product {
 }
 
 /**
- * Get all products via API Gateway - fetches ALL pages
+ * Load ALL products from API with progress tracking
+ * Fetches in batches and calls onProgress callback
  */
-export const getAllProducts = async (): Promise<Product[]> => {
+export const loadAllProducts = async (
+  onProgress?: (loaded: number, total: number, hasMore: boolean) => void
+): Promise<Product[]> => {
+  let allProducts: Product[] = [];
+  let page = 1;
+  const limit = 500; // Fetch 500 per batch for speed
+  let hasMore = true;
+  let totalProducts = 0;
+
   try {
-    console.log('📦 Fetching ALL products from API Gateway...');
+    // First request to get total count
+    const firstResponse = await fetch(
+      `${import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod'}/products?limit=1&page=1`
+    );
+    const firstData = await firstResponse.json();
+    totalProducts = firstData.total || firstData.count || 0;
 
-    const allProducts: Product[] = [];
-    let page = 1;
-    const limit = 500;
-    let hasMore = true;
-
-    while (hasMore) {
-      const response = await productsApi.getAll({ limit, page });
-      console.log(`📦 Page ${page}: received ${response?.items?.length || 0} products`);
-
-      // Handle null/undefined responses
-      if (!response) {
-        console.warn('⚠️ No response from products API');
-        break;
-      }
-
-      // Handle different response formats
-      let products = [];
-      if (Array.isArray(response)) {
-        products = response;
-      } else if (response.items && Array.isArray(response.items)) {
-        products = response.items;
-      } else if (response.products && Array.isArray(response.products)) {
-        products = response.products;
-      } else if (response.data && Array.isArray(response.data)) {
-        products = response.data;
-      }
-
-      if (products.length === 0) {
-        hasMore = false;
-      } else {
-        allProducts.push(...products);
-        // Check if we got fewer products than limit (meaning we're on last page)
-        if (products.length < limit) {
-          hasMore = false;
-        } else {
-          page++;
-        }
-      }
+    if (totalProducts === 0) {
+      return [];
     }
 
-    console.log(`✅ Total products fetched: ${allProducts.length}`);
+    // Now fetch all products in batches
+    while (hasMore) {
+      const url = `${import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod'}/products?limit=${limit}&page=${page}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const items: Product[] = data.items || [];
+      
+      allProducts = [...allProducts, ...items];
+      
+      // Check if we have more pages
+      hasMore = items.length === limit && allProducts.length < totalProducts;
+      page++;
+
+      // Report progress
+      if (onProgress) {
+        onProgress(allProducts.length, totalProducts, hasMore);
+      }
+
+      console.log(`📦 Loaded page ${page - 1}: ${items.length} products (total: ${allProducts.length}/${totalProducts})`);
+    }
+
+    console.log(`✅ All products loaded: ${allProducts.length}`);
     return allProducts;
-  } catch (error: any) {
-    console.error('❌ Failed to fetch products:', error.message);
-    return []; // Return empty array instead of throwing
+  } catch (error) {
+    console.error('❌ Failed to load products:', error);
+    return allProducts; // Return what we have so far
   }
 };
+
+/**
+ * Get all products (alias for backward compatibility)
+ */
+export const getAllProducts = loadAllProducts;
 
 /**
  * Get product by ID via API Gateway

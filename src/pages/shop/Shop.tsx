@@ -12,7 +12,7 @@ import LazyImage from '@/components/ui/LazyImage';
 // import { FixedSizeList as List } from 'react-window'; // Temporarily disabled
 
 // const ITEMS_PER_PAGE = 50; // Not needed - showing all products in grid
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+// const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod'; // Not needed - using productService
 
 // Infinite scroll hook - loads more products when user scrolls to bottom
 // Currently unused but available for future infinite scroll mode
@@ -112,6 +112,7 @@ export default function Shop() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
   const [error, setError] = useState<Error | null>(null);
   const [filters, setFilters] = useState({
     category: 'all',
@@ -145,87 +146,39 @@ export default function Shop() {
     ...(brandsData?.map((b: Brand) => b.name).filter(Boolean) || []),
   ], [brandsData]);
 
-  // Fetch ALL products from server and display in grid
+  // Fetch ALL products from server and display in grid with progress
   const fetchAllProducts = useCallback(async () => {
     setIsLoadingProducts(true);
     setError(null);
+    
+    if (isSaleFilter) {
+      setAllProducts(saleProducts || []);
+      setTotalProducts(saleProducts?.length || 0);
+      setIsLoadingProducts(false);
+      return;
+    }
+
     try {
-      console.log(`📦 Fetching ALL products...`);
+      console.log('📦 Loading all products with progress tracking...');
 
-      if (isSaleFilter) {
-        // For sale filter, use collection products (already loaded)
-        setAllProducts(saleProducts || []);
-        setTotalProducts(saleProducts?.length || 0);
-        setIsLoadingProducts(false);
-        return;
-      }
+      // Import and use loadAllProducts from productService
+      const { loadAllProducts } = await import('@/services/productService');
+      
+      const products = await loadAllProducts((loaded, total, _hasMore) => {
+        setLoadingProgress({ loaded, total });
+        console.log(`📊 Progress: ${loaded}/${total} (${Math.round(loaded / total * 100)}%)`);
+      });
 
-      // Fetch first page to get total count
-      const params = new URLSearchParams();
-      params.append('limit', '1');
-      params.append('page', '1');
-      if (filters.category !== 'all') params.append('category', filters.category);
-      if (filters.brand !== 'all') params.append('brand', filters.brand);
-      if (filters.status === 'sale') params.append('isSale', 'true');
-      if (filters.status === 'new') params.append('isNew', 'true');
-
-      const firstUrl = `${API_URL}/products?${params.toString()}`;
-      const firstResponse = await fetch(firstUrl, { cache: 'force-cache' });
-      if (!firstResponse.ok) throw new Error(`HTTP ${firstResponse.status}`);
-      const firstData = await firstResponse.json();
-
-      const total = firstData.total || firstData.count || 0;
-      console.log(`📊 Total products available: ${total}`);
-      setTotalProducts(total);
-
-      if (total === 0) {
-        setAllProducts([]);
-        setIsLoadingProducts(false);
-        return;
-      }
-
-      // Now fetch ALL products in one request (Lambda supports up to 500 per page, so batch if needed)
-      const allProducts: any[] = [];
-      let page = 1;
-      const limit = 500;
-      let hasMore = true;
-
-      while (hasMore) {
-        const batchParams = new URLSearchParams();
-        batchParams.append('limit', String(limit));
-        batchParams.append('page', String(page));
-        if (filters.category !== 'all') batchParams.append('category', filters.category);
-        if (filters.brand !== 'all') batchParams.append('brand', filters.brand);
-        if (filters.status === 'sale') batchParams.append('isSale', 'true');
-        if (filters.status === 'new') batchParams.append('isNew', 'true');
-
-        const batchUrl = `${API_URL}/products?${batchParams.toString()}`;
-        console.log(`📡 Fetching page ${page}...`);
-
-        const response = await fetch(batchUrl, { cache: 'force-cache' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-
-        const items = data.items || [];
-        allProducts.push(...items);
-        console.log(`📦 Page ${page}: got ${items.length} products (total so far: ${allProducts.length})`);
-
-        if (items.length < limit || allProducts.length >= total) {
-          hasMore = false;
-        } else {
-          page++;
-        }
-      }
-
-      console.log(`✅ Fetched ${allProducts.length} products total`);
-      setAllProducts(allProducts);
+      setAllProducts(products);
+      setTotalProducts(products.length);
+      console.log(`✅ Loaded ${products.length} products total`);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
     } finally {
       setIsLoadingProducts(false);
     }
-  }, [isSaleFilter, saleProducts, filters.category, filters.brand, filters.status]);
+  }, [isSaleFilter, saleProducts]);
 
   // Fetch products when filters change
   useEffect(() => {
@@ -266,13 +219,31 @@ export default function Shop() {
     (p) => typeof p?.isNew === 'boolean' || typeof p?.isSale === 'boolean'
   );
 
-  // Loading state
+  // Loading state with progress bar
   if (isLoadingProducts) {
+    const progressPercent = loadingProgress.total > 0 
+      ? Math.round((loadingProgress.loaded / loadingProgress.total) * 100) 
+      : 0;
+    
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
-          <p className="text-gray-600">Loading products...</p>
+          <div className="mb-4">
+            <div className="text-6xl mb-4">🛍️</div>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2">Loading Products...</h3>
+            {loadingProgress.total > 0 && (
+              <p className="text-gray-500 mb-4">
+                {loadingProgress.loaded} of {loadingProgress.total} products ({progressPercent}%)
+              </p>
+            )}
+          </div>
+          <div className="w-64 mx-auto bg-gray-200 rounded-full h-2 mb-4">
+            <div 
+              className="bg-gold h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <p className="text-gray-600">Please wait...</p>
         </div>
       </div>
     );
