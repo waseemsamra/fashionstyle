@@ -102,6 +102,21 @@ export default function Shop() {
       if (filters.brands.length > 0) {
         params.append('limit', '500');
       }
+      // Map Price Range to Min/Max Price for API
+      if (filters.priceRange !== 'all') {
+        switch (filters.priceRange) {
+          case 'under50': params.append('maxPrice', '50'); break;
+          case '50-100': params.append('minPrice', '50'); params.append('maxPrice', '100'); break;
+          case '100-200': params.append('minPrice', '100'); params.append('maxPrice', '200'); break;
+          case 'over200': params.append('minPrice', '200'); break;
+        }
+      }
+
+      // Handle Multiple Brands
+      if (filters.brands.length > 0) {
+        params.append('brands', filters.brands.join(','));
+      }
+
       if (filters.status === 'sale') params.append('isSale', 'true');
       if (filters.status === 'new') params.append('isNew', 'true');
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
@@ -118,48 +133,13 @@ export default function Shop() {
       const total = data.total || 0;
 
       console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
-      if (products.length > 0) {
-        console.log('📊 First 3 products:', products.slice(0, 3).map((p: any) => ({
-          name: p.name,
-          category: p.category,
-          brand: p.brand
-        })));
-      }
 
-      // NOTE: Category filtering is now done server-side by the API
-      // Do NOT filter client-side - it would reduce the count incorrectly
-
-      // Filter by brands client-side if multiple brands selected
-      if (filters.brands.length > 0) {
-        const brandLower = filters.brands.map(b => b.toLowerCase());
-        products = products.filter((p: any) =>
-          p.brand && brandLower.includes(p.brand.toLowerCase())
-        );
-        console.log(`🏷️ Filtered by ${filters.brands.length} brands: ${products.length} products`);
-      }
-
-      // Filter by price range client-side
-      if (filters.priceRange !== 'all') {
-        products = products.filter((p: any) => {
-          const price = Number(p.price) || 0;
-          switch (filters.priceRange) {
-            case 'under50': return price < 50;
-            case '50-100': return price >= 50 && price <= 100;
-            case '100-200': return price >= 100 && price <= 200;
-            case 'over200': return price > 200;
-            default: return true;
-          }
-        });
-      }
-
-      // If we filtered client-side (brands or price), calculate actual total
-      // Category filtering is done server-side, so total is already accurate
-      const hasClientFilters = filters.brands.length > 0 || filters.priceRange !== 'all';
-      const actualTotal = hasClientFilters ? products.length : total;
+      // NOTE: ALL filtering is now done server-side by the API.
+      // We removed client-side filtering to ensure pagination works correctly.
 
       setAllProducts(products);
-      setTotalProducts(actualTotal);
-      console.log(`✅ Loaded page ${currentPage}: ${products.length} products (total: ${actualTotal})`);
+      setTotalProducts(total); // Use the total count from API
+      console.log(`✅ Loaded page ${currentPage}: ${products.length} products (total: ${total})`);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);

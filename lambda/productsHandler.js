@@ -14,7 +14,7 @@ exports.handler = async (event) => {
     try {
         const params = event.queryStringParameters || {};
         const category = params.category;
-        const brand = params.brand;
+        const brandsParam = params.brands; // Comma separated string
         const minPrice = params.minPrice ? parseFloat(params.minPrice) : null;
         const maxPrice = params.maxPrice ? parseFloat(params.maxPrice) : null;
         const sortBy = params.sortBy || 'createdAt';
@@ -22,7 +22,9 @@ exports.handler = async (event) => {
         const limit = parseInt(params.limit || '50');
         const page = parseInt(params.page || '1');
 
-        // Scan ALL products (up to 20,000 for accuracy)
+        console.log(`🔍 Filters: Category=${category}, Brands=${brandsParam}, Price=${minPrice}-${maxPrice}, Sort=${sortBy} ${sortOrder}`);
+
+        // 1. Scan ALL products (up to 20,000 to ensure we find everything for categories)
         let allProducts = [];
         let lastKey = null;
         const MAX_SCAN = 20000;
@@ -45,20 +47,25 @@ exports.handler = async (event) => {
             if (scannedCount >= MAX_SCAN) break;
         } while (lastKey);
 
+        console.log(`📦 Scanned ${scannedCount} items, found ${allProducts.length} products before filtering`);
+
         let filtered = allProducts;
 
-        // Apply category filter
+        // 2. Apply Category Filter
         if (category && category !== 'all') {
             filtered = filtered.filter(p => p.category === category);
         }
 
-        // Apply brand filter
-        if (brand && brand !== 'all') {
-            const brandLower = brand.toLowerCase().trim();
-            filtered = filtered.filter(p => p.brand && p.brand.toLowerCase().trim() === brandLower);
+        // 3. Apply Brand Filter (Supports comma-separated list for multi-select)
+        if (brandsParam) {
+            const selectedBrands = brandsParam.split(',').map(b => b.toLowerCase().trim());
+            filtered = filtered.filter(p => {
+                const pBrand = p.brand ? p.brand.toLowerCase().trim() : '';
+                return selectedBrands.some(sb => pBrand === sb || pBrand.includes(sb));
+            });
         }
 
-        // Apply price range filter
+        // 4. Apply Price Range Filter
         if (minPrice !== null) {
             filtered = filtered.filter(p => (p.price || 0) >= minPrice);
         }
@@ -66,7 +73,9 @@ exports.handler = async (event) => {
             filtered = filtered.filter(p => (p.price || 0) <= maxPrice);
         }
 
-        // Apply sorting
+        console.log(`✅ After filtering: ${filtered.length} products`);
+
+        // 5. Apply Sorting
         filtered.sort((a, b) => {
             let valA, valB;
             if (sortBy === 'price') {
@@ -75,12 +84,10 @@ exports.handler = async (event) => {
             } else if (sortBy === 'name') {
                 valA = (a.name || '').toLowerCase();
                 valB = (b.name || '').toLowerCase();
-            } else if (sortBy === 'createdAt') {
+            } else {
+                // Default: Date
                 valA = new Date(a.createdAt || 0).getTime();
                 valB = new Date(b.createdAt || 0).getTime();
-            } else {
-                valA = a[sortBy] || '';
-                valB = b[sortBy] || '';
             }
 
             if (sortOrder === 'asc') {
@@ -90,10 +97,11 @@ exports.handler = async (event) => {
             }
         });
 
-        // Apply pagination
+        // 6. Apply Pagination
         const start = (page - 1) * limit;
-        const end = start + limit;
-        const paginated = filtered.slice(start, end);
+        const paginated = filtered.slice(start, start + limit);
+
+        console.log(`📄 Returning page ${page} (${paginated.length} items) of ${filtered.length} total`);
 
         return {
             statusCode: 200,
@@ -103,8 +111,7 @@ exports.handler = async (event) => {
                 count: paginated.length,
                 total: filtered.length,
                 page,
-                limit,
-                filters: { category, brand, minPrice, maxPrice, sortBy, sortOrder }
+                limit
             })
         };
     } catch (error) {
