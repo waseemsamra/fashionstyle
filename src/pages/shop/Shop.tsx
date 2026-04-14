@@ -31,6 +31,7 @@ export default function Shop() {
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
@@ -76,7 +77,12 @@ export default function Shop() {
 
   // Fetch products with filters and pagination
   const fetchProducts = useCallback(async () => {
-    setIsLoadingProducts(true);
+    const isFirstLoad = !allProducts.length;
+    if (isFirstLoad) {
+      setIsLoadingProducts(true);
+    } else {
+      setIsFiltering(true);
+    }
     setError(null);
 
     if (isSaleFilter) {
@@ -84,6 +90,7 @@ export default function Shop() {
       setTotalProducts(saleProducts?.length || 0);
       setCurrentPage(1);
       setIsLoadingProducts(false);
+      setIsFiltering(false);
       return;
     }
 
@@ -94,7 +101,7 @@ export default function Shop() {
       const params = new URLSearchParams();
       params.append('limit', String(PRODUCTS_PER_PAGE));
       params.append('page', String(currentPage));
-      
+
       if (filters.category && filters.category !== 'all') {
         params.append('category', filters.category);
       }
@@ -133,27 +140,28 @@ export default function Shop() {
       const total = data.total || 0;
 
       console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
+      console.log(`📦 Sample product brands:`, products.slice(0, 3).map((p: any) => ({ name: p.name, brand: p.brand })));
 
-      // NOTE: ALL filtering is now done server-side by the API.
-      // We removed client-side filtering to ensure pagination works correctly.
+      // NOTE: ALL filtering is done server-side by the API.
 
       setAllProducts(products);
-      setTotalProducts(total); // Use the total count from API
+      setTotalProducts(total);
       console.log(`✅ Loaded page ${currentPage}: ${products.length} products (total: ${total})`);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
     } finally {
       setIsLoadingProducts(false);
+      setIsFiltering(false);
     }
-  }, [isSaleFilter, saleProducts, filters.category, filters.brands, filters.status, filters.priceRange, currentPage]);
+  }, [isSaleFilter, saleProducts, filters.category, filters.brands, filters.status, filters.priceRange, currentPage, allProducts.length]);
 
   // Auto-fetch when filters or page change
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Read URL parameters to set filters
+  // Read URL parameters to set filters (only on initial mount)
   useEffect(() => {
     const category = searchParams.get('category');
     const brand = searchParams.get('brand');
@@ -176,7 +184,8 @@ export default function Shop() {
     if (Object.keys(updates).length > 0) {
       setFilters(prev => ({ ...prev, ...updates }));
     }
-  }, [searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   const resetFilters = () => {
     setFilters({
@@ -216,7 +225,7 @@ export default function Shop() {
   const actualTotal = isSaleFilter ? allProducts.length : totalProducts;
   const totalPages = Math.max(1, Math.ceil(actualTotal / (filters.brands.length > 0 || filters.priceRange !== 'all' ? 500 : PRODUCTS_PER_PAGE)));
 
-  // Loading state
+  // Loading state (only for initial load)
   if (isLoadingProducts) {
     return (
       <div className="min-h-screen flex items-center justify-center pt-24">
@@ -243,7 +252,7 @@ export default function Shop() {
   }
 
   return (
-    <div className="min-h-screen bg-beige-100 pt-24 pb-8">
+    <div className={`min-h-screen bg-beige-100 pt-24 pb-8 transition-opacity duration-200 ${isFiltering ? 'opacity-60' : 'opacity-100'}`}>
       {/* Hero Section for Sale */}
       {filters.status === 'sale' && (
         <section className="relative bg-gradient-to-r from-gold/20 via-gold/10 to-transparent py-16 mb-8">
@@ -290,13 +299,14 @@ export default function Shop() {
             <div ref={brandDropdownRef} className="relative">
               <label className="block text-xs font-medium text-gray-500 mb-1">Brands ({filters.brands.length})</label>
               <button
+                type="button"
                 onClick={() => setShowBrandDropdown(!showBrandDropdown)}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-left flex items-center justify-between focus:outline-none focus:border-gold/50 bg-white hover:border-gold/50 transition"
               >
                 <span className="truncate">{filters.brands.length === 0 ? 'All Brands' : filters.brands.slice(0, 2).join(', ') + (filters.brands.length > 2 ? '...' : '')}</span>
                 <ChevronDown className="w-4 h-4 flex-shrink-0 ml-1" />
               </button>
-              
+
               {showBrandDropdown && (
                 <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
                   <div className="p-2 border-b border-gray-100">
@@ -308,6 +318,8 @@ export default function Shop() {
                   <div className="max-h-48 overflow-y-auto">
                     {brandsLoading ? (
                       <div className="p-4 text-center text-sm text-gray-500">Loading...</div>
+                    ) : brands.length === 0 ? (
+                      <div className="p-4 text-center text-sm text-gray-500">No brands available</div>
                     ) : (
                       brands.map(brand => (
                         <label key={brand} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2">
@@ -372,9 +384,17 @@ export default function Shop() {
         </div>
 
         {/* Products Count */}
-        <p className="text-gray-600 mb-6">
-          {actualTotal > 0 ? `Showing ${displayedCount} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
-        </p>
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-gray-600">
+            {actualTotal > 0 ? `Showing ${displayedCount} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
+          </p>
+          {isFiltering && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gold" />
+              <span>Updating...</span>
+            </div>
+          )}
+        </div>
 
         {allProducts.length === 0 ? (
           <div className="text-center py-20">
