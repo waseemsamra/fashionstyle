@@ -49,7 +49,7 @@ export interface ShippingRatesResponse {
 }
 
 class ShippingService {
-  private baseUrl = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
+  private baseUrl = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
   async getRates(address: Address, cart: Cart): Promise<ShippingRatesResponse> {
     const token = localStorage.getItem('jwt_token');

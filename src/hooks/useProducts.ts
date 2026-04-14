@@ -1,7 +1,7 @@
 // hooks/useProducts.ts
 import { useQuery } from '@tanstack/react-query';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 async function fetchAllProducts(): Promise<any[]> {
   const allProducts: any[] = [];

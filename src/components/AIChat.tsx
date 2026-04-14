@@ -64,7 +64,7 @@ interface MCPToolCall {
 }
 
 // ===== CONSTANTS =====
-const API_URL = import.meta.env.VITE_API_URL || 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 const STORAGE_KEYS = {
   LEARNED: 'ai_chat_learned',
   CONTEXT: 'ai_chat_context',

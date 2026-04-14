@@ -6,7 +6,7 @@ import { getProductImage, handleImageError } from '@/utils/productImage';
 import { useBrands } from '@/hooks/useBrands';
 import type { Brand } from '@/services/brandsService';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 interface Product {
   id: string;

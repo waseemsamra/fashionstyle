@@ -33,7 +33,7 @@ export interface ReviewStats {
   };
 }
 
-const API_URL = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
+const API_URL = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 class ReviewsService {
   async getReviews(productId: string, filters: ReviewFilters = {}): Promise<{

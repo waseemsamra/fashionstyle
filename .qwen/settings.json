@@ -47,7 +47,8 @@
       "Bash(script)",
       "Bash(bash *)",
       "Bash(find *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(xargs *)"
     ]
   },
   "mcpServers": {

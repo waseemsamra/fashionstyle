@@ -31,7 +31,7 @@ export default function Categories() {
         console.log('📦 Loading categories from products...');
 
         // Fetch products to calculate categories dynamically
-        const response = await fetch('https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com/products?limit=1000', {
+        const response = await fetch('https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/products?limit=1000', {
           cache: 'force-cache'
         });
         const data = await response.json();

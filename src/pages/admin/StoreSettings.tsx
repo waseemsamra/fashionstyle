@@ -45,7 +45,7 @@ export default function StoreSettings() {
       console.log('📡 Loading store info from DynamoDB...');
       const token = localStorage.getItem('jwt_token');
       
-      const response = await fetch('https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com/admin/settings-v2/store-info', {
+      const response = await fetch('https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/store-info', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -156,7 +156,7 @@ export default function StoreSettings() {
       console.log('📡 Saving store info to DynamoDB...');
       const token = localStorage.getItem('jwt_token');
       
-      const response = await fetch('https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com/admin/settings-v2/store-info', {
+      const response = await fetch('https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/store-info', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -152,7 +152,7 @@ export interface PickupResponse {
   status: 'confirmed' | 'pending' | 'cancelled';
 }
 
-const API_BASE = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
+const API_BASE = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 class CarrierService {
   // Carrier Management

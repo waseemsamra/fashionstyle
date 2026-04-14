@@ -8,7 +8,7 @@ import LazyImage from '@/components/ui/LazyImage';
 import { getProductUrl } from '@/utils/productUrl';
 import { toCDNUrl } from '@/utils/productImage';
 
-const API_URL = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
+const API_URL = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 interface Category {
   name: string;

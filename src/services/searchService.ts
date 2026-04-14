@@ -51,7 +51,7 @@ export interface SearchResponse {
 }
 
 class SearchService {
-  private baseUrl = 'https://tmdoc0q5ij.execute-api.us-east-1.amazonaws.com';
+  private baseUrl = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
   private abortController: AbortController | null = null;
 
   async search(params: SearchFilters): Promise<SearchResponse> {
