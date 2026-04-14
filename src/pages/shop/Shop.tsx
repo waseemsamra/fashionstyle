@@ -39,6 +39,8 @@ export default function Shop() {
     rating: 'all',
     status: 'all',
     brands: [] as string[],
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
   });
   const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
@@ -102,6 +104,8 @@ export default function Shop() {
       }
       if (filters.status === 'sale') params.append('isSale', 'true');
       if (filters.status === 'new') params.append('isNew', 'true');
+      if (filters.sortBy) params.append('sortBy', filters.sortBy);
+      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
       const url = `${API_URL}/products?${params.toString()}`;
       console.log('📡 Fetching:', url);
@@ -201,6 +205,8 @@ export default function Shop() {
       rating: 'all',
       status: 'all',
       brands: [],
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
     });
     setCurrentPage(1);
   };
@@ -356,6 +362,24 @@ export default function Shop() {
                 <option value="100-200">$100 - $200</option>
                 <option value="over200">Over $200</option>
               </select>
+            </div>
+
+            {/* Sort Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Sort By</label>
+              <div className="flex gap-2">
+                <select value={filters.sortBy} onChange={(e) => { setFilters(prev => ({ ...prev, sortBy: e.target.value })); setCurrentPage(1); }} className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+                  <option value="createdAt">Newest</option>
+                  <option value="price">Price</option>
+                  <option value="name">Name</option>
+                </select>
+                {filters.sortBy === 'price' && (
+                  <select value={filters.sortOrder} onChange={(e) => { setFilters(prev => ({ ...prev, sortOrder: e.target.value })); setCurrentPage(1); }} className="w-20 px-2 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+                    <option value="asc">↑</option>
+                    <option value="desc">↓</option>
+                  </select>
+                )}
+              </div>
             </div>
 
             {/* Reset Button */}
