@@ -54,11 +54,11 @@ export default function Categories() {
             description: cat.description || CATEGORY_DESCRIPTIONS[cat.name] || `${cat.count || 0} products`,
             itemCount: cat.count || 0,
           }))
-          .filter(c => c.itemCount > 0)
-          .sort((a, b) => b.itemCount - a.itemCount)
+          .filter((c: { itemCount: number }) => c.itemCount > 0)
+          .sort((a: { itemCount: number }, b: { itemCount: number }) => b.itemCount - a.itemCount)
           .slice(0, 8);
 
-        console.log('📋 Final categories:', cats.map(c => `${c.name}(${c.itemCount})`).join(', '));
+        console.log('📋 Final categories:', cats.map((c: { name: string; itemCount: number }) => `${c.name}(${c.itemCount})`).join(', '));
         setCategories(cats);
       } catch (error) {
         console.error('Failed to load categories:', error);
