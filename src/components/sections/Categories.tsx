@@ -18,6 +18,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Festive Collection': 'Celebrate in style',
 };
 
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+
 export default function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -28,32 +30,29 @@ export default function Categories() {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        console.log('📦 Loading categories from products...');
+        console.log('📦 Loading categories from API...');
 
-        // Fetch products to calculate categories dynamically
-        const response = await fetch('https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/products?limit=1000', {
+        // Fetch categories from the dedicated categories endpoint
+        const response = await fetch(`${API_URL}/categories`, {
           cache: 'force-cache'
         });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
         const data = await response.json();
-        const products = data.items || [];
+        const categoriesData = data.categories || [];
 
-        // Calculate category counts
-        const categoryCounts: Record<string, number> = {};
-        products.forEach((p: any) => {
-          if (p.category) {
-            categoryCounts[p.category] = (categoryCounts[p.category] || 0) + 1;
-          }
-        });
-
-        console.log('📊 Category counts:', categoryCounts);
+        console.log('📊 Loaded categories:', categoriesData);
 
         // Build categories array with images and descriptions
-        const cats = Object.entries(categoryCounts)
-          .map(([name, count]) => ({
-            name,
-            image: CATEGORY_IMAGES[name] || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
-            description: CATEGORY_DESCRIPTIONS[name] || `${count} products`,
-            itemCount: count,
+        const cats = categoriesData
+          .map((cat: any) => ({
+            name: cat.name,
+            image: cat.image || CATEGORY_IMAGES[cat.name] || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
+            description: cat.description || CATEGORY_DESCRIPTIONS[cat.name] || `${cat.count || 0} products`,
+            itemCount: cat.count || 0,
           }))
           .filter(c => c.itemCount > 0)
           .sort((a, b) => b.itemCount - a.itemCount)
