@@ -52,7 +52,7 @@ class BrandService {
         coverImage: brand.coverImage || '',
         productCount: brand.productCount || brand.products || 0,
         isFeatured: brand.isFeatured || false,
-      })).sort((a, b) => a.name.localeCompare(b.name));
+      })).sort((a: Brand, b: Brand) => a.name.localeCompare(b.name));
 
       console.log(`✅ Loaded ${brands.length} brands from database`);
 
