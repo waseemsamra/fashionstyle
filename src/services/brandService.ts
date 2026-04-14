@@ -1,6 +1,6 @@
 // services/brandService.ts
-// Use NEW API - extract brands from products
-const API_URL = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+// Fetch brands from the dedicated brands API endpoint
+const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 
 export interface Brand {
   id: string;
@@ -32,34 +32,29 @@ class BrandService {
     }
 
     try {
-      console.log('🏷️ Fetching brands from NEW API (extracted from products)...');
+      console.log('🏷️ Fetching brands from brands API...');
 
-      // Fetch products and extract unique brands
-      const response = await fetch(`${API_URL}/products?limit=1000`);
+      // Fetch brands from the dedicated brands endpoint
+      const response = await fetch(`${API_URL}/admin/brands`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
       const data = await response.json();
-      const products = data.items || [];
-
-      // Extract unique brands with product counts
-      const brandMap: Record<string, number> = {};
-      products.forEach((p: any) => {
-        if (p.brand) {
-          brandMap[p.brand] = (brandMap[p.brand] || 0) + 1;
-        }
-      });
+      const brandsData = data.brands || data.items || [];
 
       // Convert to Brand objects
-      const brands: Brand[] = Object.entries(brandMap).map(([name, count]) => ({
-        id: `brand-${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-        name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        description: `${name} collection`,
-        logo: '',
-        coverImage: '',
-        productCount: count,
-        isFeatured: false,
+      const brands: Brand[] = brandsData.map((brand: any) => ({
+        id: brand.id || `brand-${brand.name?.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        name: brand.name || 'Unknown',
+        slug: brand.slug || brand.name?.toLowerCase().replace(/[^a-z0-9]/g, '-') || '',
+        description: brand.description || '',
+        logo: brand.logo || '',
+        coverImage: brand.coverImage || '',
+        productCount: brand.productCount || brand.products || 0,
+        isFeatured: brand.isFeatured || false,
       })).sort((a, b) => a.name.localeCompare(b.name));
 
-      console.log(`✅ Extracted ${brands.length} unique brands from ${products.length} products`);
+      console.log(`✅ Loaded ${brands.length} brands from database`);
 
       // Cache the results
       this.cachedBrands = brands;
