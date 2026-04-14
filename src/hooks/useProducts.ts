@@ -69,17 +69,27 @@ export function useProduct(productIdentifier: string | undefined) {
       console.log('🔍 Extracted ID:', searchId);
 
       try {
-        // Fetch all products from API (handling pagination)
-        const products = await fetchAllProducts();
+        // Fetch all products in a single request with high limit
+        const url = `${API_URL}/products?limit=5000`;
+        console.log('📡 Fetching products from:', url);
+        const response = await fetch(url);
 
-        console.log('📊 Searching in', products.length, 'products');
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error('❌ API Error:', response.status, errorText);
+          throw new Error(`Failed to fetch products: ${response.status}`);
+        }
 
-        // Find product by ID
+        const data = await response.json();
+        const products = data.items || [];
+        console.log('📦 Got', products.length, 'products');
+
+        // Find product by ID (compare as strings for flexibility)
         const product = products.find((p: any) => String(p.id) === String(searchId));
 
         if (!product) {
           console.error('❌ Product not found. Searched for ID:', searchId);
-          console.log('Available IDs:', products.map((p: any) => p.id).join(', '));
+          console.log('First 10 available IDs:', products.slice(0, 10).map((p: any) => p.id).join(', '));
           return null;
         }
 
