@@ -38,7 +38,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 export default function Category() {
   const { name } = useParams();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);

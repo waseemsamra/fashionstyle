@@ -93,10 +93,10 @@ export default function Shop() {
       const data = await response.json();
 
       // Extract unique brands from products
-      const uniqueBrands = [...new Set(
+      const uniqueBrands: string[] = [...new Set<string>(
         (data.items || [])
           .map((product: any) => product.brand)
-          .filter(Boolean)
+          .filter((brand: string): brand is string => Boolean(brand))
       )].sort();
 
       console.log(`✅ Found ${uniqueBrands.length} brands for category: ${category}`);
