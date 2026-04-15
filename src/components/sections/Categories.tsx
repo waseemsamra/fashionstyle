@@ -63,22 +63,18 @@ export default function Categories() {
             description: cat.description || CATEGORY_DESCRIPTIONS[cat.name] || `${cat.count || 0} products`,
             itemCount: cat.count || 0,
           }))
+          .filter((c: { itemCount: number }) => c.itemCount >= 5) // Only show categories with 5+ products
           .sort((a: { itemCount: number }, b: { itemCount: number }) => b.itemCount - a.itemCount)
           .slice(0, 8);
 
-        // Filter to show only categories with products
-        const filteredCats = cats.filter((c: { itemCount: number }) => c.itemCount > 0);
+        console.log(`📋 Filtered to ${cats.length} categories with 5+ products`);
+        console.log('📋 Final categories:', cats.map((c: { name: string; itemCount: number }) => `${c.name}(${c.itemCount})`).join(', '));
         
-        // If no categories have products, show all categories anyway (better UX than blank)
-        const finalCategories = filteredCats.length > 0 ? filteredCats : cats;
-
-        if (finalCategories.length === 0) {
-          setError('No categories found');
+        if (cats.length === 0) {
+          setError('No categories with products found');
           setCategories([]);
         } else {
-          console.log(`📋 Categories with items: ${filteredCats.length}, Final categories: ${finalCategories.length}`);
-          console.log('📋 Final categories:', finalCategories.map((c: { name: string; itemCount: number }) => `${c.name}(${c.itemCount})`).join(', '));
-          setCategories(finalCategories);
+          setCategories(cats);
           setError(null);
         }
       } catch (error) {
