@@ -5,7 +5,7 @@ const { DynamoDBDocumentClient, ScanCommand, GetCommand, PutCommand, DeleteComma
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' });
 const dynamodb = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME = process.env.COLLECTIONS_TABLE || process.env.TABLE_NAME || 'fashionstore-data';
+const TABLE_NAME = process.env.PRODUCTS_TABLE || process.env.COLLECTIONS_TABLE || process.env.TABLE_NAME || 'fashionstore-data';
 
 // CORS headers
 const CORS_HEADERS = {
