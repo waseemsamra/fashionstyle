@@ -80,25 +80,36 @@ exports.handler = async (event) => {
 async function getCategories() {
   console.log('📂 Fetching categories from products...');
 
-  // Scan products to get unique categories with counts
-  const scanCommand = new ScanCommand({
-    TableName: TABLE_NAME,
-    FilterExpression: 'entityType = :entityType',
-    ExpressionAttributeValues: { ':entityType': 'PRODUCT' },
-    Limit: 5000,
-    ProjectionExpression: 'category',
-  });
-
-  const result = await dynamodb.send(scanCommand);
-  const items = result.Items || [];
-
-  // Count categories
+  // Scan all products to get unique categories with counts (paginate through all items)
   const categoryCounts = {};
-  items.forEach(item => {
-    if (item.category) {
-      categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
-    }
-  });
+  let lastEvaluatedKey = null;
+  let totalScanned = 0;
+
+  do {
+    const scanCommand = new ScanCommand({
+      TableName: TABLE_NAME,
+      FilterExpression: 'entityType = :entityType',
+      ExpressionAttributeValues: { ':entityType': 'PRODUCT' },
+      ProjectionExpression: 'category',
+      ExclusiveStartKey: lastEvaluatedKey,
+    });
+
+    const result = await dynamodb.send(scanCommand);
+    const items = result.Items || [];
+    totalScanned += items.length;
+
+    // Count categories
+    items.forEach(item => {
+      if (item.category) {
+        categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
+      }
+    });
+
+    console.log(`📊 Scanned ${totalScanned} products so far, found ${Object.keys(categoryCounts).length} unique categories...`);
+    lastEvaluatedKey = result.LastEvaluatedKey;
+  } while (lastEvaluatedKey);
+
+  console.log(`✅ Total products scanned: ${totalScanned}`);
 
   // Check for custom category data (images, descriptions)
   let customCategories = {};
