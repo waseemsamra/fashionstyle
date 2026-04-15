@@ -154,16 +154,17 @@ export default function Shop() {
 
       // Build query params
       const params = new URLSearchParams();
-      params.append('limit', String(PRODUCTS_PER_PAGE));
-      params.append('page', String(currentPage));
-
-      if (filters.category && filters.category !== 'all') {
-        params.append('category', filters.category);
-      }
-      // For brands, we fetch more and filter client-side
-      if (filters.brands.length > 0) {
-        params.append('limit', '500');
-      }
+      
+      // Determine if we need to fetch all products for client-side filtering
+      const hasClientFilters = filters.category !== 'all' || 
+                               filters.brands.length > 0 || 
+                               filters.priceRange !== 'all' || 
+                               filters.status !== 'all';
+      
+      // Fetch all products when filters are active (for client-side filtering)
+      const fetchLimit = hasClientFilters ? 2000 : PRODUCTS_PER_PAGE;
+      params.append('limit', String(fetchLimit));
+      params.append('page', '1'); // Always fetch from page 1 when filtering
       // Map Price Range to Min/Max Price for API
       if (filters.priceRange !== 'all') {
         switch (filters.priceRange) {
@@ -198,11 +199,75 @@ export default function Shop() {
       console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
       console.log(`📦 Sample product brands:`, products.slice(0, 3).map((p: any) => ({ name: p.name, brand: p.brand })));
 
-      // NOTE: ALL filtering is done server-side by the API.
+      // Client-side filtering fallback (API may not support all filters)
+      let filteredProducts = [...products];
 
-      setAllProducts(products);
-      setTotalProducts(total);
-      console.log(`✅ Loaded page ${currentPage}: ${products.length} products (total: ${total})`);
+      // Filter by Category
+      if (filters.category && filters.category !== 'all') {
+        filteredProducts = filteredProducts.filter(p => 
+          p.category?.toLowerCase() === filters.category.toLowerCase() ||
+          p.category?.name?.toLowerCase() === filters.category.toLowerCase()
+        );
+        console.log(`🏷️ After category filter: ${filteredProducts.length} products`);
+      }
+
+      // Filter by Brands
+      if (filters.brands.length > 0) {
+        filteredProducts = filteredProducts.filter(p => 
+          filters.brands.includes(p.brand)
+        );
+        console.log(`🏢 After brand filter: ${filteredProducts.length} products`);
+      }
+
+      // Filter by Price Range
+      if (filters.priceRange !== 'all') {
+        filteredProducts = filteredProducts.filter(p => {
+          const price = p.price || 0;
+          switch (filters.priceRange) {
+            case 'under50': return price < 50;
+            case '50-100': return price >= 50 && price <= 100;
+            case '100-200': return price >= 100 && price <= 200;
+            case 'over200': return price > 200;
+            default: return true;
+          }
+        });
+        console.log(`💰 After price filter: ${filteredProducts.length} products`);
+      }
+
+      // Filter by Status (Sale/New)
+      if (filters.status === 'sale') {
+        filteredProducts = filteredProducts.filter(p => p.isSale === true);
+        console.log(`🏷️ After sale filter: ${filteredProducts.length} products`);
+      }
+      if (filters.status === 'new') {
+        filteredProducts = filteredProducts.filter(p => p.isNew === true);
+        console.log(`🆕 After new filter: ${filteredProducts.length} products`);
+      }
+
+      // Sort Products
+      if (filters.sortBy) {
+        filteredProducts.sort((a, b) => {
+          let result = 0;
+          switch (filters.sortBy) {
+            case 'price':
+              result = (a.price || 0) - (b.price || 0);
+              break;
+            case 'name':
+              result = (a.name || '').localeCompare(b.name || '');
+              break;
+            case 'createdAt':
+            default:
+              result = 0; // Already sorted by newest from API
+              break;
+          }
+          return filters.sortOrder === 'desc' ? -result : result;
+        });
+        console.log(`📊 Sorted by: ${filters.sortBy} (${filters.sortOrder})`);
+      }
+
+      setAllProducts(filteredProducts);
+      setTotalProducts(filteredProducts.length);
+      console.log(`✅ Loaded page ${currentPage}: ${filteredProducts.length} products (from ${total} total)`);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
