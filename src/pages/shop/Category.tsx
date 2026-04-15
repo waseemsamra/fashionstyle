@@ -98,7 +98,7 @@ export default function Category() {
       const url = `${API_URL}/products?${params.toString()}`;
       console.log('📡 Fetching:', url);
 
-      const response = await fetch(url, { cache: 'force-cache' });
+      const response = await fetch(url, { cache: 'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
 
@@ -106,6 +106,7 @@ export default function Category() {
       const total = data.total || 0;
 
       console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
+      console.log(`🔍 Category filter used: "${decodedName}", Normalized for filtering...`);
 
       setAllProducts(products);
       setTotalProducts(total);
