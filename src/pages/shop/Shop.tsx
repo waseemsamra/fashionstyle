@@ -165,6 +165,11 @@ export default function Shop() {
       const fetchLimit = hasClientFilters ? 2000 : PRODUCTS_PER_PAGE;
       params.append('limit', String(fetchLimit));
       params.append('page', '1'); // Always fetch from page 1 when filtering
+      // Add Category Filter to API
+      if (filters.category !== 'all') {
+        params.append('category', filters.category);
+      }
+
       // Map Price Range to Min/Max Price for API
       if (filters.priceRange !== 'all') {
         switch (filters.priceRange) {
