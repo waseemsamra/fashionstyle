@@ -7,6 +7,15 @@ const dynamodb = DynamoDBDocumentClient.from(client);
 
 const TABLE_NAME = process.env.COLLECTIONS_TABLE || process.env.TABLE_NAME || 'fashionstore-data';
 
+// Utility function to convert normalized category names to title case for display
+function toTitleCase(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 // CORS headers
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -17,12 +26,12 @@ const CORS_HEADERS = {
 
 // Default category images
 const DEFAULT_CATEGORY_IMAGES = {
-  'Bridal Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-bridal.jpg',
-  'Casual Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-casual.jpg',
-  'Formal Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-formal.jpg',
-  'Accessories': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-accessories.jpg',
-  'Festive Collection': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-festive.jpg',
-  'Uncategorized': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
+  'Bridal Wear': '/category-bridal.jpg',
+  'Casual Wear': '/category-casual.jpg',
+  'Formal Wear': '/category-formal.jpg',
+  'Accessories': '/category-accessories.jpg',
+  'Festive Collection': '/category-festive.jpg',
+  'Uncategorized': '/product-placeholder.jpg',
 };
 
 exports.handler = async (event) => {
@@ -98,10 +107,12 @@ async function getCategories() {
     const items = result.Items || [];
     totalScanned += items.length;
 
-    // Count categories
+    // Count categories (with normalization to match productsHandler filtering)
     items.forEach(item => {
       if (item.category) {
-        categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
+        // Normalize category name to match the filtering logic in productsHandler
+        const normalizedCategory = item.category.trim().toLowerCase();
+        categoryCounts[normalizedCategory] = (categoryCounts[normalizedCategory] || 0) + 1;
       }
     });
 
@@ -127,12 +138,15 @@ async function getCategories() {
   }
 
   // Build categories array with images and counts
-  const categories = Object.entries(categoryCounts).map(([name, count]) => ({
-    name,
-    count,
-    image: customCategories[name]?.image || DEFAULT_CATEGORY_IMAGES[name] || '',
-    description: customCategories[name]?.description || `${count} products`,
-  })).sort((a, b) => b.count - a.count);
+  const categories = Object.entries(categoryCounts).map(([normalizedName, count]) => {
+    const displayName = toTitleCase(normalizedName);
+    return {
+      name: displayName,
+      count,
+      image: customCategories[displayName]?.image || customCategories[normalizedName]?.image || DEFAULT_CATEGORY_IMAGES[displayName] || '',
+      description: customCategories[displayName]?.description || customCategories[normalizedName]?.description || `${count} products`,
+    };
+  }).sort((a, b) => b.count - a.count);
 
   console.log(`✅ Found ${categories.length} categories`);
 

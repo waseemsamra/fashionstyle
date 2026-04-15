@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import ProductForm from '@/components/admin/ProductForm';
 import { getAllProducts, deleteProduct, createProduct, updateProduct } from '@/services/productService';
 import { brandService } from '@/services/brandService';
+import { categoryService } from '@/services/categoryService';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -134,9 +135,10 @@ export default function AdminProducts() {
   const [itemsPerPage] = useState(50);
 
   useEffect(() => {
-    // Load products and brands on mount
+    // Load products, brands, and categories on mount
     loadProducts();
     loadBrands();
+    loadCategories();
   }, []);
 
   const loadBrands = async () => {
@@ -164,6 +166,33 @@ export default function AdminProducts() {
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      console.log('📂 Fetching categories from API...');
+      const fetchedCategories = await categoryService.getAllCategories();
+      
+      if (fetchedCategories && fetchedCategories.length > 0) {
+        // Convert to the format expected by ProductForm
+        const categoriesWithIds = fetchedCategories.map((cat: any) => ({
+          id: cat.id || cat.name,
+          name: cat.name,
+          image: cat.image,
+          count: cat.count,
+        }));
+        
+        console.log('✅ Loaded', categoriesWithIds.length, 'categories from API');
+        setCategories(categoriesWithIds);
+      } else {
+        console.log('🟡 No categories returned from API, using defaults');
+        setCategories(DEFAULT_CATEGORIES);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch categories:', error);
+      console.log('🟡 Using default categories as fallback');
+      setCategories(DEFAULT_CATEGORIES);
+    }
+  };
+
   const loadProducts = async () => {
     setLoading(true);
     try {
@@ -186,20 +215,6 @@ export default function AdminProducts() {
       console.log('📦 Products data:', products);
 
       setProducts(products);
-
-      // Extract unique categories from products and add to dropdown
-      const existingCategories = new Set(DEFAULT_CATEGORIES.map(c => c.name));
-      const extraCategories: { id: string; name: string }[] = [];
-      products.forEach(p => {
-        if (p.category && !existingCategories.has(p.category)) {
-          existingCategories.add(p.category);
-          extraCategories.push({ id: `cat-${p.category}`, name: p.category });
-        }
-      });
-      if (extraCategories.length > 0) {
-        setCategories([...DEFAULT_CATEGORIES, ...extraCategories]);
-        console.log('📂 Added extra categories:', extraCategories);
-      }
 
       if (products.length > 0) {
         toast.success(`Loaded ${products.length} products`);
