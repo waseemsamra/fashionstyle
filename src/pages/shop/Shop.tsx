@@ -45,6 +45,8 @@ export default function Shop() {
   });
   const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [isLoadingBrands, setIsLoadingBrands] = useState(false);
   const brandDropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if we're filtering by sale - use collection instead of all products
@@ -53,15 +55,58 @@ export default function Shop() {
 
   // Fetch brands from API using hook
   const { brands: brandsData, loading: brandsLoading } = useBrands();
-  const brands = useMemo(() => 
+  const allBrands = useMemo(() =>
     brandsData?.map((b: Brand) => b.name).filter(Boolean) || [],
   [brandsData]);
+
+  // Use available brands filtered by category, or all brands if no category selected
+  const brands = useMemo(() => {
+    if (filters.category === 'all') {
+      return allBrands;
+    }
+    return availableBrands.length > 0 ? availableBrands : allBrands;
+  }, [allBrands, availableBrands, filters.category]);
 
   // Fetch categories on mount
   useEffect(() => {
     fetchCategories().then(cats => {
       setCategories(cats);
     });
+  }, []);
+
+  // Fetch brands that have products in the selected category
+  const fetchBrandsForCategory = useCallback(async (category: string) => {
+    if (category === 'all') {
+      setAvailableBrands([]);
+      return;
+    }
+
+    setIsLoadingBrands(true);
+    try {
+      console.log(`🏷️ Fetching brands for category: ${category}`);
+      const params = new URLSearchParams();
+      params.append('category', category);
+      params.append('limit', '500');
+
+      const response = await fetch(`${API_URL}/products?${params.toString()}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+
+      // Extract unique brands from products
+      const uniqueBrands = [...new Set(
+        (data.items || [])
+          .map((product: any) => product.brand)
+          .filter(Boolean)
+      )].sort();
+
+      console.log(`✅ Found ${uniqueBrands.length} brands for category: ${category}`);
+      setAvailableBrands(uniqueBrands);
+    } catch (err) {
+      console.error('❌ Failed to fetch brands for category:', err);
+      setAvailableBrands([]);
+    } finally {
+      setIsLoadingBrands(false);
+    }
   }, []);
 
   // Close brand dropdown when clicking outside
@@ -74,6 +119,16 @@ export default function Shop() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Fetch brands for selected category and clear brand selection
+  useEffect(() => {
+    fetchBrandsForCategory(filters.category);
+    // Clear selected brands when category changes (only if there are selected brands)
+    if (filters.brands.length > 0 && filters.category !== 'all') {
+      // Keep only brands that are still available in the new category
+      setFilters(prev => ({ ...prev, brands: [] }));
+    }
+  }, [filters.category, fetchBrandsForCategory, filters.brands.length]);
 
   // Fetch products with filters and pagination
   const fetchProducts = useCallback(async () => {
@@ -126,6 +181,7 @@ export default function Shop() {
 
       if (filters.status === 'sale') params.append('isSale', 'true');
       if (filters.status === 'new') params.append('isNew', 'true');
+      if (filters.rating && filters.rating !== 'all') params.append('minRating', filters.rating);
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
@@ -154,7 +210,7 @@ export default function Shop() {
       setIsLoadingProducts(false);
       setIsFiltering(false);
     }
-  }, [isSaleFilter, saleProducts, filters.category, filters.brands, filters.status, filters.priceRange, currentPage, allProducts.length]);
+  }, [isSaleFilter, saleProducts, filters.category, filters.brands, filters.status, filters.priceRange, filters.rating, filters.sortBy, filters.sortOrder, currentPage, allProducts.length]);
 
   // Auto-fetch when filters or page change
   useEffect(() => {
@@ -297,7 +353,12 @@ export default function Shop() {
 
             {/* Multi-Select Brand Filter */}
             <div ref={brandDropdownRef} className="relative">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Brands ({filters.brands.length})</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                Brands ({filters.brands.length})
+                {filters.category !== 'all' && (
+                  <span className="text-xs text-gold ml-1">(in {filters.category})</span>
+                )}
+              </label>
               <button
                 type="button"
                 onClick={() => setShowBrandDropdown(!showBrandDropdown)}
@@ -316,10 +377,15 @@ export default function Shop() {
                     </label>
                   </div>
                   <div className="max-h-48 overflow-y-auto">
-                    {brandsLoading ? (
-                      <div className="p-4 text-center text-sm text-gray-500">Loading...</div>
+                    {isLoadingBrands || brandsLoading ? (
+                      <div className="p-4 text-center text-sm text-gray-500">
+                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gold mx-auto mb-2" />
+                        Loading brands...
+                      </div>
                     ) : brands.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-gray-500">No brands available</div>
+                      <div className="p-4 text-center text-sm text-gray-500">
+                        {filters.category !== 'all' ? `No brands found in ${filters.category}` : 'No brands available'}
+                      </div>
                     ) : (
                       brands.map(brand => (
                         <label key={brand} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2">
