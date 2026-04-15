@@ -7,6 +7,11 @@ const dynamodb = DynamoDBDocumentClient.from(client);
 
 const TABLE_NAME = process.env.COLLECTIONS_TABLE || process.env.TABLE_NAME || 'fashionstore-data';
 
+// Utility function to convert normalized category names to title case for display
+function toTitleCase(str) {
+  return str.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
 // CORS headers
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -98,10 +103,12 @@ async function getCategories() {
     const items = result.Items || [];
     totalScanned += items.length;
 
-    // Count categories
+    // Count categories (with normalization to match productsHandler filtering)
     items.forEach(item => {
       if (item.category) {
-        categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
+        // Normalize category name to match the filtering logic in productsHandler
+        const normalizedCategory = item.category.trim().toLowerCase();
+        categoryCounts[normalizedCategory] = (categoryCounts[normalizedCategory] || 0) + 1;
       }
     });
 
@@ -127,12 +134,15 @@ async function getCategories() {
   }
 
   // Build categories array with images and counts
-  const categories = Object.entries(categoryCounts).map(([name, count]) => ({
-    name,
-    count,
-    image: customCategories[name]?.image || DEFAULT_CATEGORY_IMAGES[name] || '',
-    description: customCategories[name]?.description || `${count} products`,
-  })).sort((a, b) => b.count - a.count);
+  const categories = Object.entries(categoryCounts).map(([normalizedName, count]) => {
+    const displayName = toTitleCase(normalizedName);
+    return {
+      name: displayName,
+      count,
+      image: customCategories[displayName]?.image || customCategories[normalizedName]?.image || DEFAULT_CATEGORY_IMAGES[displayName] || '',
+      description: customCategories[displayName]?.description || customCategories[normalizedName]?.description || `${count} products`,
+    };
+  }).sort((a, b) => b.count - a.count);
 
   console.log(`✅ Found ${categories.length} categories`);
 
