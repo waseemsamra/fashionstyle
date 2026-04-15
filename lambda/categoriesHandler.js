@@ -86,30 +86,39 @@ async function getCategories() {
   let totalScanned = 0;
 
   do {
-    const scanCommand = new ScanCommand({
+    // Scan all items to count categories (pagination required)
+    const scanParams = {
       TableName: TABLE_NAME,
-      FilterExpression: 'entityType = :entityType',
-      ExpressionAttributeValues: { ':entityType': 'PRODUCT' },
       ProjectionExpression: 'category',
-      ExclusiveStartKey: lastEvaluatedKey,
-    });
-
+      Limit: 1000, // Scan in batches of 1000 to avoid 1MB limit
+    };
+    
+    // Add pagination key if available
+    if (lastEvaluatedKey) {
+      scanParams.ExclusiveStartKey = lastEvaluatedKey;
+    }
+    
+    const scanCommand = new ScanCommand(scanParams);
     const result = await dynamodb.send(scanCommand);
     const items = result.Items || [];
     totalScanned += items.length;
 
-    // Count categories
+    // Count categories (normalize names)
     items.forEach(item => {
       if (item.category) {
-        categoryCounts[item.category] = (categoryCounts[item.category] || 0) + 1;
+        // Normalize category name
+        const normalizedCategory = String(item.category).trim();
+        categoryCounts[normalizedCategory] = (categoryCounts[normalizedCategory] || 0) + 1;
       }
     });
 
-    console.log(`📊 Scanned ${totalScanned} products so far, found ${Object.keys(categoryCounts).length} unique categories...`);
+    console.log(`📊 Scanned ${totalScanned} items so far, found ${Object.keys(categoryCounts).length} unique categories...`);
+    console.log(`📊 Current category counts:`, JSON.stringify(categoryCounts).substring(0, 200));
     lastEvaluatedKey = result.LastEvaluatedKey;
   } while (lastEvaluatedKey);
 
-  console.log(`✅ Total products scanned: ${totalScanned}`);
+  console.log(`✅ Total items scanned: ${totalScanned}`);
+  console.log(`✅ Final category counts:`, categoryCounts);
 
   // Check for custom category data (images, descriptions)
   let customCategories = {};
@@ -128,13 +137,14 @@ async function getCategories() {
 
   // Build categories array with images and counts
   const categories = Object.entries(categoryCounts).map(([name, count]) => ({
+    id: name,
     name,
     count,
     image: customCategories[name]?.image || DEFAULT_CATEGORY_IMAGES[name] || '',
     description: customCategories[name]?.description || `${count} products`,
   })).sort((a, b) => b.count - a.count);
 
-  console.log(`✅ Found ${categories.length} categories`);
+  console.log(`✅ Found ${categories.length} categories:`, categories.map(c => `${c.name}(${c.count})`).join(', '));
 
   return {
     statusCode: 200,

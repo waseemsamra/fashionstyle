@@ -25,24 +25,33 @@ export default function Categories() {
   const [isVisible, setIsVisible] = useState(false);
   const [categories, setCategories] = useState<{name: string, image: string, description: string, itemCount: number}[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadCategories = async () => {
       try {
         console.log('📦 Loading categories from API...');
+        setError(null);
 
         // Fetch categories from the dedicated categories endpoint
         const response = await fetch(`${API_URL}/categories`, {
-          cache: 'force-cache'
+          cache: 'no-store'
         });
         
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          throw new Error(`HTTP ${response.status} - Failed to fetch categories`);
         }
         
         const data = await response.json();
         const categoriesData = data.categories || [];
+
+        if (!categoriesData || categoriesData.length === 0) {
+          setError('No categories found');
+          setCategories([]);
+          setLoading(false);
+          return;
+        }
 
         console.log('📊 Loaded categories:', categoriesData);
 
@@ -54,14 +63,28 @@ export default function Categories() {
             description: cat.description || CATEGORY_DESCRIPTIONS[cat.name] || `${cat.count || 0} products`,
             itemCount: cat.count || 0,
           }))
-          .filter((c: { itemCount: number }) => c.itemCount > 0)
           .sort((a: { itemCount: number }, b: { itemCount: number }) => b.itemCount - a.itemCount)
           .slice(0, 8);
 
-        console.log('📋 Final categories:', cats.map((c: { name: string; itemCount: number }) => `${c.name}(${c.itemCount})`).join(', '));
-        setCategories(cats);
+        // Filter to show only categories with products
+        const filteredCats = cats.filter((c: { itemCount: number }) => c.itemCount > 0);
+        
+        // If no categories have products, show all categories anyway (better UX than blank)
+        const finalCategories = filteredCats.length > 0 ? filteredCats : cats;
+
+        if (finalCategories.length === 0) {
+          setError('No categories found');
+          setCategories([]);
+        } else {
+          console.log(`📋 Categories with items: ${filteredCats.length}, Final categories: ${finalCategories.length}`);
+          console.log('📋 Final categories:', finalCategories.map((c: { name: string; itemCount: number }) => `${c.name}(${c.itemCount})`).join(', '));
+          setCategories(finalCategories);
+          setError(null);
+        }
       } catch (error) {
         console.error('Failed to load categories:', error);
+        setError(error instanceof Error ? error.message : 'Failed to load categories');
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -86,13 +109,26 @@ export default function Categories() {
     return () => observer.disconnect();
   }, []);
 
-  if (loading || categories.length === 0) {
+  if (loading) {
     return (
       <section id="categories" ref={sectionRef} className="section-padding bg-beige-100">
         <div className="container-custom">
-          <div className="text-center">
+          <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
             <p className="text-gray-600">Loading categories...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || categories.length === 0) {
+    return (
+      <section id="categories" ref={sectionRef} className="section-padding bg-beige-100">
+        <div className="container-custom">
+          <div className="text-center py-12">
+            <p className="text-red-600 font-semibold text-lg mb-2">❌ {error || 'No categories found'}</p>
+            <p className="text-gray-600 text-sm">Unable to load categories at this time. Please try refreshing the page.</p>
           </div>
         </div>
       </section>
