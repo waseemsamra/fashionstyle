@@ -122,7 +122,7 @@ export default function Categories() {
           {categories.map((category, index) => (
             <div
               key={category.name}
-              onClick={() => navigate(`/shop?category=${encodeURIComponent(category.name)}`)}
+              onClick={() => navigate(`/category/${encodeURIComponent(category.name)}`)}
               className={`group relative overflow-hidden rounded-2xl cursor-pointer ${
                 index % 3 === 0 ? 'lg:row-span-2' : ''
               } ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}
