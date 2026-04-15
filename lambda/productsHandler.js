@@ -51,9 +51,14 @@ exports.handler = async (event) => {
 
         let filtered = allProducts;
 
-        // 2. Apply Category Filter
+        // 2. Apply Category Filter (Case-insensitive and trim whitespace)
         if (category && category !== 'all') {
-            filtered = filtered.filter(p => p.category === category);
+            const normalizedCategory = category.trim().toLowerCase();
+            filtered = filtered.filter(p => {
+                const productCategory = p.category ? p.category.trim().toLowerCase() : '';
+                return productCategory === normalizedCategory;
+            });
+            console.log(`🏷️ After category filter (${category}): ${filtered.length} products`);
         }
 
         // 3. Apply Brand Filter (Supports comma-separated list for multi-select)

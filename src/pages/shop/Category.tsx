@@ -173,8 +173,6 @@ export default function Category() {
   const displayedCount = allProducts.length;
   const actualTotal = totalProducts;
   const totalPages = Math.max(1, Math.ceil(actualTotal / (filters.brands.length > 0 || filters.priceRange !== 'all' ? 500 : PRODUCTS_PER_PAGE)));
-
-  const heroImage = CATEGORY_HERO_IMAGES[decodedName] || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg';
   const description = CATEGORY_DESCRIPTIONS[decodedName] || `Explore our ${decodedName} collection`;
 
   if (isLoadingProducts) {
@@ -203,27 +201,25 @@ export default function Category() {
 
   return (
     <div className={`min-h-screen bg-beige-100 transition-opacity duration-200 ${isFiltering ? 'opacity-60' : 'opacity-100'}`}>
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-gold/20 via-gold/10 to-transparent py-16 mb-8">
+      {/* Hero Section - Clean Background */}
+      <section className="relative bg-gradient-to-r from-gold/30 via-gold/20 to-gold/10 py-20 mb-8">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-center gap-8">
-            <div className="max-w-2xl">
-              <Button variant="ghost" onClick={() => navigate('/')} className="mb-4">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Home
-              </Button>
-              <h1 className="font-playfair text-4xl md:text-5xl font-bold text-black mb-4">{decodedName}</h1>
-              <p className="text-gray-600 text-lg mb-4">{description}</p>
-              <p className="text-gray-500">
-                {actualTotal > 0 ? `${actualTotal} products available` : 'No products found'}
-              </p>
-            </div>
-            <div className="hidden md:block w-64 h-64 rounded-2xl overflow-hidden shadow-lg">
-              <img
-                src={heroImage}
-                alt={decodedName}
-                className="w-full h-full object-cover"
-              />
+          <div className="max-w-3xl">
+            <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Home
+            </Button>
+            <h1 className="font-playfair text-5xl md:text-6xl font-bold text-black mb-4">{decodedName}</h1>
+            <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-8">
+              <div>
+                <p className="text-gray-600 text-lg">{description}</p>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-gold">{actualTotal}</span>
+                <span className="text-gray-600 text-lg">
+                  {actualTotal === 1 ? 'Product' : 'Products'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
