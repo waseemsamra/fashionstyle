@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
 
 const CATEGORY_IMAGES: Record<string, string> = {
-  'Bridal Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-bridal.jpg',
-  'Casual Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-casual.jpg',
-  'Formal Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-formal.jpg',
-  'Accessories': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-accessories.jpg',
-  'Festive Collection': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-festive.jpg',
+  'Bridal Wear': '/category-bridal.jpg',
+  'Casual Wear': '/category-casual.jpg',
+  'Formal Wear': '/category-formal.jpg',
+  'Accessories': '/category-accessories.jpg',
+  'Festive Collection': '/category-festive.jpg',
 };
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
@@ -50,7 +50,7 @@ export default function Categories() {
         const cats = categoriesData
           .map((cat: any) => ({
             name: cat.name,
-            image: cat.image || CATEGORY_IMAGES[cat.name] || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
+            image: cat.image || CATEGORY_IMAGES[cat.name] || '/product-placeholder.jpg',
             description: cat.description || CATEGORY_DESCRIPTIONS[cat.name] || `${cat.count || 0} products`,
             itemCount: cat.count || 0,
           }))
