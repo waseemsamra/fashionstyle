@@ -12,18 +12,6 @@ import type { Brand } from '@/services/brandsService';
 const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
 const PRODUCTS_PER_PAGE = 50;
 
-// Category hero images
-const CATEGORY_HERO_IMAGES: Record<string, string> = {
-  'Bridal Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-bridal.jpg',
-  'Casual Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-casual.jpg',
-  'Formal Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-formal.jpg',
-  'Accessories': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-accessories.jpg',
-  'Festive Collection': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-festive.jpg',
-  'Kids Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
-  'Men Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
-  'Women Wear': 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg',
-};
-
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Bridal Wear': 'Exquisite wedding ensembles for your special day',
   'Casual Wear': 'Everyday elegance for effortless style',
