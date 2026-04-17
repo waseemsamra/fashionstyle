@@ -47,7 +47,27 @@ export default function Category() {
   const { brands: brandsData, loading: brandsLoading } = useBrands();
   const brands = (brandsData?.map((b: Brand) => b.name).filter(Boolean) || []);
 
-  const decodedName = decodeURIComponent(name || '');
+  // Convert slug to normalized category name
+  // "formal-wear" -> "formal wear"
+  const slugToCategory = (slug: string): string => {
+    return slug
+      .toLowerCase()
+      .replace(/-/g, ' ')
+      .trim();
+  };
+
+  // Convert slug to display name
+  // "formal-wear" -> "Formal Wear"
+  const slugToDisplayName = (slug: string): string => {
+    return slug
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const categorySlug = name || '';
+  const categoryName = slugToCategory(categorySlug);
+  const displayName = slugToDisplayName(categorySlug);
 
   // Close brand dropdown when clicking outside
   useEffect(() => {
@@ -71,12 +91,12 @@ export default function Category() {
     setError(null);
 
     try {
-      console.log('📦 Fetching category products for:', decodedName, 'page:', currentPage);
+      console.log('📦 Fetching category products for:', categoryName, 'slug:', categorySlug, 'page:', currentPage);
 
       const params = new URLSearchParams();
       params.append('limit', String(PRODUCTS_PER_PAGE));
       params.append('page', String(currentPage));
-      params.append('category', decodedName);
+      params.append('category', categorySlug); // Send slug to API
 
       if (filters.brands.length > 0) {
         params.append('limit', '500');
@@ -108,8 +128,64 @@ export default function Category() {
       console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
       console.log(`🔍 Category filter used: "${decodedName}", Normalized for filtering...`);
 
-      setAllProducts(products);
-      setTotalProducts(total);
+      // CLIENT-SIDE FILTERING FALLBACK (API may not filter properly)
+      let filteredProducts = [...products];
+
+      // Filter by Category (case-insensitive with normalization)
+      const normalizedCategory = categoryName.toLowerCase().trim();
+      filteredProducts = filteredProducts.filter(p => {
+        const productCategory = (p.category || '').toLowerCase().trim();
+        return productCategory === normalizedCategory;
+      });
+
+      console.log(`✅ After client-side category filter: ${products.length} -> ${filteredProducts.length} products`);
+
+      // Filter by Brands (if any selected)
+      if (filters.brands.length > 0) {
+        filteredProducts = filteredProducts.filter(p => 
+          filters.brands.includes(p.brand)
+        );
+        console.log(`✅ After brand filter: ${filteredProducts.length} products`);
+      }
+
+      // Filter by Price Range
+      if (filters.priceRange !== 'all') {
+        filteredProducts = filteredProducts.filter(p => {
+          const price = p.price || 0;
+          switch (filters.priceRange) {
+            case 'under50': return price < 50;
+            case '50-100': return price >= 50 && price <= 100;
+            case '100-200': return price >= 100 && price <= 200;
+            case 'over200': return price > 200;
+            default: return true;
+          }
+        });
+        console.log(`✅ After price filter: ${filteredProducts.length} products`);
+      }
+
+      // Apply Sorting
+      filteredProducts.sort((a, b) => {
+        let valA, valB;
+        if (filters.sortBy === 'price') {
+          valA = a.price || 0;
+          valB = b.price || 0;
+        } else if (filters.sortBy === 'name') {
+          valA = (a.name || '').toLowerCase();
+          valB = (b.name || '').toLowerCase();
+        } else {
+          valA = new Date(a.createdAt || 0).getTime();
+          valB = new Date(b.createdAt || 0).getTime();
+        }
+
+        if (filters.sortOrder === 'asc') {
+          return valA < valB ? -1 : valA > valB ? 1 : 0;
+        } else {
+          return valA > valB ? -1 : valA < valB ? 1 : 0;
+        }
+      });
+
+      setAllProducts(filteredProducts);
+      setTotalProducts(filteredProducts.length);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
@@ -117,7 +193,7 @@ export default function Category() {
       setIsLoadingProducts(false);
       setIsFiltering(false);
     }
-  }, [decodedName, filters.brands, filters.priceRange, filters.sortBy, filters.sortOrder, currentPage, allProducts.length]);
+  }, [categorySlug, categoryName, filters.brands, filters.priceRange, filters.sortBy, filters.sortOrder, currentPage, allProducts.length]);
 
   useEffect(() => {
     fetchProducts();
@@ -162,7 +238,7 @@ export default function Category() {
   const displayedCount = allProducts.length;
   const actualTotal = totalProducts;
   const totalPages = Math.max(1, Math.ceil(actualTotal / (filters.brands.length > 0 || filters.priceRange !== 'all' ? 500 : PRODUCTS_PER_PAGE)));
-  const description = CATEGORY_DESCRIPTIONS[decodedName] || `Explore our ${decodedName} collection`;
+  const description = CATEGORY_DESCRIPTIONS[displayName] || `Explore our ${displayName} collection`;
 
   if (isLoadingProducts) {
     return (
@@ -198,7 +274,7 @@ export default function Category() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Home
             </Button>
-            <h1 className="font-playfair text-5xl md:text-6xl font-bold text-black mb-4">{decodedName}</h1>
+            <h1 className="font-playfair text-5xl md:text-6xl font-bold text-black mb-4">{displayName}</h1>
             <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-8">
               <div>
                 <p className="text-gray-600 text-lg">{description}</p>

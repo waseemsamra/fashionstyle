@@ -2,6 +2,19 @@ const AWS = require('aws-sdk');
 const dynamodb = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = process.env.TABLE_NAME || 'fashionstore-data';
 
+/**
+ * Convert URL slug to normalized category name
+ * "formal-wear" -> "formal wear"
+ * "kids-wear" -> "kids wear"
+ */
+function slugToCategory(slug) {
+  if (!slug) return '';
+  return slug
+    .toLowerCase()
+    .replace(/-/g, ' ')
+    .trim();
+}
+
 exports.handler = async (event) => {
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -13,7 +26,7 @@ exports.handler = async (event) => {
 
     try {
         const params = event.queryStringParameters || {};
-        const category = params.category;
+        const categorySlug = params.category; // Now expecting slug: "formal-wear"
         const brandsParam = params.brands; // Comma separated string
         const minPrice = params.minPrice ? parseFloat(params.minPrice) : null;
         const maxPrice = params.maxPrice ? parseFloat(params.maxPrice) : null;
@@ -22,7 +35,10 @@ exports.handler = async (event) => {
         const limit = parseInt(params.limit || '50');
         const page = parseInt(params.page || '1');
 
-        console.log(`🔍 Filters: Category=${category}, Brands=${brandsParam}, Price=${minPrice}-${maxPrice}, Sort=${sortBy} ${sortOrder}`);
+        // Convert slug to normalized category name
+        const category = categorySlug ? slugToCategory(categorySlug) : null;
+
+        console.log(`🔍 Filters: Category=${category} (from slug: ${categorySlug}), Brands=${brandsParam}, Price=${minPrice}-${maxPrice}, Sort=${sortBy} ${sortOrder}`);
 
         // 1. Scan ALL products (up to 20,000 to ensure we find everything for categories)
         let allProducts = [];
@@ -51,15 +67,19 @@ exports.handler = async (event) => {
 
         let filtered = allProducts;
 
-        // 2. Apply Category Filter (Case-insensitive and trim whitespace)
+        // 2. Apply Category Filter (Case-insensitive and trim whitespace - normalize BOTH sides)
         if (category && category !== 'all') {
-            const normalizedCategory = category.trim().toLowerCase();
-            console.log(`🏷️ Normalizing category filter: "${category}" -> "${normalizedCategory}"`);
+            const normalizedFilter = category.trim().toLowerCase();
+            console.log(`🏷️ Normalizing category filter: "${category}" -> "${normalizedFilter}"`);
             
             const beforeFilter = filtered.length;
             filtered = filtered.filter(p => {
                 const productCategory = p.category ? p.category.trim().toLowerCase() : '';
-                return productCategory === normalizedCategory;
+                const match = productCategory === normalizedFilter;
+                if (!match && beforeFilter <= 10) {
+                    console.log(`  Product category: "${p.category}" -> normalized: "${productCategory}" vs filter: "${normalizedFilter}"`);
+                }
+                return match;
             });
             console.log(`🏷️ After category filter: ${beforeFilter} -> ${filtered.length} products matched`);
         }

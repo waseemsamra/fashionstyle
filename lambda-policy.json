@@ -1,0 +1,21 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:Scan",
+                "dynamodb:GetItem",
+                "dynamodb:Query",
+                "dynamodb:PutItem",
+                "dynamodb:UpdateItem",
+                "dynamodb:DeleteItem"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-east-1:536217686312:table/products-prod",
+                "arn:aws:dynamodb:us-east-1:536217686312:table/fashionstore-data",
+                "arn:aws:dynamodb:us-east-1:536217686312:table/fashionstore-data-prod"
+            ]
+        }
+    ]
+}

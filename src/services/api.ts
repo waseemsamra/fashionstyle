@@ -1,7 +1,7 @@
 // services/api.ts
 import { cache, CACHE_KEYS, getCollectionCacheKey } from './cache';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod';
 
 // API Client with all methods for backwards compatibility
 export const apiClient = {

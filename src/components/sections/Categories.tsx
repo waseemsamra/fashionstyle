@@ -18,12 +18,12 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Festive Collection': 'Celebrate in style',
 };
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod';
 
 export default function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [categories, setCategories] = useState<{name: string, image: string, description: string, itemCount: number}[]>([]);
+  const [categories, setCategories] = useState<{slug: string, name: string, displayName: string, image: string, description: string, itemCount: number}[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -34,17 +34,36 @@ export default function Categories() {
         console.log('📦 Loading categories from API...');
         setError(null);
 
-        // Fetch categories from the dedicated categories endpoint
-        const response = await fetch(`${API_URL}/categories`, {
+        // Fetch all products and extract categories from them
+        const response = await fetch(`${API_URL}/products?limit=1000`, {
           cache: 'no-store'
         });
         
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status} - Failed to fetch categories`);
+          throw new Error(`HTTP ${response.status} - Failed to fetch products`);
         }
         
         const data = await response.json();
-        const categoriesData = data.categories || [];
+        const products = data.products || [];
+        
+        // Extract categories from products
+        const categoryMap = new Map<string, number>();
+        products.forEach((product: any) => {
+          if (product.category) {
+            const category = String(product.category);
+            categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
+          }
+        });
+        
+        const categoriesData = Array.from(categoryMap.entries()).map(([name, count]) => ({
+          id: name.toLowerCase().replace(/\s+/g, '-'),
+          slug: name.toLowerCase().replace(/\s+/g, '-'),
+          name,
+          displayName: name,
+          itemCount: count,
+          image: CATEGORY_IMAGES[name] || '/product-placeholder.jpg',
+          description: CATEGORY_DESCRIPTIONS[name] || `${count} products`,
+        }));
 
         if (!categoriesData || categoriesData.length === 0) {
           setError('No categories found');
@@ -58,20 +77,20 @@ export default function Categories() {
         // Build categories array with images and descriptions
         const cats = categoriesData
           .map((cat: any) => ({
-            name: cat.name,
-            image: cat.image || CATEGORY_IMAGES[cat.name] || '/product-placeholder.jpg',
-            description: cat.description || CATEGORY_DESCRIPTIONS[cat.name] || `${cat.count || 0} products`,
+            slug: cat.slug,
+            displayName: cat.displayName || cat.name, // Use displayName for UI, fallback to name
+            image: cat.image || CATEGORY_IMAGES[cat.displayName || cat.name] || '/product-placeholder.jpg',
+            description: cat.description || CATEGORY_DESCRIPTIONS[cat.displayName || cat.name] || `${cat.count || 0} products`,
             itemCount: cat.count || 0,
           }))
-          .filter((c: { itemCount: number }) => c.itemCount >= 5) // Only show categories with 5+ products
           .sort((a: { itemCount: number }, b: { itemCount: number }) => b.itemCount - a.itemCount)
           .slice(0, 8);
 
-        console.log(`📋 Filtered to ${cats.length} categories with 5+ products`);
+        console.log(`Showing ${cats.length} categories`);
         console.log('📋 Final categories:', cats.map((c: { name: string; itemCount: number }) => `${c.name}(${c.itemCount})`).join(', '));
         
         if (cats.length === 0) {
-          setError('No categories with products found');
+          setError('No categories found');
           setCategories([]);
         } else {
           setCategories(cats);
@@ -153,8 +172,8 @@ export default function Categories() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {categories.map((category, index) => (
             <div
-              key={category.name}
-              onClick={() => navigate(`/category/${encodeURIComponent(category.name)}`)}
+              key={category.slug}
+              onClick={() => navigate(`/category/${category.slug}`)}
               className={`group relative overflow-hidden rounded-2xl cursor-pointer ${
                 index % 3 === 0 ? 'lg:row-span-2' : ''
               } ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}
@@ -183,7 +202,7 @@ export default function Categories() {
 
                   {/* Title */}
                   <h3 className="font-playfair text-xl md:text-2xl font-semibold text-white mb-1 group-hover:-translate-y-1 transition-transform duration-300">
-                    {category.name}
+                    {category.displayName}
                   </h3>
 
                   {/* Description */}

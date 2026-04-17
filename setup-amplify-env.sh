@@ -8,7 +8,7 @@ echo "Adding environment variables to Amplify..."
 aws amplify update-app \
   --app-id $APP_ID \
   --environment-variables \
-    VITE_API_URL=https://8ur8l436ff.execute-api.us-east-1.amazonaws.com/prod \
+    VITE_API_URL=https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod \
     VITE_GRAPHQL_URL=https://5wclz64wkfgp3h3exivmggigvu.appsync-api.us-east-1.amazonaws.com/graphql \
     VITE_GRAPHQL_API_KEY=da2-aadwbwrozrfgriafn6pgjjhrca \
     VITE_USER_POOL_ID=us-east-1_qavi3JAVz \

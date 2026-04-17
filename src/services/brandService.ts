@@ -1,6 +1,6 @@
 // services/brandService.ts
 // Fetch brands from the dedicated brands API endpoint
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const API_URL = import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod';
 
 export interface Brand {
   id: string;

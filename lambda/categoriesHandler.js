@@ -75,6 +75,36 @@ exports.handler = async (event) => {
 };
 
 /**
+ * Convert normalized (lowercase) category name to title case
+ */
+function toTitleCase(normalizedName) {
+  const mapping = {
+    'bridal wear': 'Bridal Wear',
+    'casual wear': 'Casual Wear',
+    'formal wear': 'Formal Wear',
+    'accessories': 'Accessories',
+    'festive collection': 'Festive Collection',
+    'kids wear': 'Kids Wear',
+    'men wear': 'Men Wear',
+    'women wear': 'Women Wear',
+  };
+  return mapping[normalizedName] || normalizedName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+/**
+ * Convert category name to URL-friendly slug
+ * "Formal Wear" -> "formal-wear"
+ * "Kids Wear" -> "kids-wear"
+ */
+function toSlug(categoryName) {
+  return categoryName
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]/g, '');
+}
+
+/**
  * GET /categories - Get all categories with counts from products + images
  */
 async function getCategories() {
@@ -103,11 +133,11 @@ async function getCategories() {
     const items = result.Items || [];
     totalScanned += items.length;
 
-    // Count categories (normalize names)
+    // Count categories (normalize names - lowercase and trim for consistency with productsHandler)
     items.forEach(item => {
       if (item.category) {
-        // Normalize category name
-        const normalizedCategory = String(item.category).trim();
+        // Normalize category name to match productsHandler filtering
+        const normalizedCategory = String(item.category).trim().toLowerCase();
         categoryCounts[normalizedCategory] = (categoryCounts[normalizedCategory] || 0) + 1;
       }
     });
@@ -136,13 +166,19 @@ async function getCategories() {
   }
 
   // Build categories array with images and counts
-  const categories = Object.entries(categoryCounts).map(([name, count]) => ({
-    id: name,
-    name,
-    count,
-    image: customCategories[name]?.image || DEFAULT_CATEGORY_IMAGES[name] || '',
-    description: customCategories[name]?.description || `${count} products`,
-  })).sort((a, b) => b.count - a.count);
+  const categories = Object.entries(categoryCounts).map(([normalizedName, count]) => {
+    const displayName = toTitleCase(normalizedName);
+    const slug = toSlug(displayName);
+    return {
+      id: slug,
+      slug,  // URL-friendly slug: "formal-wear"
+      name: normalizedName,  // Normalized for backend: "formal wear"
+      displayName,  // Display name: "Formal Wear"
+      count,
+      image: customCategories[normalizedName]?.image || customCategories[displayName]?.image || DEFAULT_CATEGORY_IMAGES[displayName] || '',
+      description: customCategories[normalizedName]?.description || `${count} products`,
+    };
+  }).sort((a, b) => b.count - a.count);
 
   console.log(`✅ Found ${categories.length} categories:`, categories.map(c => `${c.name}(${c.count})`).join(', '));
 
