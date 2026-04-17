@@ -8,6 +8,9 @@ const CATEGORY_IMAGES: Record<string, string> = {
   'Formal Wear': '/category-formal.jpg',
   'Accessories': '/category-accessories.jpg',
   'Festive Collection': '/category-festive.jpg',
+  'Kids Wear': '/category-kids.jpg',
+  'Men Wear': '/category-men.jpg',
+  'Footwear': '/category-footwear.jpg',
 };
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
@@ -34,7 +37,6 @@ export default function Categories() {
         console.log('📦 Loading categories from API...');
         setError(null);
 
-        // Fetch all products and extract categories from them
         const response = await fetch(`${API_URL}/products?limit=1000`, {
           cache: 'no-store'
         });
@@ -44,7 +46,7 @@ export default function Categories() {
         }
         
         const data = await response.json();
-        const products = data.products || [];
+        const products = data.products || data.items || [];
         
         // Extract categories from products
         const categoryMap = new Map<string, number>();
@@ -78,16 +80,17 @@ export default function Categories() {
         const cats = categoriesData
           .map((cat: any) => ({
             slug: cat.slug,
-            displayName: cat.displayName || cat.name, // Use displayName for UI, fallback to name
+            name: cat.name,
+            displayName: cat.displayName || cat.name,
             image: cat.image || CATEGORY_IMAGES[cat.displayName || cat.name] || '/product-placeholder.jpg',
-            description: cat.description || CATEGORY_DESCRIPTIONS[cat.displayName || cat.name] || `${cat.count || 0} products`,
-            itemCount: cat.count || 0,
+            description: cat.description || CATEGORY_DESCRIPTIONS[cat.displayName || cat.name] || `${cat.itemCount} products`,
+            itemCount: cat.itemCount || 0,
           }))
           .sort((a: { itemCount: number }, b: { itemCount: number }) => b.itemCount - a.itemCount)
           .slice(0, 8);
 
         console.log(`Showing ${cats.length} categories`);
-        console.log('📋 Final categories:', cats.map((c: { name: string; itemCount: number }) => `${c.name}(${c.itemCount})`).join(', '));
+        console.log('📋 Final categories:', cats.map(c => `${c.displayName}(${c.itemCount})`).join(', '));
         
         if (cats.length === 0) {
           setError('No categories found');

@@ -126,11 +126,13 @@ export default function Category() {
       const total = data.total || 0;
 
       console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
+      const [searchParams] = useSearchParams();
+    const nameParam = searchParams.get('name');
+      const decodedName = nameParam ? decodeURIComponent(nameParam) : '';
       console.log(`🔍 Category filter used: "${decodedName}", Normalized for filtering...`);
-
       // CLIENT-SIDE FILTERING FALLBACK (API may not filter properly)
       let filteredProducts = [...products];
-
+      
       // Filter by Category (case-insensitive with normalization)
       const normalizedCategory = categoryName.toLowerCase().trim();
       filteredProducts = filteredProducts.filter(p => {
