@@ -9,7 +9,8 @@ import LazyImage from '@/components/ui/LazyImage';
 import { useBrands } from '@/hooks/useBrands';
 import type { Brand } from '@/services/brandsService';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+import { API_CONFIG } from '../../config/api';
+const API_URL = API_CONFIG.productsApi;
 const PRODUCTS_PER_PAGE = 50;
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
@@ -96,7 +97,7 @@ export default function Category() {
       const params = new URLSearchParams();
       params.append('limit', String(PRODUCTS_PER_PAGE));
       params.append('page', String(currentPage));
-      params.append('category', categorySlug); // Send slug to API
+      params.append('category', categoryName); // Send actual category name to API
 
       if (filters.brands.length > 0) {
         params.append('limit', '500');
@@ -126,10 +127,8 @@ export default function Category() {
       const total = data.total || 0;
 
       console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
-      const [searchParams] = useSearchParams();
-    const nameParam = searchParams.get('name');
-      const decodedName = nameParam ? decodeURIComponent(nameParam) : '';
-      console.log(`🔍 Category filter used: "${decodedName}", Normalized for filtering...`);
+      console.log(`🔍 Category filter used: "${categoryName}", Normalized for filtering...`);
+      
       // CLIENT-SIDE FILTERING FALLBACK (API may not filter properly)
       let filteredProducts = [...products];
       
