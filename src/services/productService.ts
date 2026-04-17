@@ -1,4 +1,4 @@
-import { productsApi } from './apiGatewayClient';
+import { productsApi } from '../config/api';
 
 export interface Product {
   id: string;

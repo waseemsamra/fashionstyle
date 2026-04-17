@@ -17,7 +17,7 @@ export const apiClient = {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'GET',
       headers,
-      credentials: 'omit',
+      credentials: 'include',
     });
     
     if (!response.ok) throw new Error(`HTTP ${response.status}`);

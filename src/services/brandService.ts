@@ -32,15 +32,35 @@ class BrandService {
     }
 
     try {
-      console.log('🏷️ Fetching brands from brands API...');
+      console.log('🏷️ Fetching brands from products API...');
 
-      // Fetch brands from the dedicated brands endpoint
-      const response = await fetch(`${API_URL}/admin/brands`);
+      // Fetch products and extract brands from them
+      const response = await fetch(`${API_URL}/products?limit=1000`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
       const data = await response.json();
-      const brandsData = data.brands || data.items || [];
+      const products = data.products || data.items || [];
+
+      // Extract unique brands from products
+      const brandMap = new Map<string, number>();
+      products.forEach((product: any) => {
+        if (product.brand) {
+          const brand = String(product.brand);
+          brandMap.set(brand, (brandMap.get(brand) || 0) + 1);
+        }
+      });
+
+      const brandsData = Array.from(brandMap.entries()).map(([name, count]) => ({
+        id: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        name: name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        description: `${count} products`,
+        logo: '',
+        coverImage: '',
+        productCount: count,
+        isFeatured: false,
+      }));
 
       // Convert to Brand objects
       const brands: Brand[] = brandsData.map((brand: any) => ({
@@ -50,11 +70,11 @@ class BrandService {
         description: brand.description || '',
         logo: brand.logo || '',
         coverImage: brand.coverImage || '',
-        productCount: brand.productCount || brand.products || 0,
+        productCount: brand.productCount || 0,
         isFeatured: brand.isFeatured || false,
       })).sort((a: Brand, b: Brand) => a.name.localeCompare(b.name));
 
-      console.log(`✅ Loaded ${brands.length} brands from database`);
+      console.log(`✅ Extracted ${brands.length} brands from products`);
 
       // Cache the results
       this.cachedBrands = brands;

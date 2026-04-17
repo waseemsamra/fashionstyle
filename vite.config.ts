@@ -35,7 +35,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/prod': {
-        target: 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com',
+        target: 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com',
         changeOrigin: true,
         configure: (proxy, _options) => {
           proxy.on('proxyRes', (proxyRes, _req, _res) => {
@@ -43,6 +43,22 @@ export default defineConfig({
             proxyRes.headers['Access-Control-Allow-Origin'] = '*';
             proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS';
             proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-Amz-Date,X-Amz-Security-Token';
+            proxyRes.writeHead(200, proxyRes.headers);
+            return;
+          });
+        }
+      },
+      '/api': {
+        target: 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com',
+        changeOrigin: true,
+        configure: (proxy, _options) => {
+          proxy.on('proxyRes', (proxyRes, _req, _res) => {
+            // Add CORS headers to all proxied responses
+            proxyRes.headers['Access-Control-Allow-Origin'] = '*';
+            proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS';
+            proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-Amz-Date,X-Amz-Security-Token';
+            proxyRes.writeHead(200, proxyRes.headers);
+            return;
           });
         }
       }

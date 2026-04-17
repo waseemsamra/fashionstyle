@@ -1,6 +1,8 @@
 // services/apiGatewayClient.ts
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+import { API_CONFIG } from '../config/api';
+
+const API_BASE_URL = API_CONFIG.baseApiUrl;
 
 if (!API_BASE_URL) {
   console.warn('⚠️ VITE_API_URL not configured. Products API will not work.');
