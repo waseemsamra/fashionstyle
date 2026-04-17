@@ -116,7 +116,7 @@ export const brandsApi = {
     try {
       console.log('🌐 API Request: GET /admin/brands (public)');
       
-      const response = await fetch(`${API_BASE_URL}/admin/brands`, {
+      const response = await fetch(`${API_CONFIG.brandsApi}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ export const brandsApi = {
   },
 
   getById: (id: string) =>
-    apiRequest(`/admin/brands/${id}`),
+    apiRequest(`${API_CONFIG.brandsApi}/${id}`, 'GET'),
 };
 
 // Order endpoints

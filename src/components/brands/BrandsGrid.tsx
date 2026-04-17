@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
-const BRANDS_API_URL = `${API_URL}/admin/brands`;
+import { API_CONFIG } from '../../config/api';
+const BRANDS_API_URL = API_CONFIG.brandsApi;
 
 interface Brand {
   id: string;

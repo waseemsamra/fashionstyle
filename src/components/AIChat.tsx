@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageCircle, X, Send, Loader2, Bot, User, Copy, Check, ShoppingBag, Tag, Lightbulb, History, Brain } from 'lucide-react';
+import { API_CONFIG } from '../config/api';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 // ===== TYPES =====
@@ -342,10 +343,10 @@ async function callMCPTool(toolCall: MCPToolCall): Promise<{ text: string; struc
         url = `${API_URL}/products/${args.productId}`;
         break;
       case 'get_brands':
-        url = `${API_URL}/admin/brands?limit=${args.limit || 100}`;
+        url = `${API_CONFIG.brandsApi}?limit=${args.limit || 100}`;
         break;
       case 'get_brand_by_slug': {
-        const brandsRes = await fetch(`${API_URL}/admin/brands?limit=500`);
+        const brandsRes = await fetch(`${API_CONFIG.brandsApi}?limit=500`);
         const brandsData = await brandsRes.json();
         const brands = brandsData.brands || brandsData.items || [];
         const brand = brands.find((b: any) => b.slug === args.slug || b.name.toLowerCase() === (args.slug as string).toLowerCase());

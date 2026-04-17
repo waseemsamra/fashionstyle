@@ -1,7 +1,8 @@
 // services/api.ts
 import { cache, CACHE_KEYS, getCollectionCacheKey } from './cache';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod';
+import { API_CONFIG } from '../config/api';
+const API_URL = API_CONFIG.baseApiUrl;
 
 // API Client with all methods for backwards compatibility
 export const apiClient = {
@@ -228,7 +229,7 @@ export const api = {
         return cached;
       }
 
-      const response = await fetch(`${API_URL}/collections/${name}`, {
+      const response = await fetch(`${API_CONFIG.collectionsApi}/${name}`, {
         credentials: 'omit',
       });
       
@@ -271,7 +272,7 @@ export const api = {
     try {
       console.log(`💾 Saving collection ${name}:`, data);
       
-      const response = await fetch(`${API_URL}/collections/${name}`, {
+      const response = await fetch(`${API_CONFIG.collectionsApi}/${name}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -323,7 +324,7 @@ export const api = {
   // Delete collection
   async deleteCollection(name: string) {
     try {
-      const response = await fetch(`${API_URL}/collections/${name}`, {
+      const response = await fetch(`${API_CONFIG.collectionsApi}/${name}`, {
         method: 'DELETE',
       });
       
