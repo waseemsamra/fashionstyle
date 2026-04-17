@@ -13,6 +13,22 @@ import { API_CONFIG } from '../../config/api';
 const API_URL = API_CONFIG.productsApi;
 const PRODUCTS_PER_PAGE = 50;
 
+// Map URL slugs to EXACT API category names (case-sensitive!)
+const categoryMap: Record<string, string> = {
+  'accessories': 'Accessories',
+  'bridal-wear': 'Bridal Wear',
+  'casual-wear': 'Casual Wear',
+  'festive-collection': 'Festive Collection',
+  'footwear': 'Footwear',
+  'formal-wear': 'Formal Wear',
+  'kids-wear': 'Kids Wear',
+  'men-wear': 'Men Wear',
+  'new-arrivals': 'New Arrivals',
+  'party-wear': 'Party Wear',
+  'summer-collection': 'Summer Collection',
+  'winter-collection': 'Winter Collection'
+};
+
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Bridal Wear': 'Exquisite wedding ensembles for your special day',
   'Casual Wear': 'Everyday elegance for effortless style',
@@ -22,6 +38,11 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Kids Wear': 'Adorable outfits for your little ones',
   'Men Wear': 'Sharp and stylish menswear collection',
   'Women Wear': 'Elegant and trendy womenswear',
+  'Footwear': 'Stylish and comfortable shoes for every occasion',
+  'Party Wear': 'Eye-catching party outfits',
+  'Summer Collection': 'Light and breezy summer styles',
+  'Winter Collection': 'Warm and cozy winter fashion',
+  'New Arrivals': 'Fresh new arrivals for you',
 };
 
 export default function Category() {
@@ -48,15 +69,6 @@ export default function Category() {
   const { brands: brandsData, loading: brandsLoading } = useBrands();
   const brands = (brandsData?.map((b: Brand) => b.name).filter(Boolean) || []);
 
-  // Convert slug to normalized category name
-  // "formal-wear" -> "formal wear"
-  const slugToCategory = (slug: string): string => {
-    return slug
-      .toLowerCase()
-      .replace(/-/g, ' ')
-      .trim();
-  };
-
   // Convert slug to display name
   // "formal-wear" -> "Formal Wear"
   const slugToDisplayName = (slug: string): string => {
@@ -67,8 +79,8 @@ export default function Category() {
   };
 
   const categorySlug = name || '';
-  const categoryName = slugToCategory(categorySlug);
-  const displayName = slugToDisplayName(categorySlug);
+  const exactCategoryName = categoryMap[categorySlug] || slugToDisplayName(categorySlug);
+  const displayName = exactCategoryName;
 
   // Close brand dropdown when clicking outside
   useEffect(() => {
@@ -92,12 +104,12 @@ export default function Category() {
     setError(null);
 
     try {
-      console.log('📦 Fetching category products for:', categoryName, 'slug:', categorySlug, 'page:', currentPage);
+      console.log('📦 Fetching category products for:', exactCategoryName, 'slug:', categorySlug, 'page:', currentPage);
 
       const params = new URLSearchParams();
       params.append('limit', String(PRODUCTS_PER_PAGE));
       params.append('page', String(currentPage));
-      params.append('category', categoryName); // Send actual category name to API
+      params.append('category', exactCategoryName); // Send actual category name to API
 
       if (filters.brands.length > 0) {
         params.append('limit', '500');
@@ -123,22 +135,20 @@ export default function Category() {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
 
-      const products = data.items || [];
-      const total = data.total || 0;
+      const products = data.products || data.items || [];
+      const total = data.total || data.count || products.length;
 
       console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
-      console.log(`🔍 Category filter used: "${categoryName}", Normalized for filtering...`);
+      console.log(`🔍 Category filter used: "${exactCategoryName}", Normalized for filtering...`);
       
       // CLIENT-SIDE FILTERING FALLBACK (API may not filter properly)
       let filteredProducts = [...products];
       
-      // Filter by Category (case-insensitive with normalization)
-      const normalizedCategory = categoryName.toLowerCase().trim();
+      // Filter by Category (case-sensitive - use exact match)
       filteredProducts = filteredProducts.filter(p => {
-        const productCategory = (p.category || '').toLowerCase().trim();
-        return productCategory === normalizedCategory;
+        const productCategory = p.category || '';
+        return productCategory === exactCategoryName;
       });
-
       console.log(`✅ After client-side category filter: ${products.length} -> ${filteredProducts.length} products`);
 
       // Filter by Brands (if any selected)
@@ -188,13 +198,16 @@ export default function Category() {
       setAllProducts(filteredProducts);
       setTotalProducts(filteredProducts.length);
     } catch (err) {
-      console.error('❌ Failed to fetch products:', err);
+      console.error('Failed to fetch products:', err);
+      console.error('API URL:', API_URL);
+      console.error('Category name:', exactCategoryName);
+      console.error('Category slug:', categorySlug);
       setError(err as Error);
     } finally {
       setIsLoadingProducts(false);
       setIsFiltering(false);
     }
-  }, [categorySlug, categoryName, filters.brands, filters.priceRange, filters.sortBy, filters.sortOrder, currentPage, allProducts.length]);
+  }, [categorySlug, exactCategoryName, filters.brands, filters.priceRange, filters.sortBy, filters.sortOrder, currentPage, allProducts.length]);
 
   useEffect(() => {
     fetchProducts();
