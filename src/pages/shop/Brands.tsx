@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
 import { API_CONFIG } from '../../config/api';
-const BRANDS_API_URL = API_CONFIG.brandsApi;
+const PRODUCTS_API_URL = API_CONFIG.productsApi;
 
 interface Brand {
   id: string;
@@ -30,10 +30,32 @@ export default function BrandsPage() {
   const fetchBrands = async () => {
     setLoading(true);
     try {
-      const response = await fetch(BRANDS_API_URL);
+      const response = await fetch(`${PRODUCTS_API_URL}/products?limit=1000`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      const brandsData = data.brands || data.items || [];
+      const products = data.products || data.items || [];
+      
+      // Extract unique brands from products
+      const brandMap = new Map<string, Brand>();
+      products.forEach((product: any) => {
+        if (product.brand) {
+          const brandName = product.brand;
+          if (!brandMap.has(brandName)) {
+            brandMap.set(brandName, {
+              id: brandName.toLowerCase().replace(/\s+/g, '-'),
+              name: brandName,
+              active: true,
+              products: 0
+            });
+          }
+          const brand = brandMap.get(brandName);
+          if (brand) {
+            brand.products = (brand.products || 0) + 1;
+          }
+        }
+      });
+      
+      const brandsData = Array.from(brandMap.values());
       setBrands(brandsData);
     } catch (error) {
       console.error('❌ Failed to load brands:', error);
