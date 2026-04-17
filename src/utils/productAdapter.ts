@@ -36,7 +36,7 @@ export function adaptProduct(backendProduct: any): FrontendProduct {
     name: backendProduct.name || 'Unnamed Product',
     description: backendProduct.description || '',
     price: Number(backendProduct.price || 0),
-    image: backendProduct.image || 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/placeholders/product-placeholder.jpg',
+    image: backendProduct.image || '/product-placeholder.jpg',
     images: backendProduct.image ? [backendProduct.image] : [],
     category: backendProduct.category || 'Uncategorized',
     brand: backendProduct.brand || '',
