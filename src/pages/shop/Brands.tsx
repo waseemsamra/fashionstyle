@@ -71,13 +71,31 @@ export default function BrandsPage() {
       
       allProducts.forEach((product: any, index: number) => {
         // Log first few products to understand structure
-        if (index < 5) {
-          console.log(`Product ${index}:`, product);
+        if (index < 10) {
+          console.log(`=== Product ${index} ===`);
+          console.log(`Full product object:`, product);
+          console.log(`Product keys:`, Object.keys(product));
+          console.log(`Brand field:`, product.brand);
+          console.log(`Brand field type:`, typeof product.brand);
+          console.log(`Brand value:`, JSON.stringify(product.brand));
         }
         
-        if (product.brand) {
-          if (typeof product.brand === 'string' && product.brand.trim()) {
-            const brandName = product.brand.trim();
+        // Check for different possible brand field names
+        const possibleBrandFields = ['brand', 'Brand', 'brandName', 'brand_name', 'manufacturer', 'company'];
+        let brandValue = null;
+        let brandFieldName = null;
+        
+        for (const field of possibleBrandFields) {
+          if (product[field]) {
+            brandValue = product[field];
+            brandFieldName = field;
+            break;
+          }
+        }
+        
+        if (brandValue) {
+          if (typeof brandValue === 'string' && brandValue.trim()) {
+            const brandName = brandValue.trim();
             if (!brandMap.has(brandName)) {
               brandMap.set(brandName, {
                 id: brandName.toLowerCase().replace(/\s+/g, '-'),
@@ -85,6 +103,7 @@ export default function BrandsPage() {
                 active: true,
                 products: 0
               });
+              console.log(`Added new brand: "${brandName}" from field "${brandFieldName}"`);
             }
             const brand = brandMap.get(brandName);
             if (brand) {
@@ -92,10 +111,13 @@ export default function BrandsPage() {
             }
           } else {
             invalidBrandTypes++;
-            console.log(`Invalid brand type for product ${index}:`, typeof product.brand, product.brand);
+            console.log(`Invalid brand type for product ${index}:`, typeof brandValue, brandValue, `field: ${brandFieldName}`);
           }
         } else {
           productsWithoutBrand++;
+          if (index < 10) {
+            console.log(`Product ${index} has no brand field. Checked:`, possibleBrandFields);
+          }
         }
       });
       
