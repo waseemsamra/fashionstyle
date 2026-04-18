@@ -33,49 +33,23 @@ class BrandService {
     }
 
     try {
-      console.log('🏷️ Fetching brands from products API...');
-
-      // Fetch products and extract brands from them
-      const response = await fetch(`${API_URL}/products?limit=1000`);
+      console.log('🏷️ Fetching brands from dedicated brands API...');
+      
+      // Fetch brands directly from brands API
+      const response = await fetch(`${API_URL}?limit=${_options?.limit || 500}`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
       const data = await response.json();
-      const products = data.products || data.items || [];
+      let brands = data.brands || data.items || [];
+      
+      // Apply filters if provided
+      if (_options?.featured) {
+        brands = brands.filter((brand: Brand) => brand.isFeatured);
+      }
+      
 
-      // Extract unique brands from products
-      const brandMap = new Map<string, number>();
-      products.forEach((product: any) => {
-        if (product.brand) {
-          const brand = String(product.brand);
-          brandMap.set(brand, (brandMap.get(brand) || 0) + 1);
-        }
-      });
-
-      const brandsData = Array.from(brandMap.entries()).map(([name, count]) => ({
-        id: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        name: name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        description: `${count} products`,
-        logo: '',
-        coverImage: '',
-        productCount: count,
-        isFeatured: false,
-      }));
-
-      // Convert to Brand objects
-      const brands: Brand[] = brandsData.map((brand: any) => ({
-        id: brand.id || `brand-${brand.name?.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-        name: brand.name || 'Unknown',
-        slug: brand.slug || brand.name?.toLowerCase().replace(/[^a-z0-9]/g, '-') || '',
-        description: brand.description || '',
-        logo: brand.logo || '',
-        coverImage: brand.coverImage || '',
-        productCount: brand.productCount || 0,
-        isFeatured: brand.isFeatured || false,
-      })).sort((a: Brand, b: Brand) => a.name.localeCompare(b.name));
-
-      console.log(`✅ Extracted ${brands.length} brands from products`);
+      console.log(`✅ Fetched ${brands.length} brands from brands API`);
 
       // Cache the results
       this.cachedBrands = brands;

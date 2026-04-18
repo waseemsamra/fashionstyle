@@ -50,6 +50,7 @@ export default function BrandsPage() {
         
         if (products.length === 0) {
           hasMore = false;
+          console.log(`No more products found. Stopping pagination at page ${page}.`);
         } else {
           allProducts = [...allProducts, ...products];
           console.log(`Fetched page ${page}: ${products.length} products (total: ${allProducts.length})`);

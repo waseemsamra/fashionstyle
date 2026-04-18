@@ -233,26 +233,29 @@ function Layout() {
       gcTime: 2 * 60 * 60 * 1000, // 2 hours
     });
 
-    // Prefetch common admin stats periods
-    console.log('🚀 Prefetching admin stats for common periods...');
-    const periods: Period[] = ['7d', '30d', '90d'];
-    periods.forEach(period => {
-      queryClient.prefetchQuery({
-        queryKey: ['admin-stats', period],
-        queryFn: async () => {
-          try {
-            const stats = await adminService.getStats(period);
-            console.log('✅ Prefetched admin stats for', period);
-            return stats;
-          } catch (error) {
-            console.warn('⚠️ Failed to prefetch stats for', period, ':', error);
-            return null;
-          }
-        },
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 30 * 60 * 1000, // 30 minutes
+    // Prefetch common admin stats periods (only for admin users)
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user?.role === 'admin') {
+      console.log('🚀 Prefetching admin stats for common periods...');
+      const periods: Period[] = ['7d', '30d', '90d'];
+      periods.forEach(period => {
+        queryClient.prefetchQuery({
+          queryKey: ['admin-stats', period],
+          queryFn: async () => {
+            try {
+              const stats = await adminService.getStats(period);
+              console.log('✅ Prefetched admin stats for', period);
+              return stats;
+            } catch (error) {
+              console.warn('⚠️ Failed to prefetch stats for', period, ':', error);
+              return null;
+            }
+          },
+          staleTime: 5 * 60 * 1000, // 5 minutes
+          gcTime: 30 * 60 * 1000, // 30 minutes
+        });
       });
-    });
+    }
 
     // Prefetch reviews for top products (mock product IDs for demo)
     console.log('🚀 Prefetching reviews for top products...');
