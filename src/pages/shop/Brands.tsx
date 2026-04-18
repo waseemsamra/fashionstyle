@@ -30,16 +30,39 @@ export default function BrandsPage() {
   const fetchBrands = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${PRODUCTS_API_URL}?limit=1000`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      const products = data.products || data.items || [];
+      // Fetch all products to get all brands
+      let allProducts: any[] = [];
+      let page = 1;
+      const pageSize = 1000; // Increased from 500 to 1000
+      let hasMore = true;
+      
+      while (hasMore) {
+        const response = await fetch(`${PRODUCTS_API_URL}/products?limit=${pageSize}&page=${page}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        const products = data.products || data.items || [];
+        
+        if (products.length === 0) {
+          hasMore = false;
+        } else {
+          allProducts = [...allProducts, ...products];
+          console.log(`Fetched page ${page}: ${products.length} products (total: ${allProducts.length})`);
+          page++;
+          
+          // Increased safety limit to allow more pages
+          if (page > 100) hasMore = false;
+        }
+      }
+      
+      console.log(`Total products fetched: ${allProducts.length}`);
       
       // Extract unique brands from products
       const brandMap = new Map<string, Brand>();
-      products.forEach((product: any) => {
-        if (product.brand) {
-          const brandName = product.brand;
+      let productsWithoutBrand = 0;
+      
+      allProducts.forEach((product: any) => {
+        if (product.brand && typeof product.brand === 'string' && product.brand.trim()) {
+          const brandName = product.brand.trim();
           if (!brandMap.has(brandName)) {
             brandMap.set(brandName, {
               id: brandName.toLowerCase().replace(/\s+/g, '-'),
@@ -52,10 +75,15 @@ export default function BrandsPage() {
           if (brand) {
             brand.products = (brand.products || 0) + 1;
           }
+        } else {
+          productsWithoutBrand++;
         }
       });
       
       const brandsData = Array.from(brandMap.values());
+      console.log(`Extracted ${brandsData.length} unique brands from ${allProducts.length} products`);
+      console.log(`Products without brand: ${productsWithoutBrand}`);
+      console.log(`Sample brands:`, brandsData.slice(0, 10).map(b => b.name));
       setBrands(brandsData);
     } catch (error) {
       console.error('❌ Failed to load brands:', error);
