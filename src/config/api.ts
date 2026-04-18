@@ -3,7 +3,7 @@
 
 export const API_CONFIG = {
   // API Endpoints using environment variables
-  productsApi: import.meta.env.VITE_PRODUCTS_API || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod',
+  productsApi: import.meta.env.VITE_PRODUCTS_API?.replace('/products', '') || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod',
   collectionsApi: import.meta.env.VITE_COLLECTIONS_API || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/collections',
   brandsApi: import.meta.env.VITE_BRANDS_API || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/brands',
   categoriesApi: import.meta.env.VITE_CATEGORIES_API || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/categories',

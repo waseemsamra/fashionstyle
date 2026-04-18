@@ -37,7 +37,7 @@ export default function BrandsPage() {
       let hasMore = true;
       
       while (hasMore) {
-        const response = await fetch(`${PRODUCTS_API_URL}?limit=${pageSize}&page=${page}`);
+        const response = await fetch(`${PRODUCTS_API_URL}/products?limit=${pageSize}&page=${page}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         
