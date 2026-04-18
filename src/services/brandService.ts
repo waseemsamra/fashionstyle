@@ -1,7 +1,7 @@
 // services/brandService.ts
 // Fetch brands from the dedicated brands API endpoint
 import { API_CONFIG } from '../config/api';
-const API_URL = API_CONFIG.baseApiUrl;
+const API_URL = API_CONFIG.brandsApi;
 
 export interface Brand {
   id: string;
