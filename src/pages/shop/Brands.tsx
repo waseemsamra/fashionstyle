@@ -37,10 +37,16 @@ export default function BrandsPage() {
       let hasMore = true;
       
       while (hasMore) {
-        const response = await fetch(`${PRODUCTS_API_URL}/products?limit=${pageSize}&page=${page}`);
+        const response = await fetch(`${PRODUCTS_API_URL}?limit=${pageSize}&page=${page}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
+        
+        console.log(`API Response structure:`, Object.keys(data));
+        console.log(`Full API Response:`, data);
+        
         const products = data.products || data.items || [];
+        console.log(`Products array length: ${products.length}`);
+        console.log(`Sample product:`, products[0]);
         
         if (products.length === 0) {
           hasMore = false;
@@ -59,21 +65,34 @@ export default function BrandsPage() {
       // Extract unique brands from products
       const brandMap = new Map<string, Brand>();
       let productsWithoutBrand = 0;
+      let invalidBrandTypes = 0;
       
-      allProducts.forEach((product: any) => {
-        if (product.brand && typeof product.brand === 'string' && product.brand.trim()) {
-          const brandName = product.brand.trim();
-          if (!brandMap.has(brandName)) {
-            brandMap.set(brandName, {
-              id: brandName.toLowerCase().replace(/\s+/g, '-'),
-              name: brandName,
-              active: true,
-              products: 0
-            });
-          }
-          const brand = brandMap.get(brandName);
-          if (brand) {
-            brand.products = (brand.products || 0) + 1;
+      console.log(`Processing ${allProducts.length} products for brand extraction...`);
+      
+      allProducts.forEach((product: any, index: number) => {
+        // Log first few products to understand structure
+        if (index < 5) {
+          console.log(`Product ${index}:`, product);
+        }
+        
+        if (product.brand) {
+          if (typeof product.brand === 'string' && product.brand.trim()) {
+            const brandName = product.brand.trim();
+            if (!brandMap.has(brandName)) {
+              brandMap.set(brandName, {
+                id: brandName.toLowerCase().replace(/\s+/g, '-'),
+                name: brandName,
+                active: true,
+                products: 0
+              });
+            }
+            const brand = brandMap.get(brandName);
+            if (brand) {
+              brand.products = (brand.products || 0) + 1;
+            }
+          } else {
+            invalidBrandTypes++;
+            console.log(`Invalid brand type for product ${index}:`, typeof product.brand, product.brand);
           }
         } else {
           productsWithoutBrand++;
@@ -81,9 +100,14 @@ export default function BrandsPage() {
       });
       
       const brandsData = Array.from(brandMap.values());
-      console.log(`Extracted ${brandsData.length} unique brands from ${allProducts.length} products`);
+      console.log(`=== BRAND EXTRACTION SUMMARY ===`);
+      console.log(`Total products processed: ${allProducts.length}`);
       console.log(`Products without brand: ${productsWithoutBrand}`);
+      console.log(`Products with invalid brand type: ${invalidBrandTypes}`);
+      console.log(`Unique brands extracted: ${brandsData.length}`);
       console.log(`Sample brands:`, brandsData.slice(0, 10).map(b => b.name));
+      console.log(`================================`);
+      
       setBrands(brandsData);
     } catch (error) {
       console.error('❌ Failed to load brands:', error);
