@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+import { API_CONFIG } from '../config/api';
+const API_URL = API_CONFIG.baseApiUrl;
 const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || `${API_URL}/generate-upload-url`;
 const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v';
 const S3_REGION = import.meta.env.VITE_AWS_REGION || 'us-east-1';

@@ -21,7 +21,8 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   'Festive Collection': 'Celebrate in style',
 };
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod';
+import { API_CONFIG } from '../../config/api';
+const API_URL = API_CONFIG.productsApi;
 
 export default function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -37,7 +38,7 @@ export default function Categories() {
         console.log('📦 Loading categories from API...');
         setError(null);
 
-        const response = await fetch(`${API_URL}/products?limit=1000`, {
+        const response = await fetch(`${API_URL}?limit=1000`, {
           cache: 'no-store'
         });
         

@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { API_CONFIG } from '../../config/api';
+const API_URL = API_CONFIG.baseApiUrl;
 
 export default function StoreSettings() {
   const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ export default function StoreSettings() {
       console.log('📡 Loading store info from DynamoDB...');
       const token = localStorage.getItem('jwt_token');
       
-      const response = await fetch('https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/store-info', {
+      const response = await fetch('${API_URL}/admin/settings-v2/store-info', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -156,7 +158,7 @@ export default function StoreSettings() {
       console.log('📡 Saving store info to DynamoDB...');
       const token = localStorage.getItem('jwt_token');
       
-      const response = await fetch('https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/store-info', {
+      const response = await fetch('${API_URL}/admin/settings-v2/store-info', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

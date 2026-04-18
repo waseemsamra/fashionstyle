@@ -8,7 +8,8 @@ import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { uploadImageWithFallback } from '@/services/imageDownload';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+import { API_CONFIG } from '../../config/api';
+const API_URL = API_CONFIG.baseApiUrl;
 
 interface ExcelProduct {
   name: string;

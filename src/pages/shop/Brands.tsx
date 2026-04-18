@@ -30,7 +30,7 @@ export default function BrandsPage() {
   const fetchBrands = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${PRODUCTS_API_URL}/products?limit=1000`);
+      const response = await fetch(`${PRODUCTS_API_URL}?limit=1000`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       const products = data.products || data.items || [];

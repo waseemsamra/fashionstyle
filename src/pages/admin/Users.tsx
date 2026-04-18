@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
 // Using correct API Gateway for users
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+import { API_CONFIG } from '../../config/api';
+const API_URL = API_CONFIG.baseApiUrl;
 
 interface User {
   userId: string;

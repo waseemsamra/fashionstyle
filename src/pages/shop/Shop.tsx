@@ -10,7 +10,8 @@ import type { Brand } from '@/services/brandsService';
 import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+import { API_CONFIG } from '../../config/api';
+const API_URL = API_CONFIG.baseApiUrl;
 const PRODUCTS_PER_PAGE = 50;
 
 // Fetch categories directly from API
