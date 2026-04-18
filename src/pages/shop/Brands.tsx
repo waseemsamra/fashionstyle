@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
 import { API_CONFIG } from '../../config/api';
-const PRODUCTS_API_URL = API_CONFIG.productsApi;
+const BRANDS_API_URL = API_CONFIG.brandsApi;
 
 interface Brand {
   id: string;
@@ -30,106 +30,49 @@ export default function BrandsPage() {
   const fetchBrands = async () => {
     setLoading(true);
     try {
-      // Fetch all products to get all brands
-      let allProducts: any[] = [];
-      let page = 1;
-      const pageSize = 1000; // Increased from 500 to 1000
-      let hasMore = true;
+      console.log('Fetching brands from dedicated brands API...');
       
-      while (hasMore) {
-        const response = await fetch(`${PRODUCTS_API_URL}/products?limit=${pageSize}&page=${page}`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        
-        console.log(`API Response structure:`, Object.keys(data));
-        console.log(`Full API Response:`, data);
-        
-        const products = data.products || data.items || [];
-        console.log(`Products array length: ${products.length}`);
-        console.log(`Sample product:`, products[0]);
-        
-        if (products.length === 0) {
-          hasMore = false;
-          console.log(`No more products found. Stopping pagination at page ${page}.`);
-        } else {
-          allProducts = [...allProducts, ...products];
-          console.log(`Fetched page ${page}: ${products.length} products (total: ${allProducts.length})`);
-          page++;
-          
-          // Increased safety limit to allow more pages
-          if (page > 100) hasMore = false;
-        }
-      }
+      const response = await fetch(`${BRANDS_API_URL}?limit=500`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
       
-      console.log(`Total products fetched: ${allProducts.length}`);
+      console.log(`API Response structure:`, Object.keys(data));
+      console.log(`Full API Response:`, data);
       
-      // Extract unique brands from products
+      const brands = data.brands || data.items || [];
+      console.log(`Brands array length: ${brands.length}`);
+      console.log(`Sample brand:`, brands[0]);
+      
+      // Extract unique brands from the API response
       const brandMap = new Map<string, Brand>();
-      let productsWithoutBrand = 0;
-      let invalidBrandTypes = 0;
+      let processedBrands = 0;
       
-      console.log(`Processing ${allProducts.length} products for brand extraction...`);
-      
-      allProducts.forEach((product: any, index: number) => {
-        // Log first few products to understand structure
-        if (index < 10) {
-          console.log(`=== Product ${index} ===`);
-          console.log(`Full product object:`, product);
-          console.log(`Product keys:`, Object.keys(product));
-          console.log(`Brand field:`, product.brand);
-          console.log(`Brand field type:`, typeof product.brand);
-          console.log(`Brand value:`, JSON.stringify(product.brand));
+      brands.forEach((brand: any, index: number) => {
+        if (index < 5) {
+          console.log(`Brand ${index}:`, brand);
         }
         
-        // Check for different possible brand field names
-        const possibleBrandFields = ['brand', 'Brand', 'brandName', 'brand_name', 'manufacturer', 'company'];
-        let brandValue = null;
-        let brandFieldName = null;
-        
-        for (const field of possibleBrandFields) {
-          if (product[field]) {
-            brandValue = product[field];
-            brandFieldName = field;
-            break;
+        if (brand.name && typeof brand.name === 'string' && brand.name.trim()) {
+          const brandName = brand.name.trim();
+          if (!brandMap.has(brandName)) {
+            brandMap.set(brandName, {
+              id: brand.id || brandName.toLowerCase().replace(/\s+/g, '-'),
+              name: brandName,
+              active: brand.active !== false,
+              products: brand.productCount || 0
+            });
+            console.log(`Added brand: "${brandName}"`);
           }
-        }
-        
-        if (brandValue) {
-          if (typeof brandValue === 'string' && brandValue.trim()) {
-            const brandName = brandValue.trim();
-            if (!brandMap.has(brandName)) {
-              brandMap.set(brandName, {
-                id: brandName.toLowerCase().replace(/\s+/g, '-'),
-                name: brandName,
-                active: true,
-                products: 0
-              });
-              console.log(`Added new brand: "${brandName}" from field "${brandFieldName}"`);
-            }
-            const brand = brandMap.get(brandName);
-            if (brand) {
-              brand.products = (brand.products || 0) + 1;
-            }
-          } else {
-            invalidBrandTypes++;
-            console.log(`Invalid brand type for product ${index}:`, typeof brandValue, brandValue, `field: ${brandFieldName}`);
-          }
-        } else {
-          productsWithoutBrand++;
-          if (index < 10) {
-            console.log(`Product ${index} has no brand field. Checked:`, possibleBrandFields);
-          }
+          processedBrands++;
         }
       });
       
       const brandsData = Array.from(brandMap.values());
-      console.log(`=== BRAND EXTRACTION SUMMARY ===`);
-      console.log(`Total products processed: ${allProducts.length}`);
-      console.log(`Products without brand: ${productsWithoutBrand}`);
-      console.log(`Products with invalid brand type: ${invalidBrandTypes}`);
+      console.log(`=== BRAND FETCH SUMMARY ===`);
+      console.log(`Total brands processed: ${processedBrands}`);
       console.log(`Unique brands extracted: ${brandsData.length}`);
       console.log(`Sample brands:`, brandsData.slice(0, 10).map(b => b.name));
-      console.log(`================================`);
+      console.log(`============================`);
       
       setBrands(brandsData);
     } catch (error) {
