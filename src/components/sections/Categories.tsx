@@ -59,19 +59,18 @@ export default function Categories() {
           return;
         }
 
-        console.log('📊 Loaded categories:', categoriesData);
+        console.log('Loaded categories:', categoriesData);
 
-        // Build categories array with images and descriptions
+        // Build categories array with images and descriptions from simple strings
         const cats = categoriesData
-          .map((cat: any) => ({
-            slug: cat.slug || cat.name?.toLowerCase().replace(/\s+/g, '-'),
-            name: cat.name,
-            displayName: cat.displayName || cat.name,
-            image: cat.image || CATEGORY_IMAGES[cat.displayName || cat.name] || '/product-placeholder.jpg',
-            description: cat.description || CATEGORY_DESCRIPTIONS[cat.displayName || cat.name] || `${cat.itemCount || 0} products`,
-            itemCount: cat.itemCount || cat.productCount || 0,
+          .map((categoryName: string) => ({
+            slug: categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+            name: categoryName,
+            displayName: categoryName,
+            image: CATEGORY_IMAGES[categoryName] || '/product-placeholder.jpg',
+            description: CATEGORY_DESCRIPTIONS[categoryName] || 'Explore this category',
+            itemCount: 0, // Backend doesn't provide counts for simple string array
           }))
-          .sort((a: { itemCount: number }, b: { itemCount: number }) => b.itemCount - a.itemCount)
           .slice(0, 8);
 
         console.log(`Showing ${cats.length} categories`);
