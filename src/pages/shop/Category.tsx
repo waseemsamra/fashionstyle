@@ -67,13 +67,25 @@ export default function Category() {
 
   // Fetch brands from API
   const { brands: brandsData, loading: brandsLoading } = useBrands();
-  const brands = (brandsData?.map((b: Brand) => b.name).filter(Boolean) || []);
+  
+  // Extract brands from products as fallback
+  const extractBrandsFromProducts = (products: any[]) => {
+    const uniqueBrands = [...new Set(products.map(p => p.brand).filter(Boolean))];
+    return uniqueBrands.sort();
+  };
+  
+  // Use brands from API, or fallback to extracting from products
+  const apiBrands = (brandsData?.map((b: Brand) => b.name).filter(Boolean) || []);
+  const productBrands = allProducts.length > 0 ? extractBrandsFromProducts(allProducts) : [];
+  const brands = apiBrands.length > 0 ? apiBrands : productBrands;
   
   // Debug brands loading
-  console.log('🏷️ Category page brands debug:');
+  console.log('Category page brands debug:');
   console.log('- brandsData:', brandsData);
   console.log('- brandsLoading:', brandsLoading);
-  console.log('- extracted brands:', brands);
+  console.log('- apiBrands:', apiBrands);
+  console.log('- productBrands:', productBrands);
+  console.log('- final brands:', brands);
   console.log('- brands length:', brands.length);
 
   // Convert slug to display name
