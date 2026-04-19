@@ -185,10 +185,10 @@ export default function Categories() {
 
                 {/* Content */}
                 <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                  {/* Item Count Badge */}
-                  <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-medium w-fit mb-3 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                  {/* Item Count Badge - Hidden since backend doesn't provide count data */}
+                  {/* <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-medium w-fit mb-3 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                     {category.itemCount || 0} Items
-                  </span>
+                  </span> */}
 
                   {/* Title */}
                   <h3 className="font-playfair text-xl md:text-2xl font-semibold text-white mb-1 group-hover:-translate-y-1 transition-transform duration-300">
