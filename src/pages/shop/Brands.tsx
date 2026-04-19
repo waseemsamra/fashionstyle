@@ -169,20 +169,31 @@ export default function BrandsPage() {
     name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
   if (loading) {
+    console.log('Brands page is in loading state');
     return (
-      <div className="min-h-screen bg-white py-12">
-        <div className="container mx-auto px-4 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto"></div>
+      <div className="min-h-screen bg-white py-8">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading brands...</p>
+          </div>
         </div>
       </div>
     );
   }
 
+  console.log('Brands page rendering - brands.length:', brands.length, 'loading:', loading);
+  
   return (
     <div className="min-h-screen bg-white py-8">
       <div className="container mx-auto px-4">
         {/* Header */}
         <h1 className="text-3xl font-bold text-center mb-8">Brands</h1>
+        
+        {/* Debug Info */}
+        <div className="text-center mb-4 text-sm text-gray-600">
+          Debug: {brands.length} brands loaded, Loading: {loading ? 'Yes' : 'No'}
+        </div>
 
         {/* Brand Logos Carousel */}
         {carouselBrands.length > 0 && (
