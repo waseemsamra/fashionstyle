@@ -11,7 +11,7 @@ import type { Brand } from '@/services/brandsService';
 
 import { API_CONFIG } from '../../config/api';
 const API_URL = API_CONFIG.productsApi;
-const PRODUCTS_PER_PAGE = 50;
+const PRODUCTS_PER_PAGE = 100;
 
 // Map URL slugs to EXACT API category names (case-sensitive!)
 const categoryMap: Record<string, string> = {
@@ -104,15 +104,17 @@ export default function Category() {
     setError(null);
 
     try {
-      console.log('📦 Fetching category products for:', exactCategoryName, 'slug:', categorySlug, 'page:', currentPage);
+      console.log('Fetching category products for:', exactCategoryName, 'slug:', categorySlug, 'page:', currentPage);
 
       const params = new URLSearchParams();
-      params.append('limit', String(PRODUCTS_PER_PAGE));
+      
+      // Always fetch more products to get accurate total count
+      const fetchLimit = filters.brands.length > 0 || filters.priceRange !== 'all' ? 500 : PRODUCTS_PER_PAGE;
+      params.append('limit', String(fetchLimit));
       params.append('page', String(currentPage));
       params.append('category', exactCategoryName); // Send actual category name to API
 
       if (filters.brands.length > 0) {
-        params.append('limit', '500');
         params.append('brands', filters.brands.join(','));
       }
 
@@ -136,9 +138,9 @@ export default function Category() {
       const data = await response.json();
 
       const products = data.products || data.items || [];
-      const total = data.total || data.count || products.length;
+      const apiTotal = data.total || data.count || products.length;
 
-      console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
+      console.log(`📊 Raw API response: ${products.length} products, total: ${apiTotal}`);
       console.log(`🔍 Category filter used: "${exactCategoryName}", Normalized for filtering...`);
       
       // CLIENT-SIDE FILTERING FALLBACK (API may not filter properly)
@@ -196,7 +198,10 @@ export default function Category() {
       });
 
       setAllProducts(filteredProducts);
-      setTotalProducts(filteredProducts.length);
+      // Use API total for pagination, but if we have filters, use filtered count
+      const effectiveTotal = (filters.brands.length > 0 || filters.priceRange !== 'all') ? filteredProducts.length : apiTotal;
+      setTotalProducts(effectiveTotal);
+      console.log(`Final total products for pagination: ${effectiveTotal}`);
     } catch (err) {
       console.error('Failed to fetch products:', err);
       console.error('API URL:', API_URL);
