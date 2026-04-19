@@ -22,7 +22,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 };
 
 import { API_CONFIG } from '../../config/api';
-const API_URL = API_CONFIG.productsApi;
+const CATEGORIES_API_URL = API_CONFIG.categoriesApi;
 
 export default function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -38,35 +38,19 @@ export default function Categories() {
         console.log('📦 Loading categories from API...');
         setError(null);
 
-        const response = await fetch(`${API_URL}?limit=1000`, {
+        const response = await fetch(`${CATEGORIES_API_URL}?limit=1000`, {
           cache: 'no-store'
         });
         
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status} - Failed to fetch products`);
+          throw new Error(`HTTP ${response.status} - Failed to fetch categories`);
         }
         
         const data = await response.json();
-        const products = data.products || data.items || [];
+        const categoriesData = data.categories || data.items || [];
         
-        // Extract categories from products
-        const categoryMap = new Map<string, number>();
-        products.forEach((product: any) => {
-          if (product.category) {
-            const category = String(product.category);
-            categoryMap.set(category, (categoryMap.get(category) || 0) + 1);
-          }
-        });
-        
-        const categoriesData = Array.from(categoryMap.entries()).map(([name, count]) => ({
-          id: name.toLowerCase().replace(/\s+/g, '-'),
-          slug: name.toLowerCase().replace(/\s+/g, '-'),
-          name,
-          displayName: name,
-          itemCount: count,
-          image: CATEGORY_IMAGES[name] || '/product-placeholder.jpg',
-          description: CATEGORY_DESCRIPTIONS[name] || `${count} products`,
-        }));
+        console.log('Categories API Response:', data);
+        console.log('Categories Data:', categoriesData);
 
         if (!categoriesData || categoriesData.length === 0) {
           setError('No categories found');
@@ -80,18 +64,18 @@ export default function Categories() {
         // Build categories array with images and descriptions
         const cats = categoriesData
           .map((cat: any) => ({
-            slug: cat.slug,
+            slug: cat.slug || cat.name?.toLowerCase().replace(/\s+/g, '-'),
             name: cat.name,
             displayName: cat.displayName || cat.name,
             image: cat.image || CATEGORY_IMAGES[cat.displayName || cat.name] || '/product-placeholder.jpg',
-            description: cat.description || CATEGORY_DESCRIPTIONS[cat.displayName || cat.name] || `${cat.itemCount} products`,
-            itemCount: cat.itemCount || 0,
+            description: cat.description || CATEGORY_DESCRIPTIONS[cat.displayName || cat.name] || `${cat.itemCount || 0} products`,
+            itemCount: cat.itemCount || cat.productCount || 0,
           }))
           .sort((a: { itemCount: number }, b: { itemCount: number }) => b.itemCount - a.itemCount)
           .slice(0, 8);
 
         console.log(`Showing ${cats.length} categories`);
-        console.log('📋 Final categories:', cats.map(c => `${c.displayName}(${c.itemCount})`).join(', '));
+        console.log('Final categories:', cats.map((category: { displayName: string, itemCount: number }) => `${category.displayName}(${category.itemCount})`).join(', '));
         
         if (cats.length === 0) {
           setError('No categories found');
