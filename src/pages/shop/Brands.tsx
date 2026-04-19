@@ -32,51 +32,95 @@ export default function BrandsPage() {
     try {
       console.log('Fetching brands from dedicated brands API...');
       
-      const response = await fetch(`${BRANDS_API_URL}?limit=500`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      
-      console.log(`API Response structure:`, Object.keys(data));
-      console.log(`Full API Response:`, data);
-      
-      const brands = data.brands || data.items || [];
-      console.log(`Brands array length: ${brands.length}`);
-      console.log(`Sample brand:`, brands[0]);
-      
-      // Extract unique brands from the API response
-      const brandMap = new Map<string, Brand>();
-      let processedBrands = 0;
-      
-      brands.forEach((brand: any, index: number) => {
-        if (index < 5) {
-          console.log(`Brand ${index}:`, brand);
-        }
+      try {
+        const response = await fetch(`${BRANDS_API_URL}?limit=500`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
         
-        if (brand.name && typeof brand.name === 'string' && brand.name.trim()) {
-          const brandName = brand.name.trim();
-          if (!brandMap.has(brandName)) {
-            brandMap.set(brandName, {
-              id: brand.id || brandName.toLowerCase().replace(/\s+/g, '-'),
-              name: brandName,
-              active: brand.active !== false,
-              products: brand.productCount || 0
-            });
-            console.log(`Added brand: "${brandName}"`);
+        console.log(`API Response structure:`, Object.keys(data));
+        console.log(`Full API Response:`, data);
+        
+        const brands = data.brands || data.items || [];
+        console.log(`Brands array length: ${brands.length}`);
+        console.log(`Sample brand:`, brands[0]);
+        
+        // Extract unique brands from the API response
+        const brandMap = new Map<string, Brand>();
+        let processedBrands = 0;
+        
+        brands.forEach((brand: any, index: number) => {
+          if (index < 5) {
+            console.log(`Brand ${index}:`, brand);
           }
-          processedBrands++;
-        }
-      });
-      
-      const brandsData = Array.from(brandMap.values());
-      console.log(`=== BRAND FETCH SUMMARY ===`);
-      console.log(`Total brands processed: ${processedBrands}`);
-      console.log(`Unique brands extracted: ${brandsData.length}`);
-      console.log(`Sample brands:`, brandsData.slice(0, 10).map(b => b.name));
-      console.log(`============================`);
-      
-      setBrands(brandsData);
+          
+          if (brand.name && typeof brand.name === 'string' && brand.name.trim()) {
+            const brandName = brand.name.trim();
+            if (!brandMap.has(brandName)) {
+              brandMap.set(brandName, {
+                id: brand.id || brandName.toLowerCase().replace(/\s+/g, '-'),
+                name: brandName,
+                active: brand.active !== false,
+                products: brand.productCount || 0
+              });
+              console.log(`Added brand: "${brandName}"`);
+            }
+            processedBrands++;
+          }
+        });
+        
+        const brandsData = Array.from(brandMap.values());
+        console.log(`=== BRAND FETCH SUMMARY ===`);
+        console.log(`Total brands processed: ${processedBrands}`);
+        console.log(`Unique brands extracted: ${brandsData.length}`);
+        console.log(`Sample brands:`, brandsData.slice(0, 10).map(b => b.name));
+        console.log(`============================`);
+        
+        setBrands(brandsData);
+        return;
+      } catch (brandsApiError) {
+        console.warn('Brands API failed, falling back to products API:', brandsApiError);
+        
+        // Fallback to products API
+        console.log('Fetching brands from products API as fallback...');
+        const response = await fetch(`${API_CONFIG.productsApi}/products?limit=1000`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        
+        const products = data.products || data.items || [];
+        console.log(`Products array length: ${products.length}`);
+        
+        // Extract brands from products
+        const brandMap = new Map<string, Brand>();
+        products.forEach((product: any) => {
+          if (product.brand && typeof product.brand === 'string' && product.brand.trim()) {
+            const brandName = product.brand.trim();
+            if (!brandMap.has(brandName)) {
+              brandMap.set(brandName, {
+                id: brandName.toLowerCase().replace(/\s+/g, '-'),
+                name: brandName,
+                active: true,
+                products: 0
+              });
+            }
+            const brand = brandMap.get(brandName);
+            if (brand) {
+              brand.products = (brand.products || 0) + 1;
+            }
+          }
+        });
+        
+        const brandsData = Array.from(brandMap.values());
+        console.log(`=== FALLBACK BRAND FETCH SUMMARY ===`);
+        console.log(`Products processed: ${products.length}`);
+        console.log(`Unique brands extracted: ${brandsData.length}`);
+        console.log(`Sample brands:`, brandsData.slice(0, 10).map(b => b.name));
+        console.log(`===================================`);
+        
+        setBrands(brandsData);
+      }
     } catch (error) {
-      console.error('❌ Failed to load brands:', error);
+      console.error('Failed to load brands:', error);
+      setBrands([]);
     } finally {
       setLoading(false);
     }
