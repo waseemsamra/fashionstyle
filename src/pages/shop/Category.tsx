@@ -68,6 +68,13 @@ export default function Category() {
   // Fetch brands from API
   const { brands: brandsData, loading: brandsLoading } = useBrands();
   const brands = (brandsData?.map((b: Brand) => b.name).filter(Boolean) || []);
+  
+  // Debug brands loading
+  console.log('🏷️ Category page brands debug:');
+  console.log('- brandsData:', brandsData);
+  console.log('- brandsLoading:', brandsLoading);
+  console.log('- extracted brands:', brands);
+  console.log('- brands length:', brands.length);
 
   // Convert slug to display name
   // "formal-wear" -> "Formal Wear"
