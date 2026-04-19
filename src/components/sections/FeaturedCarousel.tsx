@@ -123,7 +123,12 @@ export default function FeaturedCarousel() {
         </div>
 
         <div className="text-center mt-12">
-          <a href="#categories" className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-black rounded-full hover:bg-black hover:text-white">View All Products</a>
+          <button 
+            onClick={() => navigate('/featured-collection')} 
+            className="inline-flex items-center justify-center gap-2 px-8 py-4 border border-black rounded-full hover:bg-black hover:text-white transition-colors"
+          >
+            View All Products
+          </button>
         </div>
       </div>
     </section>

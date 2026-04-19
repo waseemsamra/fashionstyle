@@ -24,6 +24,7 @@ const Brands = lazy(() => import('@/pages/shop/Brands'));
 const BrandDetail = lazy(() => import('@/pages/shop/BrandDetail'));
 const Category = lazy(() => import('@/pages/shop/Category'));
 const NewArrivalsPage = lazy(() => import('@/pages/shop/NewArrivalsPage'));
+const FeaturedCollectionPage = lazy(() => import('@/pages/shop/FeaturedCollection'));
 const ProductDetail = lazy(() => import('@/pages/shop/ProductDetail'));
 const Checkout = lazy(() => import('@/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@/pages/checkout/OrderConfirmation'));
@@ -275,6 +276,7 @@ function Layout() {
             <Route path="/brand/:name" element={<BrandDetail />} />
             <Route path="/category/:name" element={<Category />} />
             <Route path="/new-arrivals" element={<NewArrivalsPage />} />
+            <Route path="/featured-collection" element={<FeaturedCollectionPage />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
             <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
