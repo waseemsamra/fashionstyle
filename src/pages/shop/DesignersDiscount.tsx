@@ -7,6 +7,7 @@ import { getProductImage, handleImageError } from '@/utils/productImage';
 import { useCollection } from '@/hooks/useCollection';
 
 export default function DesignersDiscount() {
+  // Updated grid layout for larger card sizes - matches Shop page
   const navigate = useNavigate();
   
   // Use the same collection hook as the home page component
