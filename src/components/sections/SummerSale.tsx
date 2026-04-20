@@ -44,8 +44,6 @@ export default function SummerSale() {
     toggleWishlist({ productId: product.id, product });
   };
 
-  const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
-
   console.log('🏠 SummerSale render - loading:', loading, 'products:', products.length);
 
   if (loading) {
