@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, TouchEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,6 +10,7 @@ export default function NewArrivals() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
   const navigate = useNavigate();
 
   // THE FORMULA: Fetch ONLY collection products - NO scanning!
@@ -17,7 +18,7 @@ export default function NewArrivals() {
   const products = allProducts.slice(0, 4); // Show only first 4
 
   const scrollLeft = () => {
-    setCurrentSlide(prev => prev <= 0 ? 0 : prev - 1);
+    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - 1.25) : prev - 1);
   };
 
   const scrollRight = () => {
@@ -43,7 +44,27 @@ export default function NewArrivals() {
     return () => observer.disconnect();
   }, []);
 
-  const handleAddToCart = (_product: any) => {
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    const touchX = e.touches[0].clientX;
+    const diff = touchStart - touchX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        scrollRight();
+      } else {
+        scrollLeft();
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStart(0);
+  };
+
+  const handleAddToCart = (product: any) => {
     toast.info('Add to cart coming soon');
   };
 
@@ -107,7 +128,13 @@ export default function NewArrivals() {
             {/* Mobile Carousel */}
             <div className="relative lg:hidden">
               <div className="overflow-hidden">
-                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 80}%)` }}>
+                <div 
+                  className="flex transition-transform duration-500" 
+                  style={{ transform: `translateX(-${currentSlide * 80}%)` }}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
                   {products.map((product: any, index) => (
                     <div key={product.id} className="min-w-[80%] px-2">
                       <div
