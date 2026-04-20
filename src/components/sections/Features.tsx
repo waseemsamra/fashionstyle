@@ -61,14 +61,26 @@ export default function Features() {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    
     const touchX = e.touches[0].clientX;
     const diff = touchStart - touchX;
-    if (Math.abs(diff) > 50) {
+    
+    // Lower threshold for better responsiveness
+    if (Math.abs(diff) > 30) {
+      // Prevent multiple triggers during the same gesture
+      if (Math.abs(diff) > 100) {
+        return;
+      }
+      
       if (diff > 0) {
         scrollRight();
       } else {
         scrollLeft();
       }
+      
+      // Reset touch start to prevent multiple triggers
+      setTouchStart(0);
     }
   };
 

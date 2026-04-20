@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToggleWishlist } from '@/hooks/useWishlist';
@@ -12,6 +12,7 @@ export default function DesignersOnDiscount() {
   const { toggleWishlist } = useToggleWishlist();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [touchStart, setTouchStart] = useState(0);
 
   // THE FORMULA: Fetch ONLY collection products - NO scanning!
   const { products, loading } = useCollection('designersDiscount');
@@ -42,6 +43,39 @@ export default function DesignersOnDiscount() {
       return;
     }
     toggleWishlist({ productId: product.id, product });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    
+    const touchX = e.touches[0].clientX;
+    const diff = touchStart - touchX;
+    
+    // Lower threshold for better responsiveness
+    if (Math.abs(diff) > 30) {
+      // Prevent multiple triggers during the same gesture
+      if (Math.abs(diff) > 100) {
+        return;
+      }
+      
+      if (diff > 0) {
+        const maxSlide = Math.max(0, products.length - Math.min(1.25, products.length));
+        setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
+      } else {
+        setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - 1.25) : prev - 1);
+      }
+      
+      // Reset touch start to prevent multiple triggers
+      setTouchStart(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStart(0);
   };
 
   
@@ -88,7 +122,13 @@ export default function DesignersOnDiscount() {
 
               {/* Slides Container */}
               <div className="overflow-hidden">
-                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 80}%)` }}>
+                <div 
+                  className="flex transition-transform duration-500" 
+                  style={{ transform: `translateX(-${currentSlide * 80}%)` }}
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
                   {products.map((product) => (
                     <div key={product.id} className="min-w-[80%] px-3">
                       <ProductCard
