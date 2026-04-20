@@ -64,6 +64,47 @@ export default function BrandsPage() {
       
       console.log(`Final brands data length: ${brandsData.length}`);
       setBrands(brandsData);
+    } catch (error) {
+      console.warn('Brands API failed due to CORS, using products API fallback:', error);
+      
+      // Fallback to products API with improved brand extraction
+      console.log('Fetching brands from products API as fallback...');
+      try {
+        const response = await fetch(`${API_CONFIG.productsApi}/products?limit=2000`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        
+        const products = data.products || data.items || [];
+        console.log(`Products array length: ${products.length}`);
+        
+        // Extract unique brands from products with improved logic
+        const brandMap = new Map<string, Brand>();
+        products.forEach((product: any) => {
+          if (product.brand && typeof product.brand === 'string' && product.brand.trim()) {
+            const brandName = product.brand.trim();
+            if (!brandMap.has(brandName)) {
+              brandMap.set(brandName, {
+                id: brandName.toLowerCase().replace(/\s+/g, '-'),
+                name: brandName,
+                active: true,
+                products: 0
+              });
+            }
+          }
+        });
+        
+        const brandsData = Array.from(brandMap.values());
+        console.log(`=== FALLBACK BRAND FETCH SUMMARY ===`);
+        console.log(`Products processed: ${products.length}`);
+        console.log(`Unique brands extracted: ${brandsData.length}`);
+        console.log(`Sample brands:`, brandsData.slice(0, 10).map(b => b.name));
+        console.log(`==================================`);
+        
+        setBrands(brandsData);
+      } catch (fallbackError) {
+        console.error('Products API fallback also failed:', fallbackError);
+        setBrands([]);
+      }
     } finally {
       setLoading(false);
     }
