@@ -152,13 +152,13 @@ export default function FeaturedCollection() {
               <div className="overflow-hidden mx-10">
                 <div 
                   className="flex transition-transform duration-500" 
-                  style={{ transform: `translateX(-${currentSlide * 80}%)` }}
+                  style={{ transform: `translateX(-${currentSlide * 75}%)` }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                 >
                   {collectionProducts.map((product) => (
-                    <div key={product.id} className="min-w-[80%] px-2">
+                    <div key={product.id} className="min-w-[75%] px-1">
                       <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all hover:-translate-y-2">
                         <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                           <img 
@@ -192,7 +192,7 @@ export default function FeaturedCollection() {
                           </div>
                         </div>
                         <div className="p-4">
-                          <h3 className="font-playfair text-[8px] leading-[8px] font-semibold text-gray-900 mb-2 line-clamp-1">{product.name}</h3>
+                          <h3 className="font-playfair text-[6px] leading-[6px] font-semibold text-gray-900 mb-2 line-clamp-1">{product.name}</h3>
                           <div className="flex items-center gap-2 mb-2">
                             <span className="font-semibold text-lg">${product.price}</span>
                             {product.originalPrice && <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>}
@@ -254,7 +254,7 @@ export default function FeaturedCollection() {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-playfair text-[8px] leading-[8px] font-semibold text-gray-900 mb-2 line-clamp-1">{product.name}</h3>
+                    <h3 className="font-playfair text-[6px] leading-[6px] font-semibold text-gray-900 mb-2 line-clamp-1">{product.name}</h3>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-semibold text-lg">${product.price}</span>
                       {product.originalPrice && <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>}
