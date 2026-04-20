@@ -70,14 +70,14 @@ export default function DesignersDiscount() {
             <p className="text-gray-500">Check back later for new arrivals</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
             {products.map((product) => (
               <div
                 key={product.id}
                 className="group bg-white rounded-xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2"
               >
                 <div
-                  className="relative aspect-[4/5] overflow-hidden bg-beige-50 cursor-pointer"
+                  className="relative aspect-[3/4] sm:aspect-[4/5] overflow-hidden bg-beige-50 cursor-pointer"
                   onClick={() => navigate(getProductUrl(product))}
                 >
                   <img
@@ -106,11 +106,11 @@ export default function DesignersDiscount() {
                     </button>
                   </div>
                 </div>
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
                   <p className="text-gray-500 text-xs uppercase mb-1">{product.category || 'Designer Discount'}</p>
                   <h3
                     onClick={() => navigate(getProductUrl(product))}
-                    className="font-playfair text-lg font-semibold mb-2 cursor-pointer hover:text-gold transition"
+                    className="font-playfair text-sm sm:text-base font-semibold mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-1 sm:line-clamp-2"
                   >
                     {product.name}
                   </h3>

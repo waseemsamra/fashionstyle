@@ -433,7 +433,7 @@ export default function Category() {
         ) : (
           <>
             {/* Product Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-10">
               {allProducts.map((product) => (
                 <div key={product.id} className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
                   <div className="relative aspect-[3/4] overflow-hidden cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
@@ -448,12 +448,12 @@ export default function Category() {
                       </button>
                     </div>
                   </div>
-                  <div className="p-4">
+                  <div className="p-3 sm:p-4">
                     <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
                     {product.brand && (
                       <p className="text-gray-400 text-xs mb-1">{product.brand}</p>
                     )}
-                    <h3 onClick={() => navigate(getProductUrl(product))} className="font-semibold text-lg mb-2 cursor-pointer hover:text-gold transition">{product.name}</h3>
+                    <h3 onClick={() => navigate(getProductUrl(product))} className="font-semibold text-sm sm:text-base lg:text-lg mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-1 sm:line-clamp-2">{product.name}</h3>
                     <div className="flex items-center gap-1 mb-2">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />
