@@ -50,8 +50,6 @@ export default function DesignersDiscount() {
               <span className="font-medium">Back</span>
             </button>
             
-            <h1 className="text-xl font-bold text-gray-900">Designers On Discount</h1>
-            
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">
                 Showing {products.length} products
@@ -62,7 +60,7 @@ export default function DesignersDiscount() {
       </div>
 
       {/* Products Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+      <div className="container mx-auto px-4 pb-12">
         {products.length === 0 ? (
           <div className="text-center py-12">
             <ShoppingBag className="w-16 h-16 mx-auto text-gray-300 mb-4" />
@@ -70,7 +68,7 @@ export default function DesignersDiscount() {
             <p className="text-gray-500">Check back later for new arrivals</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {products.map((product) => (
               <div
                 key={product.id}
