@@ -1,24 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ChevronLeft } from 'lucide-react';
-import { toast } from 'sonner';
 import { getProductUrl } from '@/utils/productUrl';
-import { getProductImage, handleImageError } from '@/utils/productImage';
+import { getProductImage } from '@/utils/productImage';
 import LazyImage from '@/components/ui/LazyImage';
 import { useCollection } from '@/hooks/useCollection';
 
-import { API_CONFIG } from '../../config/api';
-
 export default function DesignersDiscount() {
   const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState(1);
   
   // Use the same collection hook as the home page component
   const { products, loading } = useCollection('designersDiscount');
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    setCurrentPage(1);
   }, []);
 
   if (loading) {
@@ -71,7 +66,6 @@ export default function DesignersDiscount() {
                     src={getProductImage(product)}
                     alt={product.name}
                     className="w-full h-64 object-cover rounded-t-lg"
-                    onError={handleImageError}
                   />
                   
                   {/* Discount Badge */}
