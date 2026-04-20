@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Sparkles, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { ShoppingBag, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
-export default function DesignersDiscount() {
+export default function DesignersDiscount() 
+{
   // Updated grid layout for larger card sizes - matches Shop page
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -108,6 +109,7 @@ export default function DesignersDiscount() {
             <p className="text-gray-500">Check back later for new arrivals</p>
           </div>
         ) : (
+          <>
           {/* Mobile Carousel */}
           <div className="relative lg:hidden carousel-container">
             {/* Navigation Arrows */}
@@ -254,6 +256,7 @@ export default function DesignersDiscount() {
               </div>
             ))}
           </div>
+          </>
         )}
       </div>
     </div>
