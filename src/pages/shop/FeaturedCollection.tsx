@@ -35,9 +35,9 @@ export default function FeaturedCollection() {
     const diff = touchStart - touchX;
     
     // Lower threshold for better responsiveness
-    if (Math.abs(diff) > 30) {
+    if (Math.abs(diff) > 20) {
       // Prevent multiple triggers during the same gesture
-      if (Math.abs(diff) > 100) {
+      if (Math.abs(diff) > 80) {
         return;
       }
       
@@ -158,7 +158,7 @@ export default function FeaturedCollection() {
                   onTouchEnd={handleTouchEnd}
                 >
                   {collectionProducts.map((product) => (
-                    <div key={product.id} className="min-w-[80%] px-3">
+                    <div key={product.id} className="min-w-[80%] px-2">
                       <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all hover:-translate-y-2">
                         <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                           <img 
@@ -192,7 +192,7 @@ export default function FeaturedCollection() {
                           </div>
                         </div>
                         <div className="p-4">
-                          <h3 className="font-playfair text-xs leading-[12px] font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
+                          <h3 className="font-playfair text-[10px] leading-[10px] font-semibold text-gray-900 mb-2 line-clamp-1">{product.name}</h3>
                           <div className="flex items-center gap-2 mb-2">
                             <span className="font-semibold text-lg">${product.price}</span>
                             {product.originalPrice && <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>}
@@ -254,7 +254,7 @@ export default function FeaturedCollection() {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-playfair text-xs leading-[12px] font-semibold text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
+                    <h3 className="font-playfair text-[10px] leading-[10px] font-semibold text-gray-900 mb-2 line-clamp-1">{product.name}</h3>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-semibold text-lg">${product.price}</span>
                       {product.originalPrice && <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>}
