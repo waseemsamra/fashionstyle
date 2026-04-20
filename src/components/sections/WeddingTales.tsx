@@ -82,16 +82,34 @@ export default function WeddingTales() {
         </div>
 
         <div className="relative hidden lg:block">
-          {/* Desktop Grid */}
-          <div className="grid grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} variant="compact" />
-            ))}
+          {/* Desktop Carousel */}
+          <button 
+            onClick={scrollLeft} 
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+
+          <div className="overflow-hidden">
+            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
+              {products.map((product) => (
+                <div key={product.id} className="min-w-[25%] px-2">
+                  <ProductCard product={product} variant="compact" />
+                </div>
+              ))}
+            </div>
           </div>
+
+          <button 
+            onClick={scrollRight} 
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
         </div>
 
           {/* Slide Indicators */}
-          <div className="flex justify-center mt-6 space-x-2 lg:hidden">
+          <div className="flex justify-center mt-6 space-x-2">
             {products.map((_, index) => (
               <button
                 key={index}
