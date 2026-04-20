@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
@@ -9,11 +9,21 @@ import { getProductImage, handleImageError } from '@/utils/productImage';
 export default function NewArrivals() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 
   // THE FORMULA: Fetch ONLY collection products - NO scanning!
   const { products: allProducts, loading } = useCollection('newArrivals');
   const products = allProducts.slice(0, 4); // Show only first 4
+
+  const scrollLeft = () => {
+    setCurrentSlide(prev => prev <= 0 ? 0 : prev - 1);
+  };
+
+  const scrollRight = () => {
+    const maxSlide = Math.max(0, products.length - 2); // For 1.5 cards visible
+    setCurrentSlide(prev => prev >= maxSlide ? maxSlide : prev + 1);
+  };
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -94,7 +104,85 @@ export default function NewArrivals() {
 
           {/* Right Products Grid */}
           <div className="lg:col-span-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Mobile Carousel */}
+            <div className="relative lg:hidden">
+              <div className="overflow-hidden">
+                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 66.67}%)` }}>
+                  {products.map((product: any, index) => (
+                    <div key={product.id} className="min-w-[66.67%] px-2">
+                      <div
+                        className={`group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2 ${
+                          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+                        }`}
+                        style={{
+                          transitionDelay: isVisible ? `${index * 100 + 300}ms` : '0ms',
+                        }}
+                      >
+                        {/* Image */}
+                        <div
+                          className="relative aspect-[4/5] overflow-hidden bg-beige-50 cursor-pointer"
+                          onClick={() => navigate(getProductUrl(product))}
+                        >
+                          <img
+                            src={getProductImage(product)}
+                            alt={product.name}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            onError={(e) => handleImageError(e, product.name)}
+                          />
+                          
+                          {/* New Badge */}
+                          <span className="absolute top-3 left-3 px-3 py-1 bg-gold text-white text-xs font-medium rounded-full">
+                            New Arrival
+                          </span>
+
+                          {/* Quick Add */}
+                          <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddToCart(product);
+                              }}
+                              className="w-full py-3 bg-white text-black text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold hover:text-white transition-colors duration-300 shadow-lg"
+                            >
+                              <ShoppingBag className="w-4 h-4" />
+                              Quick Add
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="p-5">
+                          <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
+                            {product.category}
+                          </p>
+                          <h3 className="font-playfair text-base font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300">
+                            {product.name}
+                          </h3>
+                          <p className="font-semibold text-lg">${product.price}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Navigation Arrows */}
+              <button 
+                onClick={scrollLeft} 
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-5"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={scrollRight} 
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-5"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Desktop Grid */}
+            <div className="hidden lg:block grid grid-cols-1 xl:grid-cols-2 gap-6">
               {products.map((product: any, index) => (
                 <div
                   key={product.id}
