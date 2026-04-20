@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, ChevronLeft } from 'lucide-react';
+import { ShoppingBag, ChevronLeft, Star } from 'lucide-react';
+import { toast } from 'sonner';
 import { getProductUrl } from '@/utils/productUrl';
-import { getProductImage } from '@/utils/productImage';
-import LazyImage from '@/components/ui/LazyImage';
+import { getProductImage, handleImageError } from '@/utils/productImage';
 import { useCollection } from '@/hooks/useCollection';
 
 export default function DesignersDiscount() {
@@ -69,52 +69,68 @@ export default function DesignersDiscount() {
             <p className="text-gray-500">Check back later for new arrivals</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-300">
-                <div className="relative">
-                  <LazyImage
+              <div
+                key={product.id}
+                className="group bg-white rounded-xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2"
+              >
+                <div
+                  className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer"
+                  onClick={() => navigate(getProductUrl(product))}
+                >
+                  <img
                     src={getProductImage(product)}
                     alt={product.name}
-                    className="w-full h-64 object-cover rounded-t-lg"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onError={(e) => handleImageError(e, product.name)}
                   />
-                  
-                  {/* Discount Badge */}
-                  {product.discountPercentage && product.discountPercentage > 0 && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
-                      {Math.round(product.discountPercentage)}% OFF
-                    </div>
-                  )}
-                </div>
-                
-                <div className="p-4">
-                  <h3 className="text-sm font-medium text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
-                  <p className="text-xs text-gray-500 mb-2 line-clamp-1">{product.brand}</p>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {product.discountPercentage && product.discountPercentage > 0 ? (
-                        <>
-                          <span className="text-lg font-bold text-gray-400 line-through">
-                            Rs. {product.originalPrice?.toLocaleString()}
-                          </span>
-                          <span className="text-lg font-bold text-gold">
-                            Rs. {product.price?.toLocaleString()}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-lg font-bold text-gold">
-                          Rs. {product.price?.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                    
+                  <div className="absolute top-3 left-3 flex flex-col gap-2">
+                    {product.discountPercentage && product.discountPercentage > 0 && (
+                      <span className="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-full">
+                        {Math.round(product.discountPercentage)}% OFF
+                      </span>
+                    )}
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                     <button
-                      onClick={() => navigate(getProductUrl(product))}
-                      className="p-2 text-gold hover:bg-gold/50 rounded-lg transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toast.info('Add to cart coming soon');
+                      }}
+                      className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
                     >
                       <ShoppingBag className="w-4 h-4" />
+                      Add to Cart
                     </button>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <p className="text-gray-500 text-xs uppercase mb-1">{product.category || 'Designer Discount'}</p>
+                  <h3
+                    onClick={() => navigate(getProductUrl(product))}
+                    className="font-playfair text-lg font-semibold mb-2 cursor-pointer hover:text-gold transition"
+                  >
+                    {product.name}
+                  </h3>
+                  <div className="flex items-center gap-1 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-3 h-3 ${
+                          i < Math.floor(product.rating || 0)
+                            ? 'text-gold fill-gold'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                    <span className="text-xs text-gray-500 ml-1">({product.rating || 0})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-lg">Rs. {product.price?.toLocaleString()}</span>
+                    {product.originalPrice && (
+                      <span className="text-gray-400 line-through text-sm">Rs. {product.originalPrice?.toLocaleString()}</span>
+                    )}
                   </div>
                 </div>
               </div>
