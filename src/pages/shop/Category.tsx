@@ -453,7 +453,7 @@ export default function Category() {
                     {product.brand && (
                       <p className="text-gray-400 text-xs mb-1">{product.brand}</p>
                     )}
-                    <h3 onClick={() => navigate(getProductUrl(product))} className="font-semibold text-xs mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-1">{product.name}</h3>
+                    <h3 onClick={() => navigate(getProductUrl(product))} className="font-semibold text-xs leading-[12px] mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-2">{product.name}</h3>
                     <div className="flex items-center gap-1 mb-2">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />

@@ -77,7 +77,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
           </div>
 
           <div className="p-3">
-            <h3 className="font-medium text-sm line-clamp-2 hover:text-gold transition">
+            <h3 className="font-medium text-xs leading-[12px] line-clamp-2 hover:text-gold transition">
               {product.name}
             </h3>
             <div className="flex items-center justify-between mt-2">
@@ -141,7 +141,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
             {product.category && (
               <p className="text-xs text-gray-500 mb-1">{product.category}</p>
             )}
-            <h3 className="font-semibold text-xs line-clamp-1 hover:text-gold transition">
+            <h3 className="font-semibold text-xs leading-[12px] line-clamp-2 hover:text-gold transition">
               {product.name}
             </h3>
             
@@ -234,7 +234,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
           {product.brand && (
             <p className="text-xs text-gray-500 mb-1">{product.brand}</p>
           )}
-          <h3 className="font-medium line-clamp-2 hover:text-gold transition">
+          <h3 className="font-medium text-xs leading-[12px] line-clamp-2 hover:text-gold transition">
             {product.name}
           </h3>
           

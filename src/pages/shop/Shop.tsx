@@ -369,10 +369,13 @@ export default function Shop() {
     return (
       <div className="min-h-screen flex items-center justify-center pt-24">
         <div className="text-center">
-          <div className="text-6xl mb-4">😕</div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">Failed to Load Products</h3>
-          <p className="text-gray-500 mb-6">Please try refreshing the page</p>
-          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
+          <p className="text-red-600 mb-4">Error loading products</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90 transition"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -560,7 +563,7 @@ export default function Shop() {
                   </div>
                   <div className="p-3 sm:p-4">
                     <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
-                    <h3 onClick={() => navigate(getProductUrl(product))} className="font-semibold text-xs mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-1">{product.name}</h3>
+                    <h3 onClick={() => navigate(getProductUrl(product))} className="font-semibold text-xs leading-[12px] mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-2">{product.name}</h3>
                     <div className="flex items-center gap-1 mb-2">
                       {[...Array(5)].map((_, i) => (
                         <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />

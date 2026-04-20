@@ -232,7 +232,9 @@ function ProductCard({ product, onWishlist, onNavigate, onBrandNavigate, onAddTo
             {product.brand}
           </button>
         </p>
-        <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer">{product.name}</h3>
+        <h3 className="font-playfair text-xs leading-[12px] font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 line-clamp-2" onClick={onNavigate}>
+                            {product.name}
+                          </h3>
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (
             <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />
