@@ -94,7 +94,7 @@ export default function NewArrivals() {
 
           {/* Right Products Grid */}
           <div className="lg:col-span-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-6">
               {products.map((product: any, index) => (
                 <div
                   key={product.id}

@@ -18,7 +18,7 @@ export default function DesignersOnDiscount() {
 
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;
-    const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
+    const maxSlide = Math.max(0, products.length - Math.min(1.5, products.length));
     const interval = setInterval(() => {
       setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
     }, 4000);
@@ -26,13 +26,12 @@ export default function DesignersOnDiscount() {
   }, [isAutoPlaying, products.length]);
 
   const scrollLeft = () => {
-    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(4, products.length)) : prev - 1);
+    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(1.5, products.length)) : prev - 1);
     setIsAutoPlaying(false);
   };
 
   const scrollRight = () => {
-    const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
-    setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
+    setCurrentSlide(prev => prev >= Math.max(0, products.length - Math.min(1.5, products.length)) ? 0 : prev + 1);
     setIsAutoPlaying(false);
   };
 
@@ -90,9 +89,9 @@ export default function DesignersOnDiscount() {
 
               {/* Slides Container */}
               <div className="overflow-hidden">
-                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
+                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 66.67}%)` }}>
                   {products.map((product) => (
-                    <div key={product.id} className="min-w-[25%] px-3">
+                    <div key={product.id} className="min-w-[66.67%] px-3">
                       <ProductCard
                         product={product}
                         onWishlist={(e: any) => handleWishlist(product, e)}
@@ -116,7 +115,7 @@ export default function DesignersOnDiscount() {
 
         {/* Indicators */}
         <div className="flex justify-center gap-2 mt-8">
-          {Array.from({ length: Math.max(1, maxSlide + 1) }).map((_, i) => (
+          {Array.from({ length: Math.max(1, Math.max(0, products.length - Math.min(1.5, products.length)) + 1) }).map((_, i) => (
             <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
           ))}
         </div>
