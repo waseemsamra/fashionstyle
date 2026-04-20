@@ -192,7 +192,7 @@ export default function FeaturedCollection() {
                           </div>
                         </div>
                         <div className="p-4">
-                          <h3 className="font-playfair text-[6px] leading-[6px] font-semibold text-gray-900 mb-2 line-clamp-1">{product.name}</h3>
+                          <h3 className="product-card-title font-playfair font-semibold text-gray-900 mb-2">{product.name}</h3>
                           <div className="flex items-center gap-2 mb-2">
                             <span className="font-semibold text-lg">${product.price}</span>
                             {product.originalPrice && <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>}
@@ -254,7 +254,7 @@ export default function FeaturedCollection() {
                     </div>
                   </div>
                   <div className="p-4">
-                    <h3 className="font-playfair text-[6px] leading-[6px] font-semibold text-gray-900 mb-2 line-clamp-1">{product.name}</h3>
+                    <h3 className="product-card-title font-playfair font-semibold text-gray-900 mb-2">{product.name}</h3>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="font-semibold text-lg">${product.price}</span>
                       {product.originalPrice && <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>}

@@ -195,7 +195,7 @@ export default function NewArrivals() {
                           <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
                             {product.category}
                           </p>
-                          <h3 className="font-playfair text-[6px] leading-[6px] font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 line-clamp-1">
+                          <h3 className="product-card-title font-playfair font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300">
                             {product.name}
                           </h3>
                           <p className="font-semibold text-lg">${product.price}</p>
@@ -270,7 +270,7 @@ export default function NewArrivals() {
                     <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
                       {product.category}
                     </p>
-                    <h3 className="font-playfair text-[6px] leading-[6px] font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 line-clamp-1">
+                    <h3 className="product-card-title font-playfair font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300">
                       {product.name}
                     </h3>
                     <p className="font-semibold text-lg">${product.price}</p>

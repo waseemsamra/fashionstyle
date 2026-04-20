@@ -1,26 +1,21 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
-import { getProductUrl } from '@/utils/productUrl';
 import ProductCard from '@/components/products/ProductCard';
 
 export default function WeddingTales() {
-  const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   // THE FORMULA: Fetch ONLY collection products - NO scanning!
   const { products, loading } = useCollection('weddingTales');
 
   useEffect(() => {
-    if (!isAutoPlaying || products.length === 0) return;
+    if (products.length === 0) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % products.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, products.length]);
+  }, [products.length]);
 
   const scrollLeft = () => {
     setCurrentSlide((prev) => (prev - 1 + products.length) % products.length);

@@ -1,0 +1,163 @@
+/* Global Product Card Styles - Consistent Across All Sections */
+
+/* Base Product Card Variables */
+.product-card {
+  /* Font sizes - consistent across all sections */
+  --product-title-font-size: 8px;
+  --product-title-line-height: 8px;
+  --product-title-lines: 1;
+  
+  /* Card dimensions - consistent across all sections */
+  --card-aspect-ratio: 3/4;
+  --card-border-radius: 1rem;
+  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --card-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Product Card Title - Consistent Text Truncation */
+.product-card-title {
+  font-size: var(--product-title-font-size);
+  line-height: var(--product-title-line-height);
+  font-weight: 600;
+  color: #111827;
+  display: -webkit-box;
+  -webkit-line-clamp: var(--product-title-lines);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.5rem;
+}
+
+/* Mobile Carousel Styles - Consistent 1.25 Cards */
+@media (max-width: 767px) {
+  .carousel-container {
+    --card-width: 80%;
+    --card-spacing: 0.5rem;
+    overflow: hidden;
+  }
+  
+  .carousel-item {
+    min-width: var(--card-width);
+    padding: var(--card-spacing);
+    flex-shrink: 0;
+  }
+  
+  .carousel-track {
+    display: flex;
+    transform: translateX(calc(var(--current-slide) * var(--card-width)));
+    transition: transform 500ms ease-in-out;
+  }
+  
+  .carousel-arrows {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+  }
+  
+  .carousel-arrow-left {
+    left: 1rem;
+  }
+  
+  .carousel-arrow-right {
+    right: 1rem;
+  }
+  
+  .carousel-arrow {
+    width: 2.5rem;
+    height: 2.5rem;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 300ms ease;
+  }
+  
+  .carousel-arrow:hover {
+    background: #d4a574;
+    color: white;
+  }
+  
+  .carousel-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  
+  .carousel-indicator {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #d4a574;
+    opacity: 0.3;
+    transition: opacity 300ms ease;
+  }
+  
+  .carousel-indicator.active {
+    background: #d4a574;
+    opacity: 1;
+  }
+}
+
+/* Desktop Grid Styles - Consistent Layouts */
+@media (min-width: 768px) {
+  .desktop-grid {
+    --grid-columns: 2;
+    --grid-gap: 1.5rem;
+  }
+  
+  .desktop-grid-2x2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--grid-gap);
+  }
+  
+  .desktop-grid-3x4 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--grid-gap);
+  }
+  
+  .desktop-grid-4x4 {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--grid-gap);
+  }
+  
+  .desktop-grid-2x4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Tablet Styles - Consistent Between Mobile and Desktop */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .carousel-container {
+    --card-width: 70%;
+    --card-spacing: 0.75rem;
+  }
+  
+  .desktop-grid {
+    --grid-columns: 2;
+    --grid-gap: 1.25rem;
+  }
+}
+
+/* Large Desktop Styles */
+@media (min-width: 1024px) {
+  .desktop-grid {
+    --grid-columns: 3;
+    --grid-gap: 1.75rem;
+  }
+  
+  .desktop-grid-4x4 {
+    --grid-columns: 4;
+  }
+}
+
+/* Extra Large Desktop Styles */
+@media (min-width: 1280px) {
+  .desktop-grid {
+    --grid-columns: 4;
+    --grid-gap: 2rem;
+  }
+}
