@@ -41,7 +41,7 @@ export default function DesignersDiscount() {
       {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center h-16">
             <button
               onClick={() => navigate('/')}
               className="flex items-center text-gray-600 hover:text-gold transition-colors"
@@ -50,7 +50,7 @@ export default function DesignersDiscount() {
               <span className="font-medium">Back</span>
             </button>
             
-            <div className="flex items-center gap-2">
+            <div className="flex-1 text-center">
               <span className="text-sm text-gray-500">
                 Showing {products.length} products
               </span>
