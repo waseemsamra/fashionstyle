@@ -152,13 +152,13 @@ export default function FeaturedCollection() {
               <div className="overflow-hidden mx-10">
                 <div 
                   className="flex transition-transform duration-500" 
-                  style={{ transform: `translateX(-${currentSlide * 75}%)` }}
+                  style={{ transform: `translateX(-${currentSlide * 80}%)` }}
                   onTouchStart={handleTouchStart}
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                 >
                   {collectionProducts.map((product) => (
-                    <div key={product.id} className="min-w-[75%] px-1">
+                    <div key={product.id} className="min-w-[80%] px-2">
                       <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all hover:-translate-y-2">
                         <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                           <img 
