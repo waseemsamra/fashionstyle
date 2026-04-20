@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShoppingBag, Star, ChevronLeft, ChevronRight, ChevronDown, Check, X } from 'lucide-react';
+import { ShoppingBag, ChevronLeft, ChevronRight, ChevronDown, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { getProductUrl } from '@/utils/productUrl';
-import { toCDNUrl } from '@/utils/productImage';
+import { getProductImage, handleImageError } from '@/utils/productImage';
 import LazyImage from '@/components/ui/LazyImage';
 import { useBrands } from '@/hooks/useBrands';
 import type { Brand } from '@/services/brandsService';

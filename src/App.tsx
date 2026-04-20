@@ -47,6 +47,7 @@ const AdminBrands = lazy(() => import('@/pages/admin/AdminBrands'));
 const FeaturedCollection = lazy(() => import('@/pages/admin/FeaturedCollection'));
 const WeddingTalesCMS = lazy(() => import('@/pages/admin/WeddingTalesCMS'));
 const DesignersDiscountCMS = lazy(() => import('@/pages/admin/DesignersDiscountCMS'));
+const DesignersDiscount = lazy(() => import('@/pages/shop/DesignersDiscount'));
 const Users = lazy(() => import('@/pages/admin/Users'));
 const Profile = lazy(() => import('@/pages/admin/Profile'));
 const AdminOrders = lazy(() => import('@/pages/admin/Orders'));
@@ -275,6 +276,7 @@ function Layout() {
             <Route path="/brands" element={<Brands />} />
             <Route path="/brand/:name" element={<BrandDetail />} />
             <Route path="/category/:name" element={<Category />} />
+            <Route path="/designers-discount" element={<DesignersDiscount />} />
             <Route path="/new-arrivals" element={<NewArrivalsPage />} />
             <Route path="/featured-collection" element={<FeaturedCollectionPage />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
