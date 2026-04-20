@@ -75,6 +75,12 @@ export default function BrandsPage() {
         console.log(`Sample brands:`, brandsData.slice(0, 10).map(b => b.name));
         console.log(`============================`);
         
+        // If API returns too few brands, fallback to extracting from products
+        if (brandsData.length < 50) {
+          console.log(`API returned only ${brandsData.length} brands, falling back to products API...`);
+          throw new Error('Insufficient brands from API, using fallback');
+        }
+        
         setBrands(brandsData);
         return;
       } catch (brandsApiError) {
@@ -82,7 +88,7 @@ export default function BrandsPage() {
         
         // Fallback to products API
         console.log('Fetching brands from products API as fallback...');
-        const response = await fetch(`${API_CONFIG.productsApi}/products?limit=1000`);
+        const response = await fetch(`${API_CONFIG.productsApi}/products?limit=2000`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         

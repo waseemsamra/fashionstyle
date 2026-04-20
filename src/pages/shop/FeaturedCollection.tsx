@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingBag, Heart, Star } from 'lucide-react';
 import { toast } from 'sonner';
@@ -46,13 +45,13 @@ export default function FeaturedCollection() {
     );
   }
 
-  const handleWishlist = (item: any, e: any) => {
+  const handleWishlist = (product: any, e: any) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleWishlist(item);
+    toggleWishlist(product);
   };
 
-  const handleAddToCart = (item: any) => {
+  const handleAddToCart = (_product: any) => {
     toast.info('Add to cart coming soon');
   };
 
