@@ -57,7 +57,7 @@ export default function DesignersOnDiscount() {
             <h2 className="font-playfair text-3xl md:text-4xl font-semibold text-black">Designers On Discount</h2>
           </div>
           <button
-            onClick={() => navigate('/shop')}
+            onClick={() => navigate('/designers-discount')}
             className="text-gold font-medium hover:text-gold/80 transition-colors flex items-center gap-2"
           >
             View All
