@@ -109,7 +109,7 @@ export default function DesignersDiscount()
             <p className="text-gray-500">Check back later for new arrivals</p>
           </div>
         ) : (
-          <>
+          <div>
           {/* Mobile Carousel */}
           <div className="relative lg:hidden carousel-container">
             {/* Navigation Arrows */}
@@ -256,7 +256,7 @@ export default function DesignersDiscount()
               </div>
             ))}
           </div>
-          </>
+          </div>
         )}
       </div>
     </div>
