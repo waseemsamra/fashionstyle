@@ -35,9 +35,9 @@ export default function FeaturedCollection() {
     const diff = touchStart - touchX;
     
     // Lower threshold for better responsiveness
-    if (Math.abs(diff) > 20) {
-      // Prevent multiple triggers during the same gesture
-      if (Math.abs(diff) > 80) {
+    if (Math.abs(diff) > 15) {
+      // Prevent multiple triggers during same gesture
+      if (Math.abs(diff) > 60) {
         return;
       }
       
