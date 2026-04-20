@@ -37,12 +37,19 @@ export default function BrandsPage() {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         
+        console.log(`=== API RESPONSE DEBUG ===`);
         console.log(`API Response structure:`, Object.keys(data));
+        console.log(`API Response keys and types:`, Object.keys(data).map(key => `${key}: ${typeof data[key]} (${Array.isArray(data[key]) ? 'array' : 'not array'})`));
+        console.log(`data.count:`, data.count);
+        console.log(`data.brands:`, data.brands);
+        console.log(`data.items:`, data.items);
         console.log(`Full API Response:`, data);
         
-        const brands = data.brands || data.items || [];
-        console.log(`Brands array length: ${brands.length}`);
+        // Try different possible brand array locations
+        const brands = data.brands || data.items || data.data || [];
+        console.log(`Selected brands array length: ${brands.length}`);
         console.log(`Sample brand:`, brands[0]);
+        console.log(`========================`);
         
         // Extract unique brands from the API response
         const brandMap = new Map<string, Brand>();
