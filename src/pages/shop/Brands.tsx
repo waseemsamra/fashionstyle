@@ -55,14 +55,15 @@ export default function BrandsPage() {
       console.log(`Sample brand keys:`, brands[0] ? Object.keys(brands[0]) : 'No brand data');
       console.log(`========================`);
       
-      // Use brands API response directly - no filtering needed
+      // Use brands API response directly - API returns array of strings (brand names)
       const brandsData = brands.map((brand: any) => {
         console.log(`Processing brand:`, brand);
+        const brandName = typeof brand === 'string' ? brand : (brand.name || brand.brand || brand.title || 'Unknown Brand');
         return {
-          id: brand.id || brand.name?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
-          name: brand.name || brand.brand || brand.title || 'Unknown Brand',
-          active: brand.active !== false,
-          products: brand.productCount || brand.count || brand.products?.length || 0
+          id: brandName.toLowerCase().replace(/\s+/g, '-'),
+          name: brandName,
+          active: true,
+          products: 0
         };
       });
       
