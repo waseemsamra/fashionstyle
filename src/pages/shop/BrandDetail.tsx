@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, ArrowLeft, ShoppingBag } from 'lucide-react';
 import { getProductImage, handleImageError } from '@/utils/productImage';
-import { useBrands } from '@/hooks/useBrands';
 import type { Brand } from '@/services/brandsService';
 
 import { API_CONFIG } from '../../config/api';
@@ -25,11 +24,48 @@ export default function BrandDetailPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [brandData, setBrandData] = useState<Brand | null>(null);
   const [loading, setLoading] = useState(true);
-  const { brands: allBrands } = useBrands();
+  const [allBrands, setAllBrands] = useState<Brand[]>([]);
 
   // Convert slug back to brand name
   const slugToName = (s: string) =>
     s.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
+  // Fetch brands data using same API as Brands page
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        console.log('🔍 Fetching brands for BrandDetail page...');
+        const response = await fetch(`${API_CONFIG.brandsApi}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        
+        console.log('📊 Brands API Response:', data);
+        const brands = data.brands || data.items || [];
+        console.log(`📦 Total brands fetched: ${brands.length}`);
+        
+        // Use brands API response directly - API returns array of strings (brand names)
+        const brandsData = brands.map((brand: any, index: number) => {
+          const brandName = typeof brand === 'string' ? brand : (brand.name || brand.brand || brand.title || 'Unknown Brand');
+          const createSlug = (name: string) =>
+            name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+          return {
+            id: `${brandName.toLowerCase().replace(/\s+/g, '-')}-${index}`,
+            name: brandName,
+            slug: createSlug(brandName),
+            active: true,
+            products: 0
+          };
+        });
+        
+        setAllBrands(brandsData);
+      } catch (error) {
+        console.warn('Failed to fetch brands:', error);
+        setAllBrands([]);
+      }
+    };
+
+    fetchBrands();
+  }, []);
 
   // Find brand data from all brands
   useEffect(() => {
