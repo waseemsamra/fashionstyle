@@ -33,7 +33,7 @@ export default function BrandsPage() {
       console.log('Fetching brands from dedicated brands API...');
       
       try {
-        const response = await fetch(`${BRANDS_API_URL}?limit=500`);
+        const response = await fetch(`${BRANDS_API_URL}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         
@@ -45,49 +45,25 @@ export default function BrandsPage() {
         console.log(`data.items:`, data.items);
         console.log(`Full API Response:`, data);
         
-        // Try different possible brand array locations
+        // Use brands API response directly - API returns {brands: Array(395), count: 395}
         const brands = data.brands || data.items || data.data || [];
+        console.log(`=== BRAND FETCH SUMMARY ===`);
+        console.log(`API Response structure:`, Object.keys(data));
+        console.log(`data.count:`, data.count);
+        console.log(`data.brands length:`, data.brands?.length || 0);
         console.log(`Selected brands array length: ${brands.length}`);
         console.log(`Sample brand:`, brands[0]);
         console.log(`========================`);
         
-        // Extract unique brands from the API response
-        const brandMap = new Map<string, Brand>();
-        let processedBrands = 0;
+        // Use brands API response directly - no filtering needed
+        const brandsData = brands.map((brand: any) => ({
+          id: brand.id || brand.name?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+          name: brand.name || 'Unknown Brand',
+          active: brand.active !== false,
+          products: brand.productCount || 0
+        }));
         
-        brands.forEach((brand: any, index: number) => {
-          if (index < 5) {
-            console.log(`Brand ${index}:`, brand);
-          }
-          
-          if (brand.name && typeof brand.name === 'string' && brand.name.trim()) {
-            const brandName = brand.name.trim();
-            if (!brandMap.has(brandName)) {
-              brandMap.set(brandName, {
-                id: brand.id || brandName.toLowerCase().replace(/\s+/g, '-'),
-                name: brandName,
-                active: brand.active !== false,
-                products: brand.productCount || 0
-              });
-              console.log(`Added brand: "${brandName}"`);
-            }
-            processedBrands++;
-          }
-        });
-        
-        const brandsData = Array.from(brandMap.values());
-        console.log(`=== BRAND FETCH SUMMARY ===`);
-        console.log(`Total brands processed: ${processedBrands}`);
-        console.log(`Unique brands extracted: ${brandsData.length}`);
-        console.log(`Sample brands:`, brandsData.slice(0, 10).map(b => b.name));
-        console.log(`============================`);
-        
-        // If API returns too few brands, fallback to extracting from products
-        if (brandsData.length < 50) {
-          console.log(`API returned only ${brandsData.length} brands, falling back to products API...`);
-          throw new Error('Insufficient brands from API, using fallback');
-        }
-        
+        console.log(`Final brands data length: ${brandsData.length}`);
         setBrands(brandsData);
         return;
       } catch (brandsApiError) {
@@ -167,7 +143,7 @@ export default function BrandsPage() {
     return groups;
   }, [filteredBrands]);
 
-  const carouselBrands = sortedBrands.slice(0, 20);
+  const carouselBrands = sortedBrands;
   const visibleBrands = 4;
   const maxIndex = Math.max(0, carouselBrands.length - visibleBrands);
 
