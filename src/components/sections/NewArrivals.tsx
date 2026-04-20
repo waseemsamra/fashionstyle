@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, TouchEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, ArrowRight, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -48,6 +48,7 @@ export default function NewArrivals() {
     setTouchStart(e.touches[0].clientX);
   };
 
+  // Fix TypeScript errors
   const handleTouchMove = (e: React.TouchEvent) => {
     const touchX = e.touches[0].clientX;
     const diff = touchStart - touchX;
