@@ -8,6 +8,7 @@ const BRANDS_API_URL = API_CONFIG.brandsApi;
 interface Brand {
   id: string;
   name: string;
+  slug: string;
   description?: string;
   logo?: string;
   active?: boolean;
