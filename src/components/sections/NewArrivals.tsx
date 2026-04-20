@@ -137,9 +137,9 @@ export default function NewArrivals() {
           </div>
 
           {/* Right Products Grid */}
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-8 desktop-grid desktop-grid-2x2">
             {/* Mobile Carousel */}
-            <div className="relative lg:hidden">
+            <div className="relative lg:hidden carousel-container">
               <div className="overflow-hidden">
                 <div 
                   className="flex transition-transform duration-500" 
@@ -205,24 +205,10 @@ export default function NewArrivals() {
                   ))}
                 </div>
               </div>
-
-              {/* Navigation Arrows */}
-              <button 
-                onClick={scrollLeft} 
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-5"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={scrollRight} 
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-5"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
             </div>
 
             {/* Desktop Grid */}
-            <div className="hidden lg:block grid grid-cols-2 gap-6">
+            <div className="hidden lg:block desktop-grid desktop-grid-2x2">
               {products.map((product: any, index) => (
                 <div
                   key={product.id}
@@ -278,9 +264,20 @@ export default function NewArrivals() {
                 </div>
               ))}
             </div>
+
+          {/* Slide Indicators */}
+          <div className="carousel-indicators">
+            {products.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`carousel-indicator ${index === currentSlide ? 'active' : ''}`}
+              />
+            ))}
           </div>
         </div>
       </div>
+    </div>
     </section>
   );
 }
