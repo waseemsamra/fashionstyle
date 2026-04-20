@@ -70,14 +70,14 @@ export default function DesignersDiscount() {
             <p className="text-gray-500">Check back later for new arrivals</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product) => (
               <div
                 key={product.id}
                 className="group bg-white rounded-xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2"
               >
                 <div
-                  className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer"
+                  className="relative aspect-[4/5] overflow-hidden bg-beige-50 cursor-pointer"
                   onClick={() => navigate(getProductUrl(product))}
                 >
                   <img
