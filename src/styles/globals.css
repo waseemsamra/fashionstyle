@@ -105,6 +105,7 @@
 /* Desktop Grid Styles - Consistent Layouts */
 @media (min-width: 768px) {
   .desktop-grid {
+    display: grid;
     --grid-columns: 2;
     --grid-gap: 1.5rem;
   }
@@ -137,6 +138,7 @@
   }
   
   .desktop-grid {
+    display: grid;
     --grid-columns: 2;
     --grid-gap: 1.25rem;
   }
@@ -145,6 +147,7 @@
 /* Large Desktop Styles */
 @media (min-width: 1024px) {
   .desktop-grid {
+    display: grid;
     --grid-columns: 3;
     --grid-gap: 1.75rem;
   }
@@ -157,6 +160,7 @@
 /* Extra Large Desktop Styles */
 @media (min-width: 1280px) {
   .desktop-grid {
+    display: grid;
     --grid-columns: 4;
     --grid-gap: 2rem;
   }
