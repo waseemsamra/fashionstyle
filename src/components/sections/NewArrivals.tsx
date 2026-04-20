@@ -21,7 +21,7 @@ export default function NewArrivals() {
   };
 
   const scrollRight = () => {
-    const maxSlide = Math.max(0, products.length - 2); // For 1.5 cards visible
+    const maxSlide = Math.max(0, products.length - 1.25); // For 1 and 1/4 cards visible
     setCurrentSlide(prev => prev >= maxSlide ? maxSlide : prev + 1);
   };
 
@@ -107,9 +107,9 @@ export default function NewArrivals() {
             {/* Mobile Carousel */}
             <div className="relative lg:hidden">
               <div className="overflow-hidden">
-                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 66.67}%)` }}>
+                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 80}%)` }}>
                   {products.map((product: any, index) => (
-                    <div key={product.id} className="min-w-[66.67%] px-2">
+                    <div key={product.id} className="min-w-[80%] px-2">
                       <div
                         className={`group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2 ${
                           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
@@ -230,7 +230,7 @@ export default function NewArrivals() {
                     <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
                       {product.category}
                     </p>
-                    <h3 className="font-playfair text-base font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300">
+                    <h3 className="font-playfair text-xs font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 line-clamp-1">
                       {product.name}
                     </h3>
                     <p className="font-semibold text-lg">${product.price}</p>

@@ -141,7 +141,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
             {product.category && (
               <p className="text-xs text-gray-500 mb-1">{product.category}</p>
             )}
-            <h3 className="font-semibold text-sm line-clamp-2 hover:text-gold transition">
+            <h3 className="font-semibold text-xs line-clamp-1 hover:text-gold transition">
               {product.name}
             </h3>
             
