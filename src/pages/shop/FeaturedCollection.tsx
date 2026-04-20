@@ -219,7 +219,7 @@ export default function FeaturedCollection() {
             </div>
 
             {/* Desktop Grid */}
-            <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6 mb-12">
+            <div className="hidden md:block md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6 mb-12">
               {collectionProducts.map((product) => (
                 <div key={product.id} className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all hover:-translate-y-2">
                   <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
