@@ -62,9 +62,12 @@ export default function BrandsPage() {
         // Create unique ID using index to avoid duplicates from case variations
         const baseId = brandName.toLowerCase().replace(/\s+/g, '-');
         const uniqueId = `${baseId}-${index}`;
+        const createSlug = (name: string) =>
+          name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
         return {
           id: uniqueId,
           name: brandName,
+          slug: createSlug(brandName),
           active: true,
           products: 0
         };
@@ -94,9 +97,12 @@ export default function BrandsPage() {
               // Create unique ID using index to avoid duplicates
               const baseId = brandName.toLowerCase().replace(/\s+/g, '-');
               const uniqueId = `${baseId}-${index}`;
+              const createSlug = (name: string) =>
+                name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
               brandMap.set(brandName, {
                 id: uniqueId,
                 name: brandName,
+                slug: createSlug(brandName),
                 active: true,
                 products: 0
               });
