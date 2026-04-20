@@ -1,17 +1,57 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, ChevronLeft, Star } from 'lucide-react';
+import { ShoppingBag, Sparkles, ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
-import { useCollection } from '@/hooks/useCollection';
 
 export default function DesignersDiscount() {
   // Updated grid layout for larger card sizes - matches Shop page
   const navigate = useNavigate();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
   
   // Use the same collection hook as the home page component
   const { products, loading } = useCollection('designersDiscount');
+
+  // Carousel navigation functions
+  const scrollLeft = () => {
+    setCurrentSlide((prev) => (prev - 1 + products.length) % products.length);
+  };
+
+  const scrollRight = () => {
+    setCurrentSlide((prev) => (prev + 1) % products.length);
+  };
+
+  // Touch handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    const touchX = e.touches[0].clientX;
+    const diff = touchStart - touchX;
+    if (Math.abs(diff) > 20) {
+      if (Math.abs(diff) > 60) return;
+      if (diff > 0) {
+        scrollRight();
+      } else {
+        scrollLeft();
+      }
+      setTouchStart(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStart(0);
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toast.info('Add to cart coming soon');
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -68,7 +108,86 @@ export default function DesignersDiscount() {
             <p className="text-gray-500">Check back later for new arrivals</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 xl:gap-8 desktop-grid desktop-grid-4x4 carousel-container lg:hidden">
+          {/* Mobile Carousel */}
+          <div className="relative lg:hidden carousel-container">
+            {/* Navigation Arrows */}
+            <button 
+              onClick={scrollLeft} 
+              className="carousel-arrow carousel-arrow-left"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button 
+              onClick={scrollRight} 
+              className="carousel-arrow carousel-arrow-right"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+
+            {/* Carousel Container */}
+            <div className="overflow-hidden">
+              <div 
+                className="carousel-track" 
+                style={{ transform: `translateX(-${currentSlide * 80}%)` }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
+                {products.map((product) => (
+                  <div key={product.id} className="carousel-item">
+                    <div className="group bg-white rounded-xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
+                      <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
+                        <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => handleImageError(e, product.name)} />
+                        <div className="absolute top-3 left-3 flex flex-col gap-2">
+                          {product.discountPercentage && product.discountPercentage > 0 && (
+                            <span className="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-full">
+                              {product.discountPercentage}% OFF
+                            </span>
+                          )}
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all">
+                          <button onClick={handleAddToCart} className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors">
+                            <ShoppingBag className="w-4 h-4" />
+                            Add to Cart
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <p className="text-gray-500 text-xs uppercase mb-1">{product.category || 'Designer Discount'}</p>
+                        <h3 className="product-card-title font-playfair font-semibold mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-2">{product.name}</h3>
+                        <div className="flex items-center gap-1 mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />
+                          ))}
+                          <span className="text-xs text-gray-500 ml-1">({product.rating || 0})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-lg">Rs. {product.price?.toLocaleString()}</span>
+                          {product.originalPrice && (
+                            <span className="text-gray-400 line-through text-sm">Rs. {product.originalPrice?.toLocaleString()}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Slide Indicators */}
+            <div className="carousel-indicators">
+              {products.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`carousel-indicator ${index === currentSlide ? 'active' : ''}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop Grid */}
+          <div className="hidden lg:block desktop-grid desktop-grid-4x4">
             {products.map((product) => (
               <div
                 key={product.id}
