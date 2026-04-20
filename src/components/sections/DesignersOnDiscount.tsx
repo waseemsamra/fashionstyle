@@ -44,8 +44,7 @@ export default function DesignersOnDiscount() {
     toggleWishlist({ productId: product.id, product });
   };
 
-  const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
-
+  
   return (
     <section className="section-padding bg-white">
       <div className="container-custom">
