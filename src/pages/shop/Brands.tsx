@@ -56,11 +56,14 @@ export default function BrandsPage() {
       console.log(`========================`);
       
       // Use brands API response directly - API returns array of strings (brand names)
-      const brandsData = brands.map((brand: any) => {
+      const brandsData = brands.map((brand: any, index: number) => {
         console.log(`Processing brand:`, brand);
         const brandName = typeof brand === 'string' ? brand : (brand.name || brand.brand || brand.title || 'Unknown Brand');
+        // Create unique ID using index to avoid duplicates from case variations
+        const baseId = brandName.toLowerCase().replace(/\s+/g, '-');
+        const uniqueId = `${baseId}-${index}`;
         return {
-          id: brandName.toLowerCase().replace(/\s+/g, '-'),
+          id: uniqueId,
           name: brandName,
           active: true,
           products: 0
@@ -84,12 +87,15 @@ export default function BrandsPage() {
         
         // Extract unique brands from products with improved logic
         const brandMap = new Map<string, Brand>();
-        products.forEach((product: any) => {
+        products.forEach((product: any, index: number) => {
           if (product.brand && typeof product.brand === 'string' && product.brand.trim()) {
             const brandName = product.brand.trim();
             if (!brandMap.has(brandName)) {
+              // Create unique ID using index to avoid duplicates
+              const baseId = brandName.toLowerCase().replace(/\s+/g, '-');
+              const uniqueId = `${baseId}-${index}`;
               brandMap.set(brandName, {
-                id: brandName.toLowerCase().replace(/\s+/g, '-'),
+                id: uniqueId,
                 name: brandName,
                 active: true,
                 products: 0
