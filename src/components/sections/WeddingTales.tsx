@@ -90,8 +90,8 @@ export default function WeddingTales() {
             <ChevronLeft className="w-6 h-6" />
           </button>
 
-          <div className="overflow-hidden mx-12">
-            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
+          <div className="overflow-hidden">
+            <div className="flex transition-transform duration-500 -mx-3" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
               {products.map((product) => (
                 <div key={product.id} className="min-w-[25%] px-3">
                   <ProductCard product={product} variant="compact" />
