@@ -84,9 +84,9 @@ export default function WeddingTales() {
           </button>
 
           <div className="overflow-hidden">
-            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * (100 / Math.min(4, products.length))}%)` }}>
+            <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 80}%)` }}>
               {products.map((product) => (
-                <div key={product.id} className="min-w-[50%] lg:min-w-[25%] px-3">
+                <div key={product.id} className="min-w-[80%] px-2">
                   <ProductCard product={product} onWishlist={(e: any) => handleWishlist(product, e)} onNavigate={() => navigate(getProductUrl(product))} onAddToCart={() => toast.info('Add to cart coming soon')} />
                 </div>
               ))}
