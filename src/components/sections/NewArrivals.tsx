@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Sparkles, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Sparkles, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
