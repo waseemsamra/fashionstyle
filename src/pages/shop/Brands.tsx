@@ -52,15 +52,19 @@ export default function BrandsPage() {
       console.log(`data.brands length:`, data.brands?.length || 0);
       console.log(`Selected brands array length: ${brands.length}`);
       console.log(`Sample brand:`, brands[0]);
+      console.log(`Sample brand keys:`, brands[0] ? Object.keys(brands[0]) : 'No brand data');
       console.log(`========================`);
       
       // Use brands API response directly - no filtering needed
-      const brandsData = brands.map((brand: any) => ({
-        id: brand.id || brand.name?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
-        name: brand.name || 'Unknown Brand',
-        active: brand.active !== false,
-        products: brand.productCount || 0
-      }));
+      const brandsData = brands.map((brand: any) => {
+        console.log(`Processing brand:`, brand);
+        return {
+          id: brand.id || brand.name?.toLowerCase().replace(/\s+/g, '-') || 'unknown',
+          name: brand.name || brand.brand || brand.title || 'Unknown Brand',
+          active: brand.active !== false,
+          products: brand.productCount || brand.count || brand.products?.length || 0
+        };
+      });
       
       console.log(`Final brands data length: ${brandsData.length}`);
       setBrands(brandsData);
