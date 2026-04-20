@@ -65,7 +65,7 @@ export default function NewArrivals() {
     setTouchStart(0);
   };
 
-  const handleAddToCart = (product: any) => {
+  const handleAddToCart = () => {
     toast.info('Add to cart coming soon');
   };
 
@@ -168,7 +168,7 @@ export default function NewArrivals() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleAddToCart(product);
+                                handleAddToCart();
                               }}
                               className="w-full py-3 bg-white text-black text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold hover:text-white transition-colors duration-300 shadow-lg"
                             >
@@ -243,7 +243,7 @@ export default function NewArrivals() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleAddToCart(product);
+                          handleAddToCart();
                         }}
                         className="w-full py-3 bg-white text-black text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold hover:text-white transition-colors duration-300 shadow-lg"
                       >
