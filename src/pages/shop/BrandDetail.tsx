@@ -91,11 +91,11 @@ export default function BrandDetailPage() {
         );
         console.log('🏷️ Target brand exists:', brandExists, '(looking for:', name, ')');
 
-        // Fetch products filtered by brand on server-side
-        console.log('🔍 Fetching products for brand:', name);
-        const productsRes = await fetch(`${API_URL}/products?limit=500&brand=${encodeURIComponent(name)}`);
+        // Fetch ALL products and filter client-side since server filtering doesn't work
+        console.log('Fetching all products for client-side filtering...');
+        const productsRes = await fetch(`${API_URL}/products?limit=1000`);
         const productsData = await productsRes.json();
-        console.log('📦 Products response:', productsData);
+        console.log('Products response:', productsData);
         const allProducts = productsData.products || productsData.items || [];
         console.log(`📦 Products from API: ${allProducts.length}`);
         
@@ -107,15 +107,37 @@ export default function BrandDetailPage() {
           });
         }
 
-        // Additional client-side filter in case API doesn't support brand filter
+        // Enhanced client-side filtering since API doesn't filter properly
         const brandProducts = allProducts.filter((p: Product) => {
           if (!p.brand) return false;
           const pBrand = p.brand.toLowerCase().trim();
           const targetBrand = name.toLowerCase().trim();
-          return pBrand === targetBrand || pBrand.includes(targetBrand) || targetBrand.includes(pBrand);
+          
+          // Exact match first
+          if (pBrand === targetBrand) return true;
+          
+          // Handle case variations and spacing
+          const normalizedPBrand = pBrand.replace(/\s+/g, ' ').trim();
+          const normalizedTarget = targetBrand.replace(/\s+/g, ' ').trim();
+          
+          return normalizedPBrand === normalizedTarget;
         });
 
-        console.log(`✅ Found ${brandProducts.length} products for "${name}"`);
+        // Log filtered results for debugging
+        console.log(`All products received: ${allProducts.length}`);
+        console.log(`Filtered products for "${name}": ${brandProducts.length}`);
+        
+        if (brandProducts.length > 0) {
+          console.log('First 3 filtered products:');
+          brandProducts.slice(0, 3).forEach((p: any) => {
+            console.log(`  - ${p.name} | Brand: "${p.brand}"`);
+          });
+        } else {
+          console.log('No products found after filtering. Available brands in response:');
+          const brandsInResponse = [...new Set(allProducts.map((p: any) => p.brand).filter(Boolean))];
+          console.log(brandsInResponse.slice(0, 10));
+        }
+
         setProducts(brandProducts);
       } catch (error) {
         console.error('Failed to fetch products:', error);
