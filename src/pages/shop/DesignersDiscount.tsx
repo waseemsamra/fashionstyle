@@ -108,7 +108,7 @@ export default function DesignersDiscount() {
                   <p className="text-gray-500 text-xs uppercase mb-1">{product.category || 'Designer Discount'}</p>
                   <h3
                     onClick={() => navigate(getProductUrl(product))}
-                    className="font-playfair text-sm sm:text-base font-semibold mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-1 sm:line-clamp-2"
+                    className="font-playfair text-xs sm:text-sm font-semibold mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-1 sm:line-clamp-2"
                   >
                     {product.name}
                   </h3>
