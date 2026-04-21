@@ -30,19 +30,19 @@ export default function HorizontalCarousel({
 
   // Ensure current slide is valid
   useEffect(() => {
-    if (currentSlide >= infiniteTotalSlides && infiniteTotalSlides > 0) {
-      setCurrentSlide(infiniteTotalSlides - 1);
+    if (currentSlide >= totalSlides && totalSlides > 0) {
+      setCurrentSlide(totalSlides - 1);
     }
-  }, [currentSlide, infiniteTotalSlides]);
+  }, [currentSlide, totalSlides]);
 
   const scrollLeft = () => {
-    setCurrentSlide((currentSlide) => (currentSlide - 1 + infiniteTotalSlides) % infiniteTotalSlides);
-    onSlideChange?.((currentSlide - 1 + infiniteTotalSlides) % infiniteTotalSlides);
+    setCurrentSlide((currentSlide) => (currentSlide - 1 + totalSlides) % totalSlides);
+    onSlideChange?.((currentSlide - 1 + totalSlides) % totalSlides);
   };
 
   const scrollRight = () => {
-    setCurrentSlide((currentSlide) => (currentSlide + 1) % infiniteTotalSlides);
-    onSlideChange?.((currentSlide + 1) % infiniteTotalSlides);
+    setCurrentSlide((currentSlide) => (currentSlide + 1) % totalSlides);
+    onSlideChange?.((currentSlide + 1) % totalSlides);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
