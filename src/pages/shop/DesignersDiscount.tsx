@@ -189,19 +189,21 @@ export default function DesignersDiscount()
           </div>
 
           {/* Desktop Carousel */}
-          <div className="hidden lg:block relative">
+          <div className="hidden lg:block relative desktop-carousel-container">
             {/* Left Arrow */}
             <button 
               onClick={scrollLeft} 
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6"
+              className="desktop-carousel-arrow desktop-carousel-arrow-left"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
 
             <div className="overflow-hidden">
-              <div className="flex transition-transform duration-500 -mx-3" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
+              <div className="desktop-carousel-track" style={{ 
+                '--current-slide': currentSlide
+              } as React.CSSProperties}>
                 {products.map((product) => (
-                  <div key={product.id} className="min-w-[25%] px-3">
+                  <div key={product.id} className="desktop-carousel-item">
                     <div className="group bg-white rounded-xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
                       <div
                         className="relative aspect-[3/4] sm:aspect-[4/5] overflow-hidden bg-beige-50 cursor-pointer"
@@ -270,20 +272,20 @@ export default function DesignersDiscount()
             {/* Right Arrow */}
             <button 
               onClick={scrollRight} 
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6"
+              className="desktop-carousel-arrow desktop-carousel-arrow-right"
             >
               <ChevronRight className="w-6 h-6" />
             </button>
           </div>
 
           {/* Desktop Slide Indicators */}
-          <div className="flex justify-center mt-6 space-x-2 hidden lg:block">
+          <div className="desktop-carousel-indicators hidden lg:block">
             {products.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                  index === currentSlide ? 'bg-gold' : 'bg-gray-300'
+                className={`desktop-carousel-indicator ${
+                  index === currentSlide ? 'active' : ''
                 }`}
               />
             ))}
