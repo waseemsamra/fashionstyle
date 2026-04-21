@@ -112,7 +112,8 @@ export default function HorizontalCarousel({
       {/* Carousel Track */}
       <div className="overflow-hidden px-8 lg:px-12">
         <div
-          className={`flex transition-transform duration-500 ease-in-out carousel-track carousel-slide-${currentSlide}`}
+          className="flex transition-transform duration-500 ease-in-out carousel-track"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
