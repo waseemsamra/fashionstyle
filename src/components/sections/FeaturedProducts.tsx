@@ -191,7 +191,7 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
           <button
             onClick={onAddToCart}
-            className="w-full py-2 md:py-3 bg-black text-white text-xs md:text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
+            className="w-full py-2 md:py-3 bg-black text-white text-xs font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
           >
             <ShoppingBag className="w-3 h-3 md:w-4 md:h-4" />
             Add to Cart
@@ -230,11 +230,11 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         
         {/* Price */}
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm md:text-lg">
+          <span className="font-semibold text-xs">
             Rs. {product.price?.toLocaleString()}
           </span>
           {product.originalPrice && (
-            <span className="text-gray-400 line-through text-xs md:text-sm">
+            <span className="text-gray-400 line-through text-xs">
               Rs. {product.originalPrice?.toLocaleString()}
             </span>
           )}
