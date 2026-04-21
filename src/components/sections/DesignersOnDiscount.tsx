@@ -5,6 +5,7 @@ import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
+import { getProductImage, handleImageError } from '@/utils/productImage';
 import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
 
 export default function DesignersOnDiscount() {
@@ -82,26 +83,24 @@ export default function DesignersOnDiscount() {
         {/* Carousel Container */}
         <HorizontalCarousel
           itemsPerView={itemsPerView}
-          showWishlist={true}
-          showAddToCart={true}
-          onWishlist={(product: any, e: React.MouseEvent) => {
-            e.stopPropagation();
-            if (!localStorage.getItem('jwt_token')) {
-              toast.error('Please login', { action: { label: 'Login', onClick: () => navigate('/login') } });
-              return;
-            }
-            toggleWishlist({ productId: product.id, product });
-          }}
-          onNavigate={(product: any) => navigate(getProductUrl(product))}
-          onAddToCart={() => toast.info('Add to cart coming soon')}
-          onSlideChange={(slideIndex) => console.log('🎯 Home Jump to slide', slideIndex)}
+          onSlideChange={(slideIndex) => console.log('Home Jump to slide', slideIndex)}
         >
           {products.map((product) => (
-            <div key={product.id}>
-              <ProductCard 
-                product={product} 
-              />
-            </div>
+            <ProductCard 
+              key={product.id}
+              product={product} 
+              navigate={navigate} 
+              onWishlist={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                if (!localStorage.getItem('jwt_token')) {
+                  toast.error('Please login', { action: { label: 'Login', onClick: () => navigate('/login') } });
+                  return;
+                }
+                toggleWishlist({ productId: product.id, product });
+              }}
+              onNavigate={() => navigate(getProductUrl(product))}
+              onAddToCart={() => toast.info('Add to cart coming soon')}
+            />
           ))}
         </HorizontalCarousel>
 
@@ -123,17 +122,18 @@ export default function DesignersOnDiscount() {
 }
 
 // Product Card Component
-function ProductCard({ product }: any) {
+function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
   return (
     <div className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 hover:-translate-y-2">
-      <div className="relative aspect-[3/4] overflow-hidden bg-beige-50">
+      <div 
+        className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer"
+        onClick={onNavigate}
+      >
         <img
-          src={product.image || product.imageUrl || ''}
+          src={getProductImage(product)}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          onError={(e) => {
-            e.currentTarget.src = '/placeholder.jpg';
-          }}
+          onError={(e) => handleImageError(e, product.name)}
         />
 
         {/* Discount Badge */}
@@ -148,6 +148,7 @@ function ProductCard({ product }: any) {
         {/* Quick Actions */}
         <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
           <button
+            onClick={onWishlist}
             className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all"
           >
             <Heart className="w-4 h-4" />
@@ -157,6 +158,7 @@ function ProductCard({ product }: any) {
         {/* Add to Cart Button - Shows on Hover */}
         <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
           <button
+            onClick={onAddToCart}
             className="w-full py-2 md:py-3 bg-black text-white text-xs md:text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
           >
             <ShoppingBag className="w-3 h-3 md:w-4 md:h-4" />
@@ -170,7 +172,10 @@ function ProductCard({ product }: any) {
           {product.category || 'Designer Discount'}
         </p>
 
-        <h3 className="font-semibold text-xs md:text-sm mb-2 cursor-pointer hover:text-gold transition line-clamp-2">
+        <h3 
+          onClick={onNavigate}
+          className="font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
+        >
           {product.name}
         </h3>
 

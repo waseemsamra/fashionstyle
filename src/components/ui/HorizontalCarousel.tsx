@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, Heart, ShoppingBag, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface HorizontalCarouselProps {
   children: ReactNode[];
@@ -9,13 +9,6 @@ interface HorizontalCarouselProps {
   showArrows?: boolean;
   showIndicators?: boolean;
   onSlideChange?: (slideIndex: number) => void;
-  // Card properties for consistency
-  cardClassName?: string;
-  showWishlist?: boolean;
-  showAddToCart?: boolean;
-  onWishlist?: (product: any, e: React.MouseEvent) => void;
-  onAddToCart?: (product: any, e: React.MouseEvent) => void;
-  onNavigate?: (product: any) => void;
 }
 
 export default function HorizontalCarousel({
@@ -24,13 +17,7 @@ export default function HorizontalCarousel({
   className = '',
   showArrows = true,
   showIndicators = true,
-  onSlideChange,
-  cardClassName = '',
-  showWishlist = true,
-  showAddToCart = true,
-  onWishlist,
-  onAddToCart,
-  onNavigate
+  onSlideChange
 }: HorizontalCarouselProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
@@ -132,105 +119,13 @@ export default function HorizontalCarousel({
                       : undefined
                   }}
                 >
-                  {slideChildren
-                    .map((child, index) => {
-                      const product = (child as any)?.props?.product || child;
-                      return (
-                        <div key={index} className={cardClassName}>
-                          <div className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 hover:-translate-y-2">
-                            <div
-                              className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer"
-                              onClick={() => onNavigate?.(product)}
-                            >
-                              <img
-                                src={product.image || product.imageUrl || ''}
-                                alt={product.name}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                onError={(e) => {
-                                  e.currentTarget.src = '/placeholder.jpg';
-                                }}
-                              />
-
-                              {/* Badge */}
-                              {product.discountPercentage && product.discountPercentage > 0 && (
-                                <div className="absolute top-3 left-3">
-                                  <span className="px-2 py-1 md:px-3 md:py-1 bg-red-500 text-white text-xs font-medium rounded-full">
-                                    {Math.round(product.discountPercentage)}% OFF
-                                  </span>
-                                </div>
-                              )}
-
-                              {/* Quick Actions */}
-                              {showWishlist && (
-                                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                                  <button
-                                    onClick={(e) => onWishlist?.(product, e)}
-                                    className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all"
-                                  >
-                                    <Heart className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              )}
-
-                              {/* Add to Cart Button - Shows on Hover */}
-                              {showAddToCart && (
-                                <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                                  <button
-                                    onClick={(e) => onAddToCart?.(product, e)}
-                                    className="w-full py-2 md:py-3 bg-black text-white text-xs md:text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
-                                  >
-                                    <ShoppingBag className="w-3 h-3 md:w-4 md:h-4" />
-                                    Add to Cart
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="p-3 md:p-4">
-                              <p className="text-gray-500 text-xs uppercase mb-1">
-                                {product.category || 'Product'}
-                              </p>
-
-                              <h3
-                                onClick={() => onNavigate?.(product)}
-                                className="font-semibold text-xs md:text-sm mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
-                              >
-                                {product.name}
-                              </h3>
-
-                              {/* Rating Stars */}
-                              <div className="flex items-center gap-1 mb-2">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`w-2.5 h-2.5 md:w-3 md:h-3 ${
-                                      i < Math.floor(product.rating || 0)
-                                        ? 'text-gold fill-gold'
-                                        : 'text-gray-300'
-                                    }`}
-                                  />
-                                ))}
-                                <span className="text-xs text-gray-500 ml-1">
-                                  ({product.rating || 0})
-                                </span>
-                              </div>
-
-                              {/* Price */}
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-sm md:text-lg">
-                                  Rs. {product.price?.toLocaleString()}
-                                </span>
-                                {product.originalPrice && (
-                                  <span className="text-gray-400 line-through text-xs md:text-sm">
-                                    Rs. {product.originalPrice?.toLocaleString()}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  {children
+                    .slice(slideIndex * itemsPerView, (slideIndex + 1) * itemsPerView)
+                    .map((child, index) => (
+                      <div key={index}>
+                        {child}
+                      </div>
+                    ))}
                 </div>
               </div>
             );
