@@ -96,48 +96,65 @@ export default function HorizontalCarousel({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {Array.from({ length: totalSlides }).map((_, slideIndex) => (
-            <div key={slideIndex} className="w-full flex-shrink-0">
-              {/* Responsive Grid */}
-              <div 
-                className={`
-                  grid gap-4 lg:gap-6
-                  ${itemsPerView === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : ''}
-                  ${itemsPerView === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : ''}
-                  ${itemsPerView === 2 ? 'grid-cols-1 sm:grid-cols-2' : ''}
-                  ${itemsPerView === 1 ? 'grid-cols-1' : ''}
-                `}
-              >
-                {children
-                  .slice(slideIndex * itemsPerView, (slideIndex + 1) * itemsPerView)
-                  .map((child, index) => (
+          {Array.from({ length: totalSlides }).map((_, slideIndex) => {
+            const slideChildren = children.slice(slideIndex * itemsPerView, (slideIndex + 1) * itemsPerView);
+            
+            // Only render slide if it has actual content
+            if (slideChildren.length === 0) return null;
+            
+            return (
+              <div key={slideIndex} className="w-full flex-shrink-0">
+                {/* Responsive Grid */}
+                <div 
+                  className={`
+                    grid gap-4 lg:gap-6
+                    ${itemsPerView === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : ''}
+                    ${itemsPerView === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : ''}
+                    ${itemsPerView === 2 ? 'grid-cols-1 sm:grid-cols-2' : ''}
+                    ${itemsPerView === 1 ? 'grid-cols-1' : ''}
+                  `}
+                  style={{
+                    gridTemplateColumns: slideChildren.length < itemsPerView 
+                      ? `repeat(${slideChildren.length}, minmax(0, 1fr))`
+                      : undefined
+                  }}
+                >
+                  {slideChildren.map((child, index) => (
                     <div key={index}>
                       {child}
                     </div>
                   ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* Slide Indicators */}
       {showIndicators && totalSlides > 1 && (
         <div className="flex justify-center gap-2 mt-6 lg:mt-8">
-          {Array.from({ length: totalSlides }).map((_, index) => (
-            <button
-              key={index}
-              onClick={() => {
-                setCurrentSlide(index);
-                onSlideChange?.(index);
-              }}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentSlide 
-                  ? 'w-6 lg:w-8 bg-gold' 
-                  : 'w-2 bg-gold/30 hover:bg-gold/50'
-              }`}
-            />
-          ))}
+          {Array.from({ length: totalSlides }).map((_, index) => {
+            const slideChildren = children.slice(index * itemsPerView, (index + 1) * itemsPerView);
+            
+            // Only show indicator if slide has actual content
+            if (slideChildren.length === 0) return null;
+            
+            return (
+              <button
+                key={index}
+                onClick={() => {
+                  setCurrentSlide(index);
+                  onSlideChange?.(index);
+                }}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  index === currentSlide 
+                    ? 'w-6 lg:w-8 bg-gold' 
+                    : 'w-2 bg-gold/30 hover:bg-gold/50'
+                }`}
+              />
+            );
+          })}
         </div>
       )}
     </div>
