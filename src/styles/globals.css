@@ -3,28 +3,49 @@
 /* Carousel Transform Classes - Pure Tailwind Approach */
 .carousel-track {
   transform: translateX(var(--carousel-translate, 0%));
+  transition: transform 0.5s ease-in-out;
 }
 
-.carousel-slide-0 { --carousel-translate: 0%; }
-.carousel-slide-1 { --carousel-translate: -100%; }
-.carousel-slide-2 { --carousel-translate: -200%; }
-.carousel-slide-3 { --carousel-translate: -300%; }
-.carousel-slide-4 { --carousel-translate: -400%; }
-.carousel-slide-5 { --carousel-translate: -500%; }
-.carousel-slide-6 { --carousel-translate: -600%; }
-.carousel-slide-7 { --carousel-translate: -700%; }
-.carousel-slide-8 { --carousel-translate: -800%; }
-.carousel-slide-9 { --carousel-translate: -900%; }
-.carousel-slide-10 { --carousel-translate: -1000%; }
-.carousel-slide-11 { --carousel-translate: -1100%; }
-.carousel-slide-12 { --carousel-translate: -1200%; }
-.carousel-slide-13 { --carousel-translate: -1300%; }
-.carousel-slide-14 { --carousel-translate: -1400%; }
-.carousel-slide-15 { --carousel-translate: -150%; }
-.carousel-slide-16 { --carousel-translate: -1600%; }
-.carousel-slide-17 { --carousel-translate: -1700%; }
-.carousel-slide-18 { --carousel-translate: -1800%; }
-.carousel-slide-19 { --carousel-translate: -1900%; }
+.carousel-track.carousel-slide-0 {
+  transform: translateX(0%);
+}
+
+.carousel-track.carousel-slide-1 {
+  transform: translateX(-100%);
+}
+
+.carousel-track.carousel-slide-2 {
+  transform: translateX(-200%);
+}
+
+.carousel-track.carousel-slide-3 {
+  transform: translateX(-300%);
+}
+
+.carousel-track.carousel-slide-4 {
+  transform: translateX(-400%);
+}
+
+.carousel-track.carousel-slide-5 {
+  transform: translateX(-500%);
+}
+
+.carousel-track.carousel-slide-6 {
+  transform: translateX(-600%);
+}
+
+.carousel-track.carousel-slide-7 {
+  transform: translateX(-700%);
+}
+
+.carousel-track.carousel-slide-8 {
+  transform: translateX(-800%);
+}
+
+.carousel-track.carousel-slide-9 {
+  transform: translateX(-900%);
+}
+
 
 /* Base Product Card Variables */
 .product-card {
