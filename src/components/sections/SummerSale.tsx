@@ -1,40 +1,48 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Heart, Star } from 'lucide-react';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
+import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
 
 export default function SummerSale() {
   const navigate = useNavigate();
   const { toggleWishlist } = useToggleWishlist();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [touchStart, setTouchStart] = useState(0);
+  const [itemsPerView, setItemsPerView] = useState(4);
 
   // THE FORMULA: Fetch ONLY collection products - NO scanning!
   const { products, loading } = useCollection('summerSale');
 
+  // Update items per view based on screen size
   useEffect(() => {
-    if (!isAutoPlaying || products.length === 0) return;
-    const maxSlide = Math.max(0, products.length - Math.min(1.25, products.length));
-    const interval = setInterval(() => {
-      setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [isAutoPlaying, products.length]);
+    const updateItemsPerView = () => {
+      const width = window.innerWidth;
+      let newItemsPerView = 4;
+      
+      console.log('📱 Summer Sale Window width changed:', width);
+      
+      if (width >= 1024) {
+        newItemsPerView = 4;
+        console.log('✅ Summer Sale Desktop mode - Showing 4 cards');
+      } else if (width >= 768) {
+        newItemsPerView = 2;
+        console.log('✅ Summer Sale Tablet mode - Showing 2 cards');
+      } else {
+        newItemsPerView = 1;
+        console.log('✅ Summer Sale Mobile mode - Showing 1 card');
+      }
+      
+      console.log(`📊 Summer Sale Setting itemsPerView to: ${newItemsPerView}`);
+      setItemsPerView(newItemsPerView);
+    };
 
-  const scrollLeft = () => {
-    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(1.25, products.length)) : prev - 1);
-    setIsAutoPlaying(false);
-  };
-
-  const scrollRight = () => {
-    setCurrentSlide(prev => prev >= Math.max(0, products.length - Math.min(1.25, products.length)) ? 0 : prev + 1);
-    setIsAutoPlaying(false);
-  };
+    updateItemsPerView();
+    window.addEventListener('resize', updateItemsPerView);
+    return () => window.removeEventListener('resize', updateItemsPerView);
+  }, []);
 
   const handleWishlist = (product: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -45,206 +53,155 @@ export default function SummerSale() {
     toggleWishlist({ productId: product.id, product });
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!touchStart) return;
-    
-    const touchX = e.touches[0].clientX;
-    const diff = touchStart - touchX;
-    
-    // Lower threshold for better responsiveness
-    if (Math.abs(diff) > 30) {
-      // Prevent multiple triggers during the same gesture
-      if (Math.abs(diff) > 100) {
-        return;
-      }
-      
-      if (diff > 0) {
-        const maxSlide = Math.max(0, products.length - Math.min(1.25, products.length));
-        setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
-      } else {
-        setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - 1.25) : prev - 1);
-      }
-      
-      // Reset touch start to prevent multiple triggers
-      setTouchStart(0);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setTouchStart(0);
-  };
-
-  console.log('🏠 SummerSale render - loading:', loading, 'products:', products.length);
-
   if (loading) {
+    console.log('⏳ Loading products...');
     return (
-      <section className="section-padding bg-beige-100">
-        <div className="container-custom">
-          <div className="text-center mb-8">
-            <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-1">Seasonal Deals</span>
-            <h2 className="font-playfair text-3xl md:text-4xl font-semibold text-black">Summer Sale</h2>
-          </div>
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
-            <p className="text-gray-600">Loading summer sale products...</p>
-          </div>
-        </div>
-      </section>
+      <div className="py-12 flex justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+      </div>
     );
   }
 
-  if (products.length === 0) return null;
+  if (products.length === 0) {
+    console.log('❌ No products found');
+    return null;
+  }
+
+  console.log('✅ Rendering carousel with', itemsPerView, 'cards per view');
 
   return (
-    <section className="section-padding bg-beige-100">
-      <div className="container-custom">
-        {/* Header: Title Left, View All Right */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-1">Seasonal Deals</span>
-            <h2 className="font-playfair text-3xl md:text-4xl font-semibold text-black">Summer Sale</h2>
-          </div>
-          <button
-            onClick={() => navigate('/shop?sale=true')}
-            className="text-gold font-medium hover:text-gold/80 transition-colors flex items-center gap-2"
-          >
-            View All
-            <ChevronRight className="w-4 h-4" />
-          </button>
+    <section className="py-12 bg-gray-50">
+      {/* DEBUG: Visual indicator of current mode */}
+      <div className="fixed top-0 right-0 bg-black text-white px-2 py-1 text-xs z-50 rounded-bl">
+        Summer Sale: {itemsPerView === 4 ? 'Desktop (4 cards)' : itemsPerView === 2 ? 'Tablet (2 cards)' : 'Mobile (1 card)'} | 
+        Width: {window.innerWidth}px | 
+        Products: {products.length}
+      </div>
+
+      <div className="container mx-auto px-4">
+        {/* Section Header */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+            Summer Sale
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Hot summer deals - Up to 50% off on selected items
+          </p>
         </div>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
-            <p className="text-gray-600">Loading summer sale products...</p>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600">
-              No summer sale products yet. Please add products in Admin → Summer Sale.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Carousel */}
-            <div className="relative">
-              {/* Left Arrow */}
-              <button
-                onClick={scrollLeft}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
+        {/* Carousel Container */}
+        <HorizontalCarousel
+          itemsPerView={itemsPerView}
+          onSlideChange={(slideIndex) => console.log('🎯 Summer Sale Jump to slide', slideIndex)}
+        >
+          {products.map((product) => (
+            <ProductCard 
+              key={product.id}
+              product={product} 
+              navigate={navigate} 
+              onWishlist={handleWishlist}
+              onNavigate={() => navigate(getProductUrl(product))}
+              onAddToCart={() => toast.info('Add to cart coming soon')}
+            />
+          ))}
+        </HorizontalCarousel>
 
-              {/* Slides Container */}
-              <div className="overflow-hidden">
-                <div 
-                  className="flex transition-transform duration-500" 
-                  style={{ transform: `translateX(-${currentSlide * 80}%)` }}
-                  onTouchStart={handleTouchStart}
-                  onTouchMove={handleTouchMove}
-                  onTouchEnd={handleTouchEnd}
-                >
-                  {products.map((product) => (
-                    <div key={product.id} className="min-w-[80%] px-3">
-                      <ProductCard
-                        product={product}
-                        onWishlist={(e: any) => handleWishlist(product, e)}
-                        onNavigate={() => navigate(getProductUrl(product))}
-                        onBrandNavigate={() => navigate(`/brand/${encodeURIComponent(product.brand)}`)}
-                        onAddToCart={() => toast.info('Add to cart coming soon')}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Right Arrow */}
-              <button
-                onClick={scrollRight}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6 lg:-mr-8"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Indicators */}
-            <div className="flex justify-center gap-2 mt-8">
-              {Array.from({ length: Math.max(1, Math.max(0, products.length - Math.min(1.25, products.length)) + 1) }).map((_, i) => (
-                <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
-              ))}
-            </div>
-          </>
-        )}
+        {/* View All Button */}
+        <div className="text-center mt-10">
+          <button
+            onClick={() => {
+              console.log('🔗 Summer Sale Navigate to /shop?sale=true');
+              navigate('/shop?sale=true');
+            }}
+            className="px-6 py-2.5 md:px-8 md:py-3 bg-gold text-white font-semibold rounded-full hover:bg-gold/90 transition-all transform hover:scale-105 shadow-md"
+          >
+            View All Summer Deals
+          </button>
+        </div>
       </div>
     </section>
   );
 }
 
-function ProductCard({ product, onWishlist, onNavigate, onBrandNavigate, onAddToCart }: any) {
+// Product Card Component
+function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
       <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
-        <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => handleImageError(e, product.name)} />
-
-        {/* Brand Name - Centered on Image */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          <button
-            onClick={(e) => { e.stopPropagation(); onBrandNavigate(); }}
-            className="bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full font-bold uppercase text-sm tracking-wide shadow-lg whitespace-nowrap hover:bg-gray-100"
-          >
-            {product.brand}
-          </button>
-        </div>
-
+        <img 
+          src={getProductImage(product)} 
+          alt={product.name} 
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+          onError={(e) => handleImageError(e, product.name)} 
+        />
+        
         {/* Sale Badge */}
-        {product.isSale && <span className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white text-xs rounded-full">Sale</span>}
+        {product.isSale && (
+          <span className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white text-xs rounded-full">
+            Sale
+          </span>
+        )}
 
         {/* Quick Actions */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-          <button onClick={onWishlist} className="w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 bg-white text-gray-700 hover:bg-gold hover:text-white">
+          <button
+            onClick={onWishlist}
+            className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all"
+          >
             <Heart className="w-4 h-4" />
-          </button>
-          <button className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gold hover:text-white">
-            <Star className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Add to Cart */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-          <button onClick={onAddToCart} className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors duration-300">
-            <ShoppingBag className="w-4 h-4" /> Add to Cart
+        {/* Add to Cart Button - Shows on Hover */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+          <button
+            onClick={onAddToCart}
+            className="w-full py-2 md:py-3 bg-black text-white text-xs md:text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
+          >
+            <ShoppingBag className="w-3 h-3 md:w-4 md:h-4" />
+            Add to Cart
           </button>
         </div>
       </div>
 
-      {/* Product Info */}
-      <div className="p-4">
-        <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
-          <button
-            onClick={(e) => { e.stopPropagation(); onBrandNavigate(); }}
-            className="underline hover:text-gold"
-          >
-            {product.brand}
-          </button>
+      <div className="p-3 md:p-4">
+        <p className="text-gray-500 text-xs uppercase mb-1">
+          {product.category || 'Summer Sale'}
         </p>
-        <h3 className="font-playfair text-xs leading-[12px] font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 line-clamp-2" onClick={onNavigate}>
-                            {product.name}
-                          </h3>
+        
+        <h3
+          onClick={onNavigate}
+          className="font-semibold text-xs md:text-sm mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
+        >
+          {product.name}
+        </h3>
+        
+        {/* Rating Stars */}
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (
-            <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />
+            <Star
+              key={i}
+              className={`w-2.5 h-2.5 md:w-3 md:h-3 ${
+                i < Math.floor(product.rating || 0) 
+                  ? 'text-gold fill-gold' 
+                  : 'text-gray-300'
+              }`}
+            />
           ))}
-          <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
+          <span className="text-xs text-gray-500 ml-1">
+            ({product.rating || 0})
+          </span>
         </div>
+        
+        {/* Price */}
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-lg">${product.price}</span>
+          <span className="font-semibold text-sm md:text-lg">
+            Rs. {product.price?.toLocaleString()}
+          </span>
           {product.originalPrice && (
-            <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
+            <span className="text-gray-400 line-through text-xs md:text-sm">
+              Rs. {product.originalPrice?.toLocaleString()}
+            </span>
           )}
         </div>
       </div>
