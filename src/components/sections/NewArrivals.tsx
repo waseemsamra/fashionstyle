@@ -208,7 +208,7 @@ export default function NewArrivals() {
             </div>
 
             {/* Desktop Grid */}
-            <div className="hidden lg:block desktop-grid desktop-grid-2x2">
+            <div className="hidden lg:grid lg:grid-cols-2 lg:gap-6">
               {products.map((product: any, index) => (
                 <div
                   key={product.id}
