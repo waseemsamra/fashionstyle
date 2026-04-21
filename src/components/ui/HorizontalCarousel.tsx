@@ -69,9 +69,9 @@ export default function HorizontalCarousel({
       if (Math.abs(diff) > 100) return;
       
       if (diff > 0) {
-        scrollLeft();
-      } else {
         scrollRight();
+      } else {
+        scrollLeft();
       }
       setTouchStart(0);
     }
