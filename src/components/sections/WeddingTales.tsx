@@ -126,22 +126,29 @@ export default function WeddingTales() {
 // Product Card Component
 function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
-      <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
-        <img 
-          src={getProductImage(product)} 
-          alt={product.name} 
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-          onError={(e) => handleImageError(e, product.name)} 
+    <div className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 hover:-translate-y-2">
+      <div
+        className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer"
+        onClick={onNavigate}
+      >
+        <img
+          src={getProductImage(product)}
+          alt={product.name}
+          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          onError={(e) => handleImageError(e, product.name)}
         />
-        
-        {/* Wedding Badge */}
-        <span className="absolute top-3 left-3 px-3 py-1 bg-pink-500 text-white text-xs rounded-full font-semibold">
-          Wedding
-        </span>
 
-        {/* Quick Actions */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+        {/* Wedding Badge */}
+        {product.discountPercentage && product.discountPercentage > 0 && (
+          <div className="absolute top-3 left-3">
+            <span className="px-2 py-1 md:px-3 md:py-1 bg-pink-500 text-white text-xs font-medium rounded-full">
+              Wedding
+            </span>
+          </div>
+        )}
+
+        {/* Wishlist Button - Shows on Hover */}
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
           <button
             onClick={onWishlist}
             className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all"
@@ -166,22 +173,22 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         <p className="text-gray-500 text-xs uppercase mb-1">
           {product.category || 'Wedding'}
         </p>
-        
+
         <h3
           onClick={onNavigate}
           className="font-semibold text-xs md:text-sm mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
         >
           {product.name}
         </h3>
-        
+
         {/* Rating Stars */}
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (
             <Star
               key={i}
               className={`w-2.5 h-2.5 md:w-3 md:h-3 ${
-                i < Math.floor(product.rating || 0) 
-                  ? 'text-gold fill-gold' 
+                i < Math.floor(product.rating || 0)
+                  ? 'text-gold fill-gold'
                   : 'text-gray-300'
               }`}
             />
@@ -190,7 +197,7 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
             ({product.rating || 0})
           </span>
         </div>
-        
+
         {/* Price */}
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm md:text-lg">
