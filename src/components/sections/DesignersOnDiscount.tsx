@@ -199,7 +199,7 @@ export default function DesignersOnDiscount() {
         {/* Indicators */}
         <div className="flex justify-center gap-2 mt-8">
           {Array.from({ length: Math.max(1, Math.max(0, products.length - Math.min(1.25, products.length)) + 1) }).map((_, i) => (
-            <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
+            <button key={i} onClick={() => { setCurrentSlide(i); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
           ))}
         </div>
       </>
