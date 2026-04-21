@@ -11,29 +11,73 @@ export default function DesignersOnDiscount() {
   const navigate = useNavigate();
   const { toggleWishlist } = useToggleWishlist();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [itemsPerView, setItemsPerView] = useState(4);
   const [touchStart, setTouchStart] = useState(0);
 
   // THE FORMULA: Fetch ONLY collection products - NO scanning!
   const { products, loading } = useCollection('designersDiscount');
 
+  // DEBUG: Log products when they load
   useEffect(() => {
-    if (!isAutoPlaying || products.length === 0) return;
-    const maxSlide = Math.max(0, products.length - Math.min(1.25, products.length));
-    const interval = setInterval(() => {
-      setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [isAutoPlaying, products.length]);
+    console.log('🔍 Home DesignersOnDiscount - Products loaded:', products.length);
+    console.log('🔍 First product:', products[0]);
+  }, [products]);
+
+  // Update items per view based on screen size
+  useEffect(() => {
+    const updateItemsPerView = () => {
+      const width = window.innerWidth;
+      let newItemsPerView = 4;
+      
+      console.log('📱 Home Window width changed:', width);
+      
+      if (width >= 1024) {
+        newItemsPerView = 4;
+        console.log('✅ Home Desktop mode - Showing 4 cards');
+      } else if (width >= 768) {
+        newItemsPerView = 2;
+        console.log('✅ Home Tablet mode - Showing 2 cards');
+      } else {
+        newItemsPerView = 1;
+        console.log('✅ Home Mobile mode - Showing 1 card');
+      }
+      
+      console.log(`📊 Home Setting itemsPerView to: ${newItemsPerView}`);
+      setItemsPerView(newItemsPerView);
+    };
+
+    updateItemsPerView();
+    window.addEventListener('resize', updateItemsPerView);
+    return () => window.removeEventListener('resize', updateItemsPerView);
+  }, []);
+
+  const totalSlides = Math.ceil(products.length / itemsPerView);
+  
+  // DEBUG: Log slide calculations
+  useEffect(() => {
+    console.log('🎯 Home Carousel Debug:');
+    console.log('   - Products:', products.length);
+    console.log('   - Items per view:', itemsPerView);
+    console.log('   - Total slides:', totalSlides);
+    console.log('   - Current slide:', currentSlide);
+  }, [products.length, itemsPerView, currentSlide, totalSlides]);
+
+  // Ensure current slide is valid
+  useEffect(() => {
+    if (currentSlide >= totalSlides && totalSlides > 0) {
+      console.log('⚠️ Home Adjusting current slide from', currentSlide, 'to', totalSlides - 1);
+      setCurrentSlide(totalSlides - 1);
+    }
+  }, [currentSlide, totalSlides]);
 
   const scrollLeft = () => {
-    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(1.25, products.length)) : prev - 1);
-    setIsAutoPlaying(false);
+    console.log('⬅️ Home Scrolling left');
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
   };
 
   const scrollRight = () => {
-    setCurrentSlide(prev => prev >= Math.max(0, products.length - Math.min(1.25, products.length)) ? 0 : prev + 1);
-    setIsAutoPlaying(false);
+    console.log('➡️ Home Scrolling right');
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
   };
 
   const handleWishlist = (product: any, e: React.MouseEvent) => {
