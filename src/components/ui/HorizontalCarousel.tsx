@@ -90,8 +90,7 @@ export default function HorizontalCarousel({
       {/* Carousel Track */}
       <div className="overflow-hidden px-8 lg:px-12">
         <div
-          className="flex transition-transform duration-500 ease-in-out"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          className={`flex transition-transform duration-500 ease-in-out carousel-track carousel-slide-${currentSlide}`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -108,16 +107,11 @@ export default function HorizontalCarousel({
                 <div 
                   className={`
                     grid gap-4 lg:gap-6
-                    ${itemsPerView === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : ''}
-                    ${itemsPerView === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : ''}
-                    ${itemsPerView === 2 ? 'grid-cols-1 sm:grid-cols-2' : ''}
-                    ${itemsPerView === 1 ? 'grid-cols-1' : ''}
+                    ${slideChildren.length === 4 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' : ''}
+                    ${slideChildren.length === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3' : ''}
+                    ${slideChildren.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : ''}
+                    ${slideChildren.length === 1 ? 'grid-cols-1' : ''}
                   `}
-                  style={{
-                    gridTemplateColumns: slideChildren.length < itemsPerView 
-                      ? `repeat(${slideChildren.length}, minmax(0, 1fr))`
-                      : undefined
-                  }}
                 >
                   {children
                     .slice(slideIndex * itemsPerView, (slideIndex + 1) * itemsPerView)

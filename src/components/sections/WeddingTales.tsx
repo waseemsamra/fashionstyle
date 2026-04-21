@@ -63,8 +63,7 @@ export default function WeddingTales() {
   }
 
   if (products.length === 0) {
-    console.log('❌ No wedding tales products found');
-    return null;
+    console.log('No wedding tales products found - showing empty state');
   }
 
   console.log('✅ Rendering wedding tales carousel with', itemsPerView, 'cards per view');
@@ -90,21 +89,28 @@ export default function WeddingTales() {
         </div>
 
         {/* Carousel Container */}
-        <HorizontalCarousel
-          itemsPerView={itemsPerView}
-          onSlideChange={(slideIndex) => console.log('🎯 Wedding Tales Jump to slide', slideIndex)}
-        >
-          {products.map((product) => (
-            <ProductCard 
-              key={product.id}
-              product={product} 
-              navigate={navigate} 
-              onWishlist={handleWishlist}
-              onNavigate={() => navigate(getProductUrl(product))}
-              onAddToCart={() => toast.info('Add to cart coming soon')}
-            />
-          ))}
-        </HorizontalCarousel>
+        {products.length > 0 ? (
+          <HorizontalCarousel
+            itemsPerView={itemsPerView}
+            onSlideChange={(slideIndex) => console.log('🎯 Wedding Tales Jump to slide', slideIndex)}
+          >
+            {products.map((product) => (
+              <ProductCard 
+                key={product.id}
+                product={product} 
+                navigate={navigate} 
+                onWishlist={handleWishlist}
+                onNavigate={() => navigate(getProductUrl(product))}
+                onAddToCart={() => toast.info('Add to cart coming soon')}
+              />
+            ))}
+          </HorizontalCarousel>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No wedding collections available at the moment.</p>
+            <p className="text-gray-400 mt-2">Check back soon for our latest wedding arrivals!</p>
+          </div>
+        )}
 
         {/* View All Button */}
         <div className="text-center mt-10">

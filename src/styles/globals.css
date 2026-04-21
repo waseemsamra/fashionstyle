@@ -1,5 +1,21 @@
 /* Global Product Card Styles - Consistent Across All Sections */
 
+/* Carousel Transform Classes - Pure Tailwind Approach */
+.carousel-track {
+  transform: translateX(var(--carousel-translate, 0%));
+}
+
+.carousel-slide-0 { --carousel-translate: 0%; }
+.carousel-slide-1 { --carousel-translate: -100%; }
+.carousel-slide-2 { --carousel-translate: -200%; }
+.carousel-slide-3 { --carousel-translate: -300%; }
+.carousel-slide-4 { --carousel-translate: -400%; }
+.carousel-slide-5 { --carousel-translate: -500%; }
+.carousel-slide-6 { --carousel-translate: -600%; }
+.carousel-slide-7 { --carousel-translate: -700%; }
+.carousel-slide-8 { --carousel-translate: -800%; }
+.carousel-slide-9 { --carousel-translate: -900%; }
+
 /* Base Product Card Variables */
 .product-card {
   /* Font sizes - consistent across all sections */
@@ -22,6 +38,7 @@
   color: #111827;
   display: -webkit-box;
   -webkit-line-clamp: var(--product-title-lines);
+  line-clamp: var(--product-title-lines);
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
