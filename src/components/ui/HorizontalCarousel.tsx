@@ -24,21 +24,25 @@ export default function HorizontalCarousel({
 
   const totalSlides = Math.ceil(children.length / itemsPerView);
 
+  // Create infinite carousel by duplicating slides
+  const infiniteChildren = [...children, ...children.slice(0, itemsPerView)];
+  const infiniteTotalSlides = Math.ceil(infiniteChildren.length / itemsPerView);
+
   // Ensure current slide is valid
   useEffect(() => {
-    if (currentSlide >= totalSlides && totalSlides > 0) {
-      setCurrentSlide(totalSlides - 1);
+    if (currentSlide >= infiniteTotalSlides && infiniteTotalSlides > 0) {
+      setCurrentSlide(infiniteTotalSlides - 1);
     }
-  }, [currentSlide, totalSlides]);
+  }, [currentSlide, infiniteTotalSlides]);
 
   const scrollLeft = () => {
-    setCurrentSlide((currentSlide) => (currentSlide - 1 + totalSlides) % totalSlides);
-    onSlideChange?.((currentSlide - 1 + totalSlides) % totalSlides);
+    setCurrentSlide((currentSlide) => (currentSlide - 1 + infiniteTotalSlides) % infiniteTotalSlides);
+    onSlideChange?.((currentSlide - 1 + infiniteTotalSlides) % infiniteTotalSlides);
   };
 
   const scrollRight = () => {
-    setCurrentSlide((currentSlide) => (currentSlide + 1) % totalSlides);
-    onSlideChange?.((currentSlide + 1) % totalSlides);
+    setCurrentSlide((currentSlide) => (currentSlide + 1) % infiniteTotalSlides);
+    onSlideChange?.((currentSlide + 1) % infiniteTotalSlides);
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -95,8 +99,8 @@ export default function HorizontalCarousel({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {Array.from({ length: totalSlides }).map((_, slideIndex) => {
-            const slideChildren = children.slice(slideIndex * itemsPerView, (slideIndex + 1) * itemsPerView);
+          {Array.from({ length: infiniteTotalSlides }).map((_, slideIndex) => {
+            const slideChildren = infiniteChildren.slice(slideIndex * itemsPerView, (slideIndex + 1) * itemsPerView);
             
             // Only render slide if it has actual content
             if (slideChildren.length === 0) return null;
@@ -144,7 +148,7 @@ export default function HorizontalCarousel({
                   onSlideChange?.(index);
                 }}
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  index === currentSlide 
+                  index === (currentSlide % totalSlides) 
                     ? 'w-6 lg:w-8 bg-gold' 
                     : 'w-2 bg-gold/30 hover:bg-gold/50'
                 }`}

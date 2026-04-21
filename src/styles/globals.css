@@ -15,6 +15,16 @@
 .carousel-slide-7 { --carousel-translate: -700%; }
 .carousel-slide-8 { --carousel-translate: -800%; }
 .carousel-slide-9 { --carousel-translate: -900%; }
+.carousel-slide-10 { --carousel-translate: -1000%; }
+.carousel-slide-11 { --carousel-translate: -1100%; }
+.carousel-slide-12 { --carousel-translate: -1200%; }
+.carousel-slide-13 { --carousel-translate: -1300%; }
+.carousel-slide-14 { --carousel-translate: -1400%; }
+.carousel-slide-15 { --carousel-translate: -150%; }
+.carousel-slide-16 { --carousel-translate: -1600%; }
+.carousel-slide-17 { --carousel-translate: -1700%; }
+.carousel-slide-18 { --carousel-translate: -1800%; }
+.carousel-slide-19 { --carousel-translate: -1900%; }
 
 /* Base Product Card Variables */
 .product-card {
