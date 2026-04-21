@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Heart, Star } from 'lucide-react';
+import { Heart, ShoppingBag, Star } from 'lucide-react';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
-import { getProductImage, handleImageError } from '@/utils/productImage';
 import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
 
 export default function DesignersOnDiscount() {
@@ -15,12 +14,6 @@ export default function DesignersOnDiscount() {
 
   // THE FORMULA: Fetch ONLY collection products - NO scanning!
   const { products, loading } = useCollection('designersDiscount');
-
-  // DEBUG: Log products when they load
-  useEffect(() => {
-    console.log('🔍 Home DesignersOnDiscount - Products loaded:', products.length);
-    console.log('🔍 First product:', products[0]);
-  }, [products]);
 
   // Update items per view based on screen size
   useEffect(() => {
@@ -89,24 +82,26 @@ export default function DesignersOnDiscount() {
         {/* Carousel Container */}
         <HorizontalCarousel
           itemsPerView={itemsPerView}
+          showWishlist={true}
+          showAddToCart={true}
+          onWishlist={(product: any, e: React.MouseEvent) => {
+            e.stopPropagation();
+            if (!localStorage.getItem('jwt_token')) {
+              toast.error('Please login', { action: { label: 'Login', onClick: () => navigate('/login') } });
+              return;
+            }
+            toggleWishlist({ productId: product.id, product });
+          }}
+          onNavigate={(product: any) => navigate(getProductUrl(product))}
+          onAddToCart={() => toast.info('Add to cart coming soon')}
           onSlideChange={(slideIndex) => console.log('🎯 Home Jump to slide', slideIndex)}
         >
           {products.map((product) => (
-            <ProductCard 
-              key={product.id}
-              product={product} 
-              navigate={navigate} 
-              onWishlist={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                if (!localStorage.getItem('jwt_token')) {
-                  toast.error('Please login', { action: { label: 'Login', onClick: () => navigate('/login') } });
-                  return;
-                }
-                toggleWishlist({ productId: product.id, product });
-              }}
-              onNavigate={() => navigate(getProductUrl(product))}
-              onAddToCart={() => toast.info('Add to cart coming soon')}
-            />
+            <div key={product.id}>
+              <ProductCard 
+                product={product} 
+              />
+            </div>
           ))}
         </HorizontalCarousel>
 
@@ -128,20 +123,19 @@ export default function DesignersOnDiscount() {
 }
 
 // Product Card Component
-function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
+function ProductCard({ product }: any) {
   return (
     <div className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 hover:-translate-y-2">
-      <div
-        className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer"
-        onClick={onNavigate}
-      >
+      <div className="relative aspect-[3/4] overflow-hidden bg-beige-50">
         <img
-          src={getProductImage(product)}
+          src={product.image || product.imageUrl || ''}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          onError={(e) => handleImageError(e, product.name)}
+          onError={(e) => {
+            e.currentTarget.src = '/placeholder.jpg';
+          }}
         />
-        
+
         {/* Discount Badge */}
         {product.discountPercentage && product.discountPercentage > 0 && (
           <div className="absolute top-3 left-3">
@@ -151,10 +145,9 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
           </div>
         )}
 
-        {/* Wishlist Button - Shows on Hover */}
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+        {/* Quick Actions */}
+        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
           <button
-            onClick={onWishlist}
             className="w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all"
           >
             <Heart className="w-4 h-4" />
@@ -164,7 +157,6 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         {/* Add to Cart Button - Shows on Hover */}
         <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
           <button
-            onClick={onAddToCart}
             className="w-full py-2 md:py-3 bg-black text-white text-xs md:text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
           >
             <ShoppingBag className="w-3 h-3 md:w-4 md:h-4" />
@@ -177,22 +169,19 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         <p className="text-gray-500 text-xs uppercase mb-1">
           {product.category || 'Designer Discount'}
         </p>
-        
-        <h3
-          onClick={onNavigate}
-          className="font-semibold text-xs md:text-sm mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
-        >
+
+        <h3 className="font-semibold text-xs md:text-sm mb-2 cursor-pointer hover:text-gold transition line-clamp-2">
           {product.name}
         </h3>
-        
+
         {/* Rating Stars */}
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (
             <Star
               key={i}
               className={`w-2.5 h-2.5 md:w-3 md:h-3 ${
-                i < Math.floor(product.rating || 0) 
-                  ? 'text-gold fill-gold' 
+                i < Math.floor(product.rating || 0)
+                  ? 'text-gold fill-gold'
                   : 'text-gray-300'
               }`}
             />
@@ -201,7 +190,7 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
             ({product.rating || 0})
           </span>
         </div>
-        
+
         {/* Price */}
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm md:text-lg">
