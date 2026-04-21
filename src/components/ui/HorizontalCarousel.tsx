@@ -36,13 +36,23 @@ export default function HorizontalCarousel({
   }, [currentSlide, totalSlides]);
 
   const scrollLeft = () => {
-    setCurrentSlide((currentSlide) => (currentSlide - 1 + totalSlides) % totalSlides);
-    onSlideChange?.((currentSlide - 1 + totalSlides) % totalSlides);
+    console.log('scrollLeft clicked, currentSlide:', currentSlide, 'totalSlides:', totalSlides);
+    setCurrentSlide((currentSlide) => {
+      const newSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+      console.log('scrollLeft newSlide:', newSlide);
+      onSlideChange?.(newSlide);
+      return newSlide;
+    });
   };
 
   const scrollRight = () => {
-    setCurrentSlide((currentSlide) => (currentSlide + 1) % totalSlides);
-    onSlideChange?.((currentSlide + 1) % totalSlides);
+    console.log('scrollRight clicked, currentSlide:', currentSlide, 'totalSlides:', totalSlides);
+    setCurrentSlide((currentSlide) => {
+      const newSlide = (currentSlide + 1) % totalSlides;
+      console.log('scrollRight newSlide:', newSlide);
+      onSlideChange?.(newSlide);
+      return newSlide;
+    });
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -77,13 +87,21 @@ export default function HorizontalCarousel({
       {showArrows && totalSlides > 1 && (
         <>
           <button
-            onClick={scrollLeft}
+            onClick={(e) => {
+              console.log('Left button clicked');
+              e.preventDefault();
+              scrollLeft();
+            }}
             className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 lg:w-12 lg:h-12"
           >
             <ChevronLeft className="w-5 h-5 lg:w-6 lg:h-6" />
           </button>
           <button
-            onClick={scrollRight}
+            onClick={(e) => {
+              console.log('Right button clicked');
+              e.preventDefault();
+              scrollRight();
+            }}
             className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 lg:w-12 lg:h-12"
           >
             <ChevronRight className="w-5 h-5 lg:w-6 lg:h-6" />
