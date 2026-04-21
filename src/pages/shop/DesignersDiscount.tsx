@@ -188,72 +188,104 @@ export default function DesignersDiscount()
             </div>
           </div>
 
-          {/* Desktop Grid */}
-          <div className="hidden lg:block desktop-grid desktop-grid-4x4">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="group bg-white rounded-xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2"
-              >
-                <div
-                  className="relative aspect-[3/4] sm:aspect-[4/5] overflow-hidden bg-beige-50 cursor-pointer"
-                  onClick={() => navigate(getProductUrl(product))}
-                >
-                  <img
-                    src={getProductImage(product)}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    onError={(e) => handleImageError(e, product.name)}
-                  />
-                  <div className="absolute top-3 left-3 flex flex-col gap-2">
-                    {product.discountPercentage && product.discountPercentage > 0 && (
-                      <span className="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-full">
-                        {Math.round(product.discountPercentage)}% OFF
-                      </span>
-                    )}
+          {/* Desktop Carousel */}
+          <div className="hidden lg:block relative">
+            {/* Left Arrow */}
+            <button 
+              onClick={scrollLeft} 
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+
+            <div className="overflow-hidden">
+              <div className="flex transition-transform duration-500 -mx-3" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
+                {products.map((product) => (
+                  <div key={product.id} className="min-w-[25%] px-3">
+                    <div className="group bg-white rounded-xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
+                      <div
+                        className="relative aspect-[3/4] sm:aspect-[4/5] overflow-hidden bg-beige-50 cursor-pointer"
+                        onClick={() => navigate(getProductUrl(product))}
+                      >
+                        <img
+                          src={getProductImage(product)}
+                          alt={product.name}
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          onError={(e) => handleImageError(e, product.name)}
+                        />
+                        <div className="absolute top-3 left-3 flex flex-col gap-2">
+                          {product.discountPercentage && product.discountPercentage > 0 && (
+                            <span className="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-full">
+                              {Math.round(product.discountPercentage)}% OFF
+                            </span>
+                          )}
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toast.info('Add to cart coming soon');
+                            }}
+                            className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
+                          >
+                            <ShoppingBag className="w-4 h-4" />
+                            Add to Cart
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-3 sm:p-4">
+                        <p className="text-gray-500 text-xs uppercase mb-1">{product.category || 'Designer Discount'}</p>
+                        <h3
+                          onClick={() => navigate(getProductUrl(product))}
+                          className="font-playfair text-xs leading-[12px] font-semibold mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
+                        >
+                          {product.name}
+                        </h3>
+                        <div className="flex items-center gap-1 mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(product.rating || 0)
+                                  ? 'text-gold fill-gold'
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                          <span className="text-xs text-gray-500 ml-1">({product.rating || 0})</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-lg">Rs. {product.price?.toLocaleString()}</span>
+                          {product.originalPrice && (
+                            <span className="text-gray-400 line-through text-sm">Rs. {product.originalPrice?.toLocaleString()}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toast.info('Add to cart coming soon');
-                      }}
-                      className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
-                    >
-                      <ShoppingBag className="w-4 h-4" />
-                      Add to Cart
-                    </button>
-                  </div>
-                </div>
-                <div className="p-3 sm:p-4">
-                  <p className="text-gray-500 text-xs uppercase mb-1">{product.category || 'Designer Discount'}</p>
-                  <h3
-                    onClick={() => navigate(getProductUrl(product))}
-                    className="font-playfair text-xs leading-[12px] font-semibold mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
-                  >
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center gap-1 mb-2">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-3 h-3 ${
-                          i < Math.floor(product.rating || 0)
-                            ? 'text-gold fill-gold'
-                            : 'text-gray-300'
-                        }`}
-                      />
-                    ))}
-                    <span className="text-xs text-gray-500 ml-1">({product.rating || 0})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-lg">Rs. {product.price?.toLocaleString()}</span>
-                    {product.originalPrice && (
-                      <span className="text-gray-400 line-through text-sm">Rs. {product.originalPrice?.toLocaleString()}</span>
-                    )}
-                  </div>
-                </div>
+                ))}
               </div>
+            </div>
+
+            {/* Right Arrow */}
+            <button 
+              onClick={scrollRight} 
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Desktop Slide Indicators */}
+          <div className="flex justify-center mt-6 space-x-2 hidden lg:block">
+            {products.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                  index === currentSlide ? 'bg-gold' : 'bg-gray-300'
+                }`}
+              />
             ))}
           </div>
           </div>
