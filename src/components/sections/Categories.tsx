@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
 
 const CATEGORY_IMAGES: Record<string, string> = {
