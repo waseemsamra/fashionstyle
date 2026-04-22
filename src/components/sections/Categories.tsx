@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const CATEGORY_IMAGES: Record<string, string> = {
   'Bridal Wear': '/category-bridal.jpg',
@@ -140,34 +140,14 @@ export default function Categories() {
   return (
     <section id="categories" ref={sectionRef} className="section-padding bg-beige-100">
       <div className="container-custom">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-          {/* Left Content */}
-          <div className={`lg:col-span-4 flex flex-col justify-center transition-all duration-700 ${
-            isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
-          }`}
-          style={{
-            transitionDelay: isVisible ? '200ms' : '0ms',
-          }}
-          >
-            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-semibold text-black mb-4">
-              CATEGORIES
-            </h2>
-            
-            <p className="text-gray-600 text-lg mb-8">
-              Explore Our Collection
-            </p>
-
-            <button
-              onClick={() => navigate('/categories')}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gold text-white font-semibold rounded-full hover:bg-gold/90 transition-all transform hover:scale-105 shadow-md w-fit"
-            >
-              View All Categories
-              <ArrowUpRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Right Categories Horizontal Scroll */}
-          <div className="lg:col-span-8">
+        {/* Centered Categories Carousel */}
+        <div className={`max-w-4xl mx-auto transition-all duration-700 ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}
+        style={{
+          transitionDelay: isVisible ? '200ms' : '0ms',
+        }}
+        >
             <div className="relative">
               {/* Left Arrow */}
               <button
@@ -234,7 +214,6 @@ export default function Categories() {
                 </div>
               </div>
             </div>
-          </div>
         </div>
       </div>
     </section>
