@@ -207,7 +207,6 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         <h3
           onClick={onNavigate}
           className="font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
-          style={{ fontSize: '12px !important', lineHeight: '16px !important' }}
         >
           {product.name}
         </h3>
@@ -231,11 +230,11 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         
         {/* Price */}
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-xs !text-xs">
+          <span className="font-semibold text-xs">
             Rs. {product.price?.toLocaleString()}
           </span>
           {product.originalPrice && (
-            <span className="text-gray-400 line-through text-xs !text-xs">
+            <span className="text-gray-400 line-through text-xs">
               Rs. {product.originalPrice?.toLocaleString()}
             </span>
           )}
