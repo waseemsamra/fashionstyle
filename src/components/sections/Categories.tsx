@@ -190,8 +190,8 @@ export default function Categories() {
                     >
                       {/* Circular Category Card */}
                       <div className="flex flex-col items-center">
-                        {/* Small Circle Image */}
-                        <div className="relative w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+                        {/* Enlarged Circle Image */}
+                        <div className="relative w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
                           <div className="w-full h-full rounded-full overflow-hidden border border-gray-200 shadow-sm">
                             <img
                               src={category.image}
