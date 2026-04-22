@@ -76,6 +76,12 @@
   margin-bottom: 0.5rem;
 }
 
+/* Featured Collection Product Name - Force Consistent Font Size */
+.featured-product-name {
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
 /* Mobile Carousel Styles - Consistent 1.25 Cards */
 @media (max-width: 767px) {
   .carousel-container {
