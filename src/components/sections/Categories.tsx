@@ -176,7 +176,7 @@ export default function Categories() {
                 id="categories-scroll"
                 className="overflow-x-auto scrollbar-hide px-10 py-4"
               >
-                <div className="flex gap-6 items-center">
+                <div className="flex gap-6 items-center justify-center">
                   {categories.map((category, index) => (
                     <div
                       key={category.slug || category.name}
