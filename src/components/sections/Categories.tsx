@@ -138,10 +138,10 @@ export default function Categories() {
   }
 
   return (
-    <section id="categories" ref={sectionRef} className="section-padding bg-beige-100">
+    <section id="categories" ref={sectionRef} className="py-8 bg-beige-100">
       <div className="container-custom">
-        {/* Centered Categories Carousel */}
-        <div className={`max-w-4xl mx-auto transition-all duration-700 ${
+        {/* Full Width Categories Carousel */}
+        <div className={`transition-all duration-700 ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
         style={{
