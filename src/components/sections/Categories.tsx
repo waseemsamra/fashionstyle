@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
-import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
+import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const CATEGORY_IMAGES: Record<string, string> = {
   'Bridal Wear': '/category-bridal.jpg',
@@ -28,33 +27,10 @@ const CATEGORIES_API_URL = API_CONFIG.categoriesApi;
 export default function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [itemsPerView, setItemsPerView] = useState(6);
   const [categories, setCategories] = useState<{slug: string, name: string, displayName: string, image: string, description: string, itemCount: number}[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  // Update items per view based on screen size
-  useEffect(() => {
-    const updateItemsPerView = () => {
-      const width = window.innerWidth;
-      let newItemsPerView = 8;
-      
-      if (width >= 1024) {
-        newItemsPerView = 8;
-      } else if (width >= 768) {
-        newItemsPerView = 6;
-      } else {
-        newItemsPerView = 4;
-      }
-      
-      setItemsPerView(newItemsPerView);
-    };
-
-    updateItemsPerView();
-    window.addEventListener('resize', updateItemsPerView);
-    return () => window.removeEventListener('resize', updateItemsPerView);
-  }, []);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -190,48 +166,74 @@ export default function Categories() {
             </button>
           </div>
 
-          {/* Right Categories Carousel */}
+          {/* Right Categories Horizontal Scroll */}
           <div className="lg:col-span-8">
-            <HorizontalCarousel
-              itemsPerView={itemsPerView}
-              showArrows={true}
-              showIndicators={false}
-            >
-              {categories.map((category, index) => (
-                <div
-                  key={category.slug || category.name}
-                  onClick={() => navigate(`/category/${category.slug || category.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
-                  className={`group relative cursor-pointer px-2 ${
-                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
-                  }`}
-                  style={{
-                    transitionDelay: isVisible ? `${index * 50 + 300}ms` : '0ms',
-                  }}
-                >
-                  {/* Circular Category Card */}
-                  <div className="flex flex-col items-center">
-                    {/* Small Circle Image */}
-                    <div className="relative w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
-                      <div className="w-full h-full rounded-full overflow-hidden border border-gray-200 shadow-sm">
-                        <img
-                          src={category.image}
-                          alt={category.displayName || category.name}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                          onError={(e) => {
-                            e.currentTarget.src = '/product-placeholder.jpg';
-                          }}
-                        />
+            <div className="relative">
+              {/* Left Arrow */}
+              <button
+                onClick={() => {
+                  const container = document.getElementById('categories-scroll');
+                  if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Right Arrow */}
+              <button
+                onClick={() => {
+                  const container = document.getElementById('categories-scroll');
+                  if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+
+              {/* Horizontal Scroll Container */}
+              <div 
+                id="categories-scroll"
+                className="overflow-x-auto scrollbar-hide px-10 py-4"
+              >
+                <div className="flex gap-6 items-center">
+                  {categories.map((category, index) => (
+                    <div
+                      key={category.slug || category.name}
+                      onClick={() => navigate(`/category/${category.slug || category.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
+                      className={`group relative cursor-pointer flex-shrink-0 ${
+                        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
+                      }`}
+                      style={{
+                        transitionDelay: isVisible ? `${index * 50 + 300}ms` : '0ms',
+                      }}
+                    >
+                      {/* Circular Category Card */}
+                      <div className="flex flex-col items-center">
+                        {/* Small Circle Image */}
+                        <div className="relative w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+                          <div className="w-full h-full rounded-full overflow-hidden border border-gray-200 shadow-sm">
+                            <img
+                              src={category.image}
+                              alt={category.displayName || category.name}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                              onError={(e) => {
+                                e.currentTarget.src = '/product-placeholder.jpg';
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Category Name */}
+                        <p className="text-xs text-gray-600 mt-2 text-center max-w-[80px] truncate">
+                          {category.displayName || category.name}
+                        </p>
                       </div>
                     </div>
-
-                    {/* Category Name */}
-                    <p className="text-xs text-gray-600 mt-2 text-center max-w-[80px] truncate">
-                      {category.displayName || category.name}
-                    </p>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </HorizontalCarousel>
+              </div>
+            </div>
           </div>
         </div>
       </div>
