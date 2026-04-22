@@ -1,31 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Star, ShoppingBag, Heart } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ShoppingBag, Star, Heart } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/services/api';
+import { getProductUrl } from '@/utils/productUrl';
+import { getProductImage, handleImageError } from '@/utils/productImage';
 import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
-import { useCollection } from '@/hooks/useCollection';
-import { useToggleWishlist } from '@/hooks/useWishlist';
-
-// Helper functions
-const getProductUrl = (product: any) => {
-  return `/product/${product.slug || product.id}`;
-};
-
-const getProductImage = (product: any) => {
-  if (product.image) {
-    return product.image;
-  }
-  return `https://picsum.photos/seed/${product.name}/400/600.jpg`;
-};
-
-const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, productName: string) => {
-  console.error(`❌ Image failed to load for ${productName}:`, e);
-  e.currentTarget.src = `https://picsum.photos/seed/${productName}/400/600.jpg`;
-};
 
 export default function FeaturedProducts() {
   const navigate = useNavigate();
-  const { toggleWishlist } = useToggleWishlist();
   const [itemsPerView, setItemsPerView] = useState(4);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +32,7 @@ export default function FeaturedProducts() {
         console.log('✅ Featured Products Mobile mode - Showing 1 card');
       }
       
+      console.log(`📊 Featured Products Setting itemsPerView to: ${newItemsPerView}`);
       setItemsPerView(newItemsPerView);
     };
 
@@ -57,42 +41,68 @@ export default function FeaturedProducts() {
     return () => window.removeEventListener('resize', updateItemsPerView);
   }, []);
 
-  // THE FORMULA: Fetch ONLY collection products - NO scanning!
-  const { products: collectionProducts, loading: collectionLoading } = useCollection('featured');
-
   useEffect(() => {
-    if (collectionProducts && collectionProducts.length > 0) {
-      console.log('✅ Featured Products loaded:', collectionProducts.length);
-      setProducts(collectionProducts);
-      setLoading(false);
-    } else {
-      console.log('❌ No products found');
-      setProducts([]);
-      setLoading(false);
-    }
-  }, [collectionProducts, collectionLoading]);
+    const loadProducts = async () => {
+      try {
+        console.log('Loading featured products...');
+        setLoading(true);
+        const data = await api.listProducts();
+        
+        let productsArray = [];
+        if (Array.isArray(data)) {
+          productsArray = data;
+        } else if (data && typeof data === 'object') {
+          if (data.items && Array.isArray(data.items)) productsArray = data.items;
+          else if (data.products && Array.isArray(data.products)) productsArray = data.products;
+          else if (data.data && Array.isArray(data.data)) productsArray = data.data;
+        }
 
-  if (loading || collectionLoading) {
+        // Filter to show only featured products (max 20)
+        const featuredProducts = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
+        
+        // If no featured products, show all available products (up to 8)
+        const displayProducts = featuredProducts.length > 0 
+          ? featuredProducts 
+          : productsArray.slice(0, 8);
+
+        console.log('Featured products loaded:', displayProducts.length, '(featured:', featuredProducts.length, ', total:', productsArray.length, ')');
+        console.log('Products to display:', displayProducts.map((p: any) => p.name));
+        setProducts(displayProducts);
+      } catch (error) {
+        console.error('Failed to load featured products:', error);
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
+
+  const handleWishlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!localStorage.getItem('jwt_token')) {
+      toast.error('Please login', { action: { label: 'Login', onClick: () => navigate('/login') } });
+      return;
+    }
+    toast.success('Added to wishlist');
+  };
+
+  if (loading) {
+    console.log('⏳ Loading featured products...');
     return (
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-              Featured Collection
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Handpicked favorites from our exclusive collection
-            </p>
-          </div>
-          <div className="flex justify-center items-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-          </div>
-        </div>
-      </section>
+      <div className="py-12 flex justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold"></div>
+      </div>
     );
   }
 
-  console.log('✅ Rendering carousel with', itemsPerView, 'cards per view');
+  if (products.length === 0) {
+    console.log('❌ No featured products found');
+    return null;
+  }
+
+  console.log('✅ Rendering featured carousel with', itemsPerView, 'cards per view');
 
   return (
     <section className="py-12 bg-gray-50">
@@ -124,7 +134,7 @@ export default function FeaturedProducts() {
               key={product.id}
               product={product} 
               navigate={navigate} 
-              onWishlist={() => toggleWishlist(product)}
+              onWishlist={handleWishlist}
               onNavigate={() => navigate(getProductUrl(product))}
               onAddToCart={() => toast.info('Add to cart coming soon')}
             />
@@ -148,7 +158,7 @@ export default function FeaturedProducts() {
   );
 }
 
-// Product Card Component - EXACTLY LIKE SUMMER SALE
+// Product Card Component
 function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
@@ -176,16 +186,28 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
             <Heart className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Add to Cart Button - Shows on Hover */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+          <button
+            onClick={onAddToCart}
+            className="w-full py-2 md:py-3 bg-black text-white text-xs font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
+          >
+            <ShoppingBag className="w-3 h-3 md:w-4 md:h-4" />
+            Add to Cart
+          </button>
+        </div>
       </div>
 
-      <div className="p-3 md:p-4">
+      <div className="p-3">
         <p className="text-gray-500 text-xs uppercase mb-1">
           {product.category || 'Featured'}
         </p>
         
         <h3
           onClick={onNavigate}
-          className="font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
+          className="font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2 featured-product-name"
+          style={{ fontSize: '8px', color: 'blue', backgroundColor: 'lightblue' }}
         >
           {product.name}
         </h3>
@@ -218,17 +240,6 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
             </span>
           )}
         </div>
-      </div>
-
-      {/* Add to Cart Button - Shows on Hover */}
-      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-        <button
-          onClick={onAddToCart}
-          className="w-full py-2 md:py-3 bg-black text-white text-xs font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
-        >
-          <ShoppingBag className="w-3 h-3 md:w-4 md:h-4" />
-          Add to Cart
-        </button>
       </div>
     </div>
   );
