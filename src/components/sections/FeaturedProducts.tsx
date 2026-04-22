@@ -199,7 +199,7 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         </div>
       </div>
 
-      <div className="p-3 md:p-4">
+      <div className="p-3">
         <p className="text-gray-500 text-xs uppercase mb-1">
           {product.category || 'Featured'}
         </p>
