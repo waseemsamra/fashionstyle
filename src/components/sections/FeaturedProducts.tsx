@@ -216,7 +216,7 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
           {[...Array(5)].map((_, i) => (
             <Star
               key={i}
-              className={`w-2.5 h-2.5 md:w-3 md:h-3 ${
+              className={`w-2.5 h-2.5 ${
                 i < Math.floor(product.rating || 0) 
                   ? 'text-gold fill-gold' 
                   : 'text-gray-300'
