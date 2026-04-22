@@ -140,75 +140,75 @@ export default function Categories() {
   return (
     <section id="categories" ref={sectionRef} className="section-padding bg-beige-100">
       <div className="container-custom">
-        {/* Section Header */}
-        <div className={`flex flex-col md:flex-row md:items-end md:justify-between mb-12 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <div>
-            <span className="text-gold text-sm font-medium tracking-wider uppercase mb-2 block">
-              Browse Collection
-            </span>
-            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-semibold text-black">
-              Shop by Category
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+          {/* Left Content */}
+          <div className={`lg:col-span-4 flex flex-col justify-center transition-all duration-700 ${
+            isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-12'
+          }`}
+          style={{
+            transitionDelay: isVisible ? '200ms' : '0ms',
+          }}
+          >
+            <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-semibold text-black mb-4">
+              CATEGORIES
             </h2>
-          </div>
-          <p className="text-gray-600 max-w-md mt-4 md:mt-0">
-            Explore our wide range of categories and find the perfect outfit for every occasion
-          </p>
-        </div>
+            
+            <p className="text-gray-600 text-lg mb-8">
+              Explore Our Collection
+            </p>
 
-        {/* Categories Grid - Masonry Style */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <button
+              onClick={() => navigate('/categories')}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gold text-white font-semibold rounded-full hover:bg-gold/90 transition-all transform hover:scale-105 shadow-md w-fit"
+            >
+              View All Categories
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Right Categories Grid */}
+          <div className="lg:col-span-8">
+            {/* Categories Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {categories.map((category, index) => (
             <div
               key={category.slug || category.name}
               onClick={() => navigate(`/category/${category.slug || category.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
-              className={`group relative overflow-hidden rounded-2xl cursor-pointer ${
-                index % 3 === 0 ? 'lg:row-span-2' : ''
-              } ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}
+              className={`group relative overflow-hidden rounded-xl cursor-pointer ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
+              }`}
               style={{
-                transitionDelay: isVisible ? `${index * 80 + 200}ms` : '0ms',
-                transitionDuration: '700ms',
+                transitionDelay: isVisible ? `${index * 100 + 300}ms` : '0ms',
               }}
             >
               {/* Image */}
-              <div className={`relative overflow-hidden ${index % 3 === 0 ? 'h-[400px] lg:h-[600px]' : 'h-[280px] lg:h-[290px]'}`}>
+              <div className="relative aspect-square overflow-hidden">
                 <img
                   src={category.image}
                   alt={category.displayName || category.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   onError={(e) => {
                     e.currentTarget.src = '/product-placeholder.jpg';
                   }}
                 />
 
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
+                {/* Content Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
                 {/* Content */}
-                <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                  {/* Item Count Badge - Hidden since backend doesn't provide count data */}
-                  {/* <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-medium w-fit mb-3 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                    {category.itemCount || 0} Items
-                  </span> */}
-
-                  {/* Title */}
-                  <h3 className="font-playfair text-xl md:text-2xl font-semibold text-white mb-1 group-hover:-translate-y-1 transition-transform duration-300">
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <h3 className="font-semibold text-white text-sm mb-1">
                     {category.displayName || category.name}
                   </h3>
-
-                  {/* Description */}
-                  <p className="text-white/70 text-sm mb-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75">
-                    {category.description}
+                  <p className="text-white/80 text-xs">
+                    {category.itemCount || 0} Items
                   </p>
-
-                  {/* Arrow */}
-                  <div className="flex items-center gap-2 text-gold opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100">
-                    <span className="text-sm font-medium">Explore</span>
-                    <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
-                  </div>
                 </div>
               </div>
             </div>
           ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>
