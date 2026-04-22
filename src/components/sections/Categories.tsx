@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
 
 const CATEGORY_IMAGES: Record<string, string> = {
   'Bridal Wear': '/category-bridal.jpg',
@@ -27,10 +28,33 @@ const CATEGORIES_API_URL = API_CONFIG.categoriesApi;
 export default function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [itemsPerView, setItemsPerView] = useState(6);
   const [categories, setCategories] = useState<{slug: string, name: string, displayName: string, image: string, description: string, itemCount: number}[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // Update items per view based on screen size
+  useEffect(() => {
+    const updateItemsPerView = () => {
+      const width = window.innerWidth;
+      let newItemsPerView = 6;
+      
+      if (width >= 1024) {
+        newItemsPerView = 6;
+      } else if (width >= 768) {
+        newItemsPerView = 4;
+      } else {
+        newItemsPerView = 3;
+      }
+      
+      setItemsPerView(newItemsPerView);
+    };
+
+    updateItemsPerView();
+    window.addEventListener('resize', updateItemsPerView);
+    return () => window.removeEventListener('resize', updateItemsPerView);
+  }, []);
 
   useEffect(() => {
     const loadCategories = async () => {
@@ -166,48 +190,48 @@ export default function Categories() {
             </button>
           </div>
 
-          {/* Right Categories Grid */}
+          {/* Right Categories Carousel */}
           <div className="lg:col-span-8">
-            {/* Categories Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {categories.map((category, index) => (
-            <div
-              key={category.slug || category.name}
-              onClick={() => navigate(`/category/${category.slug || category.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
-              className={`group relative overflow-hidden rounded-xl cursor-pointer ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
-              }`}
-              style={{
-                transitionDelay: isVisible ? `${index * 100 + 300}ms` : '0ms',
-              }}
+            <HorizontalCarousel
+              itemsPerView={itemsPerView}
+              showArrows={true}
+              showIndicators={false}
             >
-              {/* Image */}
-              <div className="relative aspect-square overflow-hidden">
-                <img
-                  src={category.image}
-                  alt={category.displayName || category.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  onError={(e) => {
-                    e.currentTarget.src = '/product-placeholder.jpg';
+              {categories.map((category, index) => (
+                <div
+                  key={category.slug || category.name}
+                  onClick={() => navigate(`/category/${category.slug || category.name?.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)}
+                  className={`group relative cursor-pointer px-2 ${
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'
+                  }`}
+                  style={{
+                    transitionDelay: isVisible ? `${index * 50 + 300}ms` : '0ms',
                   }}
-                />
+                >
+                  {/* Circular Category Card */}
+                  <div className="relative w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 mx-auto">
+                    {/* Circle Image */}
+                    <div className="w-full h-full rounded-full overflow-hidden border-2 border-white shadow-lg">
+                      <img
+                        src={category.image}
+                        alt={category.displayName || category.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        onError={(e) => {
+                          e.currentTarget.src = '/product-placeholder.jpg';
+                        }}
+                      />
+                    </div>
 
-                {/* Content Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-                {/* Content */}
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="font-semibold text-white text-sm mb-1">
-                    {category.displayName || category.name}
-                  </h3>
-                  <p className="text-white/80 text-xs">
-                    {category.itemCount || 0} Items
-                  </p>
+                    {/* Category Name */}
+                    <div className="absolute -bottom-6 left-0 right-0 text-center">
+                      <p className="text-xs font-medium text-gray-700 group-hover:text-gold transition-colors">
+                        {category.displayName || category.name}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
-            </div>
+              ))}
+            </HorizontalCarousel>
           </div>
         </div>
       </div>
