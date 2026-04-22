@@ -76,12 +76,10 @@
   margin-bottom: 0.5rem;
 }
 
-/* Featured Collection Product Name - Force Consistent Font Size */
-.featured-product-name {
-  font-size: 10px !important;
-  line-height: 14px !important;
-  color: red !important;
-  background-color: yellow !important;
+/* Featured Collection - Force Consistent Font Size */
+.featured-collection-card .font-semibold.text-xs {
+  font-size: 12px !important;
+  line-height: 16px !important;
 }
 
 /* Mobile Carousel Styles - Consistent 1.25 Cards */

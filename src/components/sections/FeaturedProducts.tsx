@@ -151,7 +151,7 @@ export default function FeaturedProducts() {
 // Product Card Component - EXACTLY LIKE SUMMER SALE
 function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
+    <div className="featured-collection-card group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
       <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
         <img 
           src={getProductImage(product)} 
