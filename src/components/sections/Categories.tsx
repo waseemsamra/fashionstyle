@@ -38,14 +38,14 @@ export default function Categories() {
   useEffect(() => {
     const updateItemsPerView = () => {
       const width = window.innerWidth;
-      let newItemsPerView = 6;
+      let newItemsPerView = 8;
       
       if (width >= 1024) {
-        newItemsPerView = 6;
+        newItemsPerView = 8;
       } else if (width >= 768) {
-        newItemsPerView = 4;
+        newItemsPerView = 6;
       } else {
-        newItemsPerView = 3;
+        newItemsPerView = 4;
       }
       
       setItemsPerView(newItemsPerView);
@@ -209,25 +209,25 @@ export default function Categories() {
                   }}
                 >
                   {/* Circular Category Card */}
-                  <div className="relative w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 mx-auto">
-                    {/* Circle Image */}
-                    <div className="w-full h-full rounded-full overflow-hidden border-2 border-white shadow-lg">
-                      <img
-                        src={category.image}
-                        alt={category.displayName || category.name}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        onError={(e) => {
-                          e.currentTarget.src = '/product-placeholder.jpg';
-                        }}
-                      />
+                  <div className="flex flex-col items-center">
+                    {/* Small Circle Image */}
+                    <div className="relative w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16">
+                      <div className="w-full h-full rounded-full overflow-hidden border border-gray-200 shadow-sm">
+                        <img
+                          src={category.image}
+                          alt={category.displayName || category.name}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          onError={(e) => {
+                            e.currentTarget.src = '/product-placeholder.jpg';
+                          }}
+                        />
+                      </div>
                     </div>
 
                     {/* Category Name */}
-                    <div className="absolute -bottom-6 left-0 right-0 text-center">
-                      <p className="text-xs font-medium text-gray-700 group-hover:text-gold transition-colors">
-                        {category.displayName || category.name}
-                      </p>
-                    </div>
+                    <p className="text-xs text-gray-600 mt-2 text-center max-w-[80px] truncate">
+                      {category.displayName || category.name}
+                    </p>
                   </div>
                 </div>
               ))}
