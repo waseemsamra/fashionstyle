@@ -1,12 +1,27 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Star, ShoppingBag, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
 import { useCollection } from '@/hooks/useCollection';
 import { useToggleWishlist } from '@/hooks/useWishlist';
-import { getProductUrl } from '@/utils/productUrl';
-import { getProductImage, handleImageError } from '@/utils/productImage';
+
+// Helper functions
+const getProductUrl = (product: any) => {
+  return `/product/${product.slug || product.id}`;
+};
+
+const getProductImage = (product: any) => {
+  if (product.image) {
+    return product.image;
+  }
+  return `https://picsum.photos/seed/${product.name}/400/600.jpg`;
+};
+
+const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, productName: string) => {
+  console.error(`❌ Image failed to load for ${productName}:`, e);
+  e.currentTarget.src = `https://picsum.photos/seed/${productName}/400/600.jpg`;
+};
 
 export default function FeaturedProducts() {
   const navigate = useNavigate();
@@ -21,12 +36,17 @@ export default function FeaturedProducts() {
       const width = window.innerWidth;
       let newItemsPerView = 4;
       
+      console.log('📱 Featured Products Window width changed:', width);
+      
       if (width >= 1024) {
         newItemsPerView = 4;
+        console.log('✅ Featured Products Desktop mode - Showing 4 cards');
       } else if (width >= 768) {
         newItemsPerView = 2;
+        console.log('✅ Featured Products Tablet mode - Showing 2 cards');
       } else {
         newItemsPerView = 1;
+        console.log('✅ Featured Products Mobile mode - Showing 1 card');
       }
       
       setItemsPerView(newItemsPerView);
@@ -37,14 +57,16 @@ export default function FeaturedProducts() {
     return () => window.removeEventListener('resize', updateItemsPerView);
   }, []);
 
-  // Fetch featured products
+  // THE FORMULA: Fetch ONLY collection products - NO scanning!
   const { products: collectionProducts, loading: collectionLoading } = useCollection('featured');
 
   useEffect(() => {
     if (collectionProducts && collectionProducts.length > 0) {
+      console.log('✅ Featured Products loaded:', collectionProducts.length);
       setProducts(collectionProducts);
       setLoading(false);
     } else {
+      console.log('❌ No products found');
       setProducts([]);
       setLoading(false);
     }
@@ -70,8 +92,17 @@ export default function FeaturedProducts() {
     );
   }
 
+  console.log('✅ Rendering carousel with', itemsPerView, 'cards per view');
+
   return (
     <section className="py-12 bg-gray-50">
+      {/* DEBUG: Visual indicator of current mode */}
+      <div className="fixed top-0 right-0 bg-black text-white px-2 py-1 text-xs z-50 rounded-bl">
+        Featured: {itemsPerView === 4 ? 'Desktop (4 cards)' : itemsPerView === 2 ? 'Tablet (2 cards)' : 'Mobile (1 card)'} | 
+        Width: {window.innerWidth}px | 
+        Products: {products.length}
+      </div>
+
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-8">
@@ -86,6 +117,7 @@ export default function FeaturedProducts() {
         {/* Carousel Container */}
         <HorizontalCarousel
           itemsPerView={itemsPerView}
+          onSlideChange={(slideIndex) => console.log('🎯 Featured Products Jump to slide', slideIndex)}
         >
           {products.map((product) => (
             <ProductCard 
@@ -102,7 +134,10 @@ export default function FeaturedProducts() {
         {/* View All Button */}
         <div className="text-center mt-10">
           <button
-            onClick={() => navigate('/shop?featured=true')}
+            onClick={() => {
+              console.log('🔗 Featured Products Navigate to /shop?featured=true');
+              navigate('/shop?featured=true');
+            }}
             className="px-6 py-2.5 md:px-8 md:py-3 bg-gold text-white font-semibold rounded-full hover:bg-gold/90 transition-all transform hover:scale-105 shadow-md"
           >
             View All Featured Items
@@ -113,10 +148,10 @@ export default function FeaturedProducts() {
   );
 }
 
-// Product Card Component - EXACT COPY FROM SUMMER SALE
+// Product Card Component - EXACTLY LIKE SUMMER SALE
 function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
+    <div className="featured-collection-card group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
       <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
         <img 
           src={getProductImage(product)} 
@@ -141,17 +176,6 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
             <Heart className="w-4 h-4" />
           </button>
         </div>
-
-        {/* Add to Cart Button - Shows on Hover */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-          <button
-            onClick={onAddToCart}
-            className="w-full py-2 md:py-3 bg-black text-white text-xs font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
-          >
-            <ShoppingBag className="w-3 h-3 md:w-4 md:h-4" />
-            Add to Cart
-          </button>
-        </div>
       </div>
 
       <div className="p-3 md:p-4">
@@ -162,6 +186,7 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         <h3
           onClick={onNavigate}
           className="font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
+          style={{ fontSize: '12px', lineHeight: '16px' }}
         >
           {product.name}
         </h3>
@@ -194,6 +219,17 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
             </span>
           )}
         </div>
+      </div>
+
+      {/* Add to Cart Button - Shows on Hover */}
+      <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+        <button
+          onClick={onAddToCart}
+          className="w-full py-2 md:py-3 bg-black text-white text-xs font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors"
+        >
+          <ShoppingBag className="w-3 h-3 md:w-4 md:h-4" />
+          Add to Cart
+        </button>
       </div>
     </div>
   );
