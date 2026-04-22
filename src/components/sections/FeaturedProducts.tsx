@@ -206,7 +206,8 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         
         <h3
           onClick={onNavigate}
-          className="font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2 !text-xs"
+          className="font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
+          style={{ fontSize: '12px !important', lineHeight: '16px !important' }}
         >
           {product.name}
         </h3>
