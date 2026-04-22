@@ -92,7 +92,6 @@ export default function WeddingTales() {
         {products.length > 0 ? (
           <HorizontalCarousel
             itemsPerView={itemsPerView}
-            onSlideChange={(slideIndex) => console.log('🎯 Wedding Tales Jump to slide', slideIndex)}
           >
             {products.map((product) => (
               <ProductCard 

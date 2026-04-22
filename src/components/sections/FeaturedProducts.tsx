@@ -161,7 +161,7 @@ export default function FeaturedProducts() {
 // Product Card Component
 function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
+    <div className="product-card group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
       <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
         <img 
           src={getProductImage(product)} 
@@ -206,7 +206,7 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         
         <h3
           onClick={onNavigate}
-          className="font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
+          className="product-card-title font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2"
         >
           {product.name}
         </h3>

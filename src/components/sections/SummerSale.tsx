@@ -22,20 +22,14 @@ export default function SummerSale() {
       const width = window.innerWidth;
       let newItemsPerView = 4;
       
-      console.log('📱 Summer Sale Window width changed:', width);
-      
       if (width >= 1024) {
         newItemsPerView = 4;
-        console.log('✅ Summer Sale Desktop mode - Showing 4 cards');
       } else if (width >= 768) {
         newItemsPerView = 2;
-        console.log('✅ Summer Sale Tablet mode - Showing 2 cards');
       } else {
         newItemsPerView = 1;
-        console.log('✅ Summer Sale Mobile mode - Showing 1 card');
       }
       
-      console.log(`📊 Summer Sale Setting itemsPerView to: ${newItemsPerView}`);
       setItemsPerView(newItemsPerView);
     };
 
@@ -92,7 +86,6 @@ export default function SummerSale() {
         {/* Carousel Container */}
         <HorizontalCarousel
           itemsPerView={itemsPerView}
-          onSlideChange={(slideIndex) => console.log('🎯 Summer Sale Jump to slide', slideIndex)}
         >
           {products.map((product) => (
             <ProductCard 

@@ -83,7 +83,6 @@ export default function DesignersOnDiscount() {
         {/* Carousel Container */}
         <HorizontalCarousel
           itemsPerView={itemsPerView}
-          onSlideChange={(slideIndex) => console.log('Home Jump to slide', slideIndex)}
         >
           {products.map((product) => (
             <ProductCard 
