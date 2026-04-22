@@ -156,13 +156,13 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
       </div>
       <div className="p-4">
         <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
-        <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold mb-2 group-hover:text-gold cursor-pointer">{product.name}</h3>
+        <h3 onClick={onNavigate} className="font-semibold text-xs mb-2 cursor-pointer hover:text-gold transition line-clamp-2">{product.name}</h3>
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (<Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />))}
           <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-lg">${product.price}</span>
+          <span className="font-semibold text-xs">${product.price}</span>
           {product.originalPrice && <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>}
         </div>
       </div>
