@@ -36,38 +36,55 @@ export function useCollection(collectionName: string): UseCollectionResult {
       setError(null);
       
       console.log(`📦 Fetching collection: ${collectionName}...`);
-      const result = await api.getCollection(collectionName);
       
-      // Check if response contains productIds (new format) or products (old format)
-      if (result.collection && result.collection.productIds) {
-        // New format: collection has productIds, need to fetch product details
-        console.log(`🔄 Collection ${collectionName} has ${result.collection.productIds.length} product IDs, fetching details...`);
-        
-        // Fetch product details using the products API
-        const productDetails = await Promise.all(
-          result.collection.productIds.map(async (productId: string) => {
-            try {
-              const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod'}/products?ids=${productId}`);
-              const data = await response.json();
-              return data.products?.[0] || null;
-            } catch (err) {
-              console.error(`❌ Failed to fetch product ${productId}:`, err);
-              return null;
-            }
-          })
-        );
-        
-        const validProducts = productDetails.filter(product => product !== null);
-        console.log(`✅ Collection ${collectionName} loaded:`, validProducts.length, 'products from IDs');
-        
-        setCollection(result.collection);
-        setProducts(validProducts);
-      } else {
-        // Old format: collection already has products array
-        console.log(`✅ Collection ${collectionName} loaded:`, result.count, 'products');
-        setCollection(result.collection);
-        setProducts(result.products);
+      // Collection configuration with filtering parameters
+      const collectionConfigs: Record<string, any> = {
+        featuredCollection: { isFeatured: true, limit: 8 },
+        newArrivals: { sort: 'createdAt', order: 'desc', limit: 8 },
+        weddingTales: { category: 'Bridal Wear', limit: 8 },
+        designersDiscount: { isSale: true, limit: 8 },
+        summerSale: { category: 'Summer Collection', limit: 8 }
+      };
+      
+      const config = collectionConfigs[collectionName];
+      if (!config) {
+        console.warn(`⚠️ No configuration found for collection: ${collectionName}`);
+        setProducts([]);
+        setCollection(null);
+        return;
       }
+      
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      Object.entries(config).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          queryParams.append(key, String(value));
+        }
+      });
+      
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod';
+      const response = await fetch(`${apiUrl}/products?${queryParams.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} - Failed to fetch collection products`);
+      }
+      
+      const data = await response.json();
+      const products = data.products || [];
+      
+      console.log(`✅ Collection ${collectionName} loaded:`, products.length, 'products');
+      
+      // Create collection object for consistency
+      const collection = {
+        id: collectionName,
+        name: collectionName,
+        displayName: collectionName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+        productIds: products.map((p: any) => p.id),
+        count: products.length
+      };
+      
+      setCollection(collection);
+      setProducts(products);
     } catch (err) {
       console.error(`❌ Failed to fetch collection ${collectionName}:`, err);
       setError(err as Error);
