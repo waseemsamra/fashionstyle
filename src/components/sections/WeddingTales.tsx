@@ -8,50 +8,6 @@ import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
 
-// Fallback wedding products data
-const fallbackWeddingProducts = [
-  {
-    id: 'wedding-1',
-    name: 'Elegant Bridal Lehenga',
-    price: 25000,
-    originalPrice: 35000,
-    category: 'Bridal Wear',
-    rating: 5,
-    discountPercentage: 29,
-    image: 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/products/wedding-1.jpg'
-  },
-  {
-    id: 'wedding-2',
-    name: 'Traditional Wedding Sherwani',
-    price: 18000,
-    originalPrice: 25000,
-    category: 'Formal Wear',
-    rating: 4,
-    discountPercentage: 28,
-    image: 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/products/wedding-2.jpg'
-  },
-  {
-    id: 'wedding-3',
-    name: 'Designer Bridal Saree',
-    price: 22000,
-    originalPrice: 30000,
-    category: 'Bridal Wear',
-    rating: 5,
-    discountPercentage: 27,
-    image: 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/products/wedding-3.jpg'
-  },
-  {
-    id: 'wedding-4',
-    name: 'Wedding Groom Suit',
-    price: 20000,
-    originalPrice: 28000,
-    category: 'Formal Wear',
-    rating: 4,
-    discountPercentage: 29,
-    image: 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/products/wedding-4.jpg'
-  }
-];
-
 export default function WeddingTales() {
   const navigate = useNavigate();
   const { toggleWishlist } = useToggleWishlist();
@@ -59,9 +15,6 @@ export default function WeddingTales() {
 
   // THE FORMULA: Fetch ONLY collection products - NO scanning!
   const { products, loading } = useCollection('weddingTales');
-  
-  // Use fallback data if API returns empty products
-  const displayProducts = products.length > 0 ? products : fallbackWeddingProducts;
 
   // Update items per view based on screen size
   useEffect(() => {
@@ -109,7 +62,7 @@ export default function WeddingTales() {
     );
   }
 
-  if (displayProducts.length === 0) {
+  if (products.length === 0) {
     console.log('No wedding tales products found - showing empty state');
   }
 
@@ -136,11 +89,11 @@ export default function WeddingTales() {
         </div>
 
         {/* Carousel Container */}
-        {displayProducts.length > 0 ? (
+        {products.length > 0 ? (
           <HorizontalCarousel
             itemsPerView={itemsPerView}
           >
-            {displayProducts.map((product) => (
+            {products.map((product) => (
               <ProductCard 
                 key={product.id}
                 product={product} 
