@@ -38,9 +38,36 @@ export function useCollection(collectionName: string): UseCollectionResult {
       console.log(`📦 Fetching collection: ${collectionName}...`);
       const result = await api.getCollection(collectionName);
       
-      console.log(`✅ Collection ${collectionName} loaded:`, result.count, 'products');
-      setCollection(result.collection);
-      setProducts(result.products);
+      // Check if response contains productIds (new format) or products (old format)
+      if (result.collection && result.collection.productIds) {
+        // New format: collection has productIds, need to fetch product details
+        console.log(`🔄 Collection ${collectionName} has ${result.collection.productIds.length} product IDs, fetching details...`);
+        
+        // Fetch product details using the products API
+        const productDetails = await Promise.all(
+          result.collection.productIds.map(async (productId: string) => {
+            try {
+              const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod'}/products?ids=${productId}`);
+              const data = await response.json();
+              return data.products?.[0] || null;
+            } catch (err) {
+              console.error(`❌ Failed to fetch product ${productId}:`, err);
+              return null;
+            }
+          })
+        );
+        
+        const validProducts = productDetails.filter(product => product !== null);
+        console.log(`✅ Collection ${collectionName} loaded:`, validProducts.length, 'products from IDs');
+        
+        setCollection(result.collection);
+        setProducts(validProducts);
+      } else {
+        // Old format: collection already has products array
+        console.log(`✅ Collection ${collectionName} loaded:`, result.count, 'products');
+        setCollection(result.collection);
+        setProducts(result.products);
+      }
     } catch (err) {
       console.error(`❌ Failed to fetch collection ${collectionName}:`, err);
       setError(err as Error);
