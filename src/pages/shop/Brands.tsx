@@ -45,8 +45,8 @@ export default function BrandsPage() {
       console.log(`data.items:`, data.items);
       console.log(`Full API Response:`, data);
       
-      // Use brands API response directly - API returns {brands: Array(395), count: 395}
-      const brands = data.brands || data.items || data.data || [];
+      // Use brands API response directly - API returns array of brands directly
+      const brands = Array.isArray(data) ? data : (data.brands || data.items || data.data || []);
       console.log(`=== BRAND FETCH SUMMARY ===`);
       console.log(`API Response structure:`, Object.keys(data));
       console.log(`data.count:`, data.count);
