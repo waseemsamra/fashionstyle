@@ -116,6 +116,9 @@ export default function AdminBrands() {
         console.log('📝 Response data:', responseData);
 
         if (!response.ok) {
+          if (response.status === 403) {
+            throw new Error('Authentication required. Please log in again to update brands.');
+          }
           throw new Error(responseData.message || `HTTP ${response.status}`);
         }
 
@@ -141,6 +144,9 @@ export default function AdminBrands() {
         console.log('📝 Response data:', responseData);
 
         if (!response.ok) {
+          if (responseData.error === 'Method POST not supported') {
+            throw new Error('Brand creation is not currently available. Please contact administrator to enable brand creation functionality.');
+          }
           throw new Error(responseData.message || `HTTP ${response.status}`);
         }
 
@@ -171,7 +177,11 @@ export default function AdminBrands() {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          if (response.status === 403) {
+            throw new Error('Authentication required. Please log in again to delete brands.');
+          }
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${response.status}`);
         }
 
         toast.success('Brand deleted successfully!');
