@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 // API Gateway URL
 import { API_CONFIG } from '../../config/api';
 const BRANDS_API_URL = API_CONFIG.brandsApi;
-const ADMIN_BRANDS_API_URL = API_CONFIG.brandsApi.replace('/brands', '/admin/brands');
 
 interface Brand {
   id: string;
@@ -100,7 +99,7 @@ export default function AdminBrands() {
       if (editingBrand) {
         // Update existing brand via PUT
         console.log('📝 Updating brand:', editingBrand.id);
-        const response = await fetch(`${ADMIN_BRANDS_API_URL}/${editingBrand.id}`, {
+        const response = await fetch(`${BRANDS_API_URL}/${editingBrand.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -128,7 +127,7 @@ export default function AdminBrands() {
           name: newBrandName,
           description: newBrandDescription
         };
-        const response = await fetch(ADMIN_BRANDS_API_URL, {
+        const response = await fetch(BRANDS_API_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -163,7 +162,7 @@ export default function AdminBrands() {
         const token = localStorage.getItem('jwt_token');
         console.log('🗑️ Deleting brand via API...');
         
-        const response = await fetch(`${ADMIN_BRANDS_API_URL}/${id}`, {
+        const response = await fetch(`${BRANDS_API_URL}/${id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
