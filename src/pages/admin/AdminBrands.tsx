@@ -95,16 +95,31 @@ export default function AdminBrands() {
 
     try {
       const token = localStorage.getItem('jwt_token');
+      console.log('🔑 JWT Token available:', !!token);
+      console.log('🔑 JWT Token length:', token?.length || 0);
 
       if (editingBrand) {
         // Update existing brand via PUT
         console.log('📝 Updating brand:', editingBrand.id);
+        console.log('📝 Request URL:', `${BRANDS_API_URL}/${editingBrand.id}`);
+        console.log('📝 Request body:', { name: newBrandName, description: newBrandDescription });
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('📝 Authorization header added');
+        } else {
+          console.log('⚠️ No JWT token found in localStorage');
+        }
+        
+        console.log('📝 Request headers:', headers);
+        
         const response = await fetch(`${BRANDS_API_URL}/${editingBrand.id}`, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` })
-          },
+          headers,
           body: JSON.stringify({
             name: newBrandName,
             description: newBrandDescription
@@ -130,12 +145,25 @@ export default function AdminBrands() {
           name: newBrandName,
           description: newBrandDescription
         };
+        console.log('📝 Request URL:', BRANDS_API_URL);
+        console.log('📝 Request body:', brandData);
+        
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+          console.log('📝 Authorization header added');
+        } else {
+          console.log('⚠️ No JWT token found in localStorage');
+        }
+        
+        console.log('📝 Request headers:', headers);
+        
         const response = await fetch(BRANDS_API_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` })
-          },
+          headers,
           body: JSON.stringify(brandData)
         });
 
