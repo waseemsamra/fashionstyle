@@ -229,21 +229,33 @@ export const api = {
         return cached;
       }
 
-      const response = await fetch(`${API_CONFIG.collectionsApi}/${name}`, {
+      // Use main /collections endpoint and extract specific collection
+      const response = await fetch(`${API_CONFIG.collectionsApi}`, {
         credentials: 'omit',
       });
       
       if (!response.ok) {
-        console.warn(`⚠️ Collection ${name} not found`);
+        console.warn(`⚠️ Collections endpoint not available`);
         return { collection: null, products: [], count: 0 };
       }
       
       const data = await response.json();
+      console.log(`📦 Collections data:`, data);
+      
+      // Extract specific collection from the response
+      const specificCollection = data[name];
+      if (!specificCollection) {
+        console.warn(`⚠️ Collection ${name} not found in response`);
+        return { collection: null, products: [], count: 0 };
+      }
+      
       const result = {
-        collection: data.collection || null,
-        products: data.products || [],
-        count: data.count || 0,
+        collection: specificCollection.collection || specificCollection,
+        products: specificCollection.products || [],
+        count: specificCollection.products?.length || 0,
       };
+
+      console.log(`✅ Collection ${name} extracted:`, result);
 
       // Cache collection for 5 minutes
       cache.set(cacheKey, result, 5 * 60 * 1000);
