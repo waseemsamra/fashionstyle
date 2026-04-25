@@ -5,7 +5,7 @@ export const API_CONFIG = {
   // API Endpoints using environment variables
   productsApi: import.meta.env.VITE_PRODUCTS_API?.replace('/products', '') || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod',
   collectionsApi: import.meta.env.VITE_COLLECTIONS_API || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/collections',
-  brandsApi: import.meta.env.VITE_BRANDS_API || 'https://kf3jcdzhkr32fktpmwl3hzndie0awiod.lambda-url.us-east-1.on.aws/brands',
+  brandsApi: 'https://q6dfid542cbp3avmsvdvvnpbyu0wgibu.lambda-url.us-east-1.on.aws/brands',
   categoriesApi: import.meta.env.VITE_CATEGORIES_API || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/categories',
   
   // Base API URL (fallback)
