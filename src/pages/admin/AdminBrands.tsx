@@ -111,18 +111,7 @@ export default function AdminBrands() {
       const token = localStorage.getItem('jwt_token');
       console.log('🔑 JWT Token available:', !!token);
       console.log('🔑 JWT Token length:', token?.length || 0);
-      
-      if (!token) {
-        console.error('❌ No JWT token found in localStorage');
-        toast.error('Please log in to manage brands');
-        return;
-      }
-      
-      if (token.length < 10) {
-        console.error('❌ JWT token appears to be invalid (too short)');
-        toast.error('Invalid authentication. Please log in again.');
-        return;
-      }
+      console.log('🌐 Using Function URL - no authentication required');
 
       if (editingBrand) {
         // Update existing brand via PUT
@@ -130,18 +119,12 @@ export default function AdminBrands() {
         console.log('📝 Request URL:', `${BRANDS_API_URL}/${editingBrand.id}`);
         console.log('📝 Request body:', { name: newBrandName, description: newBrandDescription });
         
+        // Function URL doesn't require authentication
         const headers: Record<string, string> = {
           'Content-Type': 'application/json'
         };
         
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-          console.log('📝 Authorization header added');
-        } else {
-          console.log('⚠️ No JWT token found in localStorage');
-        }
-        
-        console.log('📝 Request headers:', headers);
+        console.log('📝 Request headers (Function URL - no auth):', headers);
         
         const response = await fetch(`${BRANDS_API_URL}/${editingBrand.id}`, {
           method: 'PUT',
@@ -174,18 +157,12 @@ export default function AdminBrands() {
         console.log('📝 Request URL:', BRANDS_API_URL);
         console.log('📝 Request body:', brandData);
         
+        // Function URL doesn't require authentication
         const headers: Record<string, string> = {
           'Content-Type': 'application/json'
         };
         
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-          console.log('📝 Authorization header added');
-        } else {
-          console.log('⚠️ No JWT token found in localStorage');
-        }
-        
-        console.log('📝 Request headers:', headers);
+        console.log('📝 Request headers (Function URL - no auth):', headers);
         
         const response = await fetch(BRANDS_API_URL, {
           method: 'POST',
@@ -219,14 +196,13 @@ export default function AdminBrands() {
   const handleDeleteBrand = async (id: string) => {
     if (confirm('Are you sure you want to delete this brand?')) {
       try {
-        const token = localStorage.getItem('jwt_token');
-        console.log('🗑️ Deleting brand via API...');
+        console.log('🗑️ Deleting brand via Function URL...');
         
+        // Function URL doesn't require authentication
         const response = await fetch(`${BRANDS_API_URL}/${id}`, {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` })
+            'Content-Type': 'application/json'
           }
         });
 
