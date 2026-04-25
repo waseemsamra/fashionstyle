@@ -22,6 +22,9 @@ export interface AdminStats {
     totalProducts: number;
     outOfStock: number;
     lowStock: number;
+    featured: number;
+    new: number;
+    sale: number;
     topSelling: Array<{
       id: string;
       name: string;
@@ -128,6 +131,9 @@ class AdminService {
         totalProducts: products.length,
         outOfStock: products.filter((p: any) => !p.inStock || p.stock === 0).length,
         lowStock: products.filter((p: any) => p.stock && p.stock > 0 && p.stock < 10).length,
+        featured: products.filter((p: any) => p.isFeatured).length,
+        new: products.filter((p: any) => p.isNew).length,
+        sale: products.filter((p: any) => p.isSale).length,
         topSelling: products.slice(0, 5).map((p: any) => ({
           id: p.id,
           name: p.name,
@@ -349,6 +355,9 @@ class AdminService {
         totalProducts: data.products?.totalProducts || 0,
         outOfStock: data.products?.outOfStock || 0,
         lowStock: data.products?.lowStock || 0,
+        featured: data.products?.featured || 0,
+        new: data.products?.new || 0,
+        sale: data.products?.sale || 0,
         topSelling: data.products?.topSelling || [],
       },
       revenue: {
@@ -403,6 +412,9 @@ function getMockStats(): AdminStats {
       totalProducts: 534,
       outOfStock: 23,
       lowStock: 67,
+      featured: 12,
+      new: 8,
+      sale: 15,
       topSelling: [
         { id: '1', name: 'Classic Cotton T-Shirt', sales: 234, revenue: 5850 },
         { id: '2', name: 'Slim Fit Jeans', sales: 189, revenue: 9450 },

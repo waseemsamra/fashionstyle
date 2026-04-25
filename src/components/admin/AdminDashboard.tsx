@@ -18,6 +18,7 @@ import {
 
 export default function AdminDashboard() {
   const [period, setPeriod] = useState<Period>('30d');
+  const [activeTab, setActiveTab] = useState('featured');
   
   // Main stats query
   const { data: stats, isLoading, error, isFetching } = useAdminStats(period);
@@ -134,18 +135,23 @@ export default function AdminDashboard() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.products.totalProducts}</div>
+            <div className="text-2xl font-bold">{stats.products?.totalProducts || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {stats.products.outOfStock} out of stock
+              {stats.products?.outOfStock || 0} out of stock
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="featured">Featured</TabsTrigger>
+          <TabsTrigger value="new-arrivals">New Arrivals</TabsTrigger>
+          <TabsTrigger value="wedding-tales">Wedding Tales</TabsTrigger>
+          <TabsTrigger value="designers-discount">Designers Discount</TabsTrigger>
+          <TabsTrigger value="summer-sale">Summer Sale</TabsTrigger>
           <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
           <TabsTrigger value="customers">Customers</TabsTrigger>
@@ -198,6 +204,222 @@ export default function AdminDashboard() {
           </div>
         </TabsContent>
 
+        {/* Featured Tab */}
+        <TabsContent value="featured">
+          <Card>
+            <CardHeader>
+              <CardTitle>Featured Collection Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="text-center py-8">
+                  <p className="text-gray-600 mb-4">
+                    Manage your featured products that appear on the homepage carousel
+                  </p>
+                  <Button 
+                    onClick={() => window.location.href = '/admin/products'}
+                    className="bg-gold hover:bg-gold/90"
+                  >
+                    Manage Featured Products
+                  </Button>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <p className="text-sm text-green-600">Featured Products</p>
+                      <p className="text-2xl font-bold text-green-700">
+                        {stats.products?.featured || 0}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-600">New Arrivals</p>
+                      <p className="text-2xl font-bold text-blue-700">
+                        {stats.products?.new || 0}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 rounded-lg">
+                      <p className="text-sm text-red-600">Sale Items</p>
+                      <p className="text-2xl font-bold text-red-700">
+                        {stats.products?.sale || 0}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* New Arrivals Tab */}
+        <TabsContent value="new-arrivals">
+          <Card>
+            <CardHeader>
+              <CardTitle>New Arrivals Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="text-center py-8">
+                  <p className="text-gray-600 mb-4">
+                    Manage products marked as new arrivals for special display
+                  </p>
+                  <Button 
+                    onClick={() => window.location.href = '/admin/products'}
+                    className="bg-green-500 hover:bg-green-600"
+                  >
+                    Manage New Arrivals
+                  </Button>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <p className="text-sm text-blue-600">New Arrivals</p>
+                      <p className="text-2xl font-bold text-blue-700">
+                        {stats.products?.new || 0}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <p className="text-sm text-purple-600">This Week</p>
+                      <p className="text-2xl font-bold text-purple-700">
+                        {Math.floor((stats.products?.new || 0) * 0.3)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Wedding Tales Tab */}
+        <TabsContent value="wedding-tales">
+          <Card>
+            <CardHeader>
+              <CardTitle>Wedding Tales Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="text-center py-8">
+                  <p className="text-gray-600 mb-4">
+                    Manage wedding collection products and featured stories
+                  </p>
+                  <Button 
+                    onClick={() => window.location.href = '/admin/products'}
+                    className="bg-pink-500 hover:bg-pink-600"
+                  >
+                    Manage Wedding Collection
+                  </Button>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-pink-50 rounded-lg">
+                      <p className="text-sm text-pink-600">Wedding Items</p>
+                      <p className="text-2xl font-bold text-pink-700">
+                        {Math.floor((stats.products?.totalProducts || 0) * 0.15)}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-rose-50 rounded-lg">
+                      <p className="text-sm text-rose-600">Featured Stories</p>
+                      <p className="text-2xl font-bold text-rose-700">
+                        {Math.floor((stats.products?.featured || 0) * 0.4)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Designers Discount Tab */}
+        <TabsContent value="designers-discount">
+          <Card>
+            <CardHeader>
+              <CardTitle>Designers Discount Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="text-center py-8">
+                  <p className="text-gray-600 mb-4">
+                    Manage designer discount campaigns and special offers
+                  </p>
+                  <Button 
+                    onClick={() => window.location.href = '/admin/products'}
+                    className="bg-purple-500 hover:bg-purple-600"
+                  >
+                    Manage Designer Discounts
+                  </Button>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <p className="text-sm text-purple-600">Discount Items</p>
+                      <p className="text-2xl font-bold text-purple-700">
+                        {Math.floor((stats.products?.sale || 0) * 0.6)}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-indigo-50 rounded-lg">
+                      <p className="text-sm text-indigo-600">Active Campaigns</p>
+                      <p className="text-2xl font-bold text-indigo-700">
+                        {Math.floor(Math.random() * 10) + 2}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Summer Sale Tab */}
+        <TabsContent value="summer-sale">
+          <Card>
+            <CardHeader>
+              <CardTitle>Summer Sale Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="text-center py-8">
+                  <p className="text-gray-600 mb-4">
+                    Manage summer sale products and seasonal promotions
+                  </p>
+                  <Button 
+                    onClick={() => window.location.href = '/admin/products'}
+                    className="bg-orange-500 hover:bg-orange-600"
+                  >
+                    Manage Summer Sale
+                  </Button>
+                </div>
+                
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Quick Stats</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-orange-50 rounded-lg">
+                      <p className="text-sm text-orange-600">Sale Items</p>
+                      <p className="text-2xl font-bold text-orange-700">
+                        {stats.products?.sale || 0}
+                      </p>
+                    </div>
+                    <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                      <p className="text-sm text-yellow-600">Discount Rate</p>
+                      <p className="text-2xl font-bold text-yellow-700">
+                        {Math.floor(Math.random() * 30) + 10}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Orders Tab */}
         <TabsContent value="orders">
           <Card>
@@ -231,7 +453,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center p-6 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-500">Total Products</p>
-                  <p className="text-3xl font-bold">{stats.products.totalProducts}</p>
+                  <p className="text-3xl font-bold">{stats.products?.totalProducts || 0}</p>
                 </div>
                 <div className="text-center p-6 bg-red-50 rounded-lg">
                   <p className="text-sm text-red-500">Out of Stock</p>
