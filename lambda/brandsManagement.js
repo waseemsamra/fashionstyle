@@ -19,6 +19,44 @@ async function handleOptions() {
   };
 }
 
+// GET /:id - Get single brand
+async function getBrand(event, brandId) {
+  console.log('Getting brand:', brandId);
+  
+  try {
+    const params = {
+      TableName: BRANDS_TABLE,
+      Key: { id: brandId }
+    };
+
+    const result = await dynamodb.get(params).promise();
+    
+    if (!result.Item) {
+      return {
+        statusCode: 404,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Brand not found' }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify(result.Item),
+    };
+  } catch (error) {
+    console.error('Error getting brand:', error);
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({ 
+        error: 'Failed to get brand',
+        message: error.message 
+      }),
+    };
+  }
+}
+
 // GET /admin/brands - List all brands
 async function getAllBrands(event) {
   console.log('Getting all brands...');
@@ -258,12 +296,15 @@ async function deleteBrand(event, brandId) {
   }
 }
 
-// Handler for API Gateway
+// Handler for Function URL
 exports.handler = async (event) => {
-  console.log('Brands Handler:', event.path, event.httpMethod);
+  console.log('Brands Handler:', JSON.stringify(event));
 
-  const path = event.path;
-  const method = event.httpMethod;
+  // Function URL event structure
+  const path = event.rawPath || '/';
+  const method = event.requestContext?.http?.method || 'GET';
+
+  console.log('Path:', path, 'Method:', method);
 
   // Handle CORS preflight FIRST
   if (method === 'OPTIONS') {
@@ -272,26 +313,33 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Route: GET /admin/brands
-    if (path === '/admin/brands' && method === 'GET') {
+    // Route: GET / (root) - return all brands
+    if (path === '/' && method === 'GET') {
       return await getAllBrands(event);
     }
 
-    // Route: POST /admin/brands
-    if (path === '/admin/brands' && method === 'POST') {
+    // Route: GET /:id - get single brand
+    if (path.match(/^\/[^\/]+$/) && method === 'GET') {
+      const brandId = path.split('/').pop();
+      console.log('GET request for brand:', brandId);
+      return await getBrand(event, brandId);
+    }
+
+    // Route: POST / - create brand
+    if (path === '/' && method === 'POST') {
       return await createBrand(event);
     }
 
-    // Route: PUT /admin/brands/:id
-    if (path.match(/^\/admin\/brands\/[^\/]+$/) && method === 'PUT') {
-      const brandId = event.pathParameters ? event.pathParameters.id : path.split('/').pop();
+    // Route: PUT /:id - update brand
+    if (path.match(/^\/[^\/]+$/) && method === 'PUT') {
+      const brandId = path.split('/').pop();
       console.log('PUT request for brand:', brandId);
       return await updateBrand(event, brandId);
     }
 
-    // Route: DELETE /admin/brands/:id
-    if (path.match(/^\/admin\/brands\/[^\/]+$/) && method === 'DELETE') {
-      const brandId = event.pathParameters ? event.pathParameters.id : path.split('/').pop();
+    // Route: DELETE /:id - delete brand
+    if (path.match(/^\/[^\/]+$/) && method === 'DELETE') {
+      const brandId = path.split('/').pop();
       console.log('DELETE request for brand:', brandId);
       return await deleteBrand(event, brandId);
     }

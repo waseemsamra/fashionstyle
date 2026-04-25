@@ -70,6 +70,9 @@ const productSchema = z.object({
   patterns: z.array(z.string()).optional(),
   occasions: z.array(z.string()).optional(),
   genders: z.array(z.string()).optional(),
+  isFeatured: z.boolean().optional(),
+  isNew: z.boolean().optional(),
+  isSale: z.boolean().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -131,6 +134,9 @@ export default function ProductForm({
       patterns: [],
       occasions: [],
       genders: [],
+      isFeatured: false,
+      isNew: false,
+      isSale: false,
     },
   });
 
@@ -153,6 +159,9 @@ export default function ProductForm({
         patterns: initialData.patterns || initialData.Patterns || [],
         occasions: initialData.occasions || initialData.Occasions || [],
         genders: initialData.genders || initialData.Genders || [],
+        isFeatured: initialData.isFeatured || false,
+        isNew: initialData.isNew || false,
+        isSale: initialData.isSale || false,
       };
       console.log('🔵 Resetting form with:', values);
       reset(values);
@@ -789,6 +798,68 @@ export default function ProductForm({
                           </div>
                         )}
                       />
+                    </div>
+
+                    <div className="space-y-4">
+                      <Label className="text-sm font-medium">Product Status</Label>
+                      <div className="flex flex-wrap gap-4 p-3 border rounded-lg bg-muted/30">
+                        <Controller
+                          name="isFeatured"
+                          control={control}
+                          render={({ field }) => (
+                            <label className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded p-2 transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={field.value || false}
+                                onChange={field.onChange}
+                                className="w-4 h-4 text-gold focus:ring-gold border-gray-300 rounded"
+                              />
+                              <div className="flex items-center gap-1">
+                                <Star className="h-4 w-4 text-amber-500" />
+                                <span className="text-sm">Featured Collection</span>
+                              </div>
+                            </label>
+                          )}
+                        />
+                        
+                        <Controller
+                          name="isNew"
+                          control={control}
+                          render={({ field }) => (
+                            <label className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded p-2 transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={field.value || false}
+                                onChange={field.onChange}
+                                className="w-4 h-4 text-gold focus:ring-gold border-gray-300 rounded"
+                              />
+                              <div className="flex items-center gap-1">
+                                <Tag className="h-4 w-4 text-green-500" />
+                                <span className="text-sm">New Arrival</span>
+                              </div>
+                            </label>
+                          )}
+                        />
+                        
+                        <Controller
+                          name="isSale"
+                          control={control}
+                          render={({ field }) => (
+                            <label className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 rounded p-2 transition-colors">
+                              <input
+                                type="checkbox"
+                                checked={field.value || false}
+                                onChange={field.onChange}
+                                className="w-4 h-4 text-gold focus:ring-gold border-gray-300 rounded"
+                              />
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="h-4 w-4 text-red-500" />
+                                <span className="text-sm">On Sale</span>
+                              </div>
+                            </label>
+                          )}
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
