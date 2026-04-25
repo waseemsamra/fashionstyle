@@ -72,8 +72,17 @@ export default function AdminBrands() {
       const brandsData = Array.isArray(data) ? data : (data.brands || data.items || []);
 
       if (brandsData.length > 0) {
-        setBrands(brandsData);
-        console.log('✅ Loaded', brandsData.length, 'brands from API');
+        // Ensure each brand has required fields
+        const processedBrands = brandsData.map((brand: any) => ({
+          id: brand.id || brand.name?.toLowerCase().replace(/\s+/g, '-'),
+          name: brand.name || 'Unknown Brand',
+          description: brand.description || '',
+          logo: brand.logo || '',
+          active: brand.active !== false,
+          products: brand.products || 0
+        }));
+        setBrands(processedBrands);
+        console.log('✅ Loaded', processedBrands.length, 'brands from API');
       } else {
         console.log('⚠️ No brands found in API');
         setBrands([]);

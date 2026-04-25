@@ -57,21 +57,22 @@ export default function BrandsPage() {
       console.log(`Sample brand keys:`, brands[0] ? Object.keys(brands[0]) : 'No brand data');
       console.log(`========================`);
       
-      // Use brands API response directly - API returns array of strings (brand names)
+      // Use brands API response directly - API returns array of brand objects
       const brandsData = brands.map((brand: any, index: number) => {
         console.log(`Processing brand:`, brand);
-        const brandName = typeof brand === 'string' ? brand : (brand.name || brand.brand || brand.title || 'Unknown Brand');
-        // Create unique ID using index to avoid duplicates from case variations
-        const baseId = brandName.toLowerCase().replace(/\s+/g, '-');
-        const uniqueId = `${baseId}-${index}`;
+        // Brand API returns objects with name, id, description, etc.
+        const brandName = brand.name || brand.brand || brand.title || 'Unknown Brand';
+        const brandId = brand.id || `${brandName.toLowerCase().replace(/\s+/g, '-')}-${index}`;
         const createSlug = (name: string) =>
           name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
         return {
-          id: uniqueId,
+          id: brandId,
           name: brandName,
           slug: createSlug(brandName),
-          active: true,
-          products: 0
+          description: brand.description || '',
+          logo: brand.logo || '',
+          active: brand.active !== false,
+          products: brand.products || 0
         };
       });
       
