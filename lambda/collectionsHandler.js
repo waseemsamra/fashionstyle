@@ -24,10 +24,17 @@ const CORS_HEADERS = {
 };
 
 exports.handler = async (event) => {
-  console.log('Collections Handler:', event.path, event.httpMethod);
+  console.log('Collections Handler:', JSON.stringify(event));
 
-  // Handle OPTIONS preflight request
-  if (event.httpMethod === 'OPTIONS') {
+  // Function URL event structure
+  const path = event.rawPath || '/';
+  const method = event.requestContext?.http?.method || 'GET';
+
+  console.log('Path:', path, 'Method:', method);
+
+  // Handle CORS preflight FIRST
+  if (method === 'OPTIONS') {
+    console.log('Handling CORS preflight');
     return {
       statusCode: 200,
       headers: CORS_HEADERS,
@@ -36,8 +43,6 @@ exports.handler = async (event) => {
   }
 
   try {
-    const path = event.path;
-    const method = event.httpMethod;
 
     // GET /collections - List all collections
     if (path === '/collections' && method === 'GET') {

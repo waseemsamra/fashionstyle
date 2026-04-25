@@ -410,9 +410,24 @@ export default function AdminProducts() {
         const updatedProduct = await updateProduct(product);
         console.log('✅ Product updated successfully:', updatedProduct);
 
-        // Reload all products to get fresh data
+        // Force cache invalidation and immediate refresh
+        console.log('🔄 Force refreshing product list after save...');
+        
+        // Small delay to ensure backend has processed the save
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Clear any query cache and fetch fresh data
         const allProducts = await getAllProducts();
-        setProducts(allProducts as Product[]);
+        console.log('📦 Fresh products loaded:', allProducts.length);
+        
+        // Update the specific product in the local state if it exists
+        setProducts(prevProducts => {
+          const updatedProducts = prevProducts.map(p => 
+            p.id === product.id ? { ...p, ...product } : p
+          );
+          console.log('🔄 Updated product in state:', product.id, product.isFeatured);
+          return updatedProducts;
+        });
       } else {
         // Add new
         const created = await createProduct(product);
