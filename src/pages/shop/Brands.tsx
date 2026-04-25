@@ -32,6 +32,7 @@ export default function BrandsPage() {
     setLoading(true);
     try {
       console.log('Fetching brands from dedicated brands API...');
+      console.log('🌐 Using BRANDS_API_URL:', BRANDS_API_URL);
       
       const response = await fetch(`${BRANDS_API_URL}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
