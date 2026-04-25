@@ -29,6 +29,20 @@ export default function AdminBrands() {
   const [newBrandName, setNewBrandName] = useState('');
   const [newBrandDescription, setNewBrandDescription] = useState('');
 
+  // Check if user is authenticated
+  const isAuthenticated = localStorage.getItem('admin_access') === 'true' && 
+                           localStorage.getItem('jwt_token') && 
+                           localStorage.getItem('jwt_token')!.length > 10;
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      console.error('❌ User not authenticated for admin brands');
+      toast.error('Please log in to access admin features');
+      return;
+    }
+    loadBrands();
+  }, [isAuthenticated]);
+
   useEffect(() => {
     loadBrands();
   }, []);
@@ -97,6 +111,18 @@ export default function AdminBrands() {
       const token = localStorage.getItem('jwt_token');
       console.log('🔑 JWT Token available:', !!token);
       console.log('🔑 JWT Token length:', token?.length || 0);
+      
+      if (!token) {
+        console.error('❌ No JWT token found in localStorage');
+        toast.error('Please log in to manage brands');
+        return;
+      }
+      
+      if (token.length < 10) {
+        console.error('❌ JWT token appears to be invalid (too short)');
+        toast.error('Invalid authentication. Please log in again.');
+        return;
+      }
 
       if (editingBrand) {
         // Update existing brand via PUT
