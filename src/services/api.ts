@@ -284,12 +284,25 @@ export const api = {
     try {
       console.log(`💾 Saving collection ${name}:`, data);
       
-      const response = await fetch(`${API_CONFIG.collectionsApi}/${name}`, {
+      // Use main collections endpoint and include collection name in the data
+      const collectionData = {
+        [name]: {
+          id: name,
+          name: data.displayName || name,
+          description: data.description,
+          productIds: data.productIds,
+          products: data.productIds, // Backend will resolve these to actual products
+          metadata: data.metadata,
+          updatedAt: new Date().toISOString()
+        }
+      };
+      
+      const response = await fetch(`${API_CONFIG.collectionsApi}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(collectionData),
       });
 
       console.log(`📡 Response status:`, response.status);
