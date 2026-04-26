@@ -229,33 +229,32 @@ export const api = {
         return cached;
       }
 
-      // Use main /collections endpoint and extract specific collection
-      const response = await fetch(`${API_CONFIG.collectionsApi}`, {
+      // Use working brands API instead of collections API
+      const response = await fetch(API_CONFIG.brandsApi, {
         credentials: 'omit',
       });
       
       if (!response.ok) {
-        console.warn(`⚠️ Collections endpoint not available`);
+        console.warn(`⚠️ Brands API not available`);
         return { collection: null, products: [], count: 0 };
       }
       
-      const data = await response.json();
-      console.log(`📦 Collections data:`, data);
+      const brands = await response.json();
+      console.log(`📦 Brands data:`, brands);
       
-      // Extract specific collection from the response
-      const specificCollection = data[name];
-      if (!specificCollection) {
-        console.warn(`⚠️ Collection ${name} not found in response`);
-        return { collection: null, products: [], count: 0 };
-      }
+      // Filter featured products from brands
+      const featuredProducts = brands.filter((brand: any) => brand.featured === true);
       
       const result = {
-        collection: specificCollection.collection || specificCollection,
-        products: specificCollection.products || [],
-        count: specificCollection.products?.length || 0,
+        collection: {
+          id: name,
+          name: name === 'featuredCollection' ? 'Featured Collection' : name,
+        },
+        products: featuredProducts,
+        count: featuredProducts.length,
       };
 
-      console.log(`✅ Collection ${name} extracted:`, result);
+      console.log(`✅ Collection ${name} extracted from brands:`, result);
 
       // Cache collection for 5 minutes
       cache.set(cacheKey, result, 5 * 60 * 1000);
@@ -282,26 +281,52 @@ export const api = {
     metadata?: any;
   }) {
     try {
-      console.log(`💾 Saving collection ${name}:`, data);
+      console.log(`💾 Saving collection ${name}:`, data.productIds.length, 'products');
       
-      // Use main collections endpoint and include collection name in the data
+      // For Featured Collection, update the featured flag on brands/products
+      if (name === 'featuredCollection') {
+        // Update featured status for each product ID
+        const updatePromises = data.productIds.map(productId => 
+          this.updateFeaturedStatus(productId, true)
+        );
+        
+        const results = await Promise.all(updatePromises);
+        console.log(`✅ Updated ${results.length} products as featured`);
+        
+        // Clear cache after successful update
+        const cacheKey = getCollectionCacheKey(name);
+        cache.remove(cacheKey);
+        cache.remove(CACHE_KEYS.PRODUCTS);
+        
+        return { success: true, updated: data.productIds.length };
+      }
+      
+      // For other collections, use collections API (if available)
       const collectionData = {
         [name]: {
           id: name,
           name: data.displayName || name,
           description: data.description,
           productIds: data.productIds,
-          products: data.productIds, // Backend will resolve these to actual products
+          products: data.productIds,
           metadata: data.metadata,
           updatedAt: new Date().toISOString()
         }
       };
       
+      // Add authentication token
+      const token = localStorage.getItem('jwt_token') || localStorage.getItem('idToken');
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${API_CONFIG.collectionsApi}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(collectionData),
       });
 
@@ -326,6 +351,67 @@ export const api = {
       return result;
     } catch (error: any) {
       console.error(`❌ API Error (saveCollection ${name}):`, error);
+      throw error;
+    }
+  },
+
+  // List all brands
+  async listBrands() {
+    try {
+      const response = await fetch(API_CONFIG.brandsApi, {
+        credentials: 'omit',
+      });
+      
+      if (!response.ok) {
+        console.error(`❌ Failed to fetch brands:`, response.status);
+        return [];
+      }
+      
+      const data = await response.json();
+      console.log(`📦 Brands loaded:`, data);
+      
+      // Handle different response structures
+      if (Array.isArray(data)) {
+        return data;
+      } else if (data && data.items && Array.isArray(data.items)) {
+        return data.items;
+      } else if (data && data.brands && Array.isArray(data.brands)) {
+        return data.brands;
+      } else if (data && data.data && Array.isArray(data.data)) {
+        return data.data;
+      }
+      
+      console.warn('⚠️ Unexpected brands API response structure:', data);
+      return [];
+    } catch (error) {
+      console.error('❌ Failed to list brands:', error);
+      return [];
+    }
+  },
+
+  // Update featured status for a single product
+  async updateFeaturedStatus(productId: string, isFeatured: boolean) {
+    try {
+      // Find the product in brands data and update its featured status
+      const brands = await this.listBrands();
+      const brand = brands.find((b: any) => b.id === productId);
+      
+      if (brand) {
+        const response = await fetch(`${API_CONFIG.brandsApi}/${productId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ featured: isFeatured }),
+        });
+        
+        if (response.ok) {
+          console.log(`✅ Updated featured status for ${productId}:`, isFeatured);
+          return await response.json();
+        }
+      }
+      
+      throw new Error(`Product ${productId} not found`);
+    } catch (error) {
+      console.error(`❌ Failed to update featured status:`, error);
       throw error;
     }
   },
