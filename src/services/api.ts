@@ -229,7 +229,48 @@ export const api = {
         return cached;
       }
 
-      // Use working brands API instead of collections API
+      // Use new unified API endpoint for collections
+      const response = await fetch(`${API_CONFIG.collectionsApi}`, {
+        credentials: 'omit',
+      });
+      
+      if (!response.ok) {
+        console.warn(`⚠️ Collections API not available, falling back to brands API`);
+        return this.getCollectionFromBrands(name);
+      }
+      
+      const data = await response.json();
+      console.log(`📦 Collections data:`, data);
+      
+      // Extract specific collection from the response
+      const specificCollection = data[name];
+      if (!specificCollection) {
+        console.warn(`⚠️ Collection ${name} not found in response`);
+        return { collection: null, products: [], count: 0 };
+      }
+      
+      const result = {
+        collection: specificCollection.collection || specificCollection,
+        products: specificCollection.products || [],
+        count: specificCollection.products?.length || 0,
+      };
+
+      console.log(`✅ Collection ${name} extracted:`, result);
+
+      // Cache collection for 5 minutes
+      cache.set(cacheKey, result, 5 * 60 * 1000);
+
+      return result;
+    } catch (error) {
+      console.error(`❌ API Error (getCollection ${name}):`, error);
+      // Fallback to brands API
+      return this.getCollectionFromBrands(name);
+    }
+  },
+
+  // Fallback method to get collection from brands API
+  async getCollectionFromBrands(name: string) {
+    try {
       const response = await fetch(API_CONFIG.brandsApi, {
         credentials: 'omit',
       });
@@ -256,19 +297,9 @@ export const api = {
 
       console.log(`✅ Collection ${name} extracted from brands:`, result);
 
-      // Cache collection for 5 minutes
-      cache.set(cacheKey, result, 5 * 60 * 1000);
-
       return result;
     } catch (error) {
-      console.error(`❌ API Error (getCollection ${name}):`, error);
-      // Try cache on error
-      const cacheKey = getCollectionCacheKey(name);
-      const cached = cache.get<any>(cacheKey);
-      if (cached) {
-        console.log(`⚠️ Returning cached collection ${name} due to error`);
-        return cached;
-      }
+      console.error(`❌ Brands API Error (getCollection ${name}):`, error);
       return { collection: null, products: [], count: 0 };
     }
   },

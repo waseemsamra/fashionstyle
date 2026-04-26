@@ -2,14 +2,17 @@
 // API Configuration using environment variables
 
 export const API_CONFIG = {
-  // API Endpoints using environment variables
-  productsApi: import.meta.env.VITE_PRODUCTS_API?.replace('/products', '') || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod',
-  collectionsApi: import.meta.env.VITE_COLLECTIONS_API || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/collections',
-  brandsApi: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws',
-  categoriesApi: import.meta.env.VITE_CATEGORIES_API || 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/categories',
+  // New Unified API Endpoint
+  apiBase: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws',
   
-  // Base API URL (fallback)
-  baseApiUrl: import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod',
+  // Individual endpoints using unified API
+  brandsApi: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws',
+  collectionsApi: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws/collections',
+  categoriesApi: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws/categories',
+  productsApi: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws/products',
+  
+  // Base API URL (fallback) - now uses unified endpoint
+  baseApiUrl: import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws',
   
   // S3/Storage endpoints
   s3Bucket: import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v',
@@ -20,5 +23,5 @@ export const API_CONFIG = {
 };
 
 // Export individual endpoints for easy import
-export const { productsApi, collectionsApi, brandsApi, categoriesApi, baseApiUrl } = API_CONFIG;
+export const { apiBase, productsApi, collectionsApi, brandsApi, categoriesApi, baseApiUrl } = API_CONFIG;
 export const { s3Bucket, s3Region, s3BaseUrl, uploadApiUrl, cdnUrl } = API_CONFIG;

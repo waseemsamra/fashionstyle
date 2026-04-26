@@ -1,4 +1,5 @@
 import { productsApi } from '../config/api';
+import { api } from './api';
 
 export interface Product {
   id: string;
@@ -120,7 +121,7 @@ export const getProductById = async (id: string): Promise<Product | null> => {
   try {
     console.log('📦 Fetching product:', id);
 
-    const response = await productsApi.getById(id);
+    const response = await api.getProduct(id);
     console.log('✅ Product fetched:', response);
     return response;
   } catch (error: any) {
@@ -136,9 +137,21 @@ export const createProduct = async (product: Product): Promise<Product> => {
   try {
     console.log('📦 Creating product:', product.name);
 
-    const response = await productsApi.create(product);
-    console.log('✅ Product created:', response);
-    return response;
+    const response = await fetch(`${productsApi}/products`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(product),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ Product created:', result);
+    return result;
   } catch (error: any) {
     console.error('❌ Failed to create product:', error.message);
     throw error;
@@ -156,9 +169,21 @@ export const updateProduct = async (product: Product): Promise<Product> => {
       throw new Error('Product ID is required for update');
     }
 
-    const response = await productsApi.update(product.id, product);
-    console.log('✅ Product updated:', response);
-    return response;
+    const response = await fetch(`${productsApi}/products/${product.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(product),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
+    console.log('✅ Product updated:', result);
+    return result;
   } catch (error: any) {
     console.error('❌ Failed to update product:', error.message);
     throw error;
@@ -172,7 +197,15 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
   try {
     console.log('🗑️ Attempting to delete product:', productId);
 
-    const result = await productsApi.delete(productId);
+    const response = await fetch(`${productsApi}/products/${productId}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const result = await response.json();
     
     // 204 = success, 404 = already deleted (treat as success)
     if (result?.success) {
