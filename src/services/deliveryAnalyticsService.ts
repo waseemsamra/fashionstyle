@@ -125,7 +125,7 @@ export interface ReturnAnalytics {
   }>;
 }
 
-const API_BASE = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws';
 
 class DeliveryAnalyticsService {
   async getOverview(period: string = '30d'): Promise<AnalyticsOverview> {

@@ -17,7 +17,7 @@ export interface Cart {
 }
 
 class CartService {
-  private baseUrl = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+  private baseUrl = import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws';
   private listeners: Set<(cart: Cart) => void> = new Set();
 
   // API Methods

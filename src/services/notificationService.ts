@@ -21,7 +21,7 @@ export interface Notification {
   error?: string;
 }
 
-const API_BASE = 'https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws';
 
 class NotificationService {
   async sendNotification(data: {

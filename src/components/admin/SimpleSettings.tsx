@@ -57,9 +57,9 @@ export default function SimpleSettings({
     try {
       const token = localStorage.getItem('jwt_token');
       console.log('📡 Fetching from API with token:', token ? 'Present' : 'Missing');
-      console.log('📡 API URL:', `https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/${section}`);
+      console.log('📡 API URL:', `${import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws'}/admin/settings-v2/${section}`);
 
-      const response = await fetch(`https://rvtv0snm8k.execute-api.us-east-1.amazonaws.com/prod/admin/settings-v2/${section}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws'}/admin/settings-v2/${section}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
