@@ -62,8 +62,8 @@ export function useCollection(collectionName: string): UseCollectionResult {
         }
       });
       
-      const apiUrl = import.meta.env.VITE_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod';
-      const response = await fetch(`${apiUrl}/products?${queryParams.toString()}`);
+      const API_URL = import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws';
+      const response = await fetch(`${API_URL}/products?${queryParams.toString()}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} - Failed to fetch collection products`);
