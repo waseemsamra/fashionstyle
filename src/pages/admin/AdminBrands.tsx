@@ -52,13 +52,11 @@ export default function AdminBrands() {
     try {
       console.log('📦 Loading brands from new Brands API...');
       console.log('🌐 Using BRANDS_API_URL:', BRANDS_API_URL);
-      const token = localStorage.getItem('jwt_token');
 
       const response = await fetch(BRANDS_API_URL, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
+          'Content-Type': 'application/json'
         }
       });
 
