@@ -97,7 +97,7 @@ export default function AdminCategories() {
 
     try {
       // Save category metadata (image, description)
-      const saveRes = await fetch(`${API_URL}/categories`, {
+      const saveRes = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
