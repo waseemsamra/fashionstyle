@@ -116,7 +116,7 @@ export default function AdminCategories() {
 
         let updated = 0;
         for (const product of productsToUpdate) {
-          const response = await fetch(`${API_URL}/products`, {
+          const response = await fetch(`${API_CONFIG.productsApi}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...product, category: editName }),
