@@ -53,14 +53,18 @@ export default function AdminCategories() {
       const products = productsData.items || [];
       setAllProducts(products);
 
-      // Use categories from the dedicated endpoint with images
-      const cats: Category[] = (categoriesData.categories || categoriesData.items || [])
-        .map((cat: any) => ({
-          name: cat.name,
-          count: cat.count || 0,
-          image: cat.image || '',
-          description: cat.description || `${cat.count || 0} products`,
-        }))
+      // Use categories from the dedicated endpoint and calculate counts from products
+      const cats: Category[] = (categoriesData || [])
+        .map((cat: any) => {
+          // Count products in this category
+          const categoryProducts = products.filter((p: any) => p.category === cat.name);
+          return {
+            name: cat.name,
+            count: categoryProducts.length,
+            image: cat.image || '',
+            description: cat.description || `${categoryProducts.length} products`,
+          };
+        })
         .sort((a: Category, b: Category) => b.count - a.count);
 
       setCategories(cats);
