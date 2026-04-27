@@ -69,7 +69,8 @@ export default function AdminBrands() {
       const data = await response.json();
       console.log('✅ Brands response:', data);
       
-      const brandsData = Array.isArray(data) ? data : (data.brands || data.items || []);
+      // Handle direct array response from API
+      const brandsData = Array.isArray(data) ? data : [];
 
       if (brandsData.length > 0) {
         // Ensure each brand has required fields
