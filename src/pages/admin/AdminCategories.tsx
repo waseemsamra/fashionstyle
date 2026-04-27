@@ -42,10 +42,10 @@ export default function AdminCategories() {
       setLoading(true);
       console.log('📦 Loading categories and products...');
 
-      // Fetch categories from the dedicated endpoint
+      // Fetch categories and products from correct endpoints
       const [categoriesRes, productsRes] = await Promise.all([
-        fetch(`${API_URL}/categories`),
-        fetch(`${API_URL}/products?limit=2000`),
+        fetch(API_CONFIG.categoriesApi),
+        fetch(`${API_CONFIG.productsApi}?limit=2000`),
       ]);
 
       const categoriesData = await categoriesRes.json();
