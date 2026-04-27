@@ -8,7 +8,8 @@ import LazyImage from '@/components/ui/LazyImage';
 import { getProductUrl } from '@/utils/productUrl';
 import { toCDNUrl } from '@/utils/productImage';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
+import { API_CONFIG } from '../../config/api';
+const API_URL = API_CONFIG.categoriesApi;
 
 interface Category {
   name: string;
