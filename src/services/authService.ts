@@ -26,7 +26,7 @@ export interface AuthResponse {
 }
 
 class AuthService {
-  private baseUrl = import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws';
+  private baseUrl = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
   private refreshTimeout?: ReturnType<typeof setTimeout>;
 
   async login(email: string, password: string): Promise<AuthResponse> {

@@ -3,16 +3,16 @@
 
 export const API_CONFIG = {
   // New Unified API Endpoint
-  apiBase: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws',
+  apiBase: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws',
   
   // Individual endpoints using unified API
-  brandsApi: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws',
-  collectionsApi: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws/collections',
-  categoriesApi: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws/categories',
-  productsApi: 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws/products',
+  brandsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws',
+  collectionsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/collections',
+  categoriesApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/categories',
+  productsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products',
   
   // Base API URL (fallback) - now uses unified endpoint
-  baseApiUrl: import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws',
+  baseApiUrl: import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws',
   
   // S3/Storage endpoints
   s3Bucket: import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v',

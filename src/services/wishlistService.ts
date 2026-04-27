@@ -1,5 +1,5 @@
 class WishlistService {
-  private baseUrl = import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws';
+  private baseUrl = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
   private listeners: Set<(items: any[]) => void> = new Set();
 
   async getWishlist(userId: string) {

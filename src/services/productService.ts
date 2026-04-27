@@ -56,7 +56,7 @@ export const loadAllProducts = async (
 
     // First request to get total count
     const firstResponse = await fetch(
-      `${import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws'}/products?${firstParams.toString()}`
+      `${import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws'}/products?${firstParams.toString()}`
     );
     const firstData = await firstResponse.json();
     totalProducts = firstData.total || firstData.count || 0;
@@ -77,7 +77,7 @@ export const loadAllProducts = async (
       if (filters?.isSale) params.append('isSale', 'true');
       if (filters?.isNew) params.append('isNew', 'true');
 
-      const url = `${import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws'}/products?${params.toString()}`;
+      const url = `${import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws'}/products?${params.toString()}`;
 
       const response = await fetch(url);
       if (!response.ok) {

@@ -57,9 +57,9 @@ export default function SimpleSettings({
     try {
       const token = localStorage.getItem('jwt_token');
       console.log('📡 Fetching from API with token:', token ? 'Present' : 'Missing');
-      console.log('📡 API URL:', `${import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws'}/admin/settings-v2/${section}`);
+      console.log('📡 API URL:', `${import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws'}/admin/settings-v2/${section}`);
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws'}/admin/settings-v2/${section}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws'}/admin/settings-v2/${section}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

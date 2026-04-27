@@ -41,7 +41,7 @@ export default function Profile() {
         
         // Try to load profile from API
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws'}/users/${email.replace(/[^a-zA-Z0-9]/g, '-')}/profile`, {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws'}/users/${email.replace(/[^a-zA-Z0-9]/g, '-')}/profile`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -79,7 +79,7 @@ export default function Profile() {
     setError('');
     try {
       const token = localStorage.getItem('jwt_token') || '';
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://zbdw3piterihfqm37o3swldeca0qitsj.lambda-url.us-east-1.on.aws'}/users/${user.userId}/profile`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws'}/users/${user.userId}/profile`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
