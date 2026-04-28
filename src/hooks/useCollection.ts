@@ -1,6 +1,7 @@
 // hooks/useCollection.ts - Unified hook for fetching collection products
 import { useState, useEffect } from 'react';
 import { api } from '@/services/api';
+import { API_CONFIG } from '@/config/api';
 
 /**
  * useCollection Hook - Fetches products from a specific collection
@@ -62,8 +63,7 @@ export function useCollection(collectionName: string): UseCollectionResult {
         }
       });
       
-      const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
-      const response = await fetch(`${API_URL}/products?${queryParams.toString()}`);
+      const response = await fetch(`${API_CONFIG.productsApi}?${queryParams.toString()}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} - Failed to fetch collection products`);

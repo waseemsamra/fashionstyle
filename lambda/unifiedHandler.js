@@ -132,6 +132,27 @@ async function handleCategories(event) {
     }
   }
   
+  if (httpMethod === 'POST') {
+    try {
+      const category = JSON.parse(event.body);
+      const params = {
+        TableName: TABLE_NAME,
+        Item: {
+          ...category,
+          id: category.id || category.name?.toLowerCase().replace(/\s+/g, '-'),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+      
+      await dynamodb.put(params).promise();
+      return createResponse(200, params.Item);
+    } catch (error) {
+      console.error('Categories POST error:', error);
+      return createResponse(500, { error: 'Failed to create/update category' });
+    }
+  }
+  
   return createResponse(405, { error: 'Method not allowed' });
 }
 
