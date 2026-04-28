@@ -2,10 +2,13 @@
 // API Configuration using environment variables
 
 export const API_CONFIG = {
-  // New Unified API Endpoint
+  // Main API (Original - Stable)
   apiBase: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws',
   
-  // Individual endpoints using unified API
+  // Collections API (New - For Featured Products)
+  collectionsApiUrl: 'https://mjkgf6edxstyzcohlg2agkoqwu0cxwsr.lambda-url.us-east-1.on.aws/',
+  
+  // Individual endpoints using main API
   brandsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/brands',
   collectionsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/collections',
   categoriesApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/categories',
@@ -23,5 +26,5 @@ export const API_CONFIG = {
 };
 
 // Export individual endpoints for easy import
-export const { apiBase, productsApi, collectionsApi, brandsApi, categoriesApi, baseApiUrl } = API_CONFIG;
+export const { apiBase, collectionsApiUrl, productsApi, collectionsApi, brandsApi, categoriesApi, baseApiUrl } = API_CONFIG;
 export const { s3Bucket, s3Region, s3BaseUrl, uploadApiUrl, cdnUrl } = API_CONFIG;

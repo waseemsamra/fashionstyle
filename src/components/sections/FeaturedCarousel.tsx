@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
-import { useCollection } from '@/hooks/useCollection';
+import { useFeaturedProducts } from '@/hooks/useFeaturedProducts';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 import { featuredProducts as localFeaturedProducts } from '@/data/products';
@@ -12,8 +12,8 @@ export default function FeaturedCarousel() {
   const navigate = useNavigate();
   const { toggleWishlist } = useToggleWishlist();
   
-  // THE FORMULA: Fetch ONLY collection products - NO scanning!
-  const { products: collectionProducts, loading } = useCollection('featuredCollection');
+  // THE FORMULA: Fetch ONLY featured products from Collections API - NO scanning!
+  const { products: collectionProducts, loading } = useFeaturedProducts();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
