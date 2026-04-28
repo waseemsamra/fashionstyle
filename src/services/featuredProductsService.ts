@@ -12,9 +12,16 @@ export interface FeaturedProduct {
   isFeatured: boolean;
 }
 
+export interface CollectionInfo {
+  count: number;
+  productIds: string[];
+  lastUpdated: string;
+  exists: boolean;
+}
+
 export const featuredProductsService = {
   // Save collection - persists forever
-  saveFeaturedCollection: (productIds: string[]) => {
+  saveFeaturedCollection: (productIds: string[]): boolean => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(productIds));
       console.log(`✅ Collection saved permanently to localStorage`);
@@ -34,7 +41,7 @@ export const featuredProductsService = {
       if (saved) {
         const collection = JSON.parse(saved);
         console.log(`✅ Loaded ${collection.length} products from persistent storage`);
-        return collection;
+        return Array.isArray(collection) ? collection : [];
       }
       console.log('❌ No saved collection found, initializing with defaults');
       
@@ -145,11 +152,13 @@ export const featuredProductsService = {
   },
 
   // Get collection info
-  getCollectionInfo: () => {
+  getCollectionInfo: (): CollectionInfo => {
     const collection = featuredProductsService.getFeaturedCollection();
+    const productIds = Array.isArray(collection) ? collection : [];
+    
     return {
-      count: collection.length,
-      productIds: collection,
+      count: productIds.length,
+      productIds: productIds,
       lastUpdated: localStorage.getItem(`${STORAGE_KEY}_timestamp`) || 'Unknown',
       exists: featuredProductsService.hasCollection()
     };

@@ -5,7 +5,7 @@ import { Search, Check, ArrowLeft, Save, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
-import { useSaveCollection } from '@/hooks/useCollection';
+import { featuredProductsService } from '@/services/featuredProductsService';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 interface CollectionManagerProps {
@@ -26,7 +26,7 @@ export default function CollectionManager({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const { save, saving } = useSaveCollection(collectionId);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadProducts();
@@ -46,14 +46,14 @@ export default function CollectionManager({
 
       setAllProducts(productsArray);
 
-      // Load existing collection
-      const existingCollection = await api.getCollection(collectionId);
+      // Load existing collection from localStorage
+      const existingCollection = featuredProductsService.getFeaturedCollection();
       console.log('📦 Existing collection:', existingCollection);
-      console.log('📦 Existing product IDs:', existingCollection.products.map((p: any) => p.id));
+      console.log('📦 Existing product IDs:', existingCollection);
       
-      setSelectedIds(existingCollection.products.map((p: any) => p.id));
+      setSelectedIds(existingCollection);
 
-      console.log(`✅ Loaded ${productsArray.length} products, ${existingCollection.products.length} in collection`);
+      console.log(`✅ Loaded ${productsArray.length} products, ${existingCollection.length} in collection`);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -77,21 +77,21 @@ export default function CollectionManager({
 
   const handleSave = async () => {
     try {
-      await save({
-        productIds: selectedIds,
-        displayName: collectionName,
-        description,
-        metadata: {
-          maxProducts,
-          updatedAt: new Date().toISOString()
-        }
-      });
-
-      alert(`✅ Successfully saved ${selectedIds.length} products to ${collectionName}!`);
-      console.log(`✅ Collection ${collectionId} saved with ${selectedIds.length} products`);
+      setSaving(true);
+      
+      const success = featuredProductsService.saveWithTimestamp(selectedIds);
+      
+      if (success) {
+        alert(`✅ Successfully saved ${selectedIds.length} products to ${collectionName}!`);
+        console.log(`✅ Collection ${collectionId} saved with ${selectedIds.length} products`);
+      } else {
+        alert('Failed to save collection. Please try again.');
+      }
     } catch (error) {
       console.error('Failed to save collection:', error);
       alert('Failed to save collection. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
