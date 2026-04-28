@@ -1,7 +1,7 @@
-// services/featuredProductsService.ts - localStorage-based featured products management
+// services/featuredProductsService.ts - COMPLETE PERSISTENT STORAGE
 import { API_CONFIG } from '@/config/api';
 
-const FEATURED_COLLECTION_KEY = 'featuredCollection';
+const STORAGE_KEY = 'featured_collection';
 
 export interface FeaturedProduct {
   id: string;
@@ -13,24 +13,30 @@ export interface FeaturedProduct {
 }
 
 export const featuredProductsService = {
-  // Save featured collection to localStorage
+  // Save collection - persists forever
   saveFeaturedCollection: (productIds: string[]) => {
     try {
-      localStorage.setItem(FEATURED_COLLECTION_KEY, JSON.stringify(productIds));
-      console.log(`✅ Saved ${productIds.length} products to featured collection`);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(productIds));
+      console.log(`✅ Collection saved permanently to localStorage`);
+      console.log(`   Will persist across all sessions and refreshes`);
+      console.log(`   Saved ${productIds.length} products`);
+      return true;
     } catch (error) {
-      console.error('❌ Failed to save featured collection:', error);
+      console.error('❌ Failed to save collection:', error);
+      return false;
     }
   },
 
-  // Get featured product IDs from localStorage
-  getFeaturedIds: (): string[] => {
+  // Load collection - works even after refresh
+  getFeaturedCollection: (): string[] => {
     try {
-      const featuredIds = localStorage.getItem(FEATURED_COLLECTION_KEY);
-      
-      if (featuredIds) {
-        return JSON.parse(featuredIds);
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const collection = JSON.parse(saved);
+        console.log(`✅ Loaded ${collection.length} products from persistent storage`);
+        return collection;
       }
+      console.log('❌ No saved collection found, initializing with defaults');
       
       // Initialize with default featured products if localStorage is empty
       const defaultFeaturedIds = [
@@ -47,9 +53,14 @@ export const featuredProductsService = {
       
       return defaultFeaturedIds;
     } catch (error) {
-      console.error('❌ Failed to get featured IDs:', error);
+      console.error('❌ Failed to load collection:', error);
       return [];
     }
+  },
+
+  // Get featured product IDs from localStorage (alias for getFeaturedCollection)
+  getFeaturedIds: (): string[] => {
+    return featuredProductsService.getFeaturedCollection();
   },
 
   // Get featured products with full details
@@ -121,13 +132,41 @@ export const featuredProductsService = {
     return featuredIds.includes(productId);
   },
 
-  // Clear all featured products
-  clearFeatured: () => {
-    try {
-      localStorage.removeItem(FEATURED_COLLECTION_KEY);
-      console.log('🗑️ Cleared all featured products');
-    } catch (error) {
-      console.error('❌ Failed to clear featured products:', error);
+  // Check if collection exists
+  hasCollection: (): boolean => {
+    return localStorage.getItem(STORAGE_KEY) !== null;
+  },
+
+  // Clear collection (when admin wants to reset)
+  clearCollection: () => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(`${STORAGE_KEY}_timestamp`);
+    console.log('✅ Collection cleared from persistent storage');
+  },
+
+  // Get collection info
+  getCollectionInfo: () => {
+    const collection = featuredProductsService.getFeaturedCollection();
+    return {
+      count: collection.length,
+      productIds: collection,
+      lastUpdated: localStorage.getItem(`${STORAGE_KEY}_timestamp`) || 'Unknown',
+      exists: featuredProductsService.hasCollection()
+    };
+  },
+
+  // Update timestamp on save
+  saveWithTimestamp: (productIds: string[]) => {
+    const success = featuredProductsService.saveFeaturedCollection(productIds);
+    if (success) {
+      localStorage.setItem(`${STORAGE_KEY}_timestamp`, new Date().toISOString());
+      console.log(`✅ Collection saved with timestamp: ${new Date().toISOString()}`);
     }
+    return success;
+  },
+
+  // Legacy methods for backward compatibility
+  clearFeatured: () => {
+    featuredProductsService.clearCollection();
   }
 };
