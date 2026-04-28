@@ -1,13 +1,14 @@
-// hooks/useFeaturedProducts.ts - Hook for fetching featured products from Collections API
+// hooks/useFeaturedProducts.ts - Hook for managing featured products using localStorage
 import { useState, useEffect } from 'react';
-import { API_CONFIG } from '@/config/api';
+import { featuredProductsService } from '@/services/featuredProductsService';
 
 interface UseFeaturedProductsResult {
   products: any[];
   loading: boolean;
   error: Error | null;
   refetch: () => void;
-  toggleFeatured: (productId: string, isFeatured: boolean) => Promise<void>;
+  toggleFeatured: (productId: string) => boolean;
+  isFeatured: (productId: string) => boolean;
 }
 
 export function useFeaturedProducts(): UseFeaturedProductsResult {
@@ -20,18 +21,9 @@ export function useFeaturedProducts(): UseFeaturedProductsResult {
       setLoading(true);
       setError(null);
       
-      console.log('📦 Fetching featured products from Collections API...');
+      console.log('📦 Fetching featured products from localStorage...');
       
-      const response = await fetch(`${API_CONFIG.collectionsApiUrl}featured`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} - Failed to fetch featured products`);
-      }
-      
-      const data = await response.json();
-      const featuredProducts = Array.isArray(data) ? data : [];
-      
-      console.log(`✅ Featured products loaded:`, featuredProducts.length, 'products');
+      const featuredProducts = await featuredProductsService.getFeaturedProducts();
       
       setProducts(featuredProducts);
     } catch (err) {
@@ -43,28 +35,22 @@ export function useFeaturedProducts(): UseFeaturedProductsResult {
     }
   };
 
-  const toggleFeatured = async (productId: string, isFeatured: boolean) => {
+  const toggleFeatured = (productId: string): boolean => {
     try {
-      console.log(`🔄 Updating featured status for product ${productId}: ${isFeatured}`);
-      
-      const response = await fetch(`${API_CONFIG.collectionsApiUrl}featured/${productId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isFeatured })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} - Failed to update featured status`);
-      }
+      const isNowFeatured = featuredProductsService.toggleFeatured(productId);
       
       // Refresh the featured products list
-      await fetchFeaturedProducts();
+      fetchFeaturedProducts();
       
-      console.log(`✅ Updated featured status for product ${productId}`);
+      return isNowFeatured;
     } catch (err) {
-      console.error('❌ Failed to update featured status:', err);
-      throw err;
+      console.error('❌ Failed to toggle featured status:', err);
+      return false;
     }
+  };
+
+  const isFeatured = (productId: string): boolean => {
+    return featuredProductsService.isFeatured(productId);
   };
 
   useEffect(() => {
@@ -76,6 +62,7 @@ export function useFeaturedProducts(): UseFeaturedProductsResult {
     loading,
     error,
     refetch: fetchFeaturedProducts,
-    toggleFeatured
+    toggleFeatured,
+    isFeatured
   };
 }
