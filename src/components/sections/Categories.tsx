@@ -47,7 +47,7 @@ export default function Categories() {
         }
         
         const data = await response.json();
-        const categoriesData = data.categories || data.items || [];
+        const categoriesData = Array.isArray(data) ? data : data.categories || data.items || [];
         
         console.log('Categories API Response:', data);
         console.log('Categories Data:', categoriesData);
