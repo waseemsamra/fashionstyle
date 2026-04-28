@@ -27,7 +27,25 @@ export const featuredProductsService = {
   getFeaturedIds: (): string[] => {
     try {
       const featuredIds = localStorage.getItem(FEATURED_COLLECTION_KEY);
-      return featuredIds ? JSON.parse(featuredIds) : [];
+      
+      if (featuredIds) {
+        return JSON.parse(featuredIds);
+      }
+      
+      // Initialize with default featured products if localStorage is empty
+      const defaultFeaturedIds = [
+        'product-1775598268005', // Feathers Pret Printed Lawn 3 Piece Suit Maham
+        'product-1775567299177', // Aniiq by Charizma Embroidered Linen Suits
+        'product-1775597695512', // Feathers Pret Printed Lawn 3 Piece Suit Ela
+        'product-1775724903507', // Ravish by Ruby Suleiman Unstitched Embroidered Lawn
+        'product-1775595575696'  // Dhaga Kids Pret Solids Jersy 2 Piece
+      ];
+      
+      // Save default featured products to localStorage
+      featuredProductsService.saveFeaturedCollection(defaultFeaturedIds);
+      console.log('🎯 Initialized default featured products collection');
+      
+      return defaultFeaturedIds;
     } catch (error) {
       console.error('❌ Failed to get featured IDs:', error);
       return [];
