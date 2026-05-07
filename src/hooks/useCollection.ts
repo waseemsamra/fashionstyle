@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
+import { collectionService } from '@/services/collectionService';
 
 /**
  * useCollection Hook - Fetches products from a specific collection
@@ -36,55 +37,52 @@ export function useCollection(collectionName: string): UseCollectionResult {
       setLoading(true);
       setError(null);
       
-      console.log(`📦 Fetching collection: ${collectionName}... (v2.0 - Fixed API)`);
+      console.log(`📦 Loading collection: ${collectionName}... (from admin selections)`);
       
-      // Collection configuration with filtering parameters
-      const collectionConfigs: Record<string, any> = {
-        featuredCollection: { isFeatured: true, limit: 8 },
-        newArrivals: { sort: 'createdAt', order: 'desc', limit: 8 },
-        weddingTales: { category: 'Bridal Wear', limit: 8 },
-        designersDiscount: { isSale: true, limit: 8 },
-        summerSale: { category: 'Summer Collection', limit: 8 }
-      };
+      // Get admin-selected product IDs from localStorage
+      const selectedProductIds = collectionService.getCollection(collectionName);
+      console.log(`📦 Admin selected product IDs for ${collectionName}:`, selectedProductIds);
       
-      const config = collectionConfigs[collectionName];
-      if (!config) {
-        console.warn(`⚠️ No configuration found for collection: ${collectionName}`);
+      if (selectedProductIds.length === 0) {
+        console.log(`⚠️ No products selected for collection: ${collectionName}`);
         setProducts([]);
         setCollection(null);
         return;
       }
       
-      // Build query parameters
+      // Fetch full product details for selected IDs
+      // We need to fetch from API to get complete product information
       const queryParams = new URLSearchParams();
-      Object.entries(config).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          queryParams.append(key, String(value));
-        }
-      });
+      queryParams.append('limit', '1000'); // Fetch enough to find our products
       
       const response = await fetch(`${API_CONFIG.productsApi}?${queryParams.toString()}`);
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status} - Failed to fetch collection products`);
+        throw new Error(`HTTP ${response.status} - Failed to fetch products`);
       }
       
       const data = await response.json();
-      const products = data.products || data.items || [];
+      const allProducts = data.products || data.items || [];
       
-      console.log(`✅ Collection ${collectionName} loaded:`, products.length, 'products');
+      // Filter products to only include admin-selected ones
+      const selectedProducts = allProducts.filter((product: any) => 
+        selectedProductIds.includes(product.id)
+      );
+      
+      console.log(`✅ Collection ${collectionName} loaded:`, selectedProducts.length, 'products');
+      console.log(`📦 Filtered from ${allProducts.length} total products`);
       
       // Create collection object for consistency
       const collection = {
         id: collectionName,
         name: collectionName,
         displayName: collectionName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-        productIds: products.map((p: any) => p.id),
-        count: products.length
+        productIds: selectedProductIds,
+        count: selectedProducts.length
       };
       
       setCollection(collection);
-      setProducts(products);
+      setProducts(selectedProducts);
     } catch (err) {
       console.error(`❌ Failed to fetch collection ${collectionName}:`, err);
       setError(err as Error);

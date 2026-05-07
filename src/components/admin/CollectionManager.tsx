@@ -5,7 +5,7 @@ import { Search, Check, ArrowLeft, Save, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
-import { featuredProductsService } from '@/services/featuredProductsService';
+import { collectionService } from '@/services/collectionService';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 interface CollectionManagerProps {
@@ -47,7 +47,7 @@ export default function CollectionManager({
       setAllProducts(productsArray);
 
       // Load existing collection from localStorage
-      const existingCollection = featuredProductsService.getFeaturedCollection();
+      const existingCollection = collectionService.getCollection(collectionId);
       console.log('📦 Existing collection:', existingCollection);
       console.log('📦 Existing product IDs:', existingCollection);
       
@@ -79,7 +79,7 @@ export default function CollectionManager({
     try {
       setSaving(true);
       
-      const success = featuredProductsService.saveWithTimestamp(selectedIds);
+      const success = collectionService.saveWithTimestamp(collectionId, selectedIds);
       
       if (success) {
         alert(`✅ Successfully saved ${selectedIds.length} products to ${collectionName}!`);
