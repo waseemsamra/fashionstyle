@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
-import { useFeaturedProducts } from '@/hooks/useFeaturedProducts';
+import { useCollection } from '@/hooks/useCollection';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 import { featuredProducts as localFeaturedProducts } from '@/data/products';
@@ -12,8 +12,8 @@ export default function FeaturedCarousel() {
   const navigate = useNavigate();
   const { toggleWishlist } = useToggleWishlist();
   
-  // THE FORMULA: Fetch ONLY featured products from Collections API - NO scanning!
-  const { products: collectionProducts, loading } = useFeaturedProducts();
+  // THE FORMULA: Fetch ONLY featured products from admin selections - NO scanning!
+  const { products: collectionProducts, loading } = useCollection('featuredCollection');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
@@ -99,7 +99,7 @@ export default function FeaturedCarousel() {
 
           <div className="overflow-hidden">
             <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * (100 / Math.min(4, products.length))}%)` }}>
-              {products.map((product) => (
+              {products.map((product: any) => (
                 <div key={product.id} className="min-w-[50%] lg:min-w-[25%] px-3">
                   <ProductCard product={product} onWishlist={(e: any) => handleWishlist(product, e)} onNavigate={() => navigate(getProductUrl(product))} onAddToCart={() => toast.info('Add to cart coming soon')} />
                 </div>
