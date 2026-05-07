@@ -36,7 +36,7 @@ export function useCollection(collectionName: string): UseCollectionResult {
       setLoading(true);
       setError(null);
       
-      console.log(`📦 Fetching collection: ${collectionName}...`);
+      console.log(`📦 Fetching collection: ${collectionName}... (v2.0 - Fixed API)`);
       
       // Collection configuration with filtering parameters
       const collectionConfigs: Record<string, any> = {
