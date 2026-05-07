@@ -70,7 +70,7 @@ export function useCollection(collectionName: string): UseCollectionResult {
       }
       
       const data = await response.json();
-      const products = data.products || [];
+      const products = data.products || data.items || [];
       
       console.log(`✅ Collection ${collectionName} loaded:`, products.length, 'products');
       
