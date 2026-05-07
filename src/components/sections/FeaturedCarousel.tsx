@@ -4,6 +4,7 @@ import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-reac
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
+import { currencyService } from '@/services/currencyService';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 import { featuredProducts as localFeaturedProducts } from '@/data/products';
@@ -162,8 +163,8 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
           <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-xs">${product.price}</span>
-          {product.originalPrice && <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>}
+          <span className="font-semibold text-xs">{currencyService.formatPrice(product.price)}</span>
+          {product.originalPrice && <span className="text-gray-400 line-through text-sm">{currencyService.formatPrice(product.originalPrice)}</span>}
         </div>
       </div>
     </div>

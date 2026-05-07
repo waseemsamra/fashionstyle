@@ -4,6 +4,7 @@ import { ShoppingBag, Heart, Star } from 'lucide-react';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
+import { currencyService } from '@/services/currencyService';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 import HorizontalCarousel from '@/components/ui/HorizontalCarousel';
@@ -189,11 +190,11 @@ function ProductCard({ product, onWishlist, onNavigate, onAddToCart }: any) {
         {/* Price */}
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm md:text-lg">
-            Rs. {product.price?.toLocaleString()}
+            {currencyService.formatPrice(product.price)}
           </span>
           {product.originalPrice && (
             <span className="text-gray-400 line-through text-xs md:text-sm">
-              Rs. {product.originalPrice?.toLocaleString()}
+              {currencyService.formatPrice(product.originalPrice)}
             </span>
           )}
         </div>

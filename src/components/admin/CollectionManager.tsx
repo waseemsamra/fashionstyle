@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
 import { collectionService } from '@/services/collectionService';
+import { currencyService } from '@/services/currencyService';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 interface CollectionManagerProps {
@@ -190,7 +191,7 @@ export default function CollectionManager({
                     <p className="text-xs text-gray-500 uppercase mb-1">{product.brand}</p>
                     <h3 className="font-semibold text-sm mb-2 line-clamp-2">{product.name}</h3>
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-gold">${product.price}</span>
+                      <span className="font-bold text-gold">{currencyService.formatPrice(product.price)}</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         isSelected ? 'bg-gold text-white' : 'bg-gray-200 text-gray-700'
                       }`}>

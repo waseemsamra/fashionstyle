@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Sparkles, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCollection } from '@/hooks/useCollection';
+import { currencyService } from '@/services/currencyService';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
@@ -198,7 +199,7 @@ export default function NewArrivals() {
                           <h3 className="product-card-title font-playfair font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300">
                             {product.name}
                           </h3>
-                          <p className="font-semibold text-lg">${product.price}</p>
+                          <p className="font-semibold text-lg">{currencyService.formatPrice(product.price)}</p>
                         </div>
                       </div>
                     </div>
@@ -259,7 +260,7 @@ export default function NewArrivals() {
                     <h3 className="product-card-title font-playfair font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300">
                       {product.name}
                     </h3>
-                    <p className="font-semibold text-lg">${product.price}</p>
+                    <p className="font-semibold text-lg">{currencyService.formatPrice(product.price)}</p>
                   </div>
                 </div>
               ))}
