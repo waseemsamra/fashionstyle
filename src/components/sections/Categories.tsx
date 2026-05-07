@@ -199,7 +199,7 @@ export default function Categories() {
                       {/* Circular Category Card */}
                       <div className="flex flex-col items-center">
                         {/* Enlarged Circle Image */}
-                        <div className="relative w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24">
+                        <div className="relative w-16 h-16 md:w-24 md:h-24 lg:w-32 lg:h-32">
                           <div className="w-full h-full rounded-full overflow-hidden border border-gray-200 shadow-sm">
                             <img
                               src={category.image}
@@ -213,7 +213,7 @@ export default function Categories() {
                         </div>
 
                         {/* Category Name */}
-                        <p className="text-xs text-gray-600 mt-2 text-center max-w-[80px] truncate">
+                        <p className="text-sm text-gray-600 mt-3 text-center max-w-[120px] truncate">
                           {category.displayName || category.name}
                         </p>
                       </div>

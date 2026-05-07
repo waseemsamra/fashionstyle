@@ -104,8 +104,8 @@ export default function SummerSale() {
         <div className="text-center mt-10">
           <button
             onClick={() => {
-              console.log('🔗 Summer Sale Navigate to /shop?sale=true');
-              navigate('/shop?sale=true');
+              console.log('🔗 Summer Sale Navigate to /summer-sale');
+              navigate('/summer-sale');
             }}
             className="px-6 py-2.5 md:px-8 md:py-3 bg-gold text-white font-semibold rounded-full hover:bg-gold/90 transition-all transform hover:scale-105 shadow-md"
           >

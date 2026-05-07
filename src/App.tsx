@@ -26,6 +26,7 @@ const Category = lazy(() => import('@/pages/shop/Category'));
 const NewArrivalsPage = lazy(() => import('@/pages/shop/NewArrivalsPage'));
 const FeaturedCollectionPage = lazy(() => import('@/pages/shop/FeaturedCollection'));
 const WeddingTalesDetail = lazy(() => import('@/pages/shop/WeddingTalesDetail'));
+const SummerSaleDetail = lazy(() => import('@/pages/shop/SummerSaleDetail'));
 const ProductDetail = lazy(() => import('@/pages/shop/ProductDetail'));
 const Checkout = lazy(() => import('@/pages/checkout/Checkout'));
 const OrderConfirmation = lazy(() => import('@/pages/checkout/OrderConfirmation'));
@@ -281,6 +282,7 @@ function Layout() {
             <Route path="/new-arrivals" element={<NewArrivalsPage />} />
             <Route path="/featured-collection" element={<FeaturedCollectionPage />} />
             <Route path="/wedding-tales" element={<WeddingTalesDetail />} />
+            <Route path="/summer-sale" element={<SummerSaleDetail />} />
             <Route path="/product/:slug" element={<ProductDetail />} />
             <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
