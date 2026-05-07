@@ -63,31 +63,41 @@ export default function SummerSaleDetail()
   }
 
   return (
-    <div className="min-h-screen bg-white py-8">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center text-gray-600 hover:text-gold transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 mr-2" />
-            <span className="font-medium">Back to Home</span>
-          </button>
-          
-          <h1 className="text-3xl md:text-4xl font-playfair font-bold text-gray-900">
-            Summer Sale
-          </h1>
-          
-          <div className="w-24"></div> {/* Spacer */}
-        </div>
-
-        {/* Description */}
-        <div className="text-center mb-12 max-w-3xl mx-auto">
-          <p className="text-gray-600 text-lg">
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="relative h-96 bg-gradient-to-br from-gold/10 to-gold/20 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-black/20 z-10"></div>
+        <div className="relative z-20 text-center px-4">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">Summer Sale</h1>
+          <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
             Hot summer deals - Up to 50% off on selected items
           </p>
         </div>
+      </div>
+
+      {/* Header */}
+      <div className="bg-white shadow-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center h-16">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center text-gray-600 hover:text-gold transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 mr-2" />
+              <span className="font-medium">Back</span>
+            </button>
+            
+            <div className="flex-1 text-center">
+              <span className="text-sm text-gray-500">
+                Showing {products.length} products
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Products Grid Section */}
+      <div className="container mx-auto px-4 pb-12">
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
