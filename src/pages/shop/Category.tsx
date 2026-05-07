@@ -149,7 +149,7 @@ export default function Category() {
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-      const url = `${API_URL}/products?${params.toString()}`;
+      const url = `${API_URL}?${params.toString()}`;
       console.log('📡 Fetching:', url);
 
       const response = await fetch(url, { cache: 'no-store' });
