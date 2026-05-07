@@ -102,32 +102,41 @@ export default function FeaturedCollection() {
   };
 
   return (
-    <div className="min-h-screen bg-white py-8">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Home</span>
-          </button>
-          
-          <div className="h-px bg-gray-300 flex-1"></div>
-          
-          <h1 className="text-3xl font-bold text-gray-900">Featured Collection</h1>
-        </div>
-
-        {/* Products Count */}
-        <div className="mb-8">
-          <p className="text-gray-600">
-            {collectionProducts.length > 0 
-              ? `Showing ${collectionProducts.length} featured products`
-              : 'No featured products available'
-            }
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="relative h-96 bg-gradient-to-br from-gold/10 to-gold/20 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-black/20 z-10"></div>
+        <div className="relative z-20 text-center px-4">
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">Featured Collection</h1>
+          <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8">
+            Discover our curated selection of premium pieces
           </p>
         </div>
+      </div>
+
+      {/* Header */}
+      <div className="bg-white shadow-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center h-16">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center text-gray-600 hover:text-gold transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              <span className="font-medium">Back</span>
+            </button>
+            
+            <div className="flex-1 text-center">
+              <span className="text-sm text-gray-500">
+                Showing {collectionProducts.length} products
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Products Grid Section */}
+      <div className="container mx-auto px-4 pb-12">
 
         {/* Products Grid */}
         {collectionProducts.length > 0 ? (
