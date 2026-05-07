@@ -116,8 +116,8 @@ export default function WeddingTales() {
         <div className="text-center mt-10">
           <button
             onClick={() => {
-              console.log('🔗 Wedding Tales Navigate to /shop?wedding=true');
-              navigate('/shop?wedding=true');
+              console.log('🔗 Wedding Tales Navigate to /wedding-tales');
+              navigate('/wedding-tales');
             }}
             className="px-6 py-2.5 md:px-8 md:py-3 bg-gold text-white font-semibold rounded-full hover:bg-gold/90 transition-all transform hover:scale-105 shadow-md"
           >
