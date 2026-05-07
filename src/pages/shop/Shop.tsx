@@ -2,13 +2,15 @@ import { toCDNUrl } from '@/utils/productImage';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { X, ShoppingBag, Star, ChevronRight, ChevronDown, Check, ChevronLeft } from 'lucide-react';
+import { X, ShoppingBag, Star, ChevronRight, ChevronDown, Check, ChevronLeft, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { useBrands } from '@/hooks/useBrands';
 import { useCollection } from '@/hooks/useCollection';
+import { useToggleWishlist } from '@/hooks/useWishlist';
 import type { Brand } from '@/services/brandsService';
 import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
+import { currencyService } from '@/services/currencyService';
 
 import { API_CONFIG } from '../../config/api';
 const API_URL = API_CONFIG.baseApiUrl;
@@ -29,6 +31,7 @@ async function fetchCategories(): Promise<{name: string, count: number}[]> {
 export default function Shop() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { toggleWishlist } = useToggleWishlist();
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -347,6 +350,16 @@ export default function Shop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const handleWishlist = (product: any, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!localStorage.getItem('jwt_token')) {
+      toast.error('Please login', { action: { label: 'Login', onClick: () => navigate('/login') } });
+      return;
+    }
+    toggleWishlist({ productId: product.id, product });
+  };
+
   // Calculate pagination
   const displayedCount = allProducts.length;
   const actualTotal = isSaleFilter ? allProducts.length : totalProducts;
@@ -489,10 +502,10 @@ export default function Shop() {
               <label className="block text-xs font-medium text-gray-500 mb-1">Price</label>
               <select value={filters.priceRange} onChange={(e) => { setFilters(prev => ({ ...prev, priceRange: e.target.value })); setCurrentPage(1); }} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
                 <option value="all">All Prices</option>
-                <option value="under50">Under $50</option>
-                <option value="50-100">$50 - $100</option>
-                <option value="100-200">$100 - $200</option>
-                <option value="over200">Over $200</option>
+                <option value="under50">Under {currencyService.getSymbol()}50</option>
+                <option value="50-100">{currencyService.getSymbol()}50 - {currencyService.getSymbol()}100</option>
+                <option value="100-200">{currencyService.getSymbol()}100 - {currencyService.getSymbol()}200</option>
+                <option value="over200">Over {currencyService.getSymbol()}200</option>
               </select>
             </div>
 
@@ -555,6 +568,14 @@ export default function Shop() {
                       {product.isNew && <span className="px-3 py-1 bg-black text-white text-xs font-medium rounded-full">New</span>}
                       {product.isSale && <span className="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-full">Sale</span>}
                     </div>
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+                      <button
+                        onClick={(e) => handleWishlist(product, e)}
+                        className="w-9 h-9 rounded-full flex items-center justify-center shadow-md bg-white hover:bg-gold hover:text-white transition-colors"
+                      >
+                        <Heart className="w-4 h-4" />
+                      </button>
+                    </div>
                     <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                       <button onClick={(e) => { e.stopPropagation(); toast.info('Add to cart coming soon'); }} className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors">
                         <ShoppingBag className="w-4 h-4" /> Add to Cart
@@ -571,8 +592,8 @@ export default function Shop() {
                       <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-lg">${product.price}</span>
-                      {product.originalPrice && <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>}
+                      <span className="font-semibold text-lg">{currencyService.formatPrice(product.price)}</span>
+                      {product.originalPrice && <span className="text-gray-400 line-through text-sm">{currencyService.formatPrice(product.originalPrice)}</span>}
                     </div>
                   </div>
                 </div>
