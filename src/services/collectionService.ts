@@ -57,14 +57,28 @@ export const collectionService = {
       if (saved) {
         const collection = JSON.parse(saved);
         console.log(`✅ Loaded ${collection.length} products for collection '${collectionId}'`);
+        console.log(`📦 Storage key: ${storageKey}`);
+        console.log(`📦 Product IDs:`, collection);
         return Array.isArray(collection) ? collection : [];
       }
-      console.log(`❌ No saved collection found for '${collectionId}', initializing with defaults`);
+      console.log(`❌ No saved collection found for '${collectionId}'`);
+      console.log(`📦 Storage key: ${storageKey}`);
       
-      // Initialize with default products based on collection type
-      const defaultIds = collectionService.getDefaultProducts(collectionId);
-      collectionService.saveCollection(collectionId, defaultIds);
-      return defaultIds;
+      // Only initialize with defaults if this is first-time setup
+      // Check if collection has been initialized before
+      const initializedKey = `${storageKey}_initialized`;
+      const wasInitialized = localStorage.getItem(initializedKey);
+      
+      if (!wasInitialized) {
+        console.log(`🆕 First-time setup for '${collectionId}', initializing with defaults`);
+        const defaultIds = collectionService.getDefaultProducts(collectionId);
+        collectionService.saveCollection(collectionId, defaultIds);
+        localStorage.setItem(initializedKey, 'true');
+        return defaultIds;
+      }
+      
+      console.log(`⚠️ Collection '${collectionId}' was cleared - returning empty array`);
+      return [];
     } catch (error) {
       console.error(`❌ Failed to load collection '${collectionId}':`, error);
       return [];
