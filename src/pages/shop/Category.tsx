@@ -151,6 +151,7 @@ export default function Category() {
 
       const url = `${API_URL}?${params.toString()}`;
       console.log('📡 Fetching:', url);
+      console.log('🔄 Category API v2.0 - Fixed URL construction');
 
       const response = await fetch(url, { cache: 'no-store' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
