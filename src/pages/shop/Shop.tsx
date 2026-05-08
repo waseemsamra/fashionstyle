@@ -475,36 +475,7 @@ export default function Shop() {
                         <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gold mx-auto mb-2" />
                         Loading brands...
                       </div>
-                    ) : brands.length === 0 && filters.category === 'all' ? (
-                      <div className="p-4">
-                        <div>
-                          <div className="text-sm font-medium text-gray-700 mb-2 px-2">
-                            Browse by Category
-                          </div>
-                          <div className="space-y-1">
-                            {categories.map(cat => (
-                              <label key={cat.name} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                                <input 
-                                  type="checkbox" 
-                                  checked={filters.category === cat.name} 
-                                  onChange={() => { 
-                                    setFilters(prev => ({ ...prev, category: cat.name })); 
-                                    setCurrentPage(1); 
-                                  }} 
-                                  className="w-4 h-4 rounded border-gray-300" 
-                                />
-                                <span className="text-sm">{cat.name} ({cat.count})</span>
-                                {filters.category === cat.name && <Check className="w-3 h-3 ml-auto text-gold" />}
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    ) : brands.length === 0 ? (
-                      <div className="p-4 text-center text-sm text-gray-500">
-                        {filters.category !== 'all' ? `No brands found in ${filters.category}` : 'No brands available'}
-                      </div>
-                    ) : (
+                    ) : brands.length > 0 ? (
                       brands.map(brand => (
                         <label key={brand} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2">
                           <input type="checkbox" checked={filters.brands.includes(brand)} onChange={() => toggleBrand(brand)} className="w-4 h-4 rounded border-gray-300" />
@@ -512,6 +483,37 @@ export default function Shop() {
                           {filters.brands.includes(brand) && <Check className="w-3 h-3 ml-auto text-gold" />}
                         </label>
                       ))
+                    ) : (
+                      <div className="p-4">
+                        {filters.category === 'all' ? (
+                          <div>
+                            <div className="text-sm font-medium text-gray-700 mb-2 px-2">
+                              Browse by Category
+                            </div>
+                            <div className="space-y-1">
+                              {categories.map(cat => (
+                                <label key={cat.name} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={filters.category === cat.name} 
+                                    onChange={() => { 
+                                      setFilters(prev => ({ ...prev, category: cat.name })); 
+                                      setCurrentPage(1); 
+                                    }} 
+                                    className="w-4 h-4 rounded border-gray-300" 
+                                  />
+                                  <span className="text-sm">{cat.name} ({cat.count})</span>
+                                  {filters.category === cat.name && <Check className="w-3 h-3 ml-auto text-gold" />}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center text-sm text-gray-500">
+                            No brands found in {filters.category}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
