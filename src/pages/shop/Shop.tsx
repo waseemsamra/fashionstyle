@@ -13,13 +13,13 @@ import LazyImage from '@/components/ui/LazyImage';
 import { currencyService } from '@/services/currencyService';
 
 import { API_CONFIG } from '../../config/api';
-const API_URL = API_CONFIG.baseApiUrl;
+const API_URL = API_CONFIG.productsApi;
 const PRODUCTS_PER_PAGE = 50;
 
 // Fetch categories directly from API
 async function fetchCategories(): Promise<{name: string, count: number}[]> {
   try {
-    const res = await fetch(`${API_URL}/categories`);
+    const res = await fetch(`${API_CONFIG.categoriesApi}`);
     if (!res.ok) return [];
     const data = await res.json();
     return data.categories || [];
