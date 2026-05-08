@@ -168,7 +168,7 @@ export default function Shop() {
       // Fetch all products when filters are active (for client-side filtering)
       const fetchLimit = hasClientFilters ? 2000 : PRODUCTS_PER_PAGE;
       params.append('limit', String(fetchLimit));
-      params.append('page', '1'); // Always fetch from page 1 when filtering
+      params.append('page', hasClientFilters ? '1' : String(currentPage)); // Use current page for normal pagination
       // Add Category Filter to API
       if (filters.category !== 'all') {
         params.append('category', filters.category);
@@ -360,10 +360,16 @@ export default function Shop() {
     toggleWishlist({ productId: product.id, product });
   };
 
+  // Determine if we need to fetch all products for client-side filtering
+  const hasClientFilters = filters.category !== 'all' || 
+                               filters.brands.length > 0 || 
+                               filters.priceRange !== 'all' || 
+                               filters.status !== 'all';
+
   // Calculate pagination
   const displayedCount = allProducts.length;
   const actualTotal = isSaleFilter ? allProducts.length : totalProducts;
-  const totalPages = Math.max(1, Math.ceil(actualTotal / (filters.brands.length > 0 || filters.priceRange !== 'all' ? 500 : PRODUCTS_PER_PAGE)));
+  const totalPages = Math.max(1, Math.ceil(actualTotal / (hasClientFilters ? 500 : PRODUCTS_PER_PAGE)));
 
   // Loading state (only for initial load)
   if (isLoadingProducts) {
