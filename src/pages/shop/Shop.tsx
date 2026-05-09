@@ -275,7 +275,8 @@ export default function Shop() {
       }
 
       setAllProducts(filteredProducts);
-      setTotalProducts(filteredProducts.length);
+      // Use API total for pagination when no client filters, otherwise use filtered count
+      setTotalProducts(hasClientFilters ? filteredProducts.length : total);
       console.log(`✅ Loaded page ${currentPage}: ${filteredProducts.length} products (from ${total} total)`);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
@@ -360,16 +361,10 @@ export default function Shop() {
     toggleWishlist({ productId: product.id, product });
   };
 
-  // Determine if we need to fetch all products for client-side filtering
-  const hasClientFilters = filters.category !== 'all' || 
-                               filters.brands.length > 0 || 
-                               filters.priceRange !== 'all' || 
-                               filters.status !== 'all';
-
   // Calculate pagination
   const displayedCount = allProducts.length;
   const actualTotal = isSaleFilter ? allProducts.length : totalProducts;
-  const totalPages = Math.max(1, Math.ceil(actualTotal / (hasClientFilters ? 500 : PRODUCTS_PER_PAGE)));
+  const totalPages = Math.max(1, Math.ceil(actualTotal / PRODUCTS_PER_PAGE));
 
   // Loading state (only for initial load)
   if (isLoadingProducts) {
