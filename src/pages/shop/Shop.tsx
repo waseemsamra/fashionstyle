@@ -13,7 +13,7 @@ import LazyImage from '@/components/ui/LazyImage';
 import { currencyService } from '@/services/currencyService';
 
 import { API_CONFIG } from '../../config/api';
-const API_URL = API_CONFIG.productsApi;
+const API_URL = API_CONFIG.baseApiUrl;
 const PRODUCTS_PER_PAGE = 50;
 
 // Fetch categories directly from API
