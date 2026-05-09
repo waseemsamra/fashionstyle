@@ -165,17 +165,10 @@ export default function Shop() {
                                filters.priceRange !== 'all' || 
                                filters.status !== 'all';
       
-      // Fetch all products when filters are active (for client-side filtering)
-      const fetchLimit = hasClientFilters ? 2000 : PRODUCTS_PER_PAGE;
+      // Always fetch all products for client-side pagination
+      const fetchLimit = 2000; // Fetch enough products for pagination
       params.append('limit', String(fetchLimit));
-      if (!hasClientFilters) {
-        // Try both page and offset parameters for pagination
-        params.append('page', String(currentPage));
-        const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
-        params.append('offset', String(offset));
-      } else {
-        params.append('page', '1');
-      }
+      params.append('page', '1'); // Always get first batch
       // Add Category Filter to API
       if (filters.category !== 'all') {
         params.append('category', filters.category);
@@ -215,6 +208,8 @@ export default function Shop() {
 
       console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
       console.log(`📦 Sample product brands:`, products.slice(0, 3).map((p: any) => ({ name: p.name, brand: p.brand })));
+      console.log(`🔍 First 3 product IDs on page ${currentPage}:`, products.slice(0, 3).map((p: any) => p.id));
+      console.log(`🔍 Last 3 product IDs on page ${currentPage}:`, products.slice(-3).map((p: any) => p.id));
 
       // Client-side filtering fallback (API may not support all filters)
       let filteredProducts = [...products];
@@ -287,10 +282,17 @@ export default function Shop() {
         console.log(`🚀 No client filters - using API response directly`);
       }
 
-      setAllProducts(filteredProducts);
-      // Use API total for pagination when no client filters, otherwise use filtered count
-      setTotalProducts(hasClientFilters ? filteredProducts.length : total);
-      console.log(`✅ Loaded page ${currentPage}: ${filteredProducts.length} products (from ${total} total)`);
+      // Apply client-side pagination
+      const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+      const endIndex = startIndex + PRODUCTS_PER_PAGE;
+      const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+      
+      console.log(`📄 Client-side pagination: showing products ${startIndex + 1}-${endIndex} of ${filteredProducts.length}`);
+      console.log(`🔍 First 3 product IDs after pagination:`, paginatedProducts.slice(0, 3).map((p: any) => p.id));
+
+      setAllProducts(paginatedProducts);
+      setTotalProducts(filteredProducts.length);
+      console.log(`✅ Loaded page ${currentPage}: ${paginatedProducts.length} products (from ${filteredProducts.length} total)`);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
