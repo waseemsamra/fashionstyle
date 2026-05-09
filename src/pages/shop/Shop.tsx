@@ -34,9 +34,11 @@ export default function Shop() {
   const { toggleWishlist } = useToggleWishlist();
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({
     category: 'all',
@@ -47,8 +49,6 @@ export default function Shop() {
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
-  const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
-  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [isLoadingBrands, setIsLoadingBrands] = useState(false);
   const brandDropdownRef = useRef<HTMLDivElement>(null);
@@ -165,8 +165,10 @@ export default function Shop() {
                                filters.priceRange !== 'all' || 
                                filters.status !== 'all';
       
-      // Always fetch all products for client-side pagination
-      const fetchLimit = 2000; // Fetch enough products for pagination
+      // Smart preloading: fetch current page + prefetch next page
+      const currentBatchStart = (currentPage - 1) * PRODUCTS_PER_PAGE;
+      const prefetchAmount = currentPage < 20 ? PRODUCTS_PER_PAGE : 0; // Only prefetch if not on last page
+      const fetchLimit = hasClientFilters ? 500 : Math.min(300, currentBatchStart + PRODUCTS_PER_PAGE + prefetchAmount);
       params.append('limit', String(fetchLimit));
       params.append('page', '1'); // Always get first batch
       // Add Category Filter to API
@@ -282,7 +284,7 @@ export default function Shop() {
         console.log(`🚀 No client filters - using API response directly`);
       }
 
-      // Apply client-side pagination
+      // Apply client-side pagination with performance optimization
       const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
       const endIndex = startIndex + PRODUCTS_PER_PAGE;
       const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
@@ -357,6 +359,7 @@ export default function Shop() {
   };
 
   const goToPage = (page: number) => {
+    setIsFiltering(true); // Show loading state during page change
     setCurrentPage(page);
     setSearchParams(prev => {
       if (page > 1) prev.set('page', String(page));
@@ -670,13 +673,18 @@ export default function Shop() {
                     <button
                       key={page}
                       onClick={() => goToPage(page)}
+                      disabled={isFiltering}
                       className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
                         currentPage === page
                           ? 'bg-gold text-white hover:bg-gold/90'
                           : 'border border-gray-300 hover:bg-gray-50 hover:border-gold'
-                      }`}
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      {page}
+                      {isFiltering && currentPage === page ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mx-auto" />
+                      ) : (
+                        page
+                      )}
                     </button>
                   );
                 })}
