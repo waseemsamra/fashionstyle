@@ -168,7 +168,14 @@ export default function Shop() {
       // Fetch all products when filters are active (for client-side filtering)
       const fetchLimit = hasClientFilters ? 2000 : PRODUCTS_PER_PAGE;
       params.append('limit', String(fetchLimit));
-      params.append('page', hasClientFilters ? '1' : String(currentPage)); // Use current page for normal pagination
+      if (!hasClientFilters) {
+        // Try both page and offset parameters for pagination
+        params.append('page', String(currentPage));
+        const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
+        params.append('offset', String(offset));
+      } else {
+        params.append('page', '1');
+      }
       // Add Category Filter to API
       if (filters.category !== 'all') {
         params.append('category', filters.category);
@@ -197,8 +204,9 @@ export default function Shop() {
 
       const url = `${API_URL}/products?${params.toString()}`;
       console.log('📡 Fetching:', url);
+      console.log('📄 Requesting page:', currentPage, 'with limit:', fetchLimit);
 
-      const response = await fetch(url, { cache: 'force-cache' });
+      const response = await fetch(url, { cache: 'no-cache' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
 
