@@ -56,7 +56,6 @@ export default function Shop() {
       .then(r => r.json())
       .then(data => {
         const products = data.items || [];
-        setAllProducts(products);
         const unique = [...new Set<string>(products.map((p: any) => p.brand).filter(Boolean))].sort() as string[];
         setAllBrands(unique);
       })
