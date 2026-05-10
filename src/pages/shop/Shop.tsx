@@ -210,8 +210,56 @@ export default function Shop() {
         setTotalProducts(products.length);
       } else {
         // Use server-side results directly when no client filters
-        setAllProducts(products);
-        setTotalProducts(total);
+        // But also apply client-side pagination as backup in case API pagination fails
+        console.log(`🔄 No client filters - using server-side results`);
+        console.log(`📊 Server returned ${products.length} products, total: ${total}`);
+        
+        // Check if server-side pagination is working by verifying product IDs
+        if (products.length === PRODUCTS_PER_PAGE) {
+          // Server-side pagination seems to be working
+          setAllProducts(products);
+          setTotalProducts(total);
+          console.log(`✅ Using server-side pagination`);
+        } else {
+          // Fallback to client-side pagination if server-side doesn't work properly
+          console.log(`⚠️ Server-side pagination may not be working, applying client-side pagination as backup`);
+          
+          // Fetch more products for client-side pagination
+          const fallbackParams = new URLSearchParams();
+          fallbackParams.append('limit', '500'); // Fetch larger batch
+          
+          try {
+            const fallbackRes = await fetch(`${API_URL}/products?${fallbackParams.toString()}`);
+            if (fallbackRes.ok) {
+              const fallbackData = await fallbackRes.json();
+              const allProducts = fallbackData.items || [];
+              
+              // Apply client-side pagination
+              const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+              const endIndex = startIndex + PRODUCTS_PER_PAGE;
+              const paginatedProducts = allProducts.slice(startIndex, endIndex);
+              
+              console.log(`📄 Client-side pagination fallback:`);
+              console.log(`  - Current page: ${currentPage}`);
+              console.log(`  - Start index: ${startIndex}`);
+              console.log(`  - End index: ${endIndex}`);
+              console.log(`  - Total products: ${allProducts.length}`);
+              console.log(`  - Products on this page: ${paginatedProducts.length}`);
+              console.log(`  - First 3 product IDs:`, paginatedProducts.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name })));
+              
+              setAllProducts(paginatedProducts);
+              setTotalProducts(allProducts.length);
+            } else {
+              // If even fallback fails, use whatever we got
+              setAllProducts(products);
+              setTotalProducts(total);
+            }
+          } catch (fallbackError) {
+            console.error('❌ Fallback pagination failed:', fallbackError);
+            setAllProducts(products);
+            setTotalProducts(total);
+          }
+        }
       }
       
     } catch (err) {
