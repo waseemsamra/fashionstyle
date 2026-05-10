@@ -161,27 +161,11 @@ export default function Shop() {
     try {
       console.log('📦 Fetching products page', currentPage, 'with filters:', filters);
 
-      // Build query params
       const params = new URLSearchParams();
-      
-      // Determine if we need to fetch all products for client-side filtering
-      const hasClientFilters = filters.category !== 'all' || 
-                               filters.brands.length > 0 || 
-                               filters.priceRange !== 'all' || 
-                               filters.status !== 'all';
-      
-      // Smart preloading: fetch current page + prefetch next page
-      const currentBatchStart = (currentPage - 1) * PRODUCTS_PER_PAGE;
-      const prefetchAmount = currentPage < 20 ? PRODUCTS_PER_PAGE : 0; // Only prefetch if not on last page
-      const fetchLimit = hasClientFilters ? 500 : Math.min(300, currentBatchStart + PRODUCTS_PER_PAGE + prefetchAmount);
-      params.append('limit', String(fetchLimit));
-      params.append('page', '1'); // Always get first batch
-      // Add Category Filter to API
-      if (filters.category !== 'all') {
-        params.append('category', filters.category);
-      }
-
-      // Map Price Range to Min/Max Price for API
+      params.append('limit', String(PRODUCTS_PER_PAGE));
+      params.append('page', String(currentPage));
+      if (filters.category !== 'all') params.append('category', filters.category);
+      if (filters.brands.length > 0) params.append('brands', filters.brands.join(','));
       if (filters.priceRange !== 'all') {
         switch (filters.priceRange) {
           case 'under50': params.append('maxPrice', '50'); break;
@@ -190,116 +174,21 @@ export default function Shop() {
           case 'over200': params.append('minPrice', '200'); break;
         }
       }
-
-      // Handle Multiple Brands
-      if (filters.brands.length > 0) {
-        params.append('brands', filters.brands.join(','));
-      }
-
       if (filters.status === 'sale') params.append('isSale', 'true');
       if (filters.status === 'new') params.append('isNew', 'true');
-      if (filters.rating && filters.rating !== 'all') params.append('minRating', filters.rating);
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
       const url = `${API_URL}/products?${params.toString()}`;
-      console.log('📡 Fetching:', url);
-      console.log('📄 Requesting page:', currentPage, 'with limit:', fetchLimit);
-
       const response = await fetch(url, { cache: 'no-cache' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
 
-      let products = data.items || [];
-      const total = data.total || 0;
+      const products = data.items || [];
+      const total = data.total || products.length;
 
-      console.log(`📊 Raw API response: ${products.length} products, total: ${total}`);
-      console.log(`📦 Sample product brands:`, products.slice(0, 3).map((p: any) => ({ name: p.name, brand: p.brand })));
-      console.log(`🔍 First 3 product IDs on page ${currentPage}:`, products.slice(0, 3).map((p: any) => p.id));
-      console.log(`🔍 Last 3 product IDs on page ${currentPage}:`, products.slice(-3).map((p: any) => p.id));
-
-      // Client-side filtering fallback (API may not support all filters)
-      let filteredProducts = [...products];
-
-      // Only apply client-side filtering if we have client-side filters
-      if (hasClientFilters) {
-        // Filter by Category
-        if (filters.category && filters.category !== 'all') {
-          filteredProducts = filteredProducts.filter(p => 
-            p.category?.toLowerCase() === filters.category.toLowerCase() ||
-            p.category?.name?.toLowerCase() === filters.category.toLowerCase()
-          );
-          console.log(`🏷️ After category filter: ${filteredProducts.length} products`);
-        }
-
-        // Filter by Brands
-        if (filters.brands.length > 0) {
-          filteredProducts = filteredProducts.filter(p => 
-            filters.brands.includes(p.brand)
-          );
-          console.log(`🏢 After brand filter: ${filteredProducts.length} products`);
-        }
-
-        // Filter by Price Range
-        if (filters.priceRange !== 'all') {
-          filteredProducts = filteredProducts.filter(p => {
-            const price = p.price || 0;
-            switch (filters.priceRange) {
-              case 'under50': return price < 50;
-              case '50-100': return price >= 50 && price <= 100;
-              case '100-200': return price >= 100 && price <= 200;
-              case 'over200': return price > 200;
-              default: return true;
-            }
-          });
-          console.log(`💰 After price filter: ${filteredProducts.length} products`);
-        }
-
-        // Filter by Status (Sale/New)
-        if (filters.status === 'sale') {
-          filteredProducts = filteredProducts.filter(p => p.isSale === true);
-          console.log(`🏷️ After sale filter: ${filteredProducts.length} products`);
-        }
-        if (filters.status === 'new') {
-          filteredProducts = filteredProducts.filter(p => p.isNew === true);
-          console.log(`🆕 After new filter: ${filteredProducts.length} products`);
-        }
-
-        // Sort Products
-        if (filters.sortBy) {
-          filteredProducts.sort((a, b) => {
-            let result = 0;
-            switch (filters.sortBy) {
-              case 'price':
-                result = (a.price || 0) - (b.price || 0);
-                break;
-              case 'name':
-                result = (a.name || '').localeCompare(b.name || '');
-                break;
-              case 'createdAt':
-              default:
-                result = 0; // Already sorted by newest from API
-                break;
-            }
-            return filters.sortOrder === 'desc' ? -result : result;
-          });
-          console.log(`📊 Sorted by: ${filters.sortBy} (${filters.sortOrder})`);
-        }
-      } else {
-        console.log(`🚀 No client filters - using API response directly`);
-      }
-
-      // Apply client-side pagination with performance optimization
-      const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-      const endIndex = startIndex + PRODUCTS_PER_PAGE;
-      const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
-      
-      console.log(`📄 Client-side pagination: showing products ${startIndex + 1}-${endIndex} of ${filteredProducts.length}`);
-      console.log(`🔍 First 3 product IDs after pagination:`, paginatedProducts.slice(0, 3).map((p: any) => p.id));
-
-      setAllProducts(paginatedProducts);
-      setTotalProducts(filteredProducts.length);
-      console.log(`✅ Loaded page ${currentPage}: ${paginatedProducts.length} products (from ${filteredProducts.length} total)`);
+      setAllProducts(products);
+      setTotalProducts(total);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
@@ -385,7 +274,6 @@ export default function Shop() {
   };
 
   // Calculate pagination
-  const displayedCount = allProducts.length;
   const actualTotal = isSaleFilter ? allProducts.length : totalProducts;
   const totalPages = Math.max(1, Math.ceil(actualTotal / PRODUCTS_PER_PAGE));
 
@@ -590,7 +478,7 @@ export default function Shop() {
         {/* Products Count */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-600">
-            {actualTotal > 0 ? `Showing ${displayedCount} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
+            {actualTotal > 0 ? `Showing ${allProducts.length} of ${actualTotal} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
           </p>
           {isFiltering && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
