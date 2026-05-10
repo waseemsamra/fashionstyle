@@ -1,10 +1,9 @@
 import { toCDNUrl } from '@/utils/productImage';
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { X, ShoppingBag, Star, ChevronRight, ChevronDown, Check, ChevronLeft, Heart } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCollection } from '@/hooks/useCollection';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
@@ -31,7 +30,6 @@ export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toggleWishlist } = useToggleWishlist();
   const [allProducts, setAllProducts] = useState<any[]>([]);
-  const [displayedProducts, setDisplayedProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
@@ -48,156 +46,96 @@ export default function Shop() {
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
-  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
-  const [isLoadingBrands, setIsLoadingBrands] = useState(false);
   const brandDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Check if we're filtering by sale - use collection instead of all products
-  const isSaleFilter = searchParams.get('sale') === 'true';
-  const { products: saleProducts } = useCollection('summerSale');
-
   const [allBrands, setAllBrands] = useState<string[]>([]);
 
-  // Extract brands from products
+  // Fetch ALL products once on mount, extract brands
   useEffect(() => {
-    fetch(`${API_URL}/products?limit=500`)
+    setIsLoadingProducts(true);
+    fetch(`${API_URL}/products?limit=1000`)
       .then(r => r.json())
       .then(data => {
-        const unique = [...new Set<string>(
-          (data.items || []).map((p: any) => p.brand).filter(Boolean)
-        )].sort() as string[];
+        const products = data.items || [];
+        setAllProducts(products);
+        const unique = [...new Set<string>(products.map((p: any) => p.brand).filter(Boolean))].sort() as string[];
         setAllBrands(unique);
       })
-      .catch(() => {});
+      .catch(err => setError(err))
+      .finally(() => setIsLoadingProducts(false));
   }, []);
-
-  // Use available brands filtered by category, or all brands if no category selected
-  const brands = useMemo(() => {
-    if (filters.category === 'all') return allBrands;
-    return availableBrands.length > 0 ? availableBrands : allBrands;
-  }, [allBrands, availableBrands, filters.category]);
 
   // Fetch categories on mount
   useEffect(() => {
-    fetchCategories().then(cats => {
-      setCategories(cats);
-    });
+    fetchCategories().then(setCategories);
   }, []);
 
-  // Fetch brands that have products in the selected category
-  const fetchBrandsForCategory = useCallback(async (category: string) => {
-    if (category === 'all') {
-      setAvailableBrands([]);
-      return;
+  // Compute brands for selected category
+  const brands = useMemo(() => {
+    if (filters.category === 'all') return allBrands;
+    return [...new Set<string>(
+      allProducts.filter(p => p.category === filters.category).map(p => p.brand).filter(Boolean)
+    )].sort();
+  }, [allBrands, allProducts, filters.category]);
+
+  // Server-side filtering with proper API parameters
+  const fetchProducts = async () => {
+    setIsLoadingProducts(true);
+    const params = new URLSearchParams();
+    const fetchLimit = PRODUCTS_PER_PAGE;
+    const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    
+    params.append('limit', String(fetchLimit));
+    params.append('offset', String(offset));
+    
+    // Category Filter (server-side)
+    if (filters.category !== 'all') {
+      params.append('category', filters.category);
     }
 
-    setIsLoadingBrands(true);
-    try {
-      console.log(`🏷️ Fetching brands for category: ${category}`);
-      const params = new URLSearchParams();
-      params.append('category', category);
-      params.append('limit', '500');
-
-      const response = await fetch(`${API_URL}/products?${params.toString()}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-
-      // Extract unique brands from products
-      const uniqueBrands: string[] = [...new Set<string>(
-        (data.items || [])
-          .map((product: any) => product.brand)
-          .filter((brand: string): brand is string => Boolean(brand))
-      )].sort();
-
-      console.log(`✅ Found ${uniqueBrands.length} brands for category: ${category}`);
-      setAvailableBrands(uniqueBrands);
-    } catch (err) {
-      console.error('❌ Failed to fetch brands for category:', err);
-      setAvailableBrands([]);
-    } finally {
-      setIsLoadingBrands(false);
-    }
-  }, []);
-
-  // Close brand dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (brandDropdownRef.current && !brandDropdownRef.current.contains(e.target as Node)) {
-        setShowBrandDropdown(false);
+    // Price Range Filter (server-side)
+    if (filters.priceRange !== 'all') {
+      switch (filters.priceRange) {
+        case 'under50': params.append('maxPrice', '50'); break;
+        case '50-100': params.append('minPrice', '50'); params.append('maxPrice', '100'); break;
+        case '100-200': params.append('minPrice', '100'); params.append('maxPrice', '200'); break;
+        case 'over200': params.append('minPrice', '200'); break;
       }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Fetch brands for selected category and clear brand selection
-  useEffect(() => {
-    fetchBrandsForCategory(filters.category);
-    // Clear selected brands when category changes (only if there are selected brands)
-    if (filters.brands.length > 0 && filters.category !== 'all') {
-      // Keep only brands that are still available in the new category
-      setFilters(prev => ({ ...prev, brands: [] }));
     }
-  }, [filters.category, fetchBrandsForCategory, filters.brands.length]);
 
-  // Fetch products with filters - fetch all, paginate client-side
-  const fetchProducts = useCallback(async () => {
-    if (!allProducts.length) setIsLoadingProducts(true);
-    else setIsFiltering(true);
-    setError(null);
+    // Brand Filter (server-side) - use individual brand parameters
+    if (filters.brands.length > 0) {
+      filters.brands.forEach(brand => params.append('brand', brand));
+    }
 
-    if (isSaleFilter) {
-      setAllProducts(saleProducts || []);
-      setTotalProducts(saleProducts?.length || 0);
-      setCurrentPage(1);
-      setIsLoadingProducts(false);
-      setIsFiltering(false);
-      return;
+    // Status Filter (server-side)
+    if (filters.status === 'sale') params.append('isSale', 'true');
+    if (filters.status === 'new') params.append('isNew', 'true');
+    
+    // Rating Filter (server-side)
+    if (filters.rating && filters.rating !== 'all') params.append('minRating', filters.rating);
+    
+    // Sorting (server-side)
+    if (filters.sortBy) {
+      params.append('sort', filters.sortBy);
+      params.append('order', filters.sortOrder);
     }
 
     try {
-      const params = new URLSearchParams();
-      params.append('limit', '1000');
-      if (filters.category !== 'all') params.append('category', filters.category);
-      if (filters.brands.length > 0) params.append('brands', filters.brands.join(','));
-      if (filters.priceRange !== 'all') {
-        switch (filters.priceRange) {
-          case 'under50': params.append('maxPrice', '50'); break;
-          case '50-100': params.append('minPrice', '50'); params.append('maxPrice', '100'); break;
-          case '100-200': params.append('minPrice', '100'); params.append('maxPrice', '200'); break;
-          case 'over200': params.append('minPrice', '200'); break;
-        }
-      }
-      if (filters.status === 'sale') params.append('isSale', 'true');
-      if (filters.status === 'new') params.append('isNew', 'true');
-      if (filters.sortBy) params.append('sortBy', filters.sortBy);
-      if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
-
-      const response = await fetch(`${API_URL}/products?${params.toString()}`, { cache: 'no-cache' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      const products = data.items || [];
-      setAllProducts(products);
-      setTotalProducts(products.length);
+      const res = await fetch(`${API_URL}/products?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch products');
+      const data = await res.json();
+      setAllProducts(data.items || []);
+      setTotalProducts(data.total || 0);
     } catch (err) {
-      console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
     } finally {
       setIsLoadingProducts(false);
-      setIsFiltering(false);
     }
-  }, [isSaleFilter, saleProducts, filters.category, filters.brands, filters.status, filters.priceRange, filters.sortBy, filters.sortOrder]);
+  };
 
-  // Re-fetch when filters change (not page)
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
-
-  // Update displayed products when page or allProducts changes
-  useEffect(() => {
-    const start = (currentPage - 1) * PRODUCTS_PER_PAGE;
-    setDisplayedProducts(allProducts.slice(start, start + PRODUCTS_PER_PAGE));
-  }, [allProducts, currentPage]);
+  }, [currentPage, filters]);
 
   // Read URL parameters to set filters (only on initial mount)
   useEffect(() => {
@@ -226,15 +164,7 @@ export default function Shop() {
   }, []); // Only run once on mount
 
   const resetFilters = () => {
-    setFilters({
-      category: 'all',
-      priceRange: 'all',
-      rating: 'all',
-      status: 'all',
-      brands: [],
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
-    });
+    setFilters({ category: 'all', priceRange: 'all', rating: 'all', status: 'all', brands: [], sortBy: 'createdAt', sortOrder: 'desc' });
     setCurrentPage(1);
   };
 
@@ -370,12 +300,7 @@ export default function Shop() {
                     </label>
                   </div>
                   <div className="max-h-48 overflow-y-auto">
-                    {isLoadingBrands ? (
-                      <div className="p-4 text-center text-sm text-gray-500">
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gold mx-auto mb-2" />
-                        Loading brands...
-                      </div>
-                    ) : brands.length > 0 ? (
+                    {brands.length > 0 ? (
                       brands.map(brand => (
                         <label key={brand} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2">
                           <input type="checkbox" checked={filters.brands.includes(brand)} onChange={() => toggleBrand(brand)} className="w-4 h-4 rounded border-gray-300" />
@@ -472,7 +397,7 @@ export default function Shop() {
         {/* Products Count */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-600">
-            {totalProducts > 0 ? `Showing ${displayedProducts.length} of ${totalProducts} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
+            {totalProducts > 0 ? `Showing ${allProducts.length} of ${totalProducts} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
           </p>
           {isFiltering && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -482,7 +407,7 @@ export default function Shop() {
           )}
         </div>
 
-        {displayedProducts.length === 0 ? (
+        {allProducts.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🛍️</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">No Products Found</h3>
@@ -493,7 +418,7 @@ export default function Shop() {
           <>
             {/* Product Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-10">
-              {displayedProducts.map((product) => (
+              {allProducts.map((product: any) => (
                 <div key={product.id} className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
                   <div className="relative aspect-[3/4] overflow-hidden cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                     <LazyImage src={toCDNUrl(product.image)} alt={product.name} productName={product.name} productId={product.id} className="w-full h-full" />
