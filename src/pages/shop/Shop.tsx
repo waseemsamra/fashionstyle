@@ -20,7 +20,7 @@ async function fetchCategories(): Promise<{name: string, count: number}[]> {
     const res = await fetch(`${API_CONFIG.categoriesApi}`);
     if (!res.ok) return [];
     const data = await res.json();
-    return data.categories || [];
+    return Array.isArray(data) ? data : data.categories || [];
   } catch {
     return [];
   }
