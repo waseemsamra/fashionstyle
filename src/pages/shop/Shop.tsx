@@ -29,7 +29,6 @@ export default function Shop() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toggleWishlist } = useToggleWishlist();
-  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [displayedProducts, setDisplayedProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -339,7 +338,7 @@ export default function Shop() {
   }
 
   return (
-    <div className={`min-h-screen bg-beige-100 pt-24 pb-8 transition-opacity duration-200 ${isFiltering ? 'opacity-60' : 'opacity-100'}`}>
+    <div className="min-h-screen bg-beige-100 pt-24 pb-8">
       {/* Hero Section for Sale */}
       {filters.status === 'sale' && (
         <section className="relative bg-gradient-to-r from-gold/20 via-gold/10 to-transparent py-16 mb-8">
@@ -587,18 +586,13 @@ export default function Shop() {
                     <button
                       key={page}
                       onClick={() => goToPage(page)}
-                      disabled={isFiltering}
                       className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
                         currentPage === page
                           ? 'bg-gold text-white hover:bg-gold/90'
                           : 'border border-gray-300 hover:bg-gray-50 hover:border-gold'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      }`}
                     >
-                      {isFiltering && currentPage === page ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mx-auto" />
-                      ) : (
-                        page
-                      )}
+                      {page}
                     </button>
                   );
                 })}
