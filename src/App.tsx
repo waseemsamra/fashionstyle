@@ -106,21 +106,17 @@ function Layout() {
         staleTime: 5 * 60 * 1000, // 5 minutes
       });
 
-      // Prefetch user cart
       queryClient.prefetchQuery({
         queryKey: ['cart', user.id],
         queryFn: async () => {
           try {
             const { cartService } = await import('@/services/cartService');
-            const cart = await cartService.getCart(user.id);
-            console.log('✅ Prefetched cart with', cart.itemCount, 'items');
-            return cart;
-          } catch (error) {
-            console.warn('⚠️ Failed to prefetch cart:', error);
+            return cartService.getLocalCart();
+          } catch {
             return { items: [], total: 0, itemCount: 0 };
           }
         },
-        staleTime: 2 * 60 * 1000, // 2 minutes
+        staleTime: 2 * 60 * 1000,
       });
       
       // Prefetch user orders

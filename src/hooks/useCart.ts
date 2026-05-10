@@ -14,24 +14,28 @@ export function useCart() {
     queryKey: ['cart', userId],
     queryFn: async () => {
       console.log('🛒 Fetching cart...');
-      let cart: Cart;
+      const localCart = cartService.getLocalCart();
 
       if (userId) {
-        // Logged in: get from API
-        cart = await cartService.getCart(userId);
-        
-        // Sync with local storage if there are items
-        const localCart = cartService.getLocalCart();
-        if (localCart.items.length > 0) {
-          cart = await cartService.mergeCarts(userId, localCart);
-          cartService.clearLocalCart();
+        try {
+          const cart = await cartService.getCart(userId);
+          if (localCart.items.length > 0) {
+            try {
+              const merged = await cartService.mergeCarts(userId, localCart);
+              cartService.clearLocalCart();
+              return merged;
+            } catch {
+              return cart;
+            }
+          }
+          return cart;
+        } catch {
+          // API not available, use localStorage
+          return localCart;
         }
-      } else {
-        // Guest: get from local storage
-        cart = cartService.getLocalCart();
       }
 
-      return cart;
+      return localCart;
     },
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
