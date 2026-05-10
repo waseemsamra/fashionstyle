@@ -229,20 +229,42 @@ export default function Shop() {
   };
 
   useEffect(() => {
+    // Only call fetchProducts when filters change, not on every page change
+    setCurrentPage(1);
     fetchProducts();
-  }, [currentPage, filters]);
+  }, [filters]);
 
-  // Handle pagination with filtered products
+  // Handle page changes: only fetch from API if no client filters
   useEffect(() => {
-    if (filters.category !== 'all' || filters.brands.length > 0 || 
-        filters.priceRange !== 'all' || filters.status !== 'all') {
-      // We have filters - paginate from filteredProducts
+    if (currentPage > 1) {
+      const hasClientFilters = filters.category !== 'all' || 
+                               filters.brands.length > 0 || 
+                               filters.priceRange !== 'all' || 
+                               filters.status !== 'all';
+      
+      // For server-side pagination (no filters), fetch new page from API
+      if (!hasClientFilters) {
+        fetchProducts();
+      }
+    }
+  }, [currentPage]);
+
+  // Handle pagination display with filtered products
+  useEffect(() => {
+    const hasClientFilters = filters.category !== 'all' || filters.brands.length > 0 || 
+                             filters.priceRange !== 'all' || filters.status !== 'all';
+    
+    if (hasClientFilters && filteredProducts.length > 0) {
+      // Paginate from filtered results
       const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
       const endIndex = startIndex + PRODUCTS_PER_PAGE;
       const paginated = filteredProducts.slice(startIndex, endIndex);
       setDisplayedProducts(paginated);
+    } else if (!hasClientFilters && filteredProducts.length > 0) {
+      // No filters - display API results directly
+      setDisplayedProducts(filteredProducts);
     }
-  }, [currentPage, filteredProducts]);
+  }, [currentPage, filteredProducts, filters]);
 
   // Read URL parameters to set filters (only on initial mount)
   useEffect(() => {
