@@ -121,12 +121,25 @@ export default function Shop() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/products?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to fetch products');
+      const url = `${API_URL}/products?${params.toString()}`;
+      console.log('📡 Server-side API call:', url);
+      console.log('🔍 Filters applied:', filters);
+      console.log('📄 Page:', currentPage, 'Limit:', fetchLimit, 'Offset:', offset);
+      
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch products`);
       const data = await res.json();
+      
+      console.log('📊 API Response:', {
+        items: data.items?.length || 0,
+        total: data.total || 0,
+        sampleProducts: data.items?.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name, category: p.category, brand: p.brand }))
+      });
+      
       setAllProducts(data.items || []);
       setTotalProducts(data.total || 0);
     } catch (err) {
+      console.error('❌ API Error:', err);
       setError(err as Error);
     } finally {
       setIsLoadingProducts(false);
