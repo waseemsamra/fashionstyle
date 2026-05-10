@@ -31,6 +31,7 @@ export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toggleWishlist } = useToggleWishlist();
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [displayedProducts, setDisplayedProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
@@ -139,14 +140,10 @@ export default function Shop() {
     }
   }, [filters.category, fetchBrandsForCategory, filters.brands.length]);
 
-  // Fetch products with filters and pagination
+  // Fetch products with filters - fetch all, paginate client-side
   const fetchProducts = useCallback(async () => {
-    const isFirstLoad = !allProducts.length;
-    if (isFirstLoad) {
-      setIsLoadingProducts(true);
-    } else {
-      setIsFiltering(true);
-    }
+    if (!allProducts.length) setIsLoadingProducts(true);
+    else setIsFiltering(true);
     setError(null);
 
     if (isSaleFilter) {
@@ -159,11 +156,8 @@ export default function Shop() {
     }
 
     try {
-      console.log('📦 Fetching products page', currentPage, 'with filters:', filters);
-
       const params = new URLSearchParams();
-      params.append('limit', String(PRODUCTS_PER_PAGE));
-      params.append('page', String(currentPage));
+      params.append('limit', '1000');
       if (filters.category !== 'all') params.append('category', filters.category);
       if (filters.brands.length > 0) params.append('brands', filters.brands.join(','));
       if (filters.priceRange !== 'all') {
@@ -179,16 +173,12 @@ export default function Shop() {
       if (filters.sortBy) params.append('sortBy', filters.sortBy);
       if (filters.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-      const url = `${API_URL}/products?${params.toString()}`;
-      const response = await fetch(url, { cache: 'no-cache' });
+      const response = await fetch(`${API_URL}/products?${params.toString()}`, { cache: 'no-cache' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-
       const products = data.items || [];
-      const total = data.total || products.length;
-
       setAllProducts(products);
-      setTotalProducts(total);
+      setTotalProducts(products.length);
     } catch (err) {
       console.error('❌ Failed to fetch products:', err);
       setError(err as Error);
@@ -196,12 +186,18 @@ export default function Shop() {
       setIsLoadingProducts(false);
       setIsFiltering(false);
     }
-  }, [isSaleFilter, saleProducts, filters.category, filters.brands, filters.status, filters.priceRange, filters.rating, filters.sortBy, filters.sortOrder, currentPage, allProducts.length]);
+  }, [isSaleFilter, saleProducts, filters.category, filters.brands, filters.status, filters.priceRange, filters.sortBy, filters.sortOrder]);
 
-  // Auto-fetch when filters or page change
+  // Re-fetch when filters change (not page)
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  // Update displayed products when page or allProducts changes
+  useEffect(() => {
+    const start = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    setDisplayedProducts(allProducts.slice(start, start + PRODUCTS_PER_PAGE));
+  }, [allProducts, currentPage]);
 
   // Read URL parameters to set filters (only on initial mount)
   useEffect(() => {
@@ -273,9 +269,7 @@ export default function Shop() {
     toggleWishlist({ productId: product.id, product });
   };
 
-  // Calculate pagination
-  const actualTotal = isSaleFilter ? allProducts.length : totalProducts;
-  const totalPages = Math.max(1, Math.ceil(actualTotal / PRODUCTS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(totalProducts / PRODUCTS_PER_PAGE));
 
   // Loading state (only for initial load)
   if (isLoadingProducts) {
@@ -478,7 +472,7 @@ export default function Shop() {
         {/* Products Count */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-600">
-            {actualTotal > 0 ? `Showing ${allProducts.length} of ${actualTotal} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
+            {totalProducts > 0 ? `Showing ${displayedProducts.length} of ${totalProducts} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
           </p>
           {isFiltering && (
             <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -488,7 +482,7 @@ export default function Shop() {
           )}
         </div>
 
-        {allProducts.length === 0 ? (
+        {displayedProducts.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🛍️</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">No Products Found</h3>
@@ -499,7 +493,7 @@ export default function Shop() {
           <>
             {/* Product Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-10">
-              {allProducts.map((product) => (
+              {displayedProducts.map((product) => (
                 <div key={product.id} className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
                   <div className="relative aspect-[3/4] overflow-hidden cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                     <LazyImage src={toCDNUrl(product.image)} alt={product.name} productName={product.name} productId={product.id} className="w-full h-full" />
