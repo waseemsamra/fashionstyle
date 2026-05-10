@@ -77,22 +77,34 @@ export default function Shop() {
     )].sort();
   }, [allBrands, allProducts, filters.category]);
 
-  // Server-side filtering with proper API parameters
+  // Hybrid filtering: server-side with client-side fallback
   const fetchProducts = async () => {
     setIsLoadingProducts(true);
+    
+    // Determine if we have filters that need client-side processing
+    const hasClientFilters = filters.category !== 'all' || 
+                             filters.brands.length > 0 || 
+                             filters.priceRange !== 'all' || 
+                             filters.status !== 'all';
+    
     const params = new URLSearchParams();
-    const fetchLimit = PRODUCTS_PER_PAGE;
+    
+    // Always fetch a larger batch when we have filters for client-side processing
+    const fetchLimit = hasClientFilters ? 500 : PRODUCTS_PER_PAGE;
     const offset = (currentPage - 1) * PRODUCTS_PER_PAGE;
     
     params.append('limit', String(fetchLimit));
-    params.append('offset', String(offset));
     
-    // Category Filter (server-side)
+    // Only use offset for server-side pagination when no client filters
+    if (!hasClientFilters) {
+      params.append('offset', String(offset));
+    }
+    
+    // Try server-side filtering first
     if (filters.category !== 'all') {
       params.append('category', filters.category);
     }
 
-    // Price Range Filter (server-side)
     if (filters.priceRange !== 'all') {
       switch (filters.priceRange) {
         case 'under50': params.append('maxPrice', '50'); break;
@@ -102,19 +114,15 @@ export default function Shop() {
       }
     }
 
-    // Brand Filter (server-side) - use individual brand parameters
     if (filters.brands.length > 0) {
       filters.brands.forEach(brand => params.append('brand', brand));
     }
 
-    // Status Filter (server-side)
     if (filters.status === 'sale') params.append('isSale', 'true');
     if (filters.status === 'new') params.append('isNew', 'true');
     
-    // Rating Filter (server-side)
     if (filters.rating && filters.rating !== 'all') params.append('minRating', filters.rating);
     
-    // Sorting (server-side)
     if (filters.sortBy) {
       params.append('sort', filters.sortBy);
       params.append('order', filters.sortOrder);
@@ -122,22 +130,83 @@ export default function Shop() {
 
     try {
       const url = `${API_URL}/products?${params.toString()}`;
-      console.log('📡 Server-side API call:', url);
+      console.log('📡 Hybrid API call:', url);
       console.log('🔍 Filters applied:', filters);
       console.log('📄 Page:', currentPage, 'Limit:', fetchLimit, 'Offset:', offset);
+      console.log('🔄 Has client filters:', hasClientFilters);
       
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch products`);
       const data = await res.json();
       
-      console.log('📊 API Response:', {
-        items: data.items?.length || 0,
-        total: data.total || 0,
-        sampleProducts: data.items?.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name, category: p.category, brand: p.brand }))
+      let products = data.items || [];
+      const total = data.total || 0;
+      
+      console.log('📊 Raw API Response:', {
+        items: products.length,
+        total: total,
+        sampleProducts: products.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name, category: p.category, brand: p.brand }))
       });
       
-      setAllProducts(data.items || []);
-      setTotalProducts(data.total || 0);
+      // Apply client-side filtering as fallback if server-side filtering doesn't work
+      if (hasClientFilters) {
+        console.log('🔧 Applying client-side filtering as fallback...');
+        
+        // Category filter
+        if (filters.category !== 'all') {
+          products = products.filter((p: any) => 
+            p.category?.toLowerCase() === filters.category.toLowerCase() ||
+            p.category?.name?.toLowerCase() === filters.category.toLowerCase()
+          );
+          console.log(`🏷️ After category filter: ${products.length} products`);
+        }
+        
+        // Brand filter
+        if (filters.brands.length > 0) {
+          products = products.filter((p: any) => filters.brands.includes(p.brand));
+          console.log(`🏢 After brand filter: ${products.length} products`);
+        }
+        
+        // Price range filter
+        if (filters.priceRange !== 'all') {
+          products = products.filter((p: any) => {
+            const price = p.price || 0;
+            switch (filters.priceRange) {
+              case 'under50': return price < 50;
+              case '50-100': return price >= 50 && price <= 100;
+              case '100-200': return price >= 100 && price <= 200;
+              case 'over200': return price > 200;
+              default: return true;
+            }
+          });
+          console.log(`💰 After price filter: ${products.length} products`);
+        }
+        
+        // Status filter
+        if (filters.status === 'sale') {
+          products = products.filter((p: any) => p.isSale === true);
+          console.log(`🏷️ After sale filter: ${products.length} products`);
+        }
+        if (filters.status === 'new') {
+          products = products.filter((p: any) => p.isNew === true);
+          console.log(`🆕 After new filter: ${products.length} products`);
+        }
+        
+        // Client-side pagination for filtered results
+        const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+        const endIndex = startIndex + PRODUCTS_PER_PAGE;
+        const paginatedProducts = products.slice(startIndex, endIndex);
+        
+        console.log(`📄 Client-side pagination: showing ${startIndex + 1}-${endIndex} of ${products.length}`);
+        
+        setAllProducts(paginatedProducts);
+        setTotalProducts(products.length);
+      } else {
+        // Use server-side results directly when no client filters
+        setAllProducts(products);
+        setTotalProducts(total);
+      }
+      
     } catch (err) {
       console.error('❌ API Error:', err);
       setError(err as Error);
