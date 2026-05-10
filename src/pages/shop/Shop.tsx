@@ -197,7 +197,14 @@ export default function Shop() {
         const endIndex = startIndex + PRODUCTS_PER_PAGE;
         const paginatedProducts = products.slice(startIndex, endIndex);
         
-        console.log(`📄 Client-side pagination: showing ${startIndex + 1}-${endIndex} of ${products.length}`);
+        console.log(`📄 Client-side pagination details:`);
+        console.log(`  - Current page: ${currentPage}`);
+        console.log(`  - Products per page: ${PRODUCTS_PER_PAGE}`);
+        console.log(`  - Start index: ${startIndex}`);
+        console.log(`  - End index: ${endIndex}`);
+        console.log(`  - Total products before pagination: ${products.length}`);
+        console.log(`  - Products after pagination: ${paginatedProducts.length}`);
+        console.log(`  - First 3 product IDs on page ${currentPage}:`, paginatedProducts.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name })));
         
         setAllProducts(paginatedProducts);
         setTotalProducts(products.length);
