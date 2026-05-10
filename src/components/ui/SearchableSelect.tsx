@@ -64,7 +64,8 @@ export default function SearchableSelect({
     }
   };
 
-  const selectedOption = (options || []).find(opt => opt.id != null && String(opt.id) === value);
+  const selectedOption = (options || []).find(opt => opt.id != null && String(opt.id) === value) 
+    || (value ? { id: value, name: value } : null);
 
   return (
     <div className="space-y-2" ref={dropdownRef}>
