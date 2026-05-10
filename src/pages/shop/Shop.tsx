@@ -30,10 +30,11 @@ export default function Shop() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toggleWishlist } = useToggleWishlist();
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  const [displayedProducts, setDisplayedProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-  const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,10 +73,11 @@ export default function Shop() {
   // Compute brands for selected category
   const brands = useMemo(() => {
     if (filters.category === 'all') return allBrands;
+    // Use filteredProducts for brand computation to get accurate list
     return [...new Set<string>(
-      allProducts.filter(p => p.category === filters.category).map(p => p.brand).filter(Boolean)
+      filteredProducts.filter(p => p.category === filters.category).map(p => p.brand).filter(Boolean)
     )].sort();
-  }, [allBrands, allProducts, filters.category]);
+  }, [allBrands, filteredProducts, filters.category]);
 
   // Hybrid filtering: server-side with client-side fallback
   const fetchProducts = async () => {
@@ -192,6 +194,9 @@ export default function Shop() {
           console.log(`🆕 After new filter: ${products.length} products`);
         }
         
+        // Store ALL filtered products (without pagination)
+        setFilteredProducts(products);
+        
         // Client-side pagination for filtered results
         const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
         const endIndex = startIndex + PRODUCTS_PER_PAGE;
@@ -206,60 +211,15 @@ export default function Shop() {
         console.log(`  - Products after pagination: ${paginatedProducts.length}`);
         console.log(`  - First 3 product IDs on page ${currentPage}:`, paginatedProducts.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name })));
         
-        setAllProducts(paginatedProducts);
+        setDisplayedProducts(paginatedProducts);
         setTotalProducts(products.length);
       } else {
         // Use server-side results directly when no client filters
-        // But also apply client-side pagination as backup in case API pagination fails
         console.log(`🔄 No client filters - using server-side results`);
         console.log(`📊 Server returned ${products.length} products, total: ${total}`);
-        
-        // Check if server-side pagination is working by verifying product IDs
-        if (products.length === PRODUCTS_PER_PAGE) {
-          // Server-side pagination seems to be working
-          setAllProducts(products);
-          setTotalProducts(total);
-          console.log(`✅ Using server-side pagination`);
-        } else {
-          // Fallback to client-side pagination if server-side doesn't work properly
-          console.log(`⚠️ Server-side pagination may not be working, applying client-side pagination as backup`);
-          
-          // Fetch more products for client-side pagination
-          const fallbackParams = new URLSearchParams();
-          fallbackParams.append('limit', '500'); // Fetch larger batch
-          
-          try {
-            const fallbackRes = await fetch(`${API_URL}/products?${fallbackParams.toString()}`);
-            if (fallbackRes.ok) {
-              const fallbackData = await fallbackRes.json();
-              const allProducts = fallbackData.items || [];
-              
-              // Apply client-side pagination
-              const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-              const endIndex = startIndex + PRODUCTS_PER_PAGE;
-              const paginatedProducts = allProducts.slice(startIndex, endIndex);
-              
-              console.log(`📄 Client-side pagination fallback:`);
-              console.log(`  - Current page: ${currentPage}`);
-              console.log(`  - Start index: ${startIndex}`);
-              console.log(`  - End index: ${endIndex}`);
-              console.log(`  - Total products: ${allProducts.length}`);
-              console.log(`  - Products on this page: ${paginatedProducts.length}`);
-              console.log(`  - First 3 product IDs:`, paginatedProducts.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name })));
-              
-              setAllProducts(paginatedProducts);
-              setTotalProducts(allProducts.length);
-            } else {
-              // If even fallback fails, use whatever we got
-              setAllProducts(products);
-              setTotalProducts(total);
-            }
-          } catch (fallbackError) {
-            console.error('❌ Fallback pagination failed:', fallbackError);
-            setAllProducts(products);
-            setTotalProducts(total);
-          }
-        }
+        setFilteredProducts(products);
+        setDisplayedProducts(products);
+        setTotalProducts(total);
       }
       
     } catch (err) {
@@ -273,6 +233,18 @@ export default function Shop() {
   useEffect(() => {
     fetchProducts();
   }, [currentPage, filters]);
+
+  // Handle pagination with filtered products
+  useEffect(() => {
+    if (filters.category !== 'all' || filters.brands.length > 0 || 
+        filters.priceRange !== 'all' || filters.status !== 'all') {
+      // We have filters - paginate from filteredProducts
+      const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+      const endIndex = startIndex + PRODUCTS_PER_PAGE;
+      const paginated = filteredProducts.slice(startIndex, endIndex);
+      setDisplayedProducts(paginated);
+    }
+  }, [currentPage, filteredProducts]);
 
   // Read URL parameters to set filters (only on initial mount)
   useEffect(() => {
@@ -316,7 +288,6 @@ export default function Shop() {
   };
 
   const goToPage = (page: number) => {
-    setIsFiltering(true); // Show loading state during page change
     setCurrentPage(page);
     setSearchParams(prev => {
       if (page > 1) prev.set('page', String(page));
@@ -534,17 +505,11 @@ export default function Shop() {
         {/* Products Count */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-600">
-            {totalProducts > 0 ? `Showing ${allProducts.length} of ${totalProducts} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
+            {totalProducts > 0 ? `Showing ${displayedProducts.length} of ${totalProducts} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
           </p>
-          {isFiltering && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gold" />
-              <span>Updating...</span>
-            </div>
-          )}
         </div>
 
-        {allProducts.length === 0 ? (
+        {displayedProducts.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🛍️</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">No Products Found</h3>
@@ -555,7 +520,7 @@ export default function Shop() {
           <>
             {/* Product Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-10">
-              {allProducts.map((product: any) => (
+              {displayedProducts.map((product: any) => (
                 <div key={product.id} className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
                   <div className="relative aspect-[3/4] overflow-hidden cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                     <LazyImage src={toCDNUrl(product.image)} alt={product.name} productName={product.name} productId={product.id} className="w-full h-full" />
