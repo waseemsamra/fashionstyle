@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+const S3 = 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images';
+
 const CATEGORY_IMAGES: Record<string, string> = {
-  'Bridal Wear': '/category-bridal.jpg',
-  'Casual Wear': '/category-casual.jpg',
-  'Formal Wear': '/category-formal.jpg',
-  'Accessories': '/category-accessories.jpg',
-  'Festive Collection': '/category-festive.jpg',
-  'Kids Wear': '/category-kids.jpg',
-  'Men Wear': '/category-men.jpg',
-  'Footwear': '/category-footwear.jpg',
+  'Bridal Wear': `${S3}/category-bridal.jpg`,
+  'Casual Wear': `${S3}/category-casual.jpg`,
+  'Formal Wear': `${S3}/category-formal.jpg`,
+  'Accessories': `${S3}/category-accessories.jpg`,
+  'Festive Collection': `${S3}/category-festive.jpg`,
+  'Kids Wear': `${S3}/category-casual.jpg`,
+  'Men Wear': `${S3}/category-formal.jpg`,
+  'Footwear': `${S3}/category-accessories.jpg`,
 };
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
@@ -73,7 +75,7 @@ export default function Categories() {
               slug: categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
               name: categoryName,
               displayName: categoryName,
-              image: CATEGORY_IMAGES[categoryName] || '/product-placeholder.jpg',
+              image: CATEGORY_IMAGES[categoryName] || `${S3}/category-casual.jpg`,
               description: CATEGORY_DESCRIPTIONS[categoryName] || 'Explore this category',
               itemCount: category.count || 0, // Use count from backend if available
             };
@@ -205,9 +207,7 @@ export default function Categories() {
                               src={category.image}
                               alt={category.displayName || category.name}
                               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                              onError={(e) => {
-                                e.currentTarget.src = '/product-placeholder.jpg';
-                              }}
+                                onError={(e) => { e.currentTarget.src = `${S3}/category-casual.jpg`; }}
                             />
                           </div>
                         </div>
