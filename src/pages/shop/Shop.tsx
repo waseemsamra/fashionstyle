@@ -4,10 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { X, ShoppingBag, Star, ChevronRight, ChevronDown, Check, ChevronLeft, Heart } from 'lucide-react';
 import { toast } from 'sonner';
-import { useBrands } from '@/hooks/useBrands';
 import { useCollection } from '@/hooks/useCollection';
 import { useToggleWishlist } from '@/hooks/useWishlist';
-import type { Brand } from '@/services/brandsService';
 import { getProductUrl } from '@/utils/productUrl';
 import LazyImage from '@/components/ui/LazyImage';
 import { currencyService } from '@/services/currencyService';
@@ -57,17 +55,24 @@ export default function Shop() {
   const isSaleFilter = searchParams.get('sale') === 'true';
   const { products: saleProducts } = useCollection('summerSale');
 
-  // Fetch brands from API using hook
-  const { brands: brandsData, loading: brandsLoading } = useBrands();
-  const allBrands = useMemo(() =>
-    brandsData?.map((b: Brand) => b.name).filter(Boolean) || [],
-  [brandsData]);
+  const [allBrands, setAllBrands] = useState<string[]>([]);
+
+  // Extract brands from products
+  useEffect(() => {
+    fetch(`${API_URL}/products?limit=500`)
+      .then(r => r.json())
+      .then(data => {
+        const unique = [...new Set<string>(
+          (data.items || []).map((p: any) => p.brand).filter(Boolean)
+        )].sort() as string[];
+        setAllBrands(unique);
+      })
+      .catch(() => {});
+  }, []);
 
   // Use available brands filtered by category, or all brands if no category selected
   const brands = useMemo(() => {
-    if (filters.category === 'all') {
-      return allBrands;
-    }
+    if (filters.category === 'all') return allBrands;
     return availableBrands.length > 0 ? availableBrands : allBrands;
   }, [allBrands, availableBrands, filters.category]);
 
@@ -483,7 +488,7 @@ export default function Shop() {
                     </label>
                   </div>
                   <div className="max-h-48 overflow-y-auto">
-                    {isLoadingBrands || brandsLoading ? (
+                    {isLoadingBrands ? (
                       <div className="p-4 text-center text-sm text-gray-500">
                         <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gold mx-auto mb-2" />
                         Loading brands...
