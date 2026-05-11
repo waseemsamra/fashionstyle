@@ -194,23 +194,8 @@ export default function Shop() {
         
         // Store ALL filtered products (without pagination)
         setFilteredProducts(products);
-        
-        // Client-side pagination for filtered results
-        const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-        const endIndex = startIndex + PRODUCTS_PER_PAGE;
-        const paginatedProducts = products.slice(startIndex, endIndex);
-        
-        console.log(`📄 Client-side pagination details:`);
-        console.log(`  - Current page: ${currentPage}`);
-        console.log(`  - Products per page: ${PRODUCTS_PER_PAGE}`);
-        console.log(`  - Start index: ${startIndex}`);
-        console.log(`  - End index: ${endIndex}`);
-        console.log(`  - Total products before pagination: ${products.length}`);
-        console.log(`  - Products after pagination: ${paginatedProducts.length}`);
-        console.log(`  - First 3 product IDs on page ${currentPage}:`, paginatedProducts.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name })));
-        
-        setDisplayedProducts(paginatedProducts);
         setTotalProducts(products.length);
+        // Don't set displayedProducts here - let the pagination useEffect handle it
       } else {
         // Use server-side results directly when no client filters
         console.log(`🔄 No client filters - using server-side results`);
@@ -229,27 +214,11 @@ export default function Shop() {
   };
 
   useEffect(() => {
-    // Only call fetchProducts when filters change, not on every page change
-    setCurrentPage(1);
+    // Always fetch when currentPage or filters change
     fetchProducts();
-  }, [filters]);
+  }, [currentPage, filters]);
 
-  // Handle page changes: only fetch from API if no client filters
-  useEffect(() => {
-    if (currentPage > 1) {
-      const hasClientFilters = filters.category !== 'all' || 
-                               filters.brands.length > 0 || 
-                               filters.priceRange !== 'all' || 
-                               filters.status !== 'all';
-      
-      // For server-side pagination (no filters), fetch new page from API
-      if (!hasClientFilters) {
-        fetchProducts();
-      }
-    }
-  }, [currentPage]);
-
-  // Handle pagination display with filtered products
+  // Handle pagination display with filtered products (only when filters applied)
   useEffect(() => {
     const hasClientFilters = filters.category !== 'all' || filters.brands.length > 0 || 
                              filters.priceRange !== 'all' || filters.status !== 'all';
@@ -260,9 +229,6 @@ export default function Shop() {
       const endIndex = startIndex + PRODUCTS_PER_PAGE;
       const paginated = filteredProducts.slice(startIndex, endIndex);
       setDisplayedProducts(paginated);
-    } else if (!hasClientFilters && filteredProducts.length > 0) {
-      // No filters - display API results directly
-      setDisplayedProducts(filteredProducts);
     }
   }, [currentPage, filteredProducts, filters]);
 
