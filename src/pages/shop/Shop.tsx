@@ -227,7 +227,19 @@ export default function Shop() {
       .then(r => r.json())
       .then(data => {
         const products = data.items || [];
-        const unique = [...new Set<string>(products.map((p: any) => p.brand).filter(Boolean))].sort() as string[];
+        console.log('📊 Sample product data structure:', products.slice(0, 3).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          brand: p.brand,
+          brandType: typeof p.brand,
+          category: p.category,
+          allKeys: Object.keys(p)
+        })));
+        
+        const allBrands = products.map((p: any) => p.brand).filter(Boolean);
+        const unique = [...new Set<string>(allBrands)].sort() as string[];
+        
+        console.log(`🏢 Raw brand extraction: ${allBrands.length} brands found:`, allBrands.slice(0, 10));
         console.log(`🏢 Found ${unique.length} unique brands:`, unique);
         setAllBrands(unique);
         setAllProducts(products.slice(0, PRODUCTS_PER_PAGE)); // Show first page
