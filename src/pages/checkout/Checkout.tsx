@@ -45,42 +45,8 @@ export default function Checkout() {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
       const userId = formData.email.replace(/[^a-zA-Z0-9]/g, '-');
 
-      // Step 1: Check if user already exists
-      console.log('🔍 Checking if user exists:', formData.email);
-      let existingUser = null;
-      try {
-        const userResponse = await apiClient.get(`/users/${userId}`);
-        existingUser = userResponse.data;
-        console.log('✅ User found:', existingUser);
-      } catch (err: any) {
-        if (err.response?.status === 404) {
-          console.log('ℹ️ User does not exist, will create guest account');
-        } else {
-          throw err;
-        }
-      }
-
-      // If user exists, redirect to login
-      if (existingUser) {
-        console.log('⚠️ User already registered, redirecting to login');
-        
-        // Store checkout data for after login
-        localStorage.setItem('checkout_data', JSON.stringify({
-          formData,
-          paymentMethod,
-          items,
-          totalPrice
-        }));
-
-        navigate('/login', {
-          state: {
-            from: '/checkout',
-            message: 'You already have an account. Please login to complete your order.',
-            email: formData.email
-          }
-        });
-        return;
-      }
+      // Step 1: Skip user check and proceed with guest checkout
+      console.log('👤 Proceeding with guest checkout for:', formData.email);
 
       // Step 2: Create guest user account
       console.log('📝 Creating guest user account...');
