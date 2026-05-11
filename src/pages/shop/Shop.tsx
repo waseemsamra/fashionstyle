@@ -274,6 +274,8 @@ export default function Shop() {
       sortOrder: 'desc' 
     });
     setCurrentPage(1);
+    // Clear URL parameters when resetting
+    setSearchParams({});
     console.log('✅ Filters reset complete');
   };
 
