@@ -90,13 +90,14 @@ export default function AdminOrders() {
         return;
       }
 
-      // Use the admin orders API endpoint
+      // Use admin orders API endpoint
       const token = localStorage.getItem('jwt_token');
       const response = await api.getAllOrders(token);
       console.log('📋 Admin Orders: Raw response:', response);
 
-      // Backend returns { items: [...], total: N }
+      // Backend returns { items: [...], total: N } or { orders: [...], total: N }
       const rawOrders = response?.orders || response?.items || [];
+      console.log('📋 Admin Orders: Extracted orders count:', rawOrders.length);
       console.log('📋 Admin Orders: Total orders from API:', rawOrders.length);
       rawOrders.forEach((order: any, idx: number) => {
         console.log(`📋 Order ${idx + 1}:`, order.id || order.orderId, 'Status:', order.status, 'Email:', order.email);

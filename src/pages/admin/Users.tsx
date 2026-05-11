@@ -73,7 +73,7 @@ export default function Users() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${API_URL}/admin/users`, {
+      const response = await fetch(`${API_URL}/users`, {
         method: 'GET',
         headers,
       });
@@ -94,18 +94,20 @@ export default function Users() {
       if (data && data.users && Array.isArray(data.users)) {
         userList = data.users;
       } else if (data && data.items && Array.isArray(data.items)) {
-        // Check if it's actually users data (has email field) vs brands data
-        const firstItem = data.items[0];
-        if (firstItem && firstItem.email) {
-          userList = data.items;
-        } else {
-          console.warn('⚠️ API returned brands data instead of users');
-          toast.error('User service temporarily unavailable. Please contact support.');
-          setError('User service is returning incorrect data. Backend needs to be fixed.');
-          setLoading(false);
-          return;
-        }
-      } else if (data && data.message) {
+        userList = data.items;
+      } else if (data && data.users && Array.isArray(data.users)) {
+        userList = data.users;
+      } else if (data && Array.isArray(data)) {
+        userList = data;
+      } else {
+        console.warn('⚠️ API returned unexpected data structure');
+        toast.error('User service temporarily unavailable. Please contact support.');
+        setError('User service is returning incorrect data. Backend needs to be fixed.');
+        setLoading(false);
+        return;
+      }
+
+      if (data && data.message) {
         console.warn('⚠️ User service returned status message:', data.message);
         toast.info('User service is initializing. Please try again in a moment.');
         setError('User service is not fully initialized yet.');
@@ -191,7 +193,7 @@ export default function Users() {
 
       if (editingUser.userId) {
         // Update existing user
-        const url = `${API_URL}/admin/users/${editingUser.userId}`;
+        const url = `${API_URL}/users/${editingUser.userId}`;
 
         // Payload matches backend structure
         const payload = {
@@ -237,7 +239,7 @@ export default function Users() {
         console.log('➕ Creating new user');
         console.log('📦 Payload:', payload);
 
-        const response = await fetch(`${API_URL}/admin/users`, {
+        const response = await fetch(`${API_URL}/users`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -278,7 +280,7 @@ export default function Users() {
 
       console.log('🗑️ Deleting user:', userId);
 
-      const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+      const response = await fetch(`${API_URL}/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
