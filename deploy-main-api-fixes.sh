@@ -4,7 +4,7 @@ echo "🚀 Deploying Main API with missing endpoints fixes..."
 
 # Configuration
 REGION="us-east-1"
-FUNCTION_NAME="fashionstore-api"
+FUNCTION_NAME="fashionstore-unified-api"
 ROLE_NAME="lambda-dynamo-role"
 
 # Step 1: Create deployment package

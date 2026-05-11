@@ -174,8 +174,8 @@ export default function AdminOrders() {
         };
       }
 
-      // Backend returns { items: [...], total: N } or { orders: [...], total: N }
-      const rawOrders = response?.orders || response?.items || [];
+      // Backend returns { items: [...], total: N } or { orders: [...], total: N } or direct array [...]
+      const rawOrders = Array.isArray(response) ? response : (response?.orders || response?.items || []);
       console.log('📋 Admin Orders: Extracted orders count:', rawOrders.length);
       console.log('📋 Admin Orders: Total orders from API:', rawOrders.length);
       rawOrders.forEach((order: any, idx: number) => {
