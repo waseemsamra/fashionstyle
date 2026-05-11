@@ -51,6 +51,7 @@ const WeddingTalesCMS = lazy(() => import('@/pages/admin/WeddingTalesCMS'));
 const DesignersDiscountCMS = lazy(() => import('@/pages/admin/DesignersDiscountCMS'));
 const DesignersDiscount = lazy(() => import('@/pages/shop/DesignersDiscount'));
 const Users = lazy(() => import('@/pages/admin/Users'));
+const Customers = lazy(() => import('@/pages/admin/Customers'));
 const Profile = lazy(() => import('@/pages/admin/Profile'));
 const AdminOrders = lazy(() => import('@/pages/admin/Orders'));
 const AdminOrderDetails = lazy(() => import('@/pages/admin/OrderDetails'));
@@ -305,6 +306,7 @@ function Layout() {
               <Route path="wedding-tales" element={<WeddingTalesCMS />} />
               <Route path="designers-discount" element={<DesignersDiscountCMS />} />
               <Route path="users" element={<Users />} />
+              <Route path="customers" element={<Customers />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="orders/:orderId" element={<AdminOrderDetails />} />
               <Route path="delivery" element={<DeliveryManagement />} />
