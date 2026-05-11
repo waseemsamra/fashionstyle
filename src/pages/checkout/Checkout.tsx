@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, CreditCard, Truck, MapPin, User, Mail, Phone } from 'lucide-react';
 import { apiClient } from '@/services/api';
+import { emailService } from '@/services/emailService';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -116,7 +117,40 @@ export default function Checkout() {
       
       console.log('✅ Local order created:', result.orderId);
 
-      // Step 7: Clear cart and store order info
+      // Step 7: Send order confirmation email
+      console.log('📧 Sending order confirmation email...');
+      try {
+        const emailResult = await emailService.sendOrderConfirmation({
+          orderId: result.orderId,
+          customerName: fullName,
+          email: formData.email,
+          items: items.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            image: item.image
+          })),
+          total: totalPrice,
+          shippingAddress: {
+            fullName: fullName,
+            address: formData.address,
+            city: formData.city,
+            postalCode: formData.postalCode,
+            phone: formData.phone
+          },
+          paymentMethod: paymentMethod === 'cod' ? 'Cash on Delivery' : 'Card Payment'
+        });
+
+        if (emailResult.success) {
+          console.log('✅ Order confirmation email sent:', emailResult.messageId);
+        } else {
+          console.warn('⚠️ Failed to send order confirmation email:', emailResult.error);
+        }
+      } catch (emailError) {
+        console.error('❌ Email sending error:', emailError);
+      }
+
+      // Step 8: Clear cart and store order info
       localStorage.removeItem('cart');
 
       localStorage.setItem('lastOrder', JSON.stringify({
