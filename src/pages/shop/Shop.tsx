@@ -1,5 +1,5 @@
 import { toCDNUrl } from '@/utils/productImage';
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { X, ShoppingBag, Star, ChevronRight, ChevronDown, Check, ChevronLeft, Heart } from 'lucide-react';
