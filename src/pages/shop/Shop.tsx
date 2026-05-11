@@ -400,7 +400,7 @@ export default function Shop() {
                 </button>
                 
                 {showBrandDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-96 overflow-y-auto">
                     <div className="p-2">
                       <button
                         onClick={() => { setFilters(prev => ({ ...prev, brands: [] })); setCurrentPage(1); }}
