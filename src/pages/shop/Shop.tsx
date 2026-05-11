@@ -63,6 +63,7 @@ export default function Shop() {
 
   // Simple reliable pagination with client-side filtering
   const fetchProducts = async () => {
+    setIsFiltering(true);
     
     try {
       console.log(`📡 Fetching products for page ${currentPage} with filters:`, filters);
@@ -187,7 +188,7 @@ export default function Shop() {
       console.error('❌ API Error:', err);
       setError(err as Error);
     } finally {
-      // Loading state handled by isFiltering
+      setIsFiltering(false);
     }
   };
 
