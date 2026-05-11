@@ -32,6 +32,8 @@ export default function Shop() {
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
+  // Add loading state for better UX
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
@@ -61,7 +63,11 @@ export default function Shop() {
 
   // Simple reliable pagination with client-side filtering
   const fetchProducts = async () => {
-    setIsFiltering(true);
+    if (currentPage === 1) {
+      setIsInitialLoading(true);
+    } else {
+      setIsFiltering(true);
+    }
     
     try {
       console.log(`📡 Fetching products for page ${currentPage} with filters:`, filters);
@@ -208,6 +214,7 @@ export default function Shop() {
       console.error('❌ API Error:', err);
       setError(err as Error);
     } finally {
+      setIsInitialLoading(false);
       setIsFiltering(false);
     }
   };
@@ -336,6 +343,18 @@ export default function Shop() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showBrandDropdown]);
+
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-gold mx-auto mb-4"></div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Loading Products</h2>
+          <p className="text-gray-600">Please wait while we fetch our collection...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
