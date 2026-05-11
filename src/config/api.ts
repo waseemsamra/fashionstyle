@@ -17,6 +17,9 @@ export const API_CONFIG = {
   // Users API (separate Lambda function)
   usersApi: import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws',
   
+  // Orders API (separate Lambda function)
+  ordersApi: import.meta.env.VITE_ORDERS_API_URL || 'https://8ur8l436ff.execute-api.us-east-1.amazonaws.com/prod',
+  
   // Base API URL (fallback) - now uses unified endpoint
   baseApiUrl: import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws',
   
@@ -29,5 +32,5 @@ export const API_CONFIG = {
 };
 
 // Export individual endpoints for easy import
-export const { apiBase, collectionsApiUrl, productsApi, collectionsApi, brandsApi, categoriesApi, usersApi, baseApiUrl } = API_CONFIG;
+export const { apiBase, collectionsApiUrl, productsApi, collectionsApi, brandsApi, categoriesApi, usersApi, ordersApi, baseApiUrl } = API_CONFIG;
 export const { s3Bucket, s3Region, s3BaseUrl, uploadApiUrl, cdnUrl } = API_CONFIG;

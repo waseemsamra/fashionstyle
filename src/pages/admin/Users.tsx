@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users as UsersIcon, Edit, Trash2, UserPlus, X, RefreshCw, Mail, Phone, MapPin } from 'lucide-react';
+import { Users as UsersIcon, Edit, Trash2, UserPlus, X, RefreshCw, Mail, Phone, MapPin, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
@@ -302,6 +302,71 @@ export default function Users() {
     }
   };
 
+  const handlePasswordReset = async (email: string, name: string) => {
+    if (!confirm(`Send password reset email to ${email}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('jwt_token');
+      if (!token) {
+        toast.error('Please login to reset passwords');
+        return;
+      }
+
+      console.log('🔑 Sending password reset for:', email);
+
+      // Call password reset API
+      const response = await fetch(`${API_URL}/users/${email}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email: email,
+          name: name,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to send password reset email');
+      }
+
+      const result = await response.json();
+      console.log('✅ Password reset sent:', result);
+      toast.success(`Password reset email sent to ${email}`);
+    } catch (err: any) {
+      console.error('❌ Password reset failed:', err);
+      
+      // Fallback: Send email directly using Resend
+      try {
+        console.log('📧 Trying fallback email send...');
+        const emailResponse = await fetch('/api/send-password-reset', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: email,
+            name: name,
+            resetLink: `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}`,
+          }),
+        });
+
+        if (emailResponse.ok) {
+          toast.success(`Password reset email sent to ${email}`);
+        } else {
+          throw new Error('Failed to send password reset email');
+        }
+      } catch (emailErr: any) {
+        console.error('❌ Email fallback failed:', emailErr);
+        toast.error('Failed to send password reset email: ' + err.message);
+      }
+    }
+  };
+
   const getStatusBadge = (user: User) => {
     const status = user.status || user.cognitoStatus || 'active';
     const enabled = user.enabled !== false;
@@ -408,6 +473,7 @@ export default function Users() {
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">User</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Contact</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Location</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Joined</th>
@@ -438,10 +504,24 @@ export default function Users() {
                             {user.phone}
                           </div>
                         )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="space-y-1">
                         {user.city && (
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <MapPin className="w-3 h-3" />
                             {user.city}
+                          </div>
+                        )}
+                        {user.address && !user.city && (
+                          <div className="text-sm text-gray-600">
+                            {user.address}
+                          </div>
+                        )}
+                        {!user.address && !user.city && (
+                          <div className="text-sm text-gray-400">
+                            No location
                           </div>
                         )}
                       </div>
@@ -467,6 +547,13 @@ export default function Users() {
                           title="Edit user"
                         >
                           <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handlePasswordReset(user.email, user.name || user.email)}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                          title="Reset password"
+                        >
+                          <Key className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(user.email)}

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import OrderRow from '@/components/admin/OrderRow';
 import { toast } from 'sonner';
 import { api } from '@/services/api';
+import { API_CONFIG } from '../../config/api';
 
 interface Order {
   orderId: string;
@@ -90,11 +91,35 @@ export default function AdminOrders() {
         return;
       }
 
-      // Use admin orders API endpoint
+      // Use correct Orders API endpoint
       const token = localStorage.getItem('jwt_token');
+      const API_URL = API_CONFIG.ordersApi;
+      
+      console.log('📋 Admin Orders: Fetching from:', `${API_URL}/orders`);
+      
       let response;
       try {
-        response = await api.getAllOrders(token);
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const fetchResponse = await fetch(`${API_URL}/orders`, {
+          method: 'GET',
+          headers,
+        });
+
+        console.log('📋 Admin Orders: Response status:', fetchResponse.status);
+
+        if (!fetchResponse.ok) {
+          const errorData = await fetchResponse.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${fetchResponse.status}`);
+        }
+
+        response = await fetchResponse.json();
         console.log('📋 Admin Orders: Raw response:', response);
       } catch (error) {
         console.log('⚠️ Orders endpoint not available, using mock data');

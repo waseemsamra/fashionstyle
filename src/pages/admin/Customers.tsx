@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Edit, Trash2, UserPlus, X, RefreshCw } from 'lucide-react';
+import { Edit, Trash2, UserPlus, X, RefreshCw, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
@@ -285,6 +285,71 @@ export default function Customers() {
     }
   };
 
+  const handlePasswordReset = async (email: string, name: string) => {
+    if (!confirm(`Send password reset email to ${email}?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('jwt_token');
+      if (!token) {
+        toast.error('Please login to reset passwords');
+        return;
+      }
+
+      console.log('🔑 Sending password reset for:', email);
+
+      // Call password reset API
+      const response = await fetch(`${API_URL}/users/${email}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email: email,
+          name: name,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to send password reset email');
+      }
+
+      const result = await response.json();
+      console.log('✅ Password reset sent:', result);
+      toast.success(`Password reset email sent to ${email}`);
+    } catch (err: any) {
+      console.error('❌ Password reset failed:', err);
+      
+      // Fallback: Send email directly using Resend
+      try {
+        console.log('📧 Trying fallback email send...');
+        const emailResponse = await fetch('/api/send-password-reset', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            to: email,
+            name: name,
+            resetLink: `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}`,
+          }),
+        });
+
+        if (emailResponse.ok) {
+          toast.success(`Password reset email sent to ${email}`);
+        } else {
+          throw new Error('Failed to send password reset email');
+        }
+      } catch (emailErr: any) {
+        console.error('❌ Email fallback failed:', emailErr);
+        toast.error('Failed to send password reset email: ' + err.message);
+      }
+    }
+  };
+
   const getStatusBadge = (customer: Customer) => {
     const status = customer.status || customer.cognitoStatus || 'active';
     const enabled = customer.enabled !== false;
@@ -403,6 +468,13 @@ export default function Customers() {
                       title="Edit customer"
                     >
                       <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handlePasswordReset(customer.email, customer.name || customer.email)}
+                      className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                      title="Reset password"
+                    >
+                      <Key className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(customer.email)}
