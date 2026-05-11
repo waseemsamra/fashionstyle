@@ -119,7 +119,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       case 'products':
         return '/admin/products';
       case 'customers':
-        return '/admin/dashboard?tab=customers';
+        return '/admin/users';
       case 'brands':
         return '/admin/brands';
       case 'settings':
