@@ -92,7 +92,6 @@ export default function AdminOrders() {
       }
 
       // Use correct Orders API endpoint
-      const token = localStorage.getItem('jwt_token');
       const API_URL = API_CONFIG.ordersApi;
       
       console.log('📋 Admin Orders: Fetching from:', `${API_URL}/orders`);
@@ -103,9 +102,7 @@ export default function AdminOrders() {
           'Content-Type': 'application/json',
         };
         
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
+        // Note: cors-fixed stage doesn't require Authorization header
 
         const fetchResponse = await fetch(`${API_URL}/orders`, {
           method: 'GET',
