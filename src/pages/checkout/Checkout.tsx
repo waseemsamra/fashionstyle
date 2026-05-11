@@ -1,4 +1,4 @@
-import { toCDNUrl } from '@/utils/productImage';import { useState } from 'react';
+import { toCDNUrl } from '@/utils/productImage';import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,17 @@ export default function Checkout() {
   const totalPrice = cart.total;
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Test email service configuration on mount
+  useEffect(() => {
+    emailService.testConfiguration().then(result => {
+      if (result.success) {
+        console.log('✅ Email service is properly configured');
+      } else {
+        console.warn('⚠️ Email service configuration issue:', result.error);
+      }
+    });
+  }, []);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
