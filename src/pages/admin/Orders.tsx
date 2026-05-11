@@ -185,7 +185,14 @@ export default function AdminOrders() {
       const processedOrders = rawOrders.map((order: any) => ({
         ...order,
         orderId: order.orderId || order.id,
+        date: order.date || order.createdAt || order.updatedAt || new Date().toISOString(),
+        status: order.status || 'pending',
         total: order.totalPrice || order.total || 0,
+        items: order.items || [],
+        customer: {
+          fullName: order.fullName || order.customer?.fullName || order.shippingAddress?.name || 'N/A',
+          email: order.email || order.customer?.email || order.userId || 'N/A'
+        },
         itemCount: order.items?.length || order.itemCount || 0,
       }));
 
