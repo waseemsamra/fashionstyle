@@ -13,6 +13,7 @@ export const API_CONFIG = {
   collectionsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/collections',
   categoriesApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/categories',
   productsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products',
+  reviewsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/reviews',
   
   // Users API (separate Lambda function)
   usersApi: import.meta.env.VITE_USERS_API_URL || 'https://ad7bakhxl3fphzxyxrekrlrlt40asoqf.lambda-url.us-east-1.on.aws',
@@ -32,5 +33,5 @@ export const API_CONFIG = {
 };
 
 // Export individual endpoints for easy import
-export const { apiBase, collectionsApiUrl, productsApi, collectionsApi, brandsApi, categoriesApi, usersApi, ordersApi, baseApiUrl } = API_CONFIG;
+export const { apiBase, collectionsApiUrl, productsApi, collectionsApi, brandsApi, categoriesApi, reviewsApi, usersApi, ordersApi, baseApiUrl } = API_CONFIG;
 export const { s3Bucket, s3Region, s3BaseUrl, uploadApiUrl, cdnUrl } = API_CONFIG;

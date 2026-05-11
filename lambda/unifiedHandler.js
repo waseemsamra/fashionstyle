@@ -304,6 +304,63 @@ async function handleUsers(event) {
   return createResponse(405, { error: 'Method not allowed' });
 }
 
+// User orders handler
+async function handleUserOrders(event) {
+  const pathParts = (event.path || '').split('/');
+  const userId = pathParts[pathParts.length - 2]; // Get userId from /users/{userId}/orders
+  const httpMethod = event.httpMethod || event.requestContext?.http?.method;
+  
+  if (httpMethod === 'GET') {
+    try {
+      const TABLE_NAME = process.env.ORDERS_TABLE || 'fashionstore-orders';
+      const params = event.queryStringParameters || {};
+      
+      let scanParams = {
+        TableName: TABLE_NAME,
+        FilterExpression: 'userId = :userId',
+        ExpressionAttributeValues: { ':userId': userId }
+      };
+      
+      // Add date range filtering if provided
+      if (params.dateFrom || params.dateTo) {
+        let filterExpression = 'userId = :userId';
+        let expressionValues = { ':userId': userId };
+        
+        if (params.dateFrom) {
+          filterExpression += ' AND createdAt >= :dateFrom';
+          expressionValues[':dateFrom'] = params.dateFrom;
+        }
+        if (params.dateTo) {
+          filterExpression += ' AND createdAt <= :dateTo';
+          expressionValues[':dateTo'] = params.dateTo;
+        }
+        
+        scanParams.FilterExpression = filterExpression;
+        scanParams.ExpressionAttributeValues = expressionValues;
+      }
+      
+      const result = await dynamodb.scan(scanParams).promise();
+      
+      // Sort by creation date (newest first)
+      const orders = (result.Items || []).sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      
+      return createResponse(200, {
+        items: orders,
+        total: orders.length,
+        currentPage: 1,
+        totalPages: 1
+      });
+    } catch (error) {
+      console.error('User orders error:', error);
+      return createResponse(500, { error: 'Failed to fetch user orders' });
+    }
+  }
+  
+  return createResponse(405, { error: 'Method not allowed' });
+}
+
 // Reviews handler
 async function handleReviews(event) {
   const pathParts = (event.path || '').split('/');
@@ -313,14 +370,32 @@ async function handleReviews(event) {
   if (httpMethod === 'GET') {
     try {
       const TABLE_NAME = process.env.REVIEWS_TABLE || 'fashionstore-reviews';
-      const params = {
+      const params = event.queryStringParameters || {};
+      const limit = parseInt(params.limit || '10');
+      const sortBy = params.sortBy || 'helpful';
+      
+      let scanParams = {
         TableName: TABLE_NAME,
         FilterExpression: 'productId = :productId',
         ExpressionAttributeValues: { ':productId': productId }
       };
       
-      const result = await dynamodb.scan(params).promise();
-      return createResponse(200, result.Items || []);
+      const result = await dynamodb.scan(scanParams).promise();
+      let reviews = result.Items || [];
+      
+      // Sort reviews
+      if (sortBy === 'helpful') {
+        reviews.sort((a, b) => (b.helpful || 0) - (a.helpful || 0));
+      } else if (sortBy === 'newest') {
+        reviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      } else if (sortBy === 'rating') {
+        reviews.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      }
+      
+      // Limit results
+      reviews = reviews.slice(0, limit);
+      
+      return createResponse(200, reviews);
     } catch (error) {
       console.error('Reviews error:', error);
       return createResponse(500, { error: 'Failed to fetch reviews' });
@@ -353,6 +428,10 @@ exports.handler = async (event) => {
   } else if (path.startsWith('/collections')) {
     return await handleCollections(event);
   } else if (path.startsWith('/users')) {
+    // Check if this is a user orders endpoint
+    if (path.includes('/orders')) {
+      return await handleUserOrders(event);
+    }
     return await handleUsers(event);
   } else if (path.startsWith('/reviews')) {
     return await handleReviews(event);

@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft, CreditCard, Truck, MapPin, User, Mail, Phone } from 'lucide-react';
 import { apiClient } from '@/services/api';
 import { emailService } from '@/services/emailService';
+import { API_CONFIG } from '@/config/api';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -94,39 +95,64 @@ export default function Checkout() {
         console.log('⚠️ Profile creation may have succeeded, continuing...');
       }
 
-      // Step 4: Create order (welcome email sent automatically by Lambda)
+      // Step 4: Create order using the Orders API
       console.log('🛒 Creating order...');
       const orderData = {
-        items,
-        totalPrice,
-        paymentMethod,
-        fullName: fullName,
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: formData.phone,
-        address: formData.address,
-        city: formData.city,
-        postalCode: formData.postalCode,
-        status: 'Processing',
+        orderNumber: `ORD-${Date.now()}`,
+        userId: userId,
+        items: items.map(item => ({
+          productId: item.id,
+          name: item.name,
+          image: item.image,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        subtotal: totalPrice,
+        shipping: 0,
+        tax: 0,
+        discount: 0,
+        total: totalPrice,
+        paymentMethod: paymentMethod,
+        paymentStatus: 'paid',
+        status: 'pending',
+        shippingAddress: {
+          name: fullName,
+          line1: formData.address,
+          city: formData.city,
+          state: 'N/A',
+          postalCode: formData.postalCode,
+          country: 'UAE',
+          phone: formData.phone
+        },
+        billingAddress: {
+          name: fullName,
+          line1: formData.address,
+          city: formData.city,
+          state: 'N/A',
+          postalCode: formData.postalCode,
+          country: 'UAE',
+          phone: formData.phone
+        },
         isGuestOrder: true
       };
 
-      // Since API doesn't have order creation endpoint, create local order
-      console.log('🛒 Creating local order (API endpoint not available)...');
+      console.log('🛒 Sending order to Orders API...');
       
-      // Generate local order ID
-      const orderId = `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Create local order result
-      const result = {
-        orderId,
-        total: totalPrice,
-        status: 'Processing',
-        message: 'Order created successfully (local mode)'
-      };
-      
-      console.log('✅ Local order created:', result.orderId);
+      // Send to actual Orders API
+      const ordersResponse = await fetch(`${API_CONFIG.ordersApi}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      if (!ordersResponse.ok) {
+        throw new Error(`Orders API error: ${ordersResponse.status}`);
+      }
+
+      const result = await ordersResponse.json();
+      console.log('✅ Order created in Orders API:', result.orderId || result.id);
 
       // Step 7: Send order confirmation email
       console.log('📧 Sending order confirmation email...');
@@ -168,12 +194,12 @@ export default function Checkout() {
         orderId: result.orderId,
         email: formData.email,
         items: orderData.items,
-        totalPrice: result.total || orderData.totalPrice,
-        fullName: orderData.fullName,
-        address: orderData.address,
-        city: orderData.city,
-        postalCode: orderData.postalCode,
-        phone: orderData.phone,
+        totalPrice: result.total || orderData.total,
+        fullName: fullName,
+        address: formData.address,
+        city: formData.city,
+        postalCode: formData.postalCode,
+        phone: formData.phone,
         paymentMethod: orderData.paymentMethod,
         isGuest: true
       }));
@@ -187,13 +213,14 @@ export default function Checkout() {
             orderId: result.orderId,
             email: formData.email,
             items: orderData.items,
-            totalPrice: result.total || orderData.totalPrice,
-            fullName: orderData.fullName,
-            address: orderData.address,
-            city: orderData.city,
-            postalCode: orderData.postalCode,
-            phone: orderData.phone,
-            paymentMethod: orderData.paymentMethod
+            totalPrice: result.total || orderData.total,
+            fullName: fullName,
+            address: formData.address,
+            city: formData.city,
+            postalCode: formData.postalCode,
+            phone: formData.phone,
+            paymentMethod: orderData.paymentMethod,
+            isGuest: true
           }
         }
       });
