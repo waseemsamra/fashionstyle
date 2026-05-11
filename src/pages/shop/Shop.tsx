@@ -263,8 +263,18 @@ export default function Shop() {
   }, []); // Only run once on mount
 
   const resetFilters = () => {
-    setFilters({ category: 'all', priceRange: 'all', rating: 'all', status: 'all', brands: [], sortBy: 'createdAt', sortOrder: 'desc' });
+    console.log('🔄 Resetting all filters to default values');
+    setFilters({ 
+      category: 'all', 
+      priceRange: 'all', 
+      rating: 'all', 
+      status: 'all', 
+      brands: [], 
+      sortBy: 'createdAt', 
+      sortOrder: 'desc' 
+    });
     setCurrentPage(1);
+    console.log('✅ Filters reset complete');
   };
 
   const toggleBrand = (brand: string) => {
