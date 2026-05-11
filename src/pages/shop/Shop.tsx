@@ -192,12 +192,7 @@ export default function Shop() {
     }
   };
 
-  // Fetch products when filters change (reset to page 1)
-  useEffect(() => {
-    console.log('🔄 Filters changed, resetting to page 1');
-    setCurrentPage(1);
-    // Don't call fetchProducts here - let next useEffect handle it
-  }, [filters]);
+  // Filter changes now handle page reset directly in their handlers
 
   // Fetch next page data when currentPage changes
   useEffect(() => {
