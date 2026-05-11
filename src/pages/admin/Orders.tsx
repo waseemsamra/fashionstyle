@@ -277,7 +277,7 @@ export default function AdminOrders() {
       // Handle delete action
       if (action === 'delete') {
         console.log('🔄 Deleting order:', orderId);
-        await api.deleteOrder(orderId, token);
+        await api.deleteOrder(orderId);
 
         // Remove from local state
         setOrders(prevOrders => prevOrders.filter(order => order.orderId !== orderId));
@@ -292,7 +292,7 @@ export default function AdminOrders() {
       console.log('🔄 API URL:', `${API_CONFIG.ordersApi}/orders/${orderId}`);
       console.log('🔄 Request body:', { status: newStatus });
       
-      await api.updateOrderStatus(orderId, newStatus, token);
+      await api.updateOrderStatus(orderId, newStatus);
       console.log('🔄 API call successful');
       
       // Update local state after successful API call

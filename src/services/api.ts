@@ -554,16 +554,14 @@ export const api = {
     return apiClient.get(`/admin/orders${queryString}`, token);
   },
   
-  async updateOrderStatus(orderId: string, status: string, token: string | null) {
-    console.log('🔄 API updateOrderStatus called:', { orderId, status, hasToken: !!token });
+  async updateOrderStatus(orderId: string, status: string) {
+    console.log('🔄 API updateOrderStatus called:', { orderId, status });
     
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
     
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    // Note: cors-fixed stage doesn't require Authorization header
     
     const url = `${API_CONFIG.ordersApi}/orders/${orderId}`;
     console.log('🔄 Fetch URL:', url);
@@ -591,14 +589,12 @@ export const api = {
     return result;
   },
   
-  async deleteOrder(orderId: string, token: string | null) {
+  async deleteOrder(orderId: string) {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
     
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    // Note: cors-fixed stage doesn't require Authorization header
     
     const response = await fetch(`${API_CONFIG.ordersApi}/orders/${orderId}`, {
       method: 'DELETE',
