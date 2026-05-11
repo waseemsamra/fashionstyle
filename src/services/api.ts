@@ -38,7 +38,7 @@ export const apiClient = {
       method: 'POST',
       headers,
       body: data ? JSON.stringify(data) : undefined,
-      credentials: 'omit',
+      credentials: 'include',
     });
     
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -58,7 +58,7 @@ export const apiClient = {
       method: 'PUT',
       headers,
       body: data ? JSON.stringify(data) : undefined,
-      credentials: 'omit',
+      credentials: 'include',
     });
     
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -77,7 +77,7 @@ export const apiClient = {
     const response = await fetch(`${API_URL}${endpoint}`, {
       method: 'DELETE',
       headers,
-      credentials: 'omit',
+      credentials: 'include',
     });
     
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
