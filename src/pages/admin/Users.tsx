@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 
 // Using correct Users API endpoint
 import { API_CONFIG } from '../../config/api';
+import PasswordResetService from '../../services/passwordResetService';
 const API_URL = API_CONFIG.usersApi;
 
 interface User {
@@ -340,29 +341,19 @@ export default function Users() {
     } catch (err: any) {
       console.error('❌ Password reset failed:', err);
       
-      // Fallback: Send email directly using Resend
+      // Fallback: Send email directly using PasswordResetService
       try {
         console.log('📧 Trying fallback email send...');
-        const emailResponse = await fetch('/api/send-password-reset', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            to: email,
-            name: name,
-            resetLink: `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}`,
-          }),
+        await PasswordResetService.sendPasswordResetEmail({
+          to: email,
+          name: name,
+          resetLink: `${window.location.origin}/reset-password?email=${encodeURIComponent(email)}`,
         });
-
-        if (emailResponse.ok) {
-          toast.success(`Password reset email sent to ${email}`);
-        } else {
-          throw new Error('Failed to send password reset email');
-        }
+        
+        toast.success(`Password reset email sent to ${email}`);
       } catch (emailErr: any) {
         console.error('❌ Email fallback failed:', emailErr);
-        toast.error('Failed to send password reset email: ' + err.message);
+        toast.error('Failed to send password reset email: ' + emailErr.message);
       }
     }
   };
