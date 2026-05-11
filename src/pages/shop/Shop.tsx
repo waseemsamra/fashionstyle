@@ -195,7 +195,12 @@ export default function Shop() {
         // Store ALL filtered products (without pagination)
         setFilteredProducts(products);
         setTotalProducts(products.length);
-        // Don't set displayedProducts here - let the pagination useEffect handle it
+        
+        // Now paginate for display
+        const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+        const endIndex = startIndex + PRODUCTS_PER_PAGE;
+        const paginatedProducts = products.slice(startIndex, endIndex);
+        setDisplayedProducts(paginatedProducts);
       } else {
         // Use server-side results directly when no client filters
         console.log(`🔄 No client filters - using server-side results`);
@@ -217,20 +222,6 @@ export default function Shop() {
     // Always fetch when currentPage or filters change
     fetchProducts();
   }, [currentPage, filters]);
-
-  // Handle pagination display with filtered products (only when filters applied)
-  useEffect(() => {
-    const hasClientFilters = filters.category !== 'all' || filters.brands.length > 0 || 
-                             filters.priceRange !== 'all' || filters.status !== 'all';
-    
-    if (hasClientFilters && filteredProducts.length > 0) {
-      // Paginate from filtered results
-      const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
-      const endIndex = startIndex + PRODUCTS_PER_PAGE;
-      const paginated = filteredProducts.slice(startIndex, endIndex);
-      setDisplayedProducts(paginated);
-    }
-  }, [currentPage, filteredProducts, filters]);
 
   // Read URL parameters to set filters (only on initial mount)
   useEffect(() => {
