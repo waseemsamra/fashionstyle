@@ -55,6 +55,7 @@ export default function Shop() {
 
   // Always show all available brands
   const brands = useMemo(() => {
+    console.log(`🏢 Brands dropdown showing ${allBrands.length} brands:`, allBrands);
     return allBrands;
   }, [allBrands]);
 
@@ -221,11 +222,13 @@ export default function Shop() {
 
   // Fetch ALL products once on mount, extract brands
   useEffect(() => {
+    console.log('🏢 Fetching brands from 1000 products...');
     fetch(`${API_URL}/products?limit=1000`)
       .then(r => r.json())
       .then(data => {
         const products = data.items || [];
         const unique = [...new Set<string>(products.map((p: any) => p.brand).filter(Boolean))].sort() as string[];
+        console.log(`🏢 Found ${unique.length} unique brands:`, unique);
         setAllBrands(unique);
         setAllProducts(products.slice(0, PRODUCTS_PER_PAGE)); // Show first page
         setTotalProducts(products.length);
