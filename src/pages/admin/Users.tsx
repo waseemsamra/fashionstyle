@@ -3,9 +3,9 @@ import { Users as UsersIcon, Edit, Trash2, UserPlus, X, RefreshCw, Mail, Phone, 
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
-// Using correct API Gateway for users
+// Using correct Users API endpoint
 import { API_CONFIG } from '../../config/api';
-const API_URL = API_CONFIG.baseApiUrl;
+const API_URL = API_CONFIG.usersApi;
 
 interface User {
   userId: string;
@@ -73,12 +73,14 @@ export default function Users() {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${API_URL}/users`, {
+      let response = await fetch(`${API_URL}/users`, {
         method: 'GET',
         headers,
       });
 
       console.log('📊 Response status:', response.status);
+
+      // Users API is now working, handle normal errors only
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
