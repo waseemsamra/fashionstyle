@@ -216,11 +216,11 @@ export default function Shop() {
 
   // Filter changes now handle page reset directly in their handlers
 
-  // Fetch next page data when currentPage changes
+  // Fetch products when page or filters change
   useEffect(() => {
-    console.log('🌐 Fetching products for page', currentPage);
+    console.log('🌐 Fetching products for page', currentPage, 'with filters:', filters);
     fetchProducts();
-  }, [currentPage]);
+  }, [currentPage, filters]);
 
   // Fetch ALL products once on mount, extract brands
   useEffect(() => {
