@@ -2,7 +2,7 @@ import { toCDNUrl } from '@/utils/productImage';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { X, Star, ChevronRight, ChevronDown, ChevronLeft, Heart } from 'lucide-react';
+import { X, ShoppingBag, Star, ChevronRight, ChevronDown, Check, ChevronLeft, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { useToggleWishlist } from '@/hooks/useWishlist';
 import { getProductUrl } from '@/utils/productUrl';
@@ -14,10 +14,10 @@ const API_URL = API_CONFIG.baseApiUrl;
 const PRODUCTS_PER_PAGE = 50;
 
 // Fetch categories directly from API
-async function fetchCategories() {
+async function fetchCategories(): Promise<{name: string, count: number}[]> {
   try {
-    const res = await fetch(`${API_URL}/categories`);
-    if (!res.ok) throw new Error('Failed to fetch categories');
+    const res = await fetch(`${API_CONFIG.categoriesApi}`);
+    if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data) ? data : data.categories || [];
   } catch {
@@ -32,7 +32,7 @@ export default function Shop() {
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [totalProducts, setTotalProducts] = useState(0);
   const [categories, setCategories] = useState<{name: string, count: number}[]>([]);
-  const [isFiltering, setIsFiltering] = useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [showBrandDropdown, setShowBrandDropdown] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,6 +48,20 @@ export default function Shop() {
   const brandDropdownRef = useRef<HTMLDivElement>(null);
   const [allBrands, setAllBrands] = useState<string[]>([]);
 
+  // Fetch ALL products once on mount, extract brands
+  useEffect(() => {
+    setIsLoadingProducts(true);
+    fetch(`${API_URL}/products?limit=1000`)
+      .then(r => r.json())
+      .then(data => {
+        const products = data.items || [];
+        const unique = [...new Set<string>(products.map((p: any) => p.brand).filter(Boolean))].sort() as string[];
+        setAllBrands(unique);
+      })
+      .catch(err => setError(err))
+      .finally(() => setIsLoadingProducts(false));
+  }, []);
+
   // Fetch categories on mount
   useEffect(() => {
     fetchCategories().then(setCategories);
@@ -56,6 +70,7 @@ export default function Shop() {
   // Compute brands for selected category
   const brands = useMemo(() => {
     if (filters.category === 'all') return allBrands;
+    // Use allProducts for brand computation to get accurate list
     return [...new Set<string>(
       allProducts.filter(p => p.category === filters.category).map(p => p.brand).filter(Boolean)
     )].sort();
@@ -63,6 +78,7 @@ export default function Shop() {
 
   // Simple reliable pagination with client-side filtering
   const fetchProducts = async () => {
+    setIsLoadingProducts(true);
     
     try {
       console.log(`📡 Fetching products for page ${currentPage} with filters:`, filters);
@@ -173,7 +189,7 @@ export default function Shop() {
       const endIndex = startIndex + PRODUCTS_PER_PAGE;
       const paginatedProducts = products.slice(startIndex, endIndex);
       
-      console.log(`📄 Pagination:`);
+      console.log(`� Pagination:`);
       console.log(`  - Page: ${currentPage}`);
       console.log(`  - Start: ${startIndex}, End: ${endIndex}`);
       console.log(`  - Total products: ${products.length}`);
@@ -187,36 +203,29 @@ export default function Shop() {
       console.error('❌ API Error:', err);
       setError(err as Error);
     } finally {
-      // Loading state handled by isFiltering
+      setIsLoadingProducts(false);
     }
   };
 
-  // Fetch products when filters change (reset to page 1)
   useEffect(() => {
+    // Fetch products when filters change (reset to page 1)
     console.log('🔄 Filters changed, resetting to page 1');
     setCurrentPage(1);
-    // Don't call fetchProducts here - let next useEffect handle it
+    // Don't call fetchProducts here - let the next useEffect handle it
   }, [filters]);
 
   // Fetch next page data when currentPage changes
   useEffect(() => {
+    console.log('📄 Page change detected, currentPage:', currentPage);
     console.log('🌐 Fetching products for page', currentPage);
     fetchProducts();
   }, [currentPage]);
 
-  // Fetch ALL products once on mount, extract brands
+  // Debug displayedProducts changes
   useEffect(() => {
-    fetch(`${API_URL}/products?limit=1000`)
-      .then(r => r.json())
-      .then(data => {
-        const products = data.items || [];
-        const unique = [...new Set<string>(products.map((p: any) => p.brand).filter(Boolean))].sort() as string[];
-        setAllBrands(unique);
-        setAllProducts(products.slice(0, PRODUCTS_PER_PAGE)); // Show first page
-        setTotalProducts(products.length);
-      })
-      .catch(err => console.error('Failed to fetch brands:', err));
-  }, []);
+    console.log('📺 allProducts updated:', allProducts.length, 'items');
+    console.log('First 3 items:', allProducts.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name })));
+  }, [allProducts]);
 
   // Read URL parameters to set filters (only on initial mount)
   useEffect(() => {
@@ -256,12 +265,13 @@ export default function Shop() {
         ? prev.brands.filter(b => b !== brand)
         : [...prev.brands, brand],
     }));
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to page 1 when filters change
   };
 
   const goToPage = (page: number) => {
-    setIsFiltering(true); // Show loading state during page change
+    console.log('🔔 goToPage called with page:', page);
     setCurrentPage(page);
+    console.log('✅ setCurrentPage(', page, ') triggered');
     setSearchParams(prev => {
       if (page > 1) prev.set('page', String(page));
       else prev.delete('page');
@@ -271,60 +281,72 @@ export default function Shop() {
   };
 
   const handleWishlist = (product: any, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    const token = localStorage.getItem('jwtToken');
-    if (!token) {
-      toast.error('Please login to add items to wishlist');
-      navigate('/login');
+    if (!localStorage.getItem('jwt_token')) {
+      toast.error('Please login', { action: { label: 'Login', onClick: () => navigate('/login') } });
       return;
     }
-    toggleWishlist(product);
-    toast.success('Added to wishlist');
+    toggleWishlist({ productId: product.id, product });
   };
 
-  // Calculate pagination
   const totalPages = Math.max(1, Math.ceil(totalProducts / PRODUCTS_PER_PAGE));
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (brandDropdownRef.current && !brandDropdownRef.current.contains(event.target as Node)) {
-        setShowBrandDropdown(false);
-      }
-    };
+  // Loading state (only for initial load)
+  if (isLoadingProducts) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-24">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showBrandDropdown]);
-
+  // Error state
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center pt-24">
         <div className="text-center">
-          <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error Loading Products</h2>
-          <p className="text-gray-600 mb-4">{error.message}</p>
-          <Button onClick={() => setError(null)} className="mt-4">Try Again</Button>
+          <p className="text-red-600 mb-4">Error loading products</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90 transition"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gold/10 via-white to-gold/5 py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Shop</h1>
-            <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-              Discover our exclusive collection of premium fashion pieces
-            </p>
+    <div className="min-h-screen bg-beige-100 pt-24 pb-8">
+      {/* Hero Section for Sale */}
+      {filters.status === 'sale' && (
+        <section className="relative bg-gradient-to-r from-gold/20 via-gold/10 to-transparent py-16 mb-8">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl">
+              <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-2">Special Offers</span>
+              <h1 className="font-playfair text-4xl md:text-5xl font-bold text-black mb-4">Summer Sale</h1>
+              <p className="text-gray-600 text-lg mb-6">Discover amazing discounts on our exclusive summer collection.</p>
+              <button
+                onClick={() => setFilters(prev => ({ ...prev, status: 'all' }))}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-black text-white rounded-full hover:bg-gold transition-colors"
+              >
+                View All Products <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
+      )}
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="container mx-auto px-4">
+        <h1 className="text-3xl font-bold mb-6">
+          {filters.status === 'sale' ? 'All Products' : 'Shop All Products'}
+        </h1>
+
         {/* Inline Filters Bar */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -343,74 +365,96 @@ export default function Shop() {
               </select>
             </div>
 
-            {/* Brand Filter */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Brand</label>
-              <div className="relative" ref={brandDropdownRef}>
-                <button
-                  onClick={() => setShowBrandDropdown(!showBrandDropdown)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50 text-left flex items-center justify-between"
-                >
-                  <span className="flex-1">
-                    {filters.brands.length > 0 ? `${filters.brands.length} Selected` : 'All Brands'}
-                  </span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                
-                {showBrandDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
-                    <div className="p-2">
-                      <button
-                        onClick={() => { setFilters(prev => ({ ...prev, brands: [] })); setCurrentPage(1); }}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 rounded flex items-center gap-2"
-                      >
-                        <X className="w-4 h-4" />
-                        <span>All Brands</span>
-                      </button>
-                      {brands.map(brand => (
-                        <label key={brand} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={filters.brands.includes(brand)}
-                            onChange={() => toggleBrand(brand)}
-                            className="rounded text-gold focus:ring-gold"
-                          />
-                          <span className="text-sm">{brand}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
+            {/* Multi-Select Brand Filter */}
+            <div ref={brandDropdownRef} className="relative">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
+                Brands ({filters.brands.length})
+                {filters.category !== 'all' && (
+                  <span className="text-xs text-gold ml-1">(in {filters.category})</span>
                 )}
-              </div>
-            </div>
-
-            {/* Price Range Filter */}
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Price Range</label>
-              <select
-                value={filters.priceRange}
-                onChange={(e) => { setFilters(prev => ({ ...prev, priceRange: e.target.value })); setCurrentPage(1); }}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50"
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowBrandDropdown(!showBrandDropdown)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-left flex items-center justify-between focus:outline-none focus:border-gold/50 bg-white hover:border-gold/50 transition"
               >
-                <option value="all">All Prices</option>
-                <option value="under50">Under {currencyService.getSymbol()}50</option>
-                <option value="50-100">{currencyService.getSymbol()}50 - {currencyService.getSymbol()}100</option>
-                <option value="100-200">{currencyService.getSymbol()}100 - {currencyService.getSymbol()}200</option>
-                <option value="over200">Over {currencyService.getSymbol()}200</option>
-              </select>
+                <span className="truncate">{filters.brands.length === 0 ? 'All Brands' : filters.brands.slice(0, 2).join(', ') + (filters.brands.length > 2 ? '...' : '')}</span>
+                <ChevronDown className="w-4 h-4 flex-shrink-0 ml-1" />
+              </button>
+
+              {showBrandDropdown && (
+                <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-hidden">
+                  <div className="p-2 border-b border-gray-100">
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+                      <input type="checkbox" checked={filters.brands.length === 0} onChange={() => { setFilters(prev => ({ ...prev, brands: [] })); setCurrentPage(1); }} className="w-4 h-4" />
+                      <span className="text-sm font-medium">All Brands</span>
+                    </label>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {brands.length > 0 ? (
+                      brands.map(brand => (
+                        <label key={brand} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2">
+                          <input type="checkbox" checked={filters.brands.includes(brand)} onChange={() => toggleBrand(brand)} className="w-4 h-4 rounded border-gray-300" />
+                          <span className="text-sm">{brand}</span>
+                          {filters.brands.includes(brand) && <Check className="w-3 h-3 ml-auto text-gold" />}
+                        </label>
+                      ))
+                    ) : (
+                      <div className="p-4">
+                        {filters.category === 'all' ? (
+                          <div>
+                            <div className="text-sm font-medium text-gray-700 mb-2 px-2">
+                              Browse by Category
+                            </div>
+                            <div className="space-y-1">
+                              {categories.map(cat => (
+                                <label key={cat.name} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={filters.category === cat.name} 
+                                    onChange={() => { 
+                                      setFilters(prev => ({ ...prev, category: cat.name })); 
+                                      setCurrentPage(1); 
+                                    }} 
+                                    className="w-4 h-4 rounded border-gray-300" 
+                                  />
+                                  <span className="text-sm">{cat.name} ({cat.count})</span>
+                                  {filters.category === cat.name && <Check className="w-3 h-3 ml-auto text-gold" />}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center text-sm text-gray-500">
+                            No brands found in {filters.category}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Status Filter */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-              <select
-                value={filters.status}
-                onChange={(e) => { setFilters(prev => ({ ...prev, status: e.target.value })); setCurrentPage(1); }}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50"
-              >
-                <option value="all">All Status</option>
-                <option value="sale">Sale</option>
-                <option value="new">New</option>
+              <select value={filters.status} onChange={(e) => { setFilters(prev => ({ ...prev, status: e.target.value })); setCurrentPage(1); }} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+                <option value="all">All Products</option>
+                <option value="new">New Arrivals</option>
+                <option value="sale">On Sale</option>
+              </select>
+            </div>
+
+            {/* Price Range Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Price</label>
+              <select value={filters.priceRange} onChange={(e) => { setFilters(prev => ({ ...prev, priceRange: e.target.value })); setCurrentPage(1); }} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50">
+                <option value="all">All Prices</option>
+                <option value="under50">Under {currencyService.getSymbol()}50</option>
+                <option value="50-100">{currencyService.getSymbol()}50 - {currencyService.getSymbol()}100</option>
+                <option value="100-200">{currencyService.getSymbol()}100 - {currencyService.getSymbol()}200</option>
+                <option value="over200">Over {currencyService.getSymbol()}200</option>
               </select>
             </div>
 
@@ -443,60 +487,23 @@ export default function Shop() {
 
         {/* Products Count */}
         <div className="flex items-center justify-between mb-6">
-          <p className="text-gray-600">
-            {totalProducts > 0 ? `Showing ${allProducts.length} of ${totalProducts} products (Page ${currentPage} of ${totalPages})` : 'No products found'}
-          </p>
-          {isFiltering && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gold" />
-              <span>Updating...</span>
-            </div>
-          )}
-        </div>
 
-        {allProducts.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">🛍️</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Products Found</h3>
-            <p className="text-gray-500 mb-6">Try adjusting your filters to see more results.</p>
-            <Button onClick={resetFilters} variant="outline">Reset Filters</Button>
-          </div>
-        ) : (
-          <>
-            {/* Product Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-10">
-              {allProducts.map((product: any) => (
-                <div key={product.id} className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
-                  <div className="relative aspect-[3/4] overflow-hidden cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
-                    <LazyImage src={toCDNUrl(product.image)} alt={product.name} productName={product.name} productId={product.id} className="w-full h-full" />
-                    <div className="absolute top-3 left-3 flex flex-col gap-2">
-                      {product.isNew && <span className="px-3 py-1 bg-black text-white text-xs font-medium rounded-full">New</span>}
-                      {product.isSale && <span className="px-3 py-1 bg-red-500 text-white text-xs font-medium rounded-full">Sale</span>}
-                    </div>
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-                      <button
-                        onClick={(e) => handleWishlist(product, e)}
-                        className="w-9 h-9 rounded-full flex items-center justify-center shadow-md bg-white hover:bg-gold hover:text-white transition-colors"
-                      >
-                        <Heart className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-3 sm:p-4">
-                    <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
-                    <h3 onClick={() => navigate(getProductUrl(product))} className="font-semibold text-xs leading-[12px] mb-1 sm:mb-2 cursor-pointer hover:text-gold transition line-clamp-2">{product.name}</h3>
-                    <div className="flex items-center gap-1 mb-2">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />
-                      ))}
-                      <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-lg">{currencyService.formatPrice(product.price)}</span>
-                      {product.originalPrice && <span className="text-gray-400 line-through text-sm">{currencyService.formatPrice(product.originalPrice)}</span>}
-                    </div>
-                  </div>
-                </div>
+      {/* Inline Filters Bar */}
+      <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {/* Category Filter */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Category</label>
+            <select
+              value={filters.category}
+              onChange={(e) => { setFilters(prev => ({ ...prev, category: e.target.value })); setCurrentPage(1); }}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gold/50"
+            >
+              <option value="all">All Categories</option>
+              {categories.map(cat => (
+                <option key={cat.name} value={cat.name}>{cat.name} ({cat.count})</option>
+              ))}
+            </select>
               ))}
             </div>
 
@@ -527,18 +534,13 @@ export default function Shop() {
                     <button
                       key={page}
                       onClick={() => goToPage(page)}
-                      disabled={isFiltering}
                       className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
                         currentPage === page
                           ? 'bg-gold text-white hover:bg-gold/90'
                           : 'border border-gray-300 hover:bg-gray-50 hover:border-gold'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      }`}
                     >
-                      {isFiltering && currentPage === page ? (
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mx-auto" />
-                      ) : (
-                        page
-                      )}
+                      {page}
                     </button>
                   );
                 })}
