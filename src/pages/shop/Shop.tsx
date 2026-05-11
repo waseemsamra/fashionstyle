@@ -79,6 +79,7 @@ export default function Shop() {
 
   // Hybrid filtering: server-side with client-side fallback
   const fetchProducts = async () => {
+    console.log('🚀 fetchProducts called, currentPage:', currentPage, 'filters:', filters);
     setIsLoadingProducts(true);
     
     // Determine if we have filters that need client-side processing
@@ -187,7 +188,8 @@ export default function Shop() {
         const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
         const endIndex = startIndex + PRODUCTS_PER_PAGE;
         const paginated = products.slice(startIndex, endIndex);
-        console.log(`📍 Page ${currentPage}: showing items ${startIndex}-${endIndex}, got ${paginated.length} items`);
+        console.log(`📍 Page ${currentPage}: startIndex=${startIndex}, endIndex=${endIndex}, total products=${products.length}, paginated=${paginated.length}`);
+        console.log('📦 First 3 items on page:', paginated.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name })));
         setDisplayedProducts(paginated);
       } else {
         // No filters - use server-side pagination directly
@@ -213,7 +215,9 @@ export default function Shop() {
 
   // Fetch next page data when currentPage changes
   useEffect(() => {
+    console.log('📄 useEffect currentPage triggered, currentPage:', currentPage);
     if (currentPage > 1) {
+      console.log('📥 Calling fetchProducts for page', currentPage);
       fetchProducts();
     }
   }, [currentPage]);
@@ -260,7 +264,9 @@ export default function Shop() {
   };
 
   const goToPage = (page: number) => {
+    console.log('🔔 goToPage called with page:', page);
     setCurrentPage(page);
+    console.log('✅ setCurrentPage(', page, ') triggered');
     setSearchParams(prev => {
       if (page > 1) prev.set('page', String(page));
       else prev.delete('page');
