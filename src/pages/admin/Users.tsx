@@ -191,9 +191,10 @@ export default function Users() {
         return;
       }
 
-      if (editingUser.userId) {
-        // Update existing user
-        const url = `${API_URL}/users/${editingUser.userId}`;
+      if (editingUser.userId && editingUser.email) {
+        // Update existing user - use email as key (backend uses email as primary key)
+        const encodedEmail = encodeURIComponent(editingUser.email);
+        const url = `${API_URL}/users/${encodedEmail}`;
 
         // Payload matches backend structure
         const payload = {
@@ -266,7 +267,7 @@ export default function Users() {
     }
   };
 
-  const handleDelete = async (userId: string) => {
+  const handleDelete = async (email: string) => {
     if (!confirm('Delete this user? This action cannot be undone.')) {
       return;
     }
@@ -278,9 +279,10 @@ export default function Users() {
         return;
       }
 
-      console.log('🗑️ Deleting user:', userId);
+      console.log('🗑️ Deleting user:', email);
 
-      const response = await fetch(`${API_URL}/users/${userId}`, {
+      const encodedEmail = encodeURIComponent(email);
+      const response = await fetch(`${API_URL}/users/${encodedEmail}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -293,7 +295,7 @@ export default function Users() {
       }
 
       toast.success('User deleted successfully!');
-      setUsers(users.filter(u => u.userId !== userId));
+      setUsers(users.filter(u => u.email !== email));
     } catch (err: any) {
       console.error('❌ Delete failed:', err);
       toast.error('Failed to delete user: ' + err.message);
@@ -467,7 +469,7 @@ export default function Users() {
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(user.userId)}
+                          onClick={() => handleDelete(user.email)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete user"
                         >
