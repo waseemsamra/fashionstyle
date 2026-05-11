@@ -95,8 +95,6 @@ export default function Users() {
         userList = data.users;
       } else if (data && data.items && Array.isArray(data.items)) {
         userList = data.items;
-      } else if (data && data.users && Array.isArray(data.users)) {
-        userList = data.users;
       } else if (data && Array.isArray(data)) {
         userList = data;
       } else {
