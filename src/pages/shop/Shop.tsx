@@ -1,5 +1,5 @@
 import { toCDNUrl } from '@/utils/productImage';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { X, ShoppingBag, Star, ChevronRight, ChevronDown, Check, ChevronLeft, Heart } from 'lucide-react';
@@ -78,7 +78,7 @@ export default function Shop() {
   }, [allBrands, filteredProducts, filters.category]);
 
   // Hybrid filtering: server-side with client-side fallback
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     console.log('🚀 fetchProducts called, currentPage:', currentPage, 'filters:', filters);
     setIsLoadingProducts(true);
     
@@ -205,22 +205,44 @@ export default function Shop() {
     } finally {
       setIsLoadingProducts(false);
     }
-  };
+  }, [currentPage, filters]);
 
   useEffect(() => {
     // Fetch products when filters change (reset to page 1)
+    console.log('🔄 Filters changed, resetting to page 1');
     setCurrentPage(1);
-    fetchProducts();
+    // Don't call fetchProducts here - let the next useEffect handle it
   }, [filters]);
 
   // Fetch next page data when currentPage changes
   useEffect(() => {
-    console.log('📄 useEffect currentPage triggered, currentPage:', currentPage);
-    if (currentPage > 1) {
-      console.log('📥 Calling fetchProducts for page', currentPage);
+    console.log('📄 Page change detected, currentPage:', currentPage);
+    console.log('🌐 Fetching products for page', currentPage);
+    
+    const hasClientFilters = filters.category !== 'all' || 
+                             filters.brands.length > 0 || 
+                             filters.priceRange !== 'all' || 
+                             filters.status !== 'all';
+    
+    if (hasClientFilters && filteredProducts.length > 0) {
+      // For client filters, paginate from existing filteredProducts
+      const startIndex = (currentPage - 1) * PRODUCTS_PER_PAGE;
+      const endIndex = startIndex + PRODUCTS_PER_PAGE;
+      const paginated = filteredProducts.slice(startIndex, endIndex);
+      console.log(`✂️ Slicing filteredProducts: [${startIndex}:${endIndex}], got ${paginated.length} items`);
+      setDisplayedProducts(paginated);
+    } else {
+      // For no filters or page 1, fetch from server
+      console.log('🌐 Calling fetchProducts with currentPage=', currentPage);
       fetchProducts();
     }
-  }, [currentPage]);
+  }, [currentPage, filteredProducts, filters, fetchProducts]);
+
+  // Debug displayedProducts changes
+  useEffect(() => {
+    console.log('📺 displayedProducts updated:', displayedProducts.length, 'items');
+    console.log('First 3 items:', displayedProducts.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name })));
+  }, [displayedProducts]);
 
   // Read URL parameters to set filters (only on initial mount)
   useEffect(() => {
