@@ -269,11 +269,14 @@ export default function AdminOrders() {
 
   const handleStatusChange = async (orderId: string, newStatus: string, action?: 'update' | 'delete') => {
     console.log('🔄 Updating order status:', orderId, '→', newStatus);
+    console.log('🔄 Action:', action);
     const token = localStorage.getItem('jwt_token');
+    console.log('🔄 Token present:', !!token);
 
     try {
       // Handle delete action
       if (action === 'delete') {
+        console.log('🔄 Deleting order:', orderId);
         await api.deleteOrder(orderId, token);
 
         // Remove from local state
@@ -285,7 +288,12 @@ export default function AdminOrders() {
       }
 
       // Call API to update order status
+      console.log('🔄 Calling API to update order status...');
+      console.log('🔄 API URL:', `${API_CONFIG.ordersApi}/orders/${orderId}`);
+      console.log('🔄 Request body:', { status: newStatus });
+      
       await api.updateOrderStatus(orderId, newStatus, token);
+      console.log('🔄 API call successful');
       
       // Update local state after successful API call
       setOrders(prevOrders =>

@@ -555,11 +555,61 @@ export const api = {
   },
   
   async updateOrderStatus(orderId: string, status: string, token: string | null) {
-    return apiClient.patch(`/admin/orders/${orderId}`, { status }, token);
+    console.log('🔄 API updateOrderStatus called:', { orderId, status, hasToken: !!token });
+    
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const url = `${API_CONFIG.ordersApi}/orders/${orderId}`;
+    console.log('🔄 Fetch URL:', url);
+    console.log('🔄 Request method: PUT');
+    console.log('🔄 Request headers:', headers);
+    console.log('🔄 Request body:', { status });
+    
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ status }),
+    });
+    
+    console.log('🔄 Response status:', response.status);
+    console.log('🔄 Response ok:', response.ok);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('🔄 API Error Response:', errorText);
+      throw new Error(`Failed to update order status: ${response.status} - ${errorText}`);
+    }
+    
+    const result = await response.json();
+    console.log('🔄 API Response:', result);
+    return result;
   },
   
   async deleteOrder(orderId: string, token: string | null) {
-    return apiClient.delete(`/admin/orders/${orderId}`, token);
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await fetch(`${API_CONFIG.ordersApi}/orders/${orderId}`, {
+      method: 'DELETE',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete order: ${response.status}`);
+    }
+    
+    return response.json();
   },
   
   // Dashboard stats

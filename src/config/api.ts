@@ -18,7 +18,7 @@ export const API_CONFIG = {
   // Users API (separate Lambda function)
   usersApi: import.meta.env.VITE_USERS_API_URL || 'https://ad7bakhxl3fphzxyxrekrlrlt40asoqf.lambda-url.us-east-1.on.aws',
   
-  // Orders API (separate Lambda function)
+  // Orders API (API Gateway - confirmed working)
   ordersApi: import.meta.env.VITE_ORDERS_API_URL || 'https://r7pc3n32db.execute-api.us-east-1.amazonaws.com/prod',
   
   // Base API URL (fallback) - now uses unified endpoint
@@ -30,6 +30,49 @@ export const API_CONFIG = {
   s3BaseUrl: import.meta.env.VITE_S3_BASE_URL || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com',
   uploadApiUrl: import.meta.env.VITE_UPLOAD_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod/generate-upload-url',
   cdnUrl: import.meta.env.VITE_CDN_URL || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com',
+};
+
+// Order action helper functions
+export const orderActions = {
+  processOrder: (orderId: string) => fetch(`${API_CONFIG.ordersApi}/orders/${orderId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'Processing' })
+  }),
+  
+  shipOrder: (orderId: string) => fetch(`${API_CONFIG.ordersApi}/orders/${orderId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'Shipped' })
+  }),
+  
+  markDelivered: (orderId: string) => fetch(`${API_CONFIG.ordersApi}/orders/${orderId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'Delivered' })
+  }),
+  
+  readyForPickup: (orderId: string) => fetch(`${API_CONFIG.ordersApi}/orders/${orderId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'Ready for Pickup' })
+  }),
+  
+  markPending: (orderId: string) => fetch(`${API_CONFIG.ordersApi}/orders/${orderId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'Pending' })
+  }),
+  
+  cancelOrder: (orderId: string) => fetch(`${API_CONFIG.ordersApi}/orders/${orderId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'Cancelled' })
+  }),
+  
+  deleteOrder: (orderId: string) => fetch(`${API_CONFIG.ordersApi}/orders/${orderId}`, {
+    method: 'DELETE'
+  })
 };
 
 // Export individual endpoints for easy import
