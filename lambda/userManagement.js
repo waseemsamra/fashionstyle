@@ -9,8 +9,8 @@ const USERS_TABLE = process.env.USERS_TABLE;
 // Middleware for CORS
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,Authorization,X-Amz-Security-Token,X-Amz-Target,X-Amz-User-Agent,X-Amz-Content-Sha256,X-Amz-Content-Type,X-Amz-User-Agent,X-Amz-Target',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS,HEAD',
 };
 
 // Middleware for authentication
