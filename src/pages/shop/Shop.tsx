@@ -53,13 +53,10 @@ export default function Shop() {
     fetchCategories().then(setCategories);
   }, []);
 
-  // Compute brands for selected category
+  // Always show all available brands
   const brands = useMemo(() => {
-    if (filters.category === 'all') return allBrands;
-    return [...new Set<string>(
-      allProducts.filter(p => p.category === filters.category).map(p => p.brand).filter(Boolean)
-    )].sort();
-  }, [allBrands, allProducts, filters.category]);
+    return allBrands;
+  }, [allBrands]);
 
   // Simple reliable pagination with client-side filtering
   const fetchProducts = async () => {
