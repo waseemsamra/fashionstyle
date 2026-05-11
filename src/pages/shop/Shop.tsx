@@ -220,32 +220,30 @@ export default function Shop() {
     fetchProducts();
   }, [currentPage, filters]);
 
-  // Fetch ALL products once on mount, extract brands
+  // Fetch brands from dedicated brands API and products separately
   useEffect(() => {
-    console.log('🏢 Fetching brands from 1000 products...');
+    console.log('🏢 Fetching brands from dedicated brands API...');
+    
+    // Fetch brands from dedicated endpoint
+    fetch(`${API_URL}/brands`)
+      .then(r => r.json())
+      .then(brandsData => {
+        const brands = Array.isArray(brandsData) ? brandsData : brandsData.brands || [];
+        const brandNames = brands.map((b: any) => b.name).filter(Boolean).sort() as string[];
+        console.log(`🏢 Found ${brandNames.length} brands from brands API:`, brandNames.slice(0, 10));
+        setAllBrands(brandNames);
+      })
+      .catch(err => console.error('Failed to fetch brands from brands API:', err));
+
+    // Fetch products separately
     fetch(`${API_URL}/products?limit=1000`)
       .then(r => r.json())
       .then(data => {
         const products = data.items || [];
-        console.log('📊 Sample product data structure:', products.slice(0, 3).map((p: any) => ({
-          id: p.id,
-          name: p.name,
-          brand: p.brand,
-          brandType: typeof p.brand,
-          category: p.category,
-          allKeys: Object.keys(p)
-        })));
-        
-        const allBrands = products.map((p: any) => p.brand).filter(Boolean);
-        const unique = [...new Set<string>(allBrands)].sort() as string[];
-        
-        console.log(`🏢 Raw brand extraction: ${allBrands.length} brands found:`, allBrands.slice(0, 10));
-        console.log(`🏢 Found ${unique.length} unique brands:`, unique);
-        setAllBrands(unique);
         setAllProducts(products.slice(0, PRODUCTS_PER_PAGE)); // Show first page
         setTotalProducts(products.length);
       })
-      .catch(err => console.error('Failed to fetch brands:', err));
+      .catch(err => console.error('Failed to fetch products:', err));
   }, []);
 
   // Read URL parameters to set filters (only on initial mount)
