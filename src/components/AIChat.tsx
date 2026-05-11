@@ -353,7 +353,7 @@ async function callMCPTool(toolCall: MCPToolCall): Promise<{ text: string; struc
         return parseResponseData('get_brand_by_slug', brand);
       }
       case 'get_orders':
-        url = `${API_URL}/admin/orders?limit=${args.limit || 20}`;
+        url = `${API_CONFIG.ordersApi}/admin/orders?limit=${args.limit || 20}`;
         break;
       case 'get_users':
         url = `${API_URL}/admin/users?limit=${args.limit || 50}`;
