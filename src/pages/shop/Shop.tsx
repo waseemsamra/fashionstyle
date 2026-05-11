@@ -400,7 +400,7 @@ export default function Shop() {
                 </button>
                 
                 {showBrandDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-96 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
                     <div className="p-2">
                       <button
                         onClick={() => { setFilters(prev => ({ ...prev, brands: [] })); setCurrentPage(1); }}
@@ -409,17 +409,22 @@ export default function Shop() {
                         <X className="w-4 h-4" />
                         <span>All Brands</span>
                       </button>
-                      {brands.map(brand => (
-                        <label key={brand} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={filters.brands.includes(brand)}
-                            onChange={() => toggleBrand(brand)}
-                            className="rounded text-gold focus:ring-gold"
-                          />
-                          <span className="text-sm">{brand}</span>
-                        </label>
-                      ))}
+                      {brands.map((brand, index) => {
+                        if (index < 5) {
+                          console.log(`🏢 Rendering brand ${index + 1}: "${brand}"`);
+                        }
+                        return (
+                          <label key={brand} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={filters.brands.includes(brand)}
+                              onChange={() => toggleBrand(brand)}
+                              className="rounded text-gold focus:ring-gold"
+                            />
+                            <span className="text-sm">{brand}</span>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
