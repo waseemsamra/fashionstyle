@@ -18,8 +18,8 @@ export const API_CONFIG = {
   // Users API (separate Lambda function)
   usersApi: import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws',
   
-  // Orders API (API Gateway with CORS-fixed stage - working perfectly)
-  ordersApi: import.meta.env.VITE_ORDERS_API_URL || 'https://r7pc3n32db.execute-api.us-east-1.amazonaws.com/cors-fixed',
+  // Orders API (Lambda Function URL - bypass API Gateway CORS issues)
+  ordersApi: import.meta.env.VITE_ORDERS_API_URL || 'https://ovua7kw5mmziqy5d2zi4zoni6u0rnuwy.lambda-url.us-east-1.on.aws',
   
   // Base API URL (fallback) - now uses unified endpoint
   baseApiUrl: import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws',
