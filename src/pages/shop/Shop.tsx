@@ -108,11 +108,33 @@ export default function Shop() {
       // Apply client-side filtering for reliability
       if (filters.category !== 'all') {
         const beforeCount = products.length;
-        products = products.filter((p: any) => 
-          p.category?.toLowerCase() === filters.category.toLowerCase() ||
-          p.category?.name?.toLowerCase() === filters.category.toLowerCase()
-        );
-        console.log(`🏷️ Category filter: ${beforeCount} → ${products.length} products`);
+        console.log(`🏷️ Category filter details:`);
+        console.log(`  - Selected category: "${filters.category}"`);
+        console.log(`  - Sample product categories:`, products.slice(0, 5).map((p: any) => ({ 
+          id: p.id, 
+          name: p.name, 
+          category: p.category,
+          categoryType: typeof p.category
+        })));
+        
+        products = products.filter((p: any) => {
+          const productCategory = p.category?.toLowerCase();
+          const categoryName = p.category?.name?.toLowerCase();
+          const selectedCategory = filters.category.toLowerCase();
+          
+          const matches = productCategory === selectedCategory || categoryName === selectedCategory;
+          
+          if (beforeCount <= 10) { // Only log details for small result sets
+            console.log(`    - Product "${p.name}": category="${p.category}" (${typeof p.category}) -> ${matches ? '✅' : '❌'}`);
+          }
+          
+          return matches;
+        });
+        
+        console.log(`🏷️ Category filter result: ${beforeCount} → ${products.length} products`);
+        if (products.length === 0) {
+          console.log(`⚠️ No products found for category "${filters.category}". Available categories:`, [...new Set(products.map((p: any) => p.category).filter(Boolean))]);
+        }
       }
       
       if (filters.brands.length > 0) {
