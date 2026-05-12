@@ -94,7 +94,7 @@ export default function AdminOrders() {
       // Use correct Orders API endpoint
       const API_URL = API_CONFIG.ordersApi;
       
-      console.log('📋 Admin Orders: Fetching from:', `${API_URL}/orders`);
+      console.log('📋 Admin Orders: Fetching from:', API_URL);
       
       let response;
       try {
@@ -104,7 +104,7 @@ export default function AdminOrders() {
         
         // Note: cors-fixed stage doesn't require Authorization header
 
-        const fetchResponse = await fetch(`${API_URL}/orders`, {
+        const fetchResponse = await fetch(API_URL, {
           method: 'GET',
           headers,
         });
