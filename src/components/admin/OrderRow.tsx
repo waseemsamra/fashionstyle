@@ -328,6 +328,20 @@ export default function OrderRow({ order, onStatusChange, showActions = false }:
                   </DropdownMenuItem>
                   
                   <DropdownMenuItem
+                    onClick={() => {
+                      if (confirm(`Are you sure you want to mark order ${order.orderId} as returned?`)) {
+                        handleStatusChange('returned');
+                      }
+                    }}
+                    disabled={order.status === 'returned' || isUpdating}
+                    className="cursor-pointer text-orange-600"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Return Order
+                    {order.status === 'returned' && ' ✓'}
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem
                     onClick={handleDeleteOrder}
                     disabled={isUpdating}
                     className="cursor-pointer text-red-600"
