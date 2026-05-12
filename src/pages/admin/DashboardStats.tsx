@@ -83,7 +83,12 @@ export default function DashboardStats() {
 
       // Calculate order statistics
       const totalOrders = orders.length;
-      const totalRevenue = orders.reduce((sum: number, order: any) => sum + (order.totalPrice || order.total || 0), 0);
+      const totalRevenue = orders.reduce((sum: number, order: any) => {
+        // Try all possible field names for order total
+        const orderTotal = order.totalPrice || order.total || order.amount || order.subtotal || order.grandTotal || 0;
+        console.log(`📊 Order ${order.orderId || order.id} total field value:`, orderTotal);
+        return sum + orderTotal;
+      }, 0);
       const pendingOrders = orders.filter((o: any) => o.status === 'pending').length;
       const processingOrders = orders.filter((o: any) => o.status === 'processing').length;
       const shippedOrders = orders.filter((o: any) => o.status === 'shipped' || o.status === 'on-delivery').length;
