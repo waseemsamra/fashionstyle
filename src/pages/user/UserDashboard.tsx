@@ -8,6 +8,7 @@ export default function UserDashboard() {
   const navigate = useNavigate();
   
   useEffect(() => {
+    console.log('🔄 UserDashboard: Component mounted, redirecting to /profile');
     // Redirect to the correct profile page
     navigate('/profile', { replace: true });
   }, []);
