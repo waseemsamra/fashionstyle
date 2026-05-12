@@ -38,12 +38,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { getUserFromToken } = await import('@/utils/tokenDecoder');
         const userFromToken = getUserFromToken(token);
         
-        if (userFromToken) {
+        // Fallback: use stored email from localStorage if JWT doesn't contain email
+        const storedEmail = localStorage.getItem('user_email');
+        const userEmail = userFromToken?.email || storedEmail;
+        
+        console.log('🔍 AuthContext: Token email:', userFromToken?.email);
+        console.log('🔍 AuthContext: Stored email:', storedEmail);
+        console.log('🔍 AuthContext: Final email:', userEmail);
+        
+        if (userEmail) {
           return {
-            id: userFromToken.id,
-            email: userFromToken.email,
-            name: userFromToken.name || 'User',
-            role: (userFromToken.role as 'user' | 'admin' | 'manager') || 'user',
+            id: userFromToken?.id || storedEmail || userEmail,
+            email: userEmail,
+            name: userFromToken?.name || userEmail.split('@')[0] || 'User',
+            role: (userFromToken?.role as 'user' | 'admin' | 'manager') || 'user',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             emailVerified: true,

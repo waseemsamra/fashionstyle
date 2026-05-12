@@ -14,6 +14,8 @@ export function decodeJWT(token: string): DecodedToken | null {
   try {
     if (!token) return null;
 
+    console.log('🔍 Decoding JWT token:', token.substring(0, 50) + '...');
+
     // JWT has 3 parts: header.payload.signature
     const parts = token.split('.');
     if (parts.length !== 3) {
@@ -26,12 +28,17 @@ export function decodeJWT(token: string): DecodedToken | null {
     const decoded = atob(payload);
     const parsed = JSON.parse(decoded);
 
-    // Cognito stores email in different claims
+    console.log('🔍 JWT payload:', parsed);
+    console.log('🔍 Available JWT claims:', Object.keys(parsed));
+
+    // Try multiple possible email fields
     const email = parsed.email || 
                   parsed['cognito:username'] || 
-                  parsed['email'] ||
                   parsed['username'] ||
+                  parsed.sub ||
                   'user@example.com';
+
+    console.log('🔍 Extracted email from JWT:', email);
 
     return {
       email: email,
