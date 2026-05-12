@@ -16,6 +16,7 @@ import {
   Truck
 } from 'lucide-react';
 import { api } from '@/services/api';
+import { API_CONFIG } from '@/config/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function DashboardStats() {
@@ -44,8 +45,33 @@ export default function DashboardStats() {
     setLoading(true);
     const token = localStorage.getItem('jwt_token');
     try {
-      // Load orders
-      const ordersResponse: any = await api.getAllOrders(token);
+      // Load orders from Orders API
+      const API_URL = API_CONFIG.ordersApi;
+      console.log('📊 Dashboard: Fetching orders from:', API_URL);
+      
+      let ordersResponse;
+      try {
+        const response = await fetch(`${API_URL}/orders`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        console.log('📊 Dashboard: Orders response status:', response.status);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || `HTTP ${response.status}`);
+        }
+        
+        ordersResponse = await response.json();
+        console.log('📊 Dashboard: Raw orders response:', ordersResponse);
+      } catch (error) {
+        console.log('⚠️ Orders API not available, using fallback');
+        ordersResponse = { orders: [] };
+      }
+      
       const orders = ordersResponse.orders || [];
 
       // Calculate order statistics

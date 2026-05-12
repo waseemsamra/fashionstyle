@@ -7,11 +7,11 @@ export function useOrders(filters?: OrderFilters) {
   const { user } = useAuth();
 
   return useInfiniteQuery({
-    queryKey: ['orders', user?.id, filters],
+    queryKey: ['orders', user?.email, filters],
     queryFn: async ({ pageParam = 1 }) => {
-      if (!user?.id) throw new Error('Not authenticated');
+      if (!user?.email) throw new Error('Not authenticated');
       console.log(`📦 Fetching orders page ${pageParam}...`);
-      const data = await ordersService.getUserOrders(user.id, {
+      const data = await ordersService.getUserOrders(user.email, {
         ...filters,
         page: pageParam as number,
         limit: 10
@@ -20,7 +20,7 @@ export function useOrders(filters?: OrderFilters) {
     },
     getNextPageParam: (lastPage: any) => lastPage.nextPage,
     initialPageParam: 1,
-    enabled: !!user?.id,
+    enabled: !!user?.email,
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
     placeholderData: (previousData) => previousData,
