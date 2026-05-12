@@ -5,11 +5,12 @@ import { User, Package, Heart, Wallet, CreditCard, LogOut, Lock, X, Trash2, MapP
 import { api } from '../../services/api';
 import { useWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function UserDashboard() {
   const navigate = useNavigate();
   const { data: wishlistItems } = useWishlist();
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -109,8 +110,8 @@ export default function UserDashboard() {
 
         console.log('🆔 Using userId:', userId);
 
-        // Set user with correct userId format
-        setUser({ userId: userId, username: email, email });
+        // Set user with correct userId format (handled by AuthContext)
+        console.log('✅ User authenticated via AuthContext');
         
         // Load profile data from API
         await loadProfile(userId);
@@ -126,12 +127,12 @@ export default function UserDashboard() {
       try {
         const { getCurrentUser } = await import('aws-amplify/auth');
         const currentUser = await getCurrentUser();
-        setUser(currentUser);
-        await loadProfile(currentUser.userId);
+        setUser({ ...currentUser, userId: currentUser.username });
+        await loadProfile(currentUser.username);
       } catch (cognitoErr) {
         console.log('Cognito user not available, redirecting to login');
         navigate('/login', { state: { from: '/dashboard' } });
-        return;
+      }  return;
       }
 
       setLoading(false);
