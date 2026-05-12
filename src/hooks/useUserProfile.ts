@@ -10,15 +10,31 @@ export function useUserProfile() {
   return useQuery({
     queryKey: ['user-profile', userEmail],
     queryFn: async () => {
-      if (!userEmail) return null;
-      console.log(`👤 Fetching profile for user ${userEmail}`);
-      const data = await userService.getProfile(userEmail);
-      return data as UserProfile;
+      if (!userEmail) {
+        console.log('👤 useUserProfile: No user email found');
+        return null;
+      }
+      
+      console.log(`👤 useUserProfile: Fetching profile for user ${userEmail}`);
+      console.log(`👤 useUserProfile: User object:`, user);
+      
+      try {
+        const data = await userService.getProfile(userEmail);
+        console.log(`👤 useUserProfile: Profile data received:`, data);
+        return data as UserProfile;
+      } catch (error) {
+        console.error(`👤 useUserProfile: Error fetching profile:`, error);
+        throw error;
+      }
     },
     enabled: !!userEmail,
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
     placeholderData: (previousData) => previousData,
+    retry: (failureCount, error) => {
+      console.log(`👤 useUserProfile: Retry attempt ${failureCount}, error:`, error);
+      return failureCount < 2;
+    },
   });
 }
 

@@ -67,18 +67,33 @@ class UserService {
   async getProfile(email: string): Promise<UserProfile> {
     const token = localStorage.getItem('jwt_token');
     const encodedEmail = encodeURIComponent(email);
+    const url = `${this.baseUrl}/users/${encodedEmail}/profile`;
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/profile`, {
+    console.log(`🔍 userService.getProfile: Fetching profile`);
+    console.log(`🔍 userService.getProfile: Email: ${email}`);
+    console.log(`🔍 userService.getProfile: Encoded email: ${encodedEmail}`);
+    console.log(`🔍 userService.getProfile: Base URL: ${this.baseUrl}`);
+    console.log(`🔍 userService.getProfile: Full URL: ${url}`);
+    console.log(`🔍 userService.getProfile: Token exists: ${!!token}`);
+    
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
 
+    console.log(`🔍 userService.getProfile: Response status: ${response.status}`);
+    console.log(`🔍 userService.getProfile: Response ok: ${response.ok}`);
+
     if (!response.ok) {
-      throw new Error('Failed to fetch profile');
+      const errorText = await response.text();
+      console.error(`🔍 userService.getProfile: Error response:`, errorText);
+      throw new Error(`Failed to fetch profile: ${response.status} - ${errorText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log(`🔍 userService.getProfile: Profile data received:`, data);
+    return data;
   }
 
   async updateProfile(email: string, data: Partial<UserProfile>): Promise<UserProfile> {
