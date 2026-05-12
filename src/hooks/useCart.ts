@@ -6,22 +6,22 @@ import { toast } from 'sonner';
 
 export function useCart() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
 
   // Main cart query
   const query = useQuery({
-    queryKey: ['cart', userId],
+    queryKey: ['cart', userEmail],
     queryFn: async () => {
       console.log('🛒 Fetching cart...');
       const localCart = cartService.getLocalCart();
 
-      if (userId) {
+      if (userEmail) {
         try {
-          const cart = await cartService.getCart(userId);
+          const cart = await cartService.getCart(userEmail);
           if (localCart.items.length > 0) {
             try {
-              const merged = await cartService.mergeCarts(userId, localCart);
+              const merged = await cartService.mergeCarts(userEmail, localCart);
               cartService.clearLocalCart();
               return merged;
             } catch {
@@ -48,13 +48,13 @@ export function useCart() {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'cart' && e.newValue) {
         const newCart = JSON.parse(e.newValue);
-        queryClient.setQueryData(['cart', userId], newCart);
+        queryClient.setQueryData(['cart', userEmail], newCart);
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [userId, queryClient]);
+  }, [userEmail, queryClient]);
 
   const cart = query.data || { items: [], total: 0, itemCount: 0 };
 
@@ -69,7 +69,7 @@ export function useCart() {
 
 export function useAddToCart() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -91,19 +91,19 @@ export function useAddToCart() {
         maxQuantity: product.stock || 10,
       };
 
-      if (userId) {
-        return cartService.addToCart(userId, cartItem);
+      if (userEmail) {
+        return cartService.addToCart(userEmail, cartItem);
       } else {
         return cartService.addToLocalCart(cartItem);
       }
     },
 
     onMutate: async (variables) => {
-      await queryClient.cancelQueries({ queryKey: ['cart', userId] });
+      await queryClient.cancelQueries({ queryKey: ['cart', userEmail] });
 
-      const previousCart = queryClient.getQueryData(['cart', userId]);
+      const previousCart = queryClient.getQueryData(['cart', userEmail]);
 
-      queryClient.setQueryData(['cart', userId], (old: Cart) => {
+      queryClient.setQueryData(['cart', userEmail], (old: Cart) => {
         const existingItemIndex = old.items.findIndex(
           item => item.id === `${variables.product.id}-${variables.size || ''}-${variables.color || ''}`
         );
@@ -135,7 +135,7 @@ export function useAddToCart() {
         };
 
         // Update local storage for guests
-        if (!userId) {
+        if (!userEmail) {
           cartService.saveLocalCart(newCart);
         }
 
@@ -171,31 +171,31 @@ export function useAddToCart() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['cart', userId] });
+      queryClient.invalidateQueries({ queryKey: ['cart', userEmail] });
     },
   });
 }
 
 export function useUpdateCartItem() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ itemId, quantity }: { itemId: string; quantity: number }) => {
-      if (userId) {
-        return cartService.updateItemQuantity(userId, itemId, quantity);
+      if (userEmail) {
+        return cartService.updateItemQuantity(userEmail, itemId, quantity);
       } else {
         return cartService.updateLocalItemQuantity(itemId, quantity);
       }
     },
 
     onMutate: async ({ itemId, quantity }) => {
-      await queryClient.cancelQueries({ queryKey: ['cart', userId] });
+      await queryClient.cancelQueries({ queryKey: ['cart', userEmail] });
 
-      const previousCart = queryClient.getQueryData(['cart', userId]);
+      const previousCart = queryClient.getQueryData(['cart', userEmail]);
 
-      queryClient.setQueryData(['cart', userId], (old: Cart) => {
+      queryClient.setQueryData(['cart', userEmail], (old: Cart) => {
         const newItems = old.items.map(item =>
           item.id === itemId ? { ...item, quantity } : item
         );
@@ -206,7 +206,7 @@ export function useUpdateCartItem() {
           itemCount: newItems.reduce((sum: number, item: any) => sum + item.quantity, 0),
         };
 
-        if (!userId) {
+        if (!userEmail) {
           cartService.saveLocalCart(newCart);
         }
 
@@ -224,24 +224,24 @@ export function useUpdateCartItem() {
 
 export function useRemoveFromCart() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (itemId: string) => {
-      if (userId) {
-        return cartService.removeFromCart(userId, itemId);
+      if (userEmail) {
+        return cartService.removeFromCart(userEmail, itemId);
       } else {
         return cartService.removeFromLocalCart(itemId);
       }
     },
 
     onMutate: async (itemId) => {
-      await queryClient.cancelQueries({ queryKey: ['cart', userId] });
+      await queryClient.cancelQueries({ queryKey: ['cart', userEmail] });
 
-      const previousCart = queryClient.getQueryData(['cart', userId]);
+      const previousCart = queryClient.getQueryData(['cart', userEmail]);
 
-      queryClient.setQueryData(['cart', userId], (old: Cart) => {
+      queryClient.setQueryData(['cart', userEmail], (old: Cart) => {
         const newItems = old.items.filter(item => item.id !== itemId);
 
         const newCart = {
@@ -250,7 +250,7 @@ export function useRemoveFromCart() {
           itemCount: newItems.reduce((sum: number, item: any) => sum + item.quantity, 0),
         };
 
-        if (!userId) {
+        if (!userEmail) {
           cartService.saveLocalCart(newCart);
         }
 
@@ -272,27 +272,27 @@ export function useRemoveFromCart() {
 
 export function useClearCart() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
-      if (userId) {
-        return cartService.clearCart(userId);
+      if (userEmail) {
+        return cartService.clearCart(userEmail);
       } else {
         return cartService.clearLocalCart();
       }
     },
 
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['cart', userId] });
+      await queryClient.cancelQueries({ queryKey: ['cart', userEmail] });
 
-      const previousCart = queryClient.getQueryData(['cart', userId]);
+      const previousCart = queryClient.getQueryData(['cart', userEmail]);
 
       const emptyCart = { items: [], total: 0, itemCount: 0 };
-      queryClient.setQueryData(['cart', userId], emptyCart);
+      queryClient.setQueryData(['cart', userEmail], emptyCart);
 
-      if (!userId) {
+      if (!userEmail) {
         cartService.saveLocalCart(emptyCart);
       }
 

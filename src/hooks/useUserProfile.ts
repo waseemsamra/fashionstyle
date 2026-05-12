@@ -5,17 +5,17 @@ import { toast } from 'sonner';
 
 export function useUserProfile() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
 
   return useQuery({
-    queryKey: ['user-profile', userId],
+    queryKey: ['user-profile', userEmail],
     queryFn: async () => {
-      if (!userId) return null;
-      console.log(`👤 Fetching profile for user ${userId}`);
-      const data = await userService.getProfile(userId);
+      if (!userEmail) return null;
+      console.log(`👤 Fetching profile for user ${userEmail}`);
+      const data = await userService.getProfile(userEmail);
       return data as UserProfile;
     },
-    enabled: !!userId,
+    enabled: !!userEmail,
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
     placeholderData: (previousData) => previousData,
@@ -24,23 +24,23 @@ export function useUserProfile() {
 
 export function useUpdateProfile() {
   const { user, updateUser } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: Partial<UserProfile>) => {
-      if (!userId) throw new Error('Not authenticated');
-      return userService.updateProfile(userId, data);
+      if (!userEmail) throw new Error('Not authenticated');
+      return userService.updateProfile(userEmail, data);
     },
 
     // Optimistic update
     onMutate: async (newData) => {
-      await queryClient.cancelQueries({ queryKey: ['user-profile', userId] });
+      await queryClient.cancelQueries({ queryKey: ['user-profile', userEmail] });
 
-      const previousProfile = queryClient.getQueryData(['user-profile', userId]);
+      const previousProfile = queryClient.getQueryData(['user-profile', userEmail]);
 
       // Update React Query cache
-      queryClient.setQueryData(['user-profile', userId], (old: UserProfile) => ({
+      queryClient.setQueryData(['user-profile', userEmail], (old: UserProfile) => ({
         ...old,
         ...newData,
       }));
@@ -57,45 +57,45 @@ export function useUpdateProfile() {
 
     onError: (error, _variables, context) => {
       // Rollback
-      queryClient.setQueryData(['user-profile', userId], context?.previousProfile);
+      queryClient.setQueryData(['user-profile', userEmail], context?.previousProfile);
       toast.error('Failed to update profile');
       console.error('Profile update error:', error);
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile', userEmail] });
     },
   });
 }
 
 export function useUserAddresses() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
 
   return useQuery({
-    queryKey: ['user-addresses', userId],
+    queryKey: ['user-addresses', userEmail],
     queryFn: async () => {
-      if (!userId) return [];
-      return userService.getAddresses(userId);
+      if (!userEmail) return [];
+      return userService.getAddresses(userEmail);
     },
-    enabled: !!userId,
+    enabled: !!userEmail,
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useAddAddress() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (address: Omit<Address, 'id'>) => {
-      if (!userId) throw new Error('Not authenticated');
-      return userService.addAddress(userId, address);
+      if (!userEmail) throw new Error('Not authenticated');
+      return userService.addAddress(userEmail, address);
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-addresses', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-addresses', userEmail] });
       toast.success('Address added successfully');
     },
 
@@ -108,17 +108,17 @@ export function useAddAddress() {
 
 export function useUpdateAddress() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ addressId, data }: { addressId: string; data: Partial<Address> }) => {
-      if (!userId) throw new Error('Not authenticated');
-      return userService.updateAddress(userId, addressId, data);
+      if (!userEmail) throw new Error('Not authenticated');
+      return userService.updateAddress(userEmail, addressId, data);
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-addresses', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-addresses', userEmail] });
       toast.success('Address updated successfully');
     },
 
@@ -131,17 +131,17 @@ export function useUpdateAddress() {
 
 export function useDeleteAddress() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (addressId: string) => {
-      if (!userId) throw new Error('Not authenticated');
-      return userService.deleteAddress(userId, addressId);
+      if (!userEmail) throw new Error('Not authenticated');
+      return userService.deleteAddress(userEmail, addressId);
     },
 
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-addresses', userId] });
+      queryClient.invalidateQueries({ queryKey: ['user-addresses', userEmail] });
       toast.success('Address deleted successfully');
     },
 
@@ -154,30 +154,30 @@ export function useDeleteAddress() {
 
 export function useUserOrders() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
 
   return useQuery({
-    queryKey: ['user-orders', userId],
+    queryKey: ['user-orders', userEmail],
     queryFn: async () => {
-      if (!userId) return [];
-      return userService.getOrders(userId);
+      if (!userEmail) return [];
+      return userService.getOrders(userEmail);
     },
-    enabled: !!userId,
+    enabled: !!userEmail,
     staleTime: 5 * 60 * 1000,
   });
 }
 
 export function useUserPaymentMethods() {
   const { user } = useAuth();
-  const userId = user?.id;
+  const userEmail = user?.email;
 
   return useQuery({
-    queryKey: ['user-payment-methods', userId],
+    queryKey: ['user-payment-methods', userEmail],
     queryFn: async () => {
-      if (!userId) return [];
-      return userService.getPaymentMethods(userId);
+      if (!userEmail) return [];
+      return userService.getPaymentMethods(userEmail);
     },
-    enabled: !!userId,
+    enabled: !!userEmail,
     staleTime: 10 * 60 * 1000,
   });
 }

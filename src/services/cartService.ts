@@ -23,8 +23,9 @@ class CartService {
   // API Methods
   async getCart(userId: string): Promise<Cart> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/cart`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/cart`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -48,7 +49,8 @@ class CartService {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/users/${userId}/cart/items`, {
+      const encodedUserId = encodeURIComponent(userId);
+      const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/cart/items`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -79,8 +81,9 @@ class CartService {
 
   async updateItemQuantity(userId: string, itemId: string, quantity: number): Promise<Cart> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/cart/items/${itemId}`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/cart/items/${itemId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -101,8 +104,9 @@ class CartService {
 
   async removeFromCart(userId: string, itemId: string): Promise<Cart> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/cart/items/${itemId}`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/cart/items/${itemId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -121,8 +125,9 @@ class CartService {
 
   async clearCart(userId: string): Promise<Cart> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/cart`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/cart`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -140,8 +145,9 @@ class CartService {
 
   async mergeCarts(userId: string, localCart: Cart): Promise<Cart> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/cart/merge`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/cart/merge`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
