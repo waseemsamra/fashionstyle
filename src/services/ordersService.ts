@@ -95,12 +95,13 @@ export interface OrderStats {
 }
 
 class OrdersService {
-  private baseUrl = import.meta.env.VITE_USERS_API_URL || 'https://ad7bakhxl3fphzxyxrekrlrlt40asoqf.lambda-url.us-east-1.on.aws';
+  private baseUrl = import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws';
 
   async getUserOrders(userId: string, params: any) {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const url = new URL(`${this.baseUrl}/users/${userId}/orders`);
+    const url = new URL(`${this.baseUrl}/users/${encodedUserId}/orders`);
     Object.keys(params).forEach(key => 
       url.searchParams.append(key, params[key])
     );

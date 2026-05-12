@@ -60,12 +60,13 @@ export interface Order {
 }
 
 class UserService {
-  private baseUrl = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
+  private baseUrl = import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws';
 
   async getProfile(userId: string): Promise<UserProfile> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/profile`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/profile`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -80,8 +81,9 @@ class UserService {
 
   async updateProfile(userId: string, data: Partial<UserProfile>): Promise<UserProfile> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/profile`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/profile`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -99,10 +101,11 @@ class UserService {
 
   async uploadAvatar(userId: string, file: File): Promise<{ avatarUrl: string }> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const response = await fetch(`${this.baseUrl}/users/${userId}/avatar`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/avatar`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -119,8 +122,9 @@ class UserService {
 
   async getAddresses(userId: string): Promise<Address[]> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/addresses`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/addresses`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -135,8 +139,9 @@ class UserService {
 
   async addAddress(userId: string, address: Omit<Address, 'id'>): Promise<Address> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/addresses`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/addresses`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -154,8 +159,9 @@ class UserService {
 
   async updateAddress(userId: string, addressId: string, data: Partial<Address>): Promise<Address> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/addresses/${addressId}`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/addresses/${addressId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -173,8 +179,9 @@ class UserService {
 
   async deleteAddress(userId: string, addressId: string): Promise<void> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/addresses/${addressId}`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/addresses/${addressId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -188,8 +195,9 @@ class UserService {
 
   async getOrders(userId: string): Promise<Order[]> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/orders`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/orders`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -204,8 +212,9 @@ class UserService {
 
   async getPaymentMethods(userId: string): Promise<PaymentMethod[]> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/payment-methods`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/payment-methods`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -220,8 +229,9 @@ class UserService {
 
   async addPaymentMethod(userId: string, method: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/payment-methods`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/payment-methods`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -239,8 +249,9 @@ class UserService {
 
   async deletePaymentMethod(userId: string, methodId: string): Promise<void> {
     const token = localStorage.getItem('jwt_token');
+    const encodedUserId = encodeURIComponent(userId);
     
-    const response = await fetch(`${this.baseUrl}/users/${userId}/payment-methods/${methodId}`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/payment-methods/${methodId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
