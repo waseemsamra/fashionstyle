@@ -10,9 +10,13 @@ interface ProfileInfoProps {
 }
 
 export function ProfileInfo({ profile, onUpdate }: ProfileInfoProps) {
+  // Debug: Log the actual profile data structure
+  console.log('👤 ProfileInfo: Raw profile data:', profile);
+  console.log('👤 ProfileInfo: Available fields:', profile ? Object.keys(profile) : 'No profile data');
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: profile.name,
+    name: profile.name || `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || '',
     phone: profile.phone || '',
     dateOfBirth: profile.dateOfBirth || '',
     gender: profile.gender || '',
@@ -43,7 +47,9 @@ export function ProfileInfo({ profile, onUpdate }: ProfileInfoProps) {
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label className="text-sm text-gray-500">Full Name</label>
-            <p className="font-medium">{profile.name}</p>
+            <p className="font-medium">
+              {profile.name || `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || 'Not provided'}
+            </p>
           </div>
           <div>
             <label className="text-sm text-gray-500">Email</label>
