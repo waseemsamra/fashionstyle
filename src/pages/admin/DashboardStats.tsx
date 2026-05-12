@@ -74,6 +74,13 @@ export default function DashboardStats() {
       
       const orders = ordersResponse.orders || [];
 
+      // Debug: Log order structure
+      console.log('📊 Dashboard: Orders array:', orders);
+      if (orders.length > 0) {
+        console.log('📊 Dashboard: First order structure:', orders[0]);
+        console.log('📊 Dashboard: Available fields:', Object.keys(orders[0]));
+      }
+
       // Calculate order statistics
       const totalOrders = orders.length;
       const totalRevenue = orders.reduce((sum: number, order: any) => sum + (order.totalPrice || order.total || 0), 0);
