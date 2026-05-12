@@ -35,8 +35,7 @@ const ForgotPassword = lazy(() => import('@/pages/user/ForgotPassword'));
 const ResetPassword = lazy(() => import('@/pages/user/ResetPassword'));
 const ConfirmEmail = lazy(() => import('@/pages/user/ConfirmEmail'));
 const Login = lazy(() => import('@/pages/user/Login'));
-// UserDashboard removed - ProfilePage works correctly with AuthContext
-// const UserDashboard = lazy(() => import('@/pages/user/UserDashboard'));
+const UserDashboard = lazy(() => import('@/pages/user/UserDashboard'));
 const OrderDetails = lazy(() => import('@/pages/user/OrderDetails'));
 const VirtualTryOnPage = lazy(() => import('@/pages/VirtualTryOnPage'));
 const OccasionShoppingPage = lazy(() => import('@/pages/OccasionShoppingPage'));
@@ -293,7 +292,7 @@ function Layout() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/confirm-email" element={<ConfirmEmail />} />
-            {/* UserDashboard removed - ProfilePage works correctly with AuthContext */}
+            <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
             <Route path="/dashboard/orders/:orderId" element={<ProtectedRoute><OrderDetails /></ProtectedRoute>} />
             <Route path="/try-on" element={<VirtualTryOnPage />} />
             <Route path="/shop-by-occasion" element={<OccasionShoppingPage />} />
