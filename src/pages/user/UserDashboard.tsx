@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
   User, 
@@ -35,6 +35,18 @@ export default function UserDashboard() {
   const { data: paymentMethods } = useUserPaymentMethods();
   const { data: wishlistItems } = useWishlist();
   const { cart } = useCart();
+
+  // Debug addresses when tab changes
+  useEffect(() => {
+    if (activeTab === 'addresses') {
+      console.log('🏠 Addresses Tab Debug:', { 
+        addresses, 
+        addressesLength: addresses?.length, 
+        addressesType: typeof addresses,
+        userEmail: user?.email 
+      });
+    }
+  }, [activeTab, addresses, user?.email]);
 
   // Calculate statistics
   const totalOrders = orders?.length || 0;
@@ -395,6 +407,7 @@ export default function UserDashboard() {
                   <div className="col-span-2 text-center py-8">
                     <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 mb-4">No addresses saved</p>
+                    <p className="text-sm text-gray-400">Debug: Addresses is {addresses ? 'empty array' : 'undefined/null'}</p>
                     <Link
                       to="/profile"
                       className="inline-flex items-center space-x-2 px-6 py-3 bg-brown-600 text-white rounded-lg hover:bg-brown-700 transition-colors"
