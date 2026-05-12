@@ -317,7 +317,11 @@ export default function AdminOrders() {
     }
   };
 
-  const totalRevenue = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+  const totalRevenue = orders.reduce((sum, order) => {
+    // Use only fields that exist in Order interface
+    const orderTotal = order.totalPrice || order.total || 0;
+    return sum + orderTotal;
+  }, 0);
   const totalOrdersCount = orders.length;
 
   if (isLoading) {
