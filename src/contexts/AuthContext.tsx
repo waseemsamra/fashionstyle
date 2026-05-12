@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (userEmail) {
           return {
-            id: userFromToken?.id || storedEmail || userEmail,
+            id: userEmail, // Use email as primary identifier, not cognitoSub
             email: userEmail,
             name: userFromToken?.name || userEmail.split('@')[0] || 'User',
             role: (userFromToken?.role as 'user' | 'admin' | 'manager') || 'user',
