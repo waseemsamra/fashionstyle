@@ -104,7 +104,7 @@ export default function AdminOrders() {
         
         // Note: cors-fixed stage doesn't require Authorization header
 
-        const fetchResponse = await fetch(API_URL, {
+        const fetchResponse = await fetch(`${API_URL}/orders`, {
           method: 'GET',
           headers,
         });

@@ -95,7 +95,7 @@ export interface OrderStats {
 }
 
 class OrdersService {
-  private baseUrl = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
+  private baseUrl = import.meta.env.VITE_USERS_API_URL || 'https://ad7bakhxl3fphzxyxrekrlrlt40asoqf.lambda-url.us-east-1.on.aws';
 
   async getUserOrders(userId: string, params: any) {
     const token = localStorage.getItem('jwt_token');
