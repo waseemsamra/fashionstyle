@@ -53,6 +53,7 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
   delivered: { label: 'Delivered', color: 'bg-green-100 text-green-800', icon: CheckCircle },
   cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-800', icon: XCircle },
   returned: { label: 'Returned', color: 'bg-gray-100 text-gray-800', icon: XCircle },
+  'ready-to-pickup': { label: 'Ready for Pickup', color: 'bg-purple-100 text-purple-800', icon: CheckCircle },
 };
 
 // Normalize status to lowercase and handle variations
@@ -270,13 +271,13 @@ export default function OrderRow({ order, onStatusChange, showActions = false }:
                   </DropdownMenuItem>
                   
                   <DropdownMenuItem
-                    onClick={() => handleStatusChange('on-delivery')}
-                    disabled={order.status === 'on-delivery' || isUpdating}
+                    onClick={() => handleStatusChange('shipped')}
+                    disabled={order.status === 'shipped' || isUpdating}
                     className="cursor-pointer"
                   >
                     <Truck className="w-4 h-4 mr-2" />
                     Ship Order
-                    {order.status === 'on-delivery' && ' ✓'}
+                    {order.status === 'shipped' && ' ✓'}
                   </DropdownMenuItem>
                   
                   <DropdownMenuItem
