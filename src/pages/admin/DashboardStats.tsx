@@ -76,7 +76,7 @@ export default function DashboardStats() {
 
       // Calculate order statistics
       const totalOrders = orders.length;
-      const totalRevenue = orders.reduce((sum: number, order: any) => sum + (order.totalPrice || 0), 0);
+      const totalRevenue = orders.reduce((sum: number, order: any) => sum + (order.totalPrice || order.total || 0), 0);
       const pendingOrders = orders.filter((o: any) => o.status === 'pending').length;
       const processingOrders = orders.filter((o: any) => o.status === 'processing').length;
       const shippedOrders = orders.filter((o: any) => o.status === 'shipped' || o.status === 'on-delivery').length;
