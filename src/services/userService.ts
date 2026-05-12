@@ -64,11 +64,11 @@ export interface Order {
 class UserService {
   private baseUrl = import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws';
 
-  async getProfile(userId: string): Promise<UserProfile> {
+  async getProfile(email: string): Promise<UserProfile> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/profile`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/profile`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -81,11 +81,11 @@ class UserService {
     return response.json();
   }
 
-  async updateProfile(userId: string, data: Partial<UserProfile>): Promise<UserProfile> {
+  async updateProfile(email: string, data: Partial<UserProfile>): Promise<UserProfile> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/profile`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/profile`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -101,13 +101,13 @@ class UserService {
     return response.json();
   }
 
-  async uploadAvatar(userId: string, file: File): Promise<{ avatarUrl: string }> {
+  async uploadAvatar(email: string, file: File): Promise<{ avatarUrl: string }> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/avatar`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/avatar`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -122,11 +122,11 @@ class UserService {
     return response.json();
   }
 
-  async getAddresses(userId: string): Promise<Address[]> {
+  async getAddresses(email: string): Promise<Address[]> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/addresses`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/addresses`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -139,11 +139,11 @@ class UserService {
     return response.json();
   }
 
-  async addAddress(userId: string, address: Omit<Address, 'id'>): Promise<Address> {
+  async addAddress(email: string, address: Omit<Address, 'id'>): Promise<Address> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/addresses`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/addresses`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -159,11 +159,11 @@ class UserService {
     return response.json();
   }
 
-  async updateAddress(userId: string, addressId: string, data: Partial<Address>): Promise<Address> {
+  async updateAddress(email: string, addressId: string, data: Partial<Address>): Promise<Address> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/addresses/${addressId}`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/addresses/${addressId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -179,11 +179,11 @@ class UserService {
     return response.json();
   }
 
-  async deleteAddress(userId: string, addressId: string): Promise<void> {
+  async deleteAddress(email: string, addressId: string): Promise<void> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/addresses/${addressId}`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/addresses/${addressId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -195,11 +195,11 @@ class UserService {
     }
   }
 
-  async getOrders(userId: string): Promise<Order[]> {
+  async getOrders(email: string): Promise<Order[]> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/orders`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/orders`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -212,11 +212,11 @@ class UserService {
     return response.json();
   }
 
-  async getPaymentMethods(userId: string): Promise<PaymentMethod[]> {
+  async getPaymentMethods(email: string): Promise<PaymentMethod[]> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/payment-methods`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/payment-methods`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -229,11 +229,11 @@ class UserService {
     return response.json();
   }
 
-  async addPaymentMethod(userId: string, method: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> {
+  async addPaymentMethod(email: string, method: Omit<PaymentMethod, 'id'>): Promise<PaymentMethod> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/payment-methods`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/payment-methods`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -249,11 +249,11 @@ class UserService {
     return response.json();
   }
 
-  async deletePaymentMethod(userId: string, methodId: string): Promise<void> {
+  async deletePaymentMethod(email: string, methodId: string): Promise<void> {
     const token = localStorage.getItem('jwt_token');
-    const encodedUserId = encodeURIComponent(userId);
+    const encodedEmail = encodeURIComponent(email);
     
-    const response = await fetch(`${this.baseUrl}/users/${encodedUserId}/payment-methods/${methodId}`, {
+    const response = await fetch(`${this.baseUrl}/users/${encodedEmail}/payment-methods/${methodId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
