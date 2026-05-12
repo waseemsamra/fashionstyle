@@ -601,8 +601,15 @@ export const api = {
       headers,
     });
     
+    // DELETE returns 204 No Content on success
+    if (response.status === 204) {
+      console.log(`✅ Order ${orderId} deleted successfully`);
+      return { success: true, message: 'Order deleted successfully' };
+    }
+    
     if (!response.ok) {
-      throw new Error(`Failed to delete order: ${response.status}`);
+      const errorText = await response.text();
+      throw new Error(`Failed to delete order: ${response.status} - ${errorText}`);
     }
     
     return response.json();
