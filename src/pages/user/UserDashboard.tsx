@@ -7,57 +7,16 @@ import { useWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 
+// UserDashboard component removed - use ProfilePage instead
+// The app correctly routes to ProfilePage which uses AuthContext and proper hooks
+
+// Redirect to profile page for backward compatibility
 export default function UserDashboard() {
   const navigate = useNavigate();
-  const { data: wishlistItems } = useWishlist();
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('profile');
-  const [loading, setLoading] = useState(true);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showAddressModal, setShowAddressModal] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<any>(null);
-  const [passwords, setPasswords] = useState({ old: '', new: '', confirm: '' });
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const [profile, setProfile] = useState({
-    firstName: '',
-    lastName: '',
-    dob: '',
-    contact: '',
-    whatsapp: '',
-    address: '',
-    city: '',
-    postalCode: ''
-  });
-  const [editMode, setEditMode] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const [orders, setOrders] = useState<any[]>([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-
-  const [wallet] = useState({ balance: 150, transactions: [
-    { id: 1, type: 'Credit', amount: 200, date: '2024-03-01', desc: 'Added funds' },
-    { id: 2, type: 'Debit', amount: 50, date: '2024-03-05', desc: 'Order payment' },
-  ]});
-
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
-  const [editingPayment, setEditingPayment] = useState<any>(null);
-  const [newPayment, setNewPayment] = useState({
-    cardNumber: '',
-    cardHolder: '',
-    expiry: '',
-    cvv: '',
-    type: 'Visa'
-  });
-
-  const [addresses, setAddresses] = useState([
-    { id: 1, name: 'Home', street: '123 Main Street', city: 'Karachi', state: 'Sindh', zip: '75500', country: 'Pakistan', default: true },
-    { id: 2, name: 'Office', street: '456 Business Ave', city: 'Lahore', state: 'Punjab', zip: '54000', country: 'Pakistan', default: false },
-  ]);
-
+  
   useEffect(() => {
-    loadUser();
+    // Redirect to the correct profile page
+    navigate('/profile', { replace: true });
   }, []);
 
   useEffect(() => {
@@ -127,7 +86,7 @@ export default function UserDashboard() {
       try {
         const { getCurrentUser } = await import('aws-amplify/auth');
         const currentUser = await getCurrentUser();
-        setUser({ ...currentUser, userId: currentUser.username });
+        // User state handled by AuthContext, no need to set local state
         await loadProfile(currentUser.username);
       } catch (cognitoErr) {
         console.log('Cognito user not available, redirecting to login');
@@ -140,6 +99,7 @@ export default function UserDashboard() {
       console.log('Authentication check failed, redirecting to login');
       navigate('/login', { state: { from: '/dashboard' } });
     }
+  };
   };
 
   const loadProfile = async (userId: string) => {
