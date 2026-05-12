@@ -383,7 +383,8 @@ export default function UserDashboard() {
                       </div>
                     </div>
                     <div className="space-y-2 text-sm">
-                      <p>{address.street}</p>
+                      <p>{address.line1}</p>
+                      {address.line2 && <p>{address.line2}</p>}
                       <p>{address.city}, {address.state} {address.postalCode}</p>
                       <p>{address.country}</p>
                       <p>{address.phone}</p>
@@ -422,7 +423,7 @@ export default function UserDashboard() {
                         <p className="font-medium">
                           {method.type} ending in {method.last4}
                         </p>
-                        <p className="text-sm text-gray-500">Expires {method.expiry}</p>
+                        <p className="text-sm text-gray-500">Expires {method.expiryMonth}/{method.expiryYear}</p>
                       </div>
                     </div>
                     {method.isDefault && (
