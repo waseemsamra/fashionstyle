@@ -18,7 +18,7 @@ export default function AdminLogin() {
       console.log('🔐 Admin login attempt for:', credentials.username);
 
       // Always use direct API Gateway URL
-      const apiUrl = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/auth/signin';
+      const apiUrl = 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/auth/signin';
 
       console.log('📡 Calling API:', apiUrl);
       const response = await fetch(

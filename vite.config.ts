@@ -35,7 +35,7 @@ export default defineConfig({
     port: 5173,  // Changed to default Vite port
     proxy: {
       '/api': {
-        target: 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod',
+        target: 'https://wthvt3ydseyko2cb5rzxqyfute0vlwpi.lambda-url.us-east-1.on.aws',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy, _options) => {

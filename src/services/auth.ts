@@ -1,11 +1,11 @@
-import { apiClient } from './api';
+import { usersApiClient } from './api';
 
 // Auth service for handling authentication with the backend API
 export const authService = {
   // Sign up a new user
   signup: async (email: string, password: string, name?: string) => {
     try {
-      const response = await apiClient.post('/auth/signup', {
+      const response = await usersApiClient.post('/auth/signup', {
         email,
         password,
         name: name || email.split('@')[0]
@@ -17,7 +17,7 @@ export const authService = {
         try {
           // Use full email for userId (replace @ and . with -)
           const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
-          await apiClient.put(`/users/${userId}/profile`, {
+          await usersApiClient.put(`/users/${userId}/profile`, {
             email,
             firstName: name?.split(' ')[0] || '',
             lastName: name?.split(' ')[1] || '',
@@ -43,7 +43,7 @@ export const authService = {
   // Sign in and get JWT token
   signin: async (email: string, password: string) => {
     try {
-      const response = await apiClient.post('/auth/signin', {
+      const response = await usersApiClient.post('/auth/signin', {
         email,
         password
       });
@@ -60,7 +60,7 @@ export const authService = {
         try {
           // Use full email for userId (replace @ and . with -)
           const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
-          await apiClient.put(`/users/${userId}/profile`, {
+          await usersApiClient.put(`/users/${userId}/profile`, {
             email,
             role: 'customer',
             status: 'active'
@@ -84,7 +84,7 @@ export const authService = {
   // Request password reset code
   forgotPassword: async (email: string) => {
     try {
-      const response = await apiClient.post('/forgot-password', {
+      const response = await usersApiClient.post('/forgot-password', {
         email
       });
       return response.data;
@@ -99,7 +99,7 @@ export const authService = {
   // Confirm reset code and set new password
   confirmPassword: async (email: string, code: string, newPassword: string) => {
     try {
-      const response = await apiClient.post('/confirm-password', {
+      const response = await usersApiClient.post('/confirm-password', {
         email,
         code,
         newPassword

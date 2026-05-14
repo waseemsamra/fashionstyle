@@ -88,7 +88,7 @@ export default function DesignersDiscountCMS() {
         const shouldFlag = selectedProductIds.includes(product.id);
         if (product.isDesignersDiscount !== shouldFlag) {
           try {
-            await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/${product.id}`, {
+            await fetch(`https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products/${product.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',

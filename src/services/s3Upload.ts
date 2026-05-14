@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
-const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || `${API_URL}/generate-upload-url`;
-const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-prod-assets-536217686312';
+const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
+const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod/generate-upload-url';
+const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v';
 const S3_REGION = import.meta.env.VITE_S3_REGION || 'us-east-1';
-const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || `https://${S3_BUCKET}.s3.${S3_REGION}.amazonaws.com`;
+const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com';
 
 export interface UploadResponse {
   success: boolean;

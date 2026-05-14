@@ -1,33 +1,54 @@
 import axios from 'axios';
 
-// ALWAYS use the correct API URL - no proxy in production
-const API_URL = 'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod';
+// Use correct API URLs from environment variables
+const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
+const USERS_API_URL = import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws';
+const ORDERS_API_URL = import.meta.env.VITE_ORDERS_API_URL || 'https://r7pc3n32db.execute-api.us-east-1.amazonaws.com/prod';
+const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod/generate-upload-url';
 
-// Log the API URL being used (for debugging)
-console.log('🔧 API Client initialized with URL:', API_URL);
+// Log the API URLs being used (for debugging)
+console.log('🔧 Products API URL:', API_URL);
+console.log('🔧 Users API URL:', USERS_API_URL);
+console.log('🔧 Orders API URL:', ORDERS_API_URL);
+console.log('🔧 Upload API URL:', UPLOAD_API_URL);
 
 // In-memory cache for products
 let productsCache: any = null;
 let productsCacheTime: number = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Create axios instance with CORS handling
+// Create axios instances for each API base URL
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 10000,
 });
 
-// Add JWT token to requests
-apiClient.interceptors.request.use(
+const usersApiClient = axios.create({
+  baseURL: USERS_API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000,
+});
+
+const ordersApiClient = axios.create({
+  baseURL: ORDERS_API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000,
+});
+
+// Add JWT token to requests for users API
+usersApiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('jwt_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Add Content-Type header for all requests
     if (!config.headers['Content-Type']) {
       config.headers['Content-Type'] = 'application/json';
     }
@@ -38,42 +59,57 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Handle CORS errors
-apiClient.interceptors.response.use(
+// Handle CORS errors for users API
+usersApiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.code === 'ERR_NETWORK' || error.message?.includes('CORS')) {
-      console.warn('CORS error detected. The API Gateway may need CORS configuration.');
+      console.warn('CORS error detected on Users API.');
     }
     return Promise.reject(error);
   }
 );
 
-// API service methods
+// Add JWT token to requests for orders API
+ordersApiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('jwt_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (!config.headers['Content-Type']) {
+      config.headers['Content-Type'] = 'application/json';
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// API service methods (legacy - for backward compatibility)
 export const api = {
-  // Get filters (if endpoint exists)
+  // Get filters
   getFilters: async () => {
     try {
       const response = await apiClient.get('/filters', { timeout: 3000 });
       return response.data;
     } catch (error) {
-      // Silently fail - filters are optional
-      return { 
-        categories: [], 
-        brands: [], 
-        genders: [], 
-        occasions: [], 
-        patterns: [], 
-        materials: [], 
-        colors: [], 
-        sizes: [] 
+      return {
+        categories: [],
+        brands: [],
+        genders: [],
+        occasions: [],
+        patterns: [],
+        materials: [],
+        colors: [],
+        sizes: []
       };
     }
   },
 
   // List products with caching
   listProducts: async (params: { category?: string; brand?: string; nextToken?: string } = {}) => {
-    // Only use cache for requests without pagination
     if (!params.nextToken && !params.category && !params.brand) {
       const now = Date.now();
       if (productsCache && (now - productsCacheTime) < CACHE_DURATION) {
@@ -84,7 +120,6 @@ export const api = {
     const response = await apiClient.get('/products', { params });
     const data = response.data;
 
-    // Cache the response
     if (!params.nextToken && !params.category && !params.brand) {
       productsCache = data;
       productsCacheTime = Date.now();
@@ -105,11 +140,10 @@ export const api = {
     return response.data;
   },
 
-  // Get user profile
+  // Get user profile (uses Users API)
   getUserProfile: async (userId: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
-    const response = await fetch(`${API_URL}/users/${userId}/profile`, {
+    const response = await fetch(`${USERS_API_URL}/users/${userId}/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -117,20 +151,19 @@ export const api = {
       },
       mode: 'cors'
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error || 'Failed to fetch profile');
     }
-    
+
     return await response.json();
   },
 
-  // Update user profile
+  // Update user profile (uses Users API)
   updateUserProfile: async (userId: string, profile: any) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
-    const response = await fetch(`${API_URL}/users/${userId}/profile`, {
+    const response = await fetch(`${USERS_API_URL}/users/${userId}/profile`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -139,19 +172,18 @@ export const api = {
       mode: 'cors',
       body: JSON.stringify(profile)
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       throw new Error(error || 'Failed to update profile');
     }
-    
+
     return await response.json();
   },
 
-  // Create user profile (auto-created on signup)
+  // Create user profile (uses Users API)
   createUserProfile: async (userId: string, email: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     const defaultProfile = {
       userId: userId,
       firstName: '',
@@ -163,8 +195,8 @@ export const api = {
       role: 'customer',
       status: 'active'
     };
-    
-    const response = await fetch(`${API_URL}/users/${userId}/profile`, {
+
+    const response = await fetch(`${USERS_API_URL}/users/${userId}/profile`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -173,22 +205,21 @@ export const api = {
       mode: 'cors',
       body: JSON.stringify(defaultProfile)
     });
-    
+
     if (!response.ok) {
       const error = await response.text();
       console.error('Failed to create profile:', error);
       return { success: true };
     }
-    
+
     return await response.json();
   },
 
-  // Get payment methods
+  // Get payment methods (uses Users API)
   getPaymentMethods: async (userId: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
-      const response = await fetch(`${API_URL}/users/${userId}/payment-methods`, {
+      const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -196,12 +227,12 @@ export const api = {
         },
         mode: 'cors'
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to fetch payment methods');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to get payment methods:', error);
@@ -209,12 +240,11 @@ export const api = {
     }
   },
 
-  // Add payment method
+  // Add payment method (uses Users API)
   addPaymentMethod: async (userId: string, paymentData: any) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
-      const response = await fetch(`${API_URL}/users/${userId}/payment-methods`, {
+      const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -223,12 +253,12 @@ export const api = {
         mode: 'cors',
         body: JSON.stringify(paymentData)
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to add payment method');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to add payment method:', error);
@@ -236,12 +266,11 @@ export const api = {
     }
   },
 
-  // Update payment method
+  // Update payment method (uses Users API)
   updatePaymentMethod: async (userId: string, paymentId: string, paymentData: any) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
-      const response = await fetch(`${API_URL}/users/${userId}/payment-methods/${paymentId}`, {
+      const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods/${paymentId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -250,12 +279,12 @@ export const api = {
         mode: 'cors',
         body: JSON.stringify(paymentData)
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to update payment method');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to update payment method:', error);
@@ -263,12 +292,11 @@ export const api = {
     }
   },
 
-  // Delete payment method
+  // Delete payment method (uses Users API)
   deletePaymentMethod: async (userId: string, paymentId: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
-      const response = await fetch(`${API_URL}/users/${userId}/payment-methods/${paymentId}`, {
+      const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods/${paymentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -276,12 +304,12 @@ export const api = {
         },
         mode: 'cors'
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to delete payment method');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to delete payment method:', error);
@@ -289,12 +317,11 @@ export const api = {
     }
   },
 
-  // Set default payment method
+  // Set default payment method (uses Users API)
   setDefaultPaymentMethod: async (userId: string, paymentId: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
-      const response = await fetch(`${API_URL}/users/${userId}/payment-methods/${paymentId}/default`, {
+      const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods/${paymentId}/default`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -302,12 +329,12 @@ export const api = {
         },
         mode: 'cors'
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to set default payment method');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to set default payment method:', error);
@@ -315,10 +342,9 @@ export const api = {
     }
   },
 
-  // Get admin settings
+  // Get admin settings (uses Products API)
   getAdminSettings: async () => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
       const response = await fetch(`${API_URL}/admin/settings`, {
         method: 'GET',
@@ -328,12 +354,12 @@ export const api = {
         },
         mode: 'cors'
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to fetch settings');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to get admin settings:', error);
@@ -341,10 +367,9 @@ export const api = {
     }
   },
 
-  // Update admin settings
+  // Update admin settings (uses Products API)
   updateAdminSettings: async (settings: any) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
       const response = await fetch(`${API_URL}/admin/settings`, {
         method: 'POST',
@@ -355,12 +380,12 @@ export const api = {
         mode: 'cors',
         body: JSON.stringify(settings)
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to update settings');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to update admin settings:', error);
@@ -368,12 +393,10 @@ export const api = {
     }
   },
 
-  // Get categories from DynamoDB
+  // Get categories (uses Products API)
   getCategories: async () => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
-      // Use settings-v2 endpoint
       const response = await fetch(`${API_URL}/admin/settings-v2/categories`, {
         method: 'GET',
         headers: {
@@ -382,12 +405,12 @@ export const api = {
         },
         mode: 'cors'
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to fetch categories');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to get categories:', error);
@@ -395,10 +418,9 @@ export const api = {
     }
   },
 
-  // Save categories to DynamoDB
+  // Save categories (uses Products API)
   saveCategories: async (categories: any[]) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
       const response = await fetch(`${API_URL}/admin/settings-v2/categories`, {
         method: 'POST',
@@ -409,12 +431,12 @@ export const api = {
         mode: 'cors',
         body: JSON.stringify({ items: categories })
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to save categories');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to save categories:', error);
@@ -422,10 +444,9 @@ export const api = {
     }
   },
 
-  // Get all settings
+  // Get all settings (uses Products API)
   getAllSettings: async () => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
       const response = await fetch(`${API_URL}/admin/settings-v2`, {
         method: 'GET',
@@ -435,12 +456,12 @@ export const api = {
         },
         mode: 'cors'
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to fetch settings');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to get settings:', error);
@@ -448,10 +469,9 @@ export const api = {
     }
   },
 
-  // Save settings section
+  // Save settings section (uses Products API)
   saveSettingsSection: async (section: string, data: any) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     try {
       const response = await fetch(`${API_URL}/admin/settings-v2/${section}`, {
         method: 'POST',
@@ -462,12 +482,12 @@ export const api = {
         mode: 'cors',
         body: JSON.stringify({ data })
       });
-      
+
       if (!response.ok) {
         const error = await response.text();
         throw new Error(error || 'Failed to save settings');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to save settings:', error);
@@ -475,21 +495,20 @@ export const api = {
     }
   },
 
-  // Create order
+  // Create order (uses Orders API)
   createOrder: async (userId: string, orderData: any) => {
-    const response = await apiClient.post(`/users/${userId}/orders`, orderData);
+    const response = await ordersApiClient.post(`/users/${userId}/orders`, orderData);
     return response.data;
   },
 
-  // Get user orders
+  // Get user orders (uses Orders API)
   getUserOrders: async (userId: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    
     console.log('📋 getUserOrders - userId:', userId);
     console.log('📋 getUserOrders - Token present:', !!token);
 
     try {
-      const response = await fetch(`${API_URL}/users/${userId}/orders?t=${Date.now()}`, {
+      const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders?t=${Date.now()}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -511,7 +530,7 @@ export const api = {
       const data = await response.json();
       console.log('📋 getUserOrders - Response:', data);
       console.log('📋 getUserOrders - Orders count:', data.orders?.length || 0);
-      
+
       return data.orders || [];
     } catch (error) {
       console.error('❌ getUserOrders - Fetch error:', error);
@@ -519,43 +538,43 @@ export const api = {
     }
   },
 
-  // Get single order
+  // Get single order (uses Orders API)
   getOrder: async (userId: string, orderId: string) => {
-    const response = await apiClient.get(`/users/${userId}/orders/${orderId}`);
+    const response = await ordersApiClient.get(`/users/${userId}/orders/${orderId}`);
     return response.data;
   },
 
-  // List all users (admin)
+  // Get all users (admin - uses Users API)
   getUsers: async () => {
-    const response = await apiClient.get('/users');
+    const response = await usersApiClient.get('/users');
     return response.data;
   },
 
-  // Get single user (admin)
+  // Get single user (admin - uses Users API)
   getUser: async (userId: string) => {
-    const response = await apiClient.get(`/users/${userId}`);
+    const response = await usersApiClient.get(`/users/${userId}`);
     return response.data;
   },
 
-  // Create user (admin)
+  // Create user (admin - uses Users API)
   createUser: async (userData: { email: string; name: string; role?: string; status?: string }) => {
-    const response = await apiClient.post('/users', userData);
+    const response = await usersApiClient.post('/users', userData);
     return response.data;
   },
 
-  // Update user (admin)
+  // Update user (admin - uses Users API)
   updateUser: async (userId: string, userData: any) => {
-    const response = await apiClient.put(`/users/${userId}`, userData);
+    const response = await usersApiClient.put(`/users/${userId}`, userData);
     return response.data;
   },
 
-  // Delete user (admin)
+  // Delete user (admin - uses Users API)
   deleteUser: async (userId: string) => {
-    const response = await apiClient.delete(`/users/${userId}`);
+    const response = await usersApiClient.delete(`/users/${userId}`);
     return response.data;
   },
 
-  // Get all orders (admin)
+  // Get all orders (admin - uses Orders API)
   getAllOrders: async () => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
 
@@ -569,9 +588,9 @@ export const api = {
     }
 
     try {
-      console.log('📡 API getAllOrders - Fetching from:', `${API_URL}/admin/orders`);
-      
-      const response = await fetch(`${API_URL}/admin/orders`, {
+      console.log('📡 API getAllOrders - Fetching from:', `${ORDERS_API_URL}/admin/orders`);
+
+      const response = await fetch(`${ORDERS_API_URL}/admin/orders`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -582,7 +601,7 @@ export const api = {
       });
 
       console.log('📡 API getAllOrders - Response status:', response.status);
-      
+
       const responseText = await response.text();
       console.log('📡 API getAllOrders - Raw response:', responseText);
 
@@ -605,7 +624,7 @@ export const api = {
     }
   },
 
-  // Get single order by id (admin)
+  // Get single order by id (admin - uses Orders API)
   getOrderById: async (orderId: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     const email = localStorage.getItem('user_email') || 'admin@fashionstore.com';
@@ -616,8 +635,7 @@ export const api = {
     }
 
     try {
-      // Use user endpoint (admin endpoints require IAM auth)
-      const response = await fetch(`${API_URL}/users/${userId}/orders/${orderId}`, {
+      const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders/${orderId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -640,7 +658,7 @@ export const api = {
     }
   },
 
-  // Update order status (admin)
+  // Update order status (admin - uses Orders API)
   updateOrderStatus: async (orderId: string, status: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     const email = localStorage.getItem('user_email') || 'admin@fashionstore.com';
@@ -655,10 +673,9 @@ export const api = {
     }
 
     try {
-      // Use user endpoint (admin endpoints require IAM auth)
       console.log('📡 API updateOrderStatus - Updating order:', orderId, 'to status:', status);
-      
-      const response = await fetch(`${API_URL}/users/${userId}/orders/${orderId}`, {
+
+      const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders/${orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -691,7 +708,7 @@ export const api = {
     }
   },
 
-  // Delete order (admin)
+  // Delete order (admin - uses Orders API)
   deleteOrder: async (orderId: string) => {
     const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     const email = localStorage.getItem('user_email') || 'admin@fashionstore.com';
@@ -702,8 +719,7 @@ export const api = {
     }
 
     try {
-      // Use user endpoint (admin endpoints require IAM auth)
-      const response = await fetch(`${API_URL}/users/${userId}/orders/${orderId}`, {
+      const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders/${orderId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -730,6 +746,5 @@ export const api = {
   }
 };
 
-// Export both apiClient and api for compatibility
-export { apiClient, API_URL };
+export { apiClient, usersApiClient, ordersApiClient, API_URL, USERS_API_URL, ORDERS_API_URL };
 export default apiClient;

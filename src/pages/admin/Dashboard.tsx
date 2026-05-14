@@ -27,6 +27,7 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     description: ''
   });
   const location = useLocation();
+  const ORDERS_API_URL = import.meta.env.VITE_ORDERS_API_URL || 'https://r7pc3n32db.execute-api.us-east-1.amazonaws.com/prod';
 
   useEffect(() => {
     const currentTab = new URLSearchParams(location.search).get('tab');
@@ -687,9 +688,10 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     try {
       console.log('🔄 Updating order status:', order.orderId, 'to', newStatus);
       
-      // Update in DynamoDB via API
-      const userId = order.userId || order.PK?.replace('USER#', '');
-      const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders/${order.orderId}`, {
+// Update in DynamoDB via API
+       const userId = order.userId || order.PK?.replace('USER#', '');
+
+       const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders/${order.orderId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
@@ -720,12 +722,13 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
       try {
         console.log('🗑️ Deleting order:', order.orderId);
         
-        // Delete from DynamoDB via API
-        const userId = order.userId || order.PK?.replace('USER#', '');
-        const response = await fetch(`https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/users/${userId}/orders/${order.orderId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
+// Delete from DynamoDB via API
+         const userId = order.userId || order.PK?.replace('USER#', '');
+
+         const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders/${order.orderId}`, {
+           method: 'DELETE',
+           headers: {
+             'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`
           }
         });
         

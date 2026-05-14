@@ -79,7 +79,7 @@ export default function FeaturedCollection() {
       
       // Send batch update request
       const response = await fetch(
-        'https://xpyh8srop0.execute-api.us-east-1.amazonaws.com/prod/products/batch-featured',
+        'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products/batch-featured',
         {
           method: 'POST',
           headers: {

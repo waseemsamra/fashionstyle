@@ -1,4 +1,4 @@
-import { apiClient } from './api';
+import { ordersApiClient } from './api';
 
 export interface OrderItem {
   id?: string;
@@ -42,18 +42,17 @@ export const ordersService = {
     try {
       console.log('📦 Creating order for userId:', userId);
       console.log('📦 Order data:', orderData);
-      
+
       const token = localStorage.getItem('jwt_token');
       console.log('📦 Token present:', !!token);
-      
-      // userId should be the Cognito sub (unique ID) or email-based ID
-      const response = await apiClient.post(`/users/${userId}/orders`, orderData, {
+
+      const response = await ordersApiClient.post(`/users/${userId}/orders`, orderData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      
+
       console.log('✅ Order created:', response.data);
       return response.data;
     } catch (error: any) {
@@ -67,7 +66,7 @@ export const ordersService = {
 
   // Get all orders for a user
   getUserOrders: async (userId: string): Promise<Order[]> => {
-    const response = await apiClient.get(`/users/${userId}/orders`);
+    const response = await ordersApiClient.get(`/users/${userId}/orders`);
     return response.data.orders || [];
   },
 
@@ -75,12 +74,12 @@ export const ordersService = {
   getCurrentUserOrders: async (): Promise<Order[]> => {
     const email = localStorage.getItem('user_email');
     if (!email) return [];
-    
+
     // First get user by email to find userId
     const { userService } = await import('./user');
     const users = await userService.getUserByEmail(email);
     if (users.length === 0) return [];
-    
+
     const userId = users[0].userId;
     return ordersService.getUserOrders(userId);
   }
