@@ -73,4 +73,4 @@ class UserService {
     async getCoupons() { return this.request('/coupons'); }
 }
 
-export default new UserService();
+export const userService = new UserService();
