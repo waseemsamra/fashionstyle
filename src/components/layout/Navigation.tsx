@@ -1,4 +1,5 @@
-import { toCDNUrl } from '@/utils/productImage';import { useState, useEffect, useMemo } from 'react';
+import { toCDNUrl } from '@/utils/productImage';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { ShoppingBag, Menu, X, Search, User } from 'lucide-react';
