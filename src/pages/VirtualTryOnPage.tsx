@@ -1,4 +1,5 @@
-import { toCDNUrl } from '@/utils/productImage';import { useState, useRef } from 'react';
+import { toCDNUrl } from '@/utils/productImage';
+import { useState, useRef } from 'react';
 import { Upload, X, RotateCcw, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';

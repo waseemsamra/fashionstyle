@@ -1,4 +1,5 @@
-import { toCDNUrl } from '@/utils/productImage';import { useState, useEffect } from 'react';
+import { toCDNUrl } from '@/utils/productImage';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
