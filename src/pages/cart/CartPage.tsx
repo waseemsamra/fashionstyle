@@ -1,4 +1,5 @@
-import { toCDNUrl } from '@/utils/productImage';import { useCart, useUpdateCartItem, useRemoveFromCart, useClearCart, useCartTotals } from '@/hooks/useCart';
+import { toCDNUrl } from '@/utils/productImage';
+import { useCart, useUpdateCartItem, useRemoveFromCart, useClearCart, useCartTotals } from '@/hooks/useCart';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, AlertCircle, Truck, Shield, CreditCard } from 'lucide-react';

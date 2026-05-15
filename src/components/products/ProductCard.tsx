@@ -1,4 +1,5 @@
-import { toCDNUrl } from '@/utils/productImage';import { Link } from 'react-router-dom';
+import { toCDNUrl } from '@/utils/productImage';
+import { Link } from 'react-router-dom';
 import { ShoppingCart, Star } from 'lucide-react';
 import { WishlistButton } from '@/components/wishlist/WishlistButton';
 import LazyImage from '@/components/ui/LazyImage';
