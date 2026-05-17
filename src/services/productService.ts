@@ -169,7 +169,7 @@ export const updateProduct = async (product: Product): Promise<Product> => {
       throw new Error('Product ID is required for update');
     }
 
-    const response = await fetch(`${productsApi}/products/${product.id}`, {
+    const response = await fetch(`${productsApi}/${product.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
