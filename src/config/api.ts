@@ -15,8 +15,8 @@ export const API_CONFIG = {
   productsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products',
   reviewsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/reviews',
   
-  // Users API (separate Lambda function - working endpoint)
-  usersApi: import.meta.env.VITE_USERS_API_URL || 'https://ad7bakhxl3fphzxyxrekrlrlt40asoqf.lambda-url.us-east-1.on.aws',
+    // Users API (separate Lambda function - working endpoint)
+    usersApi: import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws',
   
   // Orders API (API Gateway URL - CORS enabled)
   ordersApi: import.meta.env.VITE_ORDERS_API_URL || 'https://r7pc3n32db.execute-api.us-east-1.amazonaws.com/prod',
