@@ -8,12 +8,12 @@ export const API_CONFIG = {
   // Collections API (New - For Featured Products)
   collectionsApiUrl: 'https://mjkgf6edxstyzcohlg2agkoqwu0cxwsr.lambda-url.us-east-1.on.aws/',
   
-  // Individual endpoints using main API
-  brandsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/brands',
-  collectionsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/collections',
-  categoriesApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/categories',
-  productsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products',
-  reviewsApi: 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/reviews',
+    // Individual endpoints using main API
+    brandsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/brands',
+    collectionsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/collections',
+    categoriesApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/categories',
+    productsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/products',
+    reviewsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/reviews',
   
     // Users API (separate Lambda function - working endpoint)
     usersApi: import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws',
@@ -21,8 +21,8 @@ export const API_CONFIG = {
   // Orders API (API Gateway URL - CORS enabled)
   ordersApi: import.meta.env.VITE_ORDERS_API_URL || 'https://r7pc3n32db.execute-api.us-east-1.amazonaws.com/prod',
   
-  // Base API URL (fallback) - now uses unified endpoint
-  baseApiUrl: import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws',
+    // Base API URL (fallback) - now uses unified endpoint
+    baseApiUrl: import.meta.env.VITE_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws',
   
   // S3/Storage endpoints
   s3Bucket: import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v',

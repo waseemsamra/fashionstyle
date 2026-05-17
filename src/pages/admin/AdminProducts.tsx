@@ -460,15 +460,15 @@ export default function AdminProducts() {
     }
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || 
-      (product.category && product.category.toLowerCase() === filterCategory.toLowerCase());
-    const matchesBrand = filterBrand === 'all' || 
-      (product.brand && product.brand.toLowerCase() === filterBrand.toLowerCase());
-
-    return matchesSearch && matchesCategory && matchesBrand;
-  });
+   const filteredProducts = products.filter(product => {
+     const matchesSearch = (product.name || '').toLowerCase().includes(searchTerm.toLowerCase());
+     const matchesCategory = filterCategory === 'all' || 
+       (product.category && product.category.toLowerCase() === filterCategory.toLowerCase());
+     const matchesBrand = filterBrand === 'all' || 
+       (product.brand && product.brand.toLowerCase() === filterBrand.toLowerCase());
+ 
+     return matchesSearch && matchesCategory && matchesBrand;
+   });
 
   // Pagination logic
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
