@@ -12,7 +12,7 @@ export const API_CONFIG = {
     brandsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/brands',
     collectionsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/collections',
     categoriesApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/categories',
-    productsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/products',
+    productsApi: 'https://c7qdi4zphneaaj7coj46b52vke0fddqr.lambda-url.us-east-1.on.aws',
     reviewsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/reviews',
   
     // Users API (separate Lambda function - working endpoint)
