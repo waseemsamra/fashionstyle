@@ -3,8 +3,19 @@ import { fetchAuthSession } from 'aws-amplify/auth';
 export const checkAdminAccess = async (): Promise<boolean> => {
   try {
     // First check if user has admin email (simple check)
-    const email = localStorage.getItem('user_email');
+    let email = localStorage.getItem('user_email');
     const jwtToken = localStorage.getItem('jwt_token');
+    
+    // If email not in localStorage, try to extract from JWT token
+    if (!email && jwtToken) {
+      try {
+        const tokenPayload = JSON.parse(atob(jwtToken.split('.')[1]));
+        email = tokenPayload.email || tokenPayload['cognito:username'];
+        console.log('🔍 Extracted email from JWT token:', email);
+      } catch (e) {
+        console.log('⚠️ Could not decode JWT token to extract email');
+      }
+    }
     
     console.log('🔍 Checking admin access for email:', email);
 
