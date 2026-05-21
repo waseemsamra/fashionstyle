@@ -3,7 +3,7 @@ import { cache, CACHE_KEYS, getCollectionCacheKey } from './cache';
 
 import { API_CONFIG } from '../config/api';
 const API_URL = API_CONFIG.baseApiUrl;
-const PRODUCTS_API = API_CONFIG.productsApi;
+export const PRODUCTS_API = API_CONFIG.productsApi;
 
 // API Client with all methods for backwards compatibility
 export const apiClient = {
@@ -162,7 +162,7 @@ export const api = {
       }
 
       const queryString = queryParams.toString();
-      const url = `${API_URL}/products${queryString ? `?${queryString}` : ''}`;
+      const url = `${PRODUCTS_API}/?${queryString}`;
       
       const response = await fetch(url, {
         credentials: 'omit',
@@ -481,7 +481,7 @@ export const api = {
 
   async getProduct(id: string) {
     try {
-      const response = await fetch(`${productsApi}/?ids=${encodeURIComponent(id)}`, {
+      const response = await fetch(`${PRODUCTS_API}/?ids=${encodeURIComponent(id)}`, {
         credentials: 'omit',
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -501,7 +501,7 @@ export const api = {
       if (params?.page) q.set('page', String(params.page));
       if (params?.brand) q.set('brand', params.brand);
       if (params?.category) q.set('category', params.category);
-      const response = await fetch(`${productsApi}/?${q.toString()}`);
+      const response = await fetch(`${PRODUCTS_API}/?${q.toString()}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     } catch (error) {

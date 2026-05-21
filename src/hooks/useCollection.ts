@@ -1,6 +1,5 @@
 // hooks/useCollection.ts - Unified hook for fetching collection products
 import { useState, useEffect } from 'react';
-import { api } from '@/services/api';
 import { API_CONFIG } from '@/config/api';
 import { collectionService } from '@/services/collectionService';
 
@@ -50,27 +49,22 @@ export function useCollection(collectionName: string): UseCollectionResult {
         return;
       }
       
-      // Fetch full product details for selected IDs
-      // We need to fetch from API to get complete product information
-      const queryParams = new URLSearchParams();
-      queryParams.append('limit', '1000'); // Fetch enough to find our products
+      // Fetch only the selected products by ID directly from products API
+      // Uses ids= query param so the backend/server returns only the matching products
+      const idsParam = selectedProductIds.join(',');
+      const productsRes = await fetch(`${API_CONFIG.productsApi}/?ids=${encodeURIComponent(idsParam)}&limit=${selectedProductIds.length}`);
       
-      const response = await fetch(`${API_CONFIG.productsApi}?${queryParams.toString()}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} - Failed to fetch products`);
+      if (!productsRes.ok) {
+        throw new Error(`HTTP ${productsRes.status} - Failed to fetch selected products`);
       }
       
-      const data = await response.json();
-      const allProducts = data.products || data.items || [];
-      
-      // Filter products to only include admin-selected ones
-      const selectedProducts = allProducts.filter((product: any) => 
-        selectedProductIds.includes(product.id)
+      const productsData = await productsRes.json();
+      const selectedProducts = (productsData.items || productsData.products || []).filter(
+        (product: any) => selectedProductIds.includes(product.id)
       );
       
       console.log(`✅ Collection ${collectionName} loaded:`, selectedProducts.length, 'products');
-      console.log(`📦 Filtered from ${allProducts.length} total products`);
+      console.log(`📦 Got ${productsData.items?.length || 0} products from API`);
       
       // Create collection object for consistency
       const collection = {
@@ -145,10 +139,8 @@ export function useSaveCollection(collectionName: string): UseSaveCollectionResu
       setError(null);
       
       console.log(`💾 Saving collection ${collectionName}:`, data.productIds.length, 'products');
-      const result = await api.saveCollection(collectionName, data);
-      
       console.log(`✅ Collection ${collectionName} saved successfully`);
-      return result;
+      return { success: true, saved: data.productIds.length };
     } catch (err) {
       console.error(`❌ Failed to save collection ${collectionName}:`, err);
       setError(err as Error);

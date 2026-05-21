@@ -10,7 +10,7 @@ import LazyImage from '@/components/ui/LazyImage';
 import { currencyService } from '@/services/currencyService';
 
 import { API_CONFIG } from '../../config/api';
-const API_URL = API_CONFIG.baseApiUrl;
+const PRODUCTS_API = API_CONFIG.productsApi;
 const CATEGORIES_API_URL = API_CONFIG.categoriesApi;
 const PRODUCTS_PER_PAGE = 50;
 
@@ -100,7 +100,7 @@ export default function Shop() {
         params.append('order', filters.sortOrder);
       }
       
-      const url = `${API_URL}/products?${params.toString()}`;
+      const url = `${PRODUCTS_API}/?${params.toString()}`;
       console.log('📡 API URL:', url);
       
       const res = await fetch(url);
@@ -232,8 +232,8 @@ export default function Shop() {
   useEffect(() => {
     console.log('🏢 Fetching brands from dedicated brands API...');
     
-    // Fetch brands from dedicated endpoint
-    fetch(`${API_URL}/brands`)
+     // Fetch brands from dedicated endpoint
+    fetch(`${API_CONFIG.brandsApi}`)
       .then(r => r.json())
       .then(brandsData => {
         const brands = Array.isArray(brandsData) ? brandsData : brandsData.brands || [];
@@ -244,7 +244,7 @@ export default function Shop() {
       .catch(err => console.error('Failed to fetch brands from brands API:', err));
 
     // Fetch products separately
-    fetch(`${API_URL}/products?limit=1000`)
+    fetch(`${PRODUCTS_API}/?limit=1000`)
       .then(r => r.json())
       .then(data => {
         const products = data.items || [];
