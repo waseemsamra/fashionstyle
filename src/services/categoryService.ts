@@ -17,7 +17,7 @@ export const categoryService = {
     try {
       console.log('📂 Fetching categories from API...');
       
-      const response = await fetch(`${API_URL}/categories`);
+      const response = await fetch(API_URL);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
