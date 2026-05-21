@@ -13,7 +13,7 @@ export const API_CONFIG = {
     collectionsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/collections',
     categoriesApi: import.meta.env.VITE_CATEGORIES_API_URL || 'https://8wzvwch1pi.execute-api.us-east-1.amazonaws.com/prod/categories',
     productsApi: import.meta.env.VITE_PRODUCTS_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products',
-    productsUpdateApi: import.meta.env.VITE_PRODUCTS_UPDATE_API_URL || 'https://ei7tr41g07.execute-api.us-east-1.amazonaws.com/prod/products',
+    productsUpdateApi: import.meta.env.VITE_PRODUCTS_UPDATE_API_URL || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod/products',
     reviewsApi: 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/reviews',
   
     // Users API (separate Lambda function - working endpoint)
