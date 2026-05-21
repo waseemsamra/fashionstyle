@@ -174,7 +174,15 @@ export const updateProduct = async (product: Product): Promise<Product> => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(product),
+      body: JSON.stringify({
+        productId: product.id,
+        productName: product.name,
+        price: product.price,
+        stock: product.stock,
+        brand: product.brand,
+        category: product.category,
+        description: product.description,
+      }),
     });
     
     if (!response.ok) {
