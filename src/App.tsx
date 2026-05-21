@@ -72,15 +72,15 @@ function Layout() {
 
   // Prefetch user data when user is authenticated
   useEffect(() => {
-    if (user?.id) {
+    if (user?.email) {
       console.log('👤 Prefetching user data...');
 
       // Prefetch user profile
       queryClient.prefetchQuery({
-        queryKey: ['user-profile', user.id],
+        queryKey: ['user-profile', user.email],
         queryFn: async () => {
           try {
-            const profile = await userService.getProfile(user.id);
+            const profile = await userService.getProfile(user.email);
             console.log('✅ Prefetched user profile');
             return profile;
           } catch (error) {
@@ -93,10 +93,10 @@ function Layout() {
 
       // Prefetch user addresses
       queryClient.prefetchQuery({
-        queryKey: ['user-addresses', user.id],
+        queryKey: ['user-addresses', user.email],
         queryFn: async () => {
           try {
-            const addresses = await userService.getAddresses(user.id);
+            const addresses = await userService.getAddresses(user.email);
             console.log('✅ Prefetched', addresses.length, 'addresses');
             return addresses;
           } catch (error) {
@@ -122,10 +122,10 @@ function Layout() {
       
       // Prefetch user orders
       queryClient.prefetchQuery({
-        queryKey: ['user-orders', user.id],
+        queryKey: ['user-orders', user.email],
         queryFn: async () => {
           try {
-            const orders = await userService.getOrders(user.id);
+            const orders = await userService.getOrders(user.email);
             console.log('✅ Prefetched', orders.length, 'orders');
             return orders;
           } catch (error) {
@@ -143,17 +143,17 @@ function Layout() {
       };
 
       queryClient.prefetchInfiniteQuery({
-        queryKey: ['orders', user.id, last30Days],
+        queryKey: ['orders', user.email, last30Days],
         queryFn: async () => {
           try {
             const { ordersService } = await import('@/services/ordersService');
-            const data = await ordersService.getUserOrders(user.id, last30Days);
+            const data = await ordersService.getUserOrders(user.email, last30Days);
             console.log('✅ Prefetched orders from last 30 days');
 
             // Calculate and cache order stats
             if (data.orders && data.orders.length > 0) {
               const stats = calculateOrderStats(data.orders);
-              queryClient.setQueryData(['order-stats', user.id], stats);
+              queryClient.setQueryData(['order-stats', user.email], stats);
               console.log('✅ Cached order stats');
             }
 

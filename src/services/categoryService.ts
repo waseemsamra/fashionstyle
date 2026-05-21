@@ -1,6 +1,6 @@
 // Fetch categories from the dedicated categories API endpoint
 import { API_CONFIG } from '../config/api';
-const API_URL = API_CONFIG.baseApiUrl;
+const API_URL = API_CONFIG.categoriesApi;
 
 export interface Category {
   id: string;

@@ -32,10 +32,12 @@ export function decodeJWT(token: string): DecodedToken | null {
     console.log('🔍 Available JWT claims:', Object.keys(parsed));
 
     // Try multiple possible email fields
+    const storedEmail = localStorage.getItem('user_email');
     const email = parsed.email || 
                   parsed['cognito:username'] || 
                   parsed['username'] ||
-                  parsed.sub ||
+                  (typeof parsed.sub === 'string' && parsed.sub.includes('@') ? parsed.sub : null) ||
+                  storedEmail ||
                   'user@example.com';
 
     console.log('🔍 Extracted email from JWT:', email);

@@ -11,12 +11,13 @@ import { currencyService } from '@/services/currencyService';
 
 import { API_CONFIG } from '../../config/api';
 const API_URL = API_CONFIG.baseApiUrl;
+const CATEGORIES_API_URL = API_CONFIG.categoriesApi;
 const PRODUCTS_PER_PAGE = 50;
 
 // Fetch categories directly from API
 async function fetchCategories() {
   try {
-    const res = await fetch(`${API_URL}/categories`);
+    const res = await fetch(`${CATEGORIES_API_URL}`);
     if (!res.ok) throw new Error('Failed to fetch categories');
     const data = await res.json();
     return Array.isArray(data) ? data : data.categories || [];

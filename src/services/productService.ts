@@ -137,7 +137,7 @@ export const createProduct = async (product: Product): Promise<Product> => {
   try {
     console.log('📦 Creating product:', product.name);
 
-    const response = await fetch(`${productsApi}/products`, {
+    const response = await fetch(`${productsApi}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -205,7 +205,7 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
   try {
     console.log('🗑️ Attempting to delete product:', productId);
 
-    const response = await fetch(`${productsApi}/products/${productId}`, {
+    const response = await fetch(`${productsApi}/${productId}`, {
       method: 'DELETE',
     });
     
