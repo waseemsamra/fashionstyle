@@ -1,4 +1,4 @@
-import { apiClient } from './api';
+import { api } from './api';
 
 export interface Product {
   id: string;
@@ -12,39 +12,44 @@ export interface Product {
   image?: string;
 }
 
+function toProduct(raw: any): Product {
+  return {
+    id: String(raw.id || ''),
+    name: raw.name || '',
+    price: raw.price || 0,
+    category: raw.category || '',
+    brand: raw.brand || '',
+    occasion: raw.occasion || raw.occasions?.[0] || '',
+    pattern: raw.pattern || raw.patterns?.[0] || '',
+    material: raw.material || raw.materials?.[0] || '',
+    image: raw.image || raw.images?.[0] || '',
+  };
+}
+
 export const productsService = {
-  // Get all products
-  getAllProducts: async (): Promise<Product[]> => {
-    const response = await apiClient.get('/products');
-    return response.data.items || response.data.products || response.data || [];
+  // Get all products from the read-only products API
+  getAllProducts: async (params?: { limit?: number; page?: number }): Promise<Product[]> => {
+    const res = await api.getProducts(params);
+    return (res.items || []).map(toProduct);
   },
 
-  // Get product by ID
+  // Get a single product by ID
   getProductById: async (id: string): Promise<Product | null> => {
-    try {
-      // Try to fetch single product directly
-      const response = await apiClient.get(`/products/${id}`);
-      // Handle different response formats: { item: ... }, { product: ... }, or direct object
-      const product = response.data.item || response.data.product || response.data;
-      return product || null;
-    } catch (error) {
-      // Fallback to finding from list
-      const products = await productsService.getAllProducts();
-      return products.find(p => p.id === id) || null;
-    }
+    const product = await api.getProduct(id);
+    return product ? toProduct(product) : null;
   },
 
-  // Get products by category
+  // Get products by category (server-side filter)
   getProductsByCategory: async (category: string): Promise<Product[]> => {
-    const products = await productsService.getAllProducts();
-    return products.filter(p => p.category.toLowerCase() === category.toLowerCase());
+    const res = await api.getProducts({ category });
+    return (res.items || []).map(toProduct);
   },
 
-  // Get products by brand
+  // Get products by brand (server-side filter)
   getProductsByBrand: async (brand: string): Promise<Product[]> => {
-    const products = await productsService.getAllProducts();
-    return products.filter(p => p.brand.toLowerCase() === brand.toLowerCase());
-  }
+    const res = await api.getProducts({ brand });
+    return (res.items || []).map(toProduct);
+  },
 };
 
 export default productsService;

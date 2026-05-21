@@ -9,7 +9,6 @@ import { getProductUrl } from '@/utils/productUrl';
 import { toCDNUrl } from '@/utils/productImage';
 
 import { API_CONFIG } from '../../config/api';
-const API_URL = API_CONFIG.categoriesApi;
 
 interface Category {
   name: string;
@@ -97,7 +96,7 @@ export default function AdminCategories() {
 
     try {
       // Save category metadata (image, description)
-      const saveRes = await fetch(API_URL, {
+      const saveRes = await fetch(API_CONFIG.categoriesApi, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,7 +115,7 @@ export default function AdminCategories() {
 
         let updated = 0;
         for (const product of productsToUpdate) {
-          const response = await fetch(`${API_CONFIG.productsApi}`, {
+          const response = await fetch(`${API_CONFIG.productsUpdateApi}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...product, category: editName }),
@@ -151,7 +150,7 @@ export default function AdminCategories() {
 
       let updated = 0;
       for (const product of productsInCategory) {
-        const response = await fetch(`${API_URL}/products`, {
+        const response = await fetch(`${API_CONFIG.productsUpdateApi}/${product.id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...product, category: '' }),

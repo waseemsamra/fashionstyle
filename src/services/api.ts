@@ -3,6 +3,7 @@ import { cache, CACHE_KEYS, getCollectionCacheKey } from './cache';
 
 import { API_CONFIG } from '../config/api';
 const API_URL = API_CONFIG.baseApiUrl;
+const PRODUCTS_API = API_CONFIG.productsApi;
 
 // API Client with all methods for backwards compatibility
 export const apiClient = {
@@ -480,7 +481,7 @@ export const api = {
 
   async getProduct(id: string) {
     try {
-      const response = await fetch(`${API_URL}/products`, {
+      const response = await fetch(`${productsApi}/?ids=${encodeURIComponent(id)}`, {
         credentials: 'omit',
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -490,6 +491,22 @@ export const api = {
     } catch (error) {
       console.error('❌ API Error (getProduct):', error);
       return null;
+    }
+  },
+
+  async getProducts(params?: { limit?: number; page?: number; brand?: string; category?: string }) {
+    try {
+      const q = new URLSearchParams();
+      if (params?.limit) q.set('limit', String(params.limit));
+      if (params?.page) q.set('page', String(params.page));
+      if (params?.brand) q.set('brand', params.brand);
+      if (params?.category) q.set('category', params.category);
+      const response = await fetch(`${productsApi}/?${q.toString()}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    } catch (error) {
+      console.error('❌ API Error (getProducts):', error);
+      return { items: [], total: 0 };
     }
   },
   

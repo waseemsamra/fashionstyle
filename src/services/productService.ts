@@ -1,4 +1,4 @@
-import { productsApi } from '../config/api';
+import { productsApi, productsUpdateApi } from '../config/api';
 import { api } from './api';
 
 export interface Product {
@@ -55,9 +55,7 @@ export const loadAllProducts = async (
     if (filters?.isNew) firstParams.append('isNew', 'true');
 
     // First request to get total count
-    const firstResponse = await fetch(
-      `${import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws'}/products?${firstParams.toString()}`
-    );
+    const firstResponse = await fetch(`${productsApi}/?${firstParams.toString()}`);
     const firstData = await firstResponse.json();
     totalProducts = firstData.total || firstData.count || 0;
 
@@ -77,7 +75,7 @@ export const loadAllProducts = async (
       if (filters?.isSale) params.append('isSale', 'true');
       if (filters?.isNew) params.append('isNew', 'true');
 
-      const url = `${import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws'}/products?${params.toString()}`;
+      const url = `${productsApi}/?${params.toString()}`;
 
       const response = await fetch(url);
       if (!response.ok) {
@@ -137,7 +135,7 @@ export const createProduct = async (product: Product): Promise<Product> => {
   try {
     console.log('📦 Creating product:', product.name);
 
-    const response = await fetch(`${productsApi}`, {
+    const response = await fetch(`${productsUpdateApi}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -169,7 +167,7 @@ export const updateProduct = async (product: Product): Promise<Product> => {
       throw new Error('Product ID is required for update');
     }
 
-    const response = await fetch(`${productsApi}/${product.id}`, {
+    const response = await fetch(`${productsUpdateApi}/${product.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -205,7 +203,7 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
   try {
     console.log('🗑️ Attempting to delete product:', productId);
 
-    const response = await fetch(`${productsApi}/${productId}`, {
+    const response = await fetch(`${productsUpdateApi}/${productId}`, {
       method: 'DELETE',
     });
     
