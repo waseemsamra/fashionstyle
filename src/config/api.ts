@@ -20,7 +20,7 @@ export const API_CONFIG = {
     usersApi: import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws',
   
   // Orders API (API Gateway URL - CORS enabled)
-  ordersApi: import.meta.env.VITE_ORDERS_API_URL || 'https://r7pc3n32db.execute-api.us-east-1.amazonaws.com/prod',
+  ordersApi: import.meta.env.VITE_ORDERS_API_URL || 'https://uowk1q5r5a.execute-api.us-east-1.amazonaws.com/prod',
   
     // Base API URL (fallback) - now uses unified endpoint
     baseApiUrl: import.meta.env.VITE_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws',
