@@ -32,15 +32,15 @@ export default defineConfig({
     include: ['react', 'react-dom', 'react-router-dom'],
   },
   server: {
-    port: 5173,  // Changed to default Vite port
+    port: 5173,
+    host: '0.0.0.0',
     proxy: {
-      '/api': {
-        target: 'https://wthvt3ydseyko2cb5rzxqyfute0vlwpi.lambda-url.us-east-1.on.aws',
+      '/api/orders': {
+        target: 'https://ooii1l1zf9.execute-api.us-east-1.amazonaws.com/prod',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/api\/orders/, ''),
         configure: (proxy, _options) => {
           proxy.on('proxyRes', (proxyRes, _req, _res) => {
-            // Add CORS headers to all proxied responses
             proxyRes.headers['Access-Control-Allow-Origin'] = '*';
             proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS';
             proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization';
