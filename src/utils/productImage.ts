@@ -1,5 +1,5 @@
 // S3 Bucket configuration
-const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || 'https://fashionstore-prod-assets-536217686312.s3.us-east-1.amazonaws.com';
+const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || import.meta.env.VITE_CDN_URL || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com';
 
 // Helper function to get product image with S3 fallback
 export const getProductImage = (product: { image?: string; name?: string; id?: string | number }, size: string = '300x400'): string => {

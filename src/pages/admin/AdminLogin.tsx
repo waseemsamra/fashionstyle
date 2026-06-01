@@ -17,8 +17,9 @@ const handleSubmit = async (e: React.FormEvent) => {
     try {
       console.log('🔐 Admin login attempt for:', credentials.username);
 
-      // Use environment variable for API URL
-      const apiUrl = import.meta.env.VITE_USERS_API_URL + '/auth/signin' || 'https://7uymscqv6xcutr5f6b2yvcgqri0wnkuj.lambda-url.us-east-1.on.aws/auth/signin';
+      // Use Admin API for auth endpoint
+      const adminApiUrl = import.meta.env.VITE_ADMIN_API || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
+      const apiUrl = adminApiUrl + '/auth/signin';
       
       console.log('📡 Calling API:', apiUrl);
       const response = await fetch(
