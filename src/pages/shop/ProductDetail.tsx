@@ -18,10 +18,18 @@ export default function ProductDetail() {
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [sizeGuideUnit, setSizeGuideUnit] = useState<'inch' | 'cm'>('cm');
   const [sizeGuideTab, setSizeGuideTab] = useState<'size' | 'measuring' | 'how-to-measure'>('size');
-  const productId = getProductIdFromSlug(slug);
+const [selectedImage, setSelectedImage] = useState<string>('');
+   const productId = getProductIdFromSlug(slug);
 
-  // Use React Query with caching
-  const { data: product, isLoading, error } = useProduct(productId);
+   // Use React Query with caching
+   const { data: product, isLoading, error } = useProduct(productId);
+
+   // Set selected image when product loads
+   useEffect(() => {
+     if (product) {
+       setSelectedImage(product.images?.[0] || product.image || '');
+     }
+   }, [product]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -99,7 +107,7 @@ export default function ProductDetail() {
             <div className="space-y-4">
               {/* Main Image */}
               <LazyImage
-                src={product.images?.[0] || product.image}
+                src={selectedImage}
                 alt={product.name}
                 productName={product.name}
                 productId={product.id}
@@ -113,8 +121,9 @@ export default function ProductDetail() {
                       key={index}
                       src={img}
                       alt={`${product.name} - view ${index + 1}`}
-                      className="w-20 h-20 object-cover rounded cursor-pointer border-2 border-transparent hover:border-gold"
+                      className={`w-20 h-20 object-cover rounded cursor-pointer border-2 transition ${selectedImage === img ? 'border-gold' : 'border-transparent hover:border-gold'}`}
                       loading="lazy"
+                      onClick={() => setSelectedImage(img)}
                     />
                   ))}
                 </div>
@@ -252,10 +261,10 @@ export default function ProductDetail() {
             </div>
 
             <div className="space-y-3">
-              <VirtualTryOn 
-                productImage={product.images?.[0] || product.image}
-                productName={product.name} 
-              />
+<VirtualTryOn 
+                 productImage={selectedImage}
+                 productName={product.name} 
+               />
               
               <Button
                 onClick={handleAddToCart}
