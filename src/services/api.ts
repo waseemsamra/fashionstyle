@@ -5,10 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL || 'https://7uymscqv6xcutr5f6b2yvcgqri0wnkuj.lambda-url.us-east-1.on.aws';
 const ORDERS_API_URL = import.meta.env.VITE_ORDERS_API_URL || 'https://ooii1l1zf9.execute-api.us-east-1.amazonaws.com/prod/orders';
 const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod/generate-upload-url';
-const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
 const CATEGORIES_API = import.meta.env.VITE_CATEGORIES_API || 'https://8wzvwch1pi.execute-api.us-east-1.amazonaws.com/prod/categories';
-const COLLECTIONS_API_URL = import.meta.env.VITE_COLLECTIONS_API_URL || 'https://apzazvqld2.execute-api.us-east-1.amazonaws.com/prod/collections';
-const PRODUCTS_UPDATE_API = import.meta.env.VITE_PRODUCTS_UPDATE_API || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod/products';
 const SETTINGS_API = import.meta.env.VITE_SETTINGS_API || 'https://c1ntcc0rt6.execute-api.us-east-1.amazonaws.com/prod/settings';
 
 // Log the API URLs being used (for debugging)
