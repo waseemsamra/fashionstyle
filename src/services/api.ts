@@ -42,21 +42,14 @@ const ordersApiClient = axios.create({
   timeout: 10000,
 });
 
-// Add JWT token to requests for users API
 usersApiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('jwt_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
     if (!config.headers['Content-Type']) {
       config.headers['Content-Type'] = 'application/json';
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Handle CORS errors for users API
@@ -70,21 +63,14 @@ usersApiClient.interceptors.response.use(
   }
 );
 
-// Add JWT token to requests for orders API
 ordersApiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('jwt_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
     if (!config.headers['Content-Type']) {
       config.headers['Content-Type'] = 'application/json';
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // API service methods (legacy - for backward compatibility)
@@ -141,12 +127,10 @@ export const api = {
   },
 
   // Get user profile (uses Users API)
-  getUserProfile: async (userId: string) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
+getUserProfile: async (userId: string) => {
     const response = await fetch(`${USERS_API_URL}/users/${userId}/profile`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       mode: 'cors'
@@ -162,11 +146,9 @@ export const api = {
 
   // Update user profile (uses Users API)
   updateUserProfile: async (userId: string, profile: any) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     const response = await fetch(`${USERS_API_URL}/users/${userId}/profile`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
+headers: {
         'Content-Type': 'application/json'
       },
       mode: 'cors',
@@ -183,7 +165,6 @@ export const api = {
 
   // Create user profile (uses Users API)
   createUserProfile: async (userId: string, email: string) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     const defaultProfile = {
       userId: userId,
       firstName: '',
@@ -198,8 +179,7 @@ export const api = {
 
     const response = await fetch(`${USERS_API_URL}/users/${userId}/profile`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
+headers: {
         'Content-Type': 'application/json'
       },
       mode: 'cors',
@@ -217,12 +197,11 @@ export const api = {
 
   // Get payment methods (uses Users API)
   getPaymentMethods: async (userId: string) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors'
@@ -242,12 +221,11 @@ export const api = {
 
   // Add payment method (uses Users API)
   addPaymentMethod: async (userId: string, paymentData: any) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
@@ -268,12 +246,11 @@ export const api = {
 
   // Update payment method (uses Users API)
   updatePaymentMethod: async (userId: string, paymentId: string, paymentData: any) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods/${paymentId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
@@ -294,12 +271,11 @@ export const api = {
 
   // Delete payment method (uses Users API)
   deletePaymentMethod: async (userId: string, paymentId: string) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods/${paymentId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors'
@@ -319,12 +295,11 @@ export const api = {
 
   // Set default payment method (uses Users API)
   setDefaultPaymentMethod: async (userId: string, paymentId: string) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${USERS_API_URL}/users/${userId}/payment-methods/${paymentId}/default`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors'
@@ -344,12 +319,11 @@ export const api = {
 
   // Get admin settings (uses Products API)
   getAdminSettings: async () => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${API_URL}/admin/settings`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors'
@@ -369,12 +343,11 @@ export const api = {
 
   // Update admin settings (uses Products API)
   updateAdminSettings: async (settings: any) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${API_URL}/admin/settings`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
@@ -395,12 +368,11 @@ export const api = {
 
   // Get categories (uses Products API)
   getCategories: async () => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${API_URL}/admin/settings-v2/categories`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors'
@@ -420,12 +392,11 @@ export const api = {
 
   // Save categories (uses Products API)
   saveCategories: async (categories: any[]) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${API_URL}/admin/settings-v2/categories`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
@@ -446,12 +417,11 @@ export const api = {
 
   // Get all settings (uses Products API)
   getAllSettings: async () => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${API_URL}/admin/settings-v2`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors'
@@ -471,12 +441,11 @@ export const api = {
 
   // Save settings section (uses Products API)
   saveSettingsSection: async (section: string, data: any) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     try {
       const response = await fetch(`${API_URL}/admin/settings-v2/${section}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
@@ -503,15 +472,11 @@ export const api = {
 
   // Get user orders (uses Orders API)
   getUserOrders: async (userId: string) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-    console.log('📋 getUserOrders - userId:', userId);
-    console.log('📋 getUserOrders - Token present:', !!token);
-
     try {
       const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders?t=${Date.now()}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
@@ -576,24 +541,13 @@ export const api = {
 
   // Get all orders (admin - uses Orders API)
   getAllOrders: async () => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
-
-    console.log('🔑 API getAllOrders - Token present:', !!token);
-    console.log('🔑 API getAllOrders - Token type:', token ? (token.startsWith('ey') ? 'JWT' : 'Other') : 'None');
-    console.log('🔑 API getAllOrders - Token length:', token?.length || 0);
-
-    if (!token) {
-      console.error('❌ API getAllOrders - No authentication token found!');
-      throw new Error('No authentication token');
-    }
-
     try {
       console.log('📡 API getAllOrders - Fetching from:', `${ORDERS_API_URL}/admin/orders`);
 
       const response = await fetch(`${ORDERS_API_URL}/admin/orders`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
@@ -626,19 +580,14 @@ export const api = {
 
   // Get single order by id (admin - uses Orders API)
   getOrderById: async (orderId: string) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     const email = localStorage.getItem('user_email') || 'admin@fashionstore.com';
     const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
-
-    if (!token) {
-      throw new Error('No authentication token');
-    }
 
     try {
       const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders/${orderId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
@@ -660,17 +609,8 @@ export const api = {
 
   // Update order status (admin - uses Orders API)
   updateOrderStatus: async (orderId: string, status: string) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     const email = localStorage.getItem('user_email') || 'admin@fashionstore.com';
     const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
-
-    console.log('🔑 API updateOrderStatus - Token present:', !!token);
-    console.log('📡 API updateOrderStatus - Using userId:', userId);
-
-    if (!token) {
-      console.error('❌ API updateOrderStatus - No authentication token found!');
-      throw new Error('No authentication token');
-    }
 
     try {
       console.log('📡 API updateOrderStatus - Updating order:', orderId, 'to status:', status);
@@ -678,7 +618,7 @@ export const api = {
       const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders/${orderId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
@@ -710,19 +650,14 @@ export const api = {
 
   // Delete order (admin - uses Orders API)
   deleteOrder: async (orderId: string) => {
-    const token = localStorage.getItem('jwt_token') || localStorage.getItem('accessToken');
     const email = localStorage.getItem('user_email') || 'admin@fashionstore.com';
     const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
-
-    if (!token) {
-      throw new Error('No authentication token');
-    }
 
     try {
       const response = await fetch(`${ORDERS_API_URL}/users/${userId}/orders/${orderId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          
           'Content-Type': 'application/json'
         },
         mode: 'cors',
