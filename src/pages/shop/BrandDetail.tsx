@@ -71,7 +71,7 @@ export default function BrandDetail() {
       <div className="relative h-[400px] bg-gradient-to-r from-black to-gray-800">
         <div className="absolute inset-0 opacity-20">
           <img
-            src="/hero-image.jpg"
+            src="https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/hero-image.jpg"
             alt={name}
             className="w-full h-full object-cover"
           />

@@ -470,7 +470,7 @@ export default function Navigation() {
                         >
                           <div className="relative w-full h-72 rounded overflow-hidden bg-gray-100">
                             <img 
-                              src={product.images?.[0] || product.image || '/product-1.jpg'} 
+                              src={product.images?.[0] || product.image || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg'} 
                               alt={product.name} 
                               className="absolute inset-0 w-full h-full object-contain object-center p-1" 
                             />
