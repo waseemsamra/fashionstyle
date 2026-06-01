@@ -95,13 +95,31 @@ export default function ProductDetail() {
 
         <div className="grid md:grid-cols-2 gap-8 bg-white rounded-lg shadow-lg p-8">
           <div>
-            <LazyImage
-              src={product.image}
-              alt={product.name}
-              productName={product.name}
-              productId={product.id}
-              className="w-full rounded-lg"
-            />
+            {/* Main Image Gallery */}
+            <div className="space-y-4">
+              {/* Main Image */}
+              <LazyImage
+                src={product.images?.[0] || product.image}
+                alt={product.name}
+                productName={product.name}
+                productId={product.id}
+                className="w-full rounded-lg aspect-[3/4]"
+              />
+              {/* Thumbnail Gallery */}
+              {product.images && product.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {product.images.map((img: string, index: number) => (
+                    <img
+                      key={index}
+                      src={img}
+                      alt={`${product.name} - view ${index + 1}`}
+                      className="w-20 h-20 object-cover rounded cursor-pointer border-2 border-transparent hover:border-gold"
+                      loading="lazy"
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -235,7 +253,7 @@ export default function ProductDetail() {
 
             <div className="space-y-3">
               <VirtualTryOn 
-                productImage={product.image} 
+                productImage={product.images?.[0] || product.image}
                 productName={product.name} 
               />
               
