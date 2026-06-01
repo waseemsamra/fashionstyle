@@ -358,12 +358,16 @@ export default function ProductDetail() {
                 </>
               )}
 
-              {sizeGuideTab === 'measuring' && (
+{sizeGuideTab === 'measuring' && (
                 <div className="space-y-4">
                   <img 
-                    src="https://https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/measuring-guide.jpg"
+                    src="https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/measuring-guide.jpg"
                     alt="How to measure" 
                     className="w-full rounded-lg"
+                    onError={(e) => {
+                      const target = e.currentTarget as HTMLImageElement;
+                      target.src = 'https://via.placeholder.com/600x300/f5f5dc/333333?text=Measuring+Guide';
+                    }}
                   />
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-600">
                     <p className="font-medium text-blue-900 mb-2">How to Measure</p>
@@ -378,9 +382,13 @@ export default function ProductDetail() {
               {sizeGuideTab === 'how-to-measure' && (
                 <div className="space-y-4">
                   <img 
-                    src="https://https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/measuring-guide.jpg"
+                    src="https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/measuring-guide.jpg"
                     alt="How to measure" 
                     className="w-full rounded-lg"
+                    onError={(e) => {
+                      const target = e.currentTarget as HTMLImageElement;
+                      target.src = 'https://via.placeholder.com/600x300/f5f5dc/333333?text=Measuring+Guide';
+                    }}
                   />
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-gray-600">
                     <p className="font-medium text-blue-900 mb-2">Measuring Instructions</p>
