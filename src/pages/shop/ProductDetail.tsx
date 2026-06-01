@@ -361,7 +361,7 @@ export default function ProductDetail() {
               {sizeGuideTab === 'measuring' && (
                 <div className="space-y-4">
                   <img 
-                    src="https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/measuring-guide.jpg"
+                    src="https://https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/measuring-guide.jpg"
                     alt="How to measure" 
                     className="w-full rounded-lg"
                   />
@@ -378,7 +378,7 @@ export default function ProductDetail() {
               {sizeGuideTab === 'how-to-measure' && (
                 <div className="space-y-4">
                   <img 
-                    src="https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/measuring-guide.jpg"
+                    src="https://https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/measuring-guide.jpg"
                     alt="How to measure" 
                     className="w-full rounded-lg"
                   />

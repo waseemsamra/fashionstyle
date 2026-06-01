@@ -37,8 +37,8 @@ export default function Hero() {
     >
       {/* Background Image with Parallax */}
       <div className="hero-bg absolute inset-0 w-full h-full">
-        <img
-          src="https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/hero-image.jpg"
+<img
+          src="https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/hero-image.jpg"
           alt="Pakistani Fashion"
           className="w-full h-full object-cover"
         />

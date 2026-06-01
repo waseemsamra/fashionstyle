@@ -276,10 +276,10 @@ export default function VirtualTryOnPage() {
           <h2 className="text-2xl font-playfair font-bold mb-6 text-center">Try Our Popular Products</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { name: 'Embroidered Lawn Suit', price: 89, image: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/product-1.jpg' },
-              { name: 'Chiffon Formal Dress', price: 149, image: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/product-2.jpg' },
-              { name: 'Silk Lehenga Set', price: 299, image: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/product-3.jpg' },
-              { name: 'Cotton Kurti', price: 59, image: 'https://fashionstore-prod-assets-536217686312.s3.amazonaws.com/images/product-4.jpg' },
+              { name: 'Embroidered Lawn Suit', price: 89, image: 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-1.jpg' },
+              { name: 'Chiffon Formal Dress', price: 149, image: 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-2.jpg' },
+              { name: 'Silk Lehenga Set', price: 299, image: 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-3.jpg' },
+              { name: 'Cotton Kurti', price: 59, image: 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/product-4.jpg' },
             ].map((product, index) => (
               <div key={index} className="bg-white rounded-lg shadow overflow-hidden">
                 <img src={product.image} alt={product.name} className="w-full h-48 object-cover" />
