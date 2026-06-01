@@ -9,7 +9,7 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -17,9 +17,9 @@ export default function AdminLogin() {
     try {
       console.log('🔐 Admin login attempt for:', credentials.username);
 
-      // Always use direct API Gateway URL
-      const apiUrl = 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws/auth/signin';
-
+      // Use environment variable for API URL
+      const apiUrl = import.meta.env.VITE_USERS_API_URL + '/auth/signin' || 'https://7uymscqv6xcutr5f6b2yvcgqri0wnkuj.lambda-url.us-east-1.on.aws/auth/signin';
+      
       console.log('📡 Calling API:', apiUrl);
       const response = await fetch(
         apiUrl,

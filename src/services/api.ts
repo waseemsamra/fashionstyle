@@ -2,9 +2,14 @@ import axios from 'axios';
 
 // Use correct API URLs from environment variables
 const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
-const USERS_API_URL = import.meta.env.VITE_USERS_API_URL || 'https://3rctw6carzadrs3okoemb4ccvi0rzxqy.lambda-url.us-east-1.on.aws';
-const ORDERS_API_URL = import.meta.env.VITE_ORDERS_API_URL || 'https://r7pc3n32db.execute-api.us-east-1.amazonaws.com/prod';
+const USERS_API_URL = import.meta.env.VITE_USERS_API_URL || 'https://7uymscqv6xcutr5f6b2yvcgqri0wnkuj.lambda-url.us-east-1.on.aws';
+const ORDERS_API_URL = import.meta.env.VITE_ORDERS_API_URL || 'https://ooii1l1zf9.execute-api.us-east-1.amazonaws.com/prod/orders';
 const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod/generate-upload-url';
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
+const CATEGORIES_API = import.meta.env.VITE_CATEGORIES_API || 'https://8wzvwch1pi.execute-api.us-east-1.amazonaws.com/prod/categories';
+const COLLECTIONS_API_URL = import.meta.env.VITE_COLLECTIONS_API_URL || 'https://apzazvqld2.execute-api.us-east-1.amazonaws.com/prod/collections';
+const PRODUCTS_UPDATE_API = import.meta.env.VITE_PRODUCTS_UPDATE_API || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod/products';
+const SETTINGS_API = import.meta.env.VITE_SETTINGS_API || 'https://c1ntcc0rt6.execute-api.us-east-1.amazonaws.com/prod/settings';
 
 // Log the API URLs being used (for debugging)
 console.log('🔧 Products API URL:', API_URL);
@@ -317,10 +322,10 @@ headers: {
     }
   },
 
-  // Get admin settings (uses Products API)
-  getAdminSettings: async () => {
+// Get admin settings (uses Settings API)
+   getAdminSettings: async () => {
     try {
-      const response = await fetch(`${API_URL}/admin/settings`, {
+      const response = await fetch(`${SETTINGS_API}`, {
         method: 'GET',
         headers: {
           
@@ -341,10 +346,10 @@ headers: {
     }
   },
 
-  // Update admin settings (uses Products API)
-  updateAdminSettings: async (settings: any) => {
+// Update admin settings (uses Settings API)
+   updateAdminSettings: async (settings: any) => {
     try {
-      const response = await fetch(`${API_URL}/admin/settings`, {
+      const response = await fetch(`${SETTINGS_API}`, {
         method: 'POST',
         headers: {
           
@@ -366,10 +371,10 @@ headers: {
     }
   },
 
-  // Get categories (uses Products API)
+// Get categories (uses Categories API)
   getCategories: async () => {
     try {
-      const response = await fetch(`${API_URL}/admin/settings-v2/categories`, {
+      const response = await fetch(`${CATEGORIES_API}`, {
         method: 'GET',
         headers: {
           
@@ -390,10 +395,10 @@ headers: {
     }
   },
 
-  // Save categories (uses Products API)
+// Save categories (uses Categories API)
   saveCategories: async (categories: any[]) => {
     try {
-      const response = await fetch(`${API_URL}/admin/settings-v2/categories`, {
+      const response = await fetch(`${CATEGORIES_API}`, {
         method: 'POST',
         headers: {
           
@@ -415,10 +420,10 @@ headers: {
     }
   },
 
-  // Get all settings (uses Products API)
-  getAllSettings: async () => {
+// Get all settings (uses Settings API)
+   getAllSettings: async () => {
     try {
-      const response = await fetch(`${API_URL}/admin/settings-v2`, {
+      const response = await fetch(`${SETTINGS_API}`, {
         method: 'GET',
         headers: {
           
@@ -439,10 +444,10 @@ headers: {
     }
   },
 
-  // Save settings section (uses Products API)
-  saveSettingsSection: async (section: string, data: any) => {
+// Save settings section (uses Settings API)
+   saveSettingsSection: async (section: string, data: any) => {
     try {
-      const response = await fetch(`${API_URL}/admin/settings-v2/${section}`, {
+      const response = await fetch(`${SETTINGS_API}/${section}`, {
         method: 'POST',
         headers: {
           
