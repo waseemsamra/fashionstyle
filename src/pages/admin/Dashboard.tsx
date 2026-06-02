@@ -99,6 +99,8 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 100;
 
   // FORCE LOAD categories from localStorage IMMEDIATELY on mount
   if (typeof window !== 'undefined') {
@@ -1260,7 +1262,7 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {products.map((product) => (
+                  {products.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage).map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded" />
@@ -1313,7 +1315,7 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {products.map((product) => (
+                  {products.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage).map((product) => (
                     <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded" />
@@ -1337,6 +1339,40 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
                   ))}
                 </tbody>
               </table>
+              
+              {/* Pagination */}
+              {products.length > productsPerPage && (
+                <div className="p-6 border-t flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Showing {(currentPage - 1) * productsPerPage + 1} - {Math.min(currentPage * productsPerPage, products.length)} of {products.length} products
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: Math.ceil(products.length / productsPerPage) }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 rounded ${currentPage === page ? 'bg-gold text-white' : 'bg-gray-200'}`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(Math.ceil(products.length / productsPerPage), p + 1))}
+                      disabled={currentPage >= Math.ceil(products.length / productsPerPage)}
+                      className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
