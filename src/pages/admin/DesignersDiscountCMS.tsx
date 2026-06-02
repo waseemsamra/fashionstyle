@@ -23,8 +23,8 @@ export default function DesignersDiscountCMS() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await api.listProducts();
-      const productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
+      const data = await api.getAllProducts();
+      const productsArray = data.items || [];
       
       // Get all unique brands
       const uniqueBrands = [...new Set(productsArray.map((p: any) => p.brand).filter(Boolean))] as string[];
@@ -151,17 +151,17 @@ export default function DesignersDiscountCMS() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">
-              {step === 'brands' ? 'Step 1: Select Brands' : 'Step 2: Select Products'}
-            </h1>
-            <p className="text-gray-600">
-              {step === 'brands' 
-                ? 'Choose which brands are on discount' 
-                : `Choose up to 8 products from ${selectedBrands.length} selected brand(s)`}
-            </p>
-          </div>
+<div className="flex items-center justify-between mb-8">
+           <div>
+             <h1 className="text-3xl font-bold mb-2">
+               {step === 'brands' ? 'Step 1: Select Brands' : 'Step 2: Select Products'}
+             </h1>
+             <p className="text-gray-600">
+               {step === 'brands' 
+                 ? `Choose which brands are on discount (${allBrands.length} brands available)` 
+                 : `Choose up to 8 products from ${selectedBrands.length} selected brand(s)`}
+             </p>
+           </div>
           
           <div className="flex items-center gap-4">
             {step === 'products' && (

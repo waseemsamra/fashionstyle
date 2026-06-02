@@ -25,21 +25,14 @@ export default function FeaturedProducts() {
   const itemsPerSlide = isMobile ? 2 : 4;
   const totalSlides = products.length > 0 ? Math.ceil(products.length / itemsPerSlide) : 1;
 
-  useEffect(() => {
+useEffect(() => {
     const loadProducts = async () => {
       try {
         console.log('Loading featured products...');
-        const data = await api.listProducts();
+        const data = await api.getAllProducts();
         
-        let productsArray = [];
-        if (Array.isArray(data)) {
-          productsArray = data;
-        } else if (data && typeof data === 'object') {
-          if (data.items && Array.isArray(data.items)) productsArray = data.items;
-          else if (data.products && Array.isArray(data.products)) productsArray = data.products;
-          else if (data.data && Array.isArray(data.data)) productsArray = data.data;
-        }
-
+        let productsArray = data.items || [];
+        
         // Filter to show only featured products (max 20)
         const featuredProducts = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
         const displayProducts = featuredProducts.length > 0 ? featuredProducts : productsArray.slice(0, 8);

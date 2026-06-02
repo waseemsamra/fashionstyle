@@ -19,8 +19,8 @@ export default function FeaturedCarousel() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const data = await api.listProducts();
-        let productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
+        const data = await api.getAllProducts();
+        let productsArray = data.items || [];
         const featured = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
         setProducts(featured.length > 0 ? featured : productsArray.slice(0, 8));
       } catch (error) {

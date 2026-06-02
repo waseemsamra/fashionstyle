@@ -31,9 +31,9 @@ export default function BrandDetail() {
 
     const fetchProducts = async () => {
       try {
-        const data = await api.listProducts();
+        const data = await api.getAllProducts();
         if (isMounted) {
-          setProducts(Array.isArray(data?.items) ? data.items : []);
+          setProducts(data.items || []);
         }
       } catch (error) {
         console.error('Failed to load brand products:', error);

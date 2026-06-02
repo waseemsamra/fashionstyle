@@ -19,8 +19,8 @@ export default function WeddingTales() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const data = await api.listProducts();
-        let productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
+        const data = await api.getAllProducts();
+        let productsArray = data.items || [];
         
         // First try to load products with isWeddingTales flag
         let wedding = productsArray.filter((p: any) => p.isWeddingTales);

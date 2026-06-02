@@ -324,56 +324,59 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     }
   };
 
-  // Load all dashboard data from API
-  useEffect(() => {
+// Load all dashboard data from API
+   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         console.log('📊 Loading dashboard data from API...');
 
         // Load products
         console.log('📦 Loading products...');
-        const productsData = await api.listProducts();
+        const productsData = await api.getAllProducts();
         console.log('📊 Raw productsData:', productsData);
-        const products = productsData.items || productsData.items || [];
-        console.log('📦 Products array length:', products.length, 'Total:', productsData.total);
-        if (Array.isArray(products)) {
-          console.log('✅ Found', products.length, 'products');
-          setProducts(products.map((p: any) => ({
-            ...p,
-            category: p.category || 'Uncategorized',
-            stock: p.stock || 0,
-            occasions: ensureArray(p.occasions),
-            patterns: ensureArray(p.patterns),
-            sizes: ensureArray(p.sizes),
-            materials: ensureArray(p.materials),
-            colors: ensureArray(p.colors),
-            genders: ensureArray(p.genders),
-          })));
-        }
+        console.log('📦 Products array length:', productsData.items?.length || 0, 'Total:', productsData.total);
+        
+        const products = productsData.items || [];
+        console.log('✅ About to setProducts with', products.length, 'products');
+        setProducts(products.map((p: any) => ({
+          ...p,
+          category: p.category || 'Uncategorized',
+          stock: p.stock || 0,
+          occasions: ensureArray(p.occasions),
+          patterns: ensureArray(p.patterns),
+          sizes: ensureArray(p.sizes),
+          materials: ensureArray(p.materials),
+          colors: ensureArray(p.colors),
+          genders: ensureArray(p.genders),
+        })));
+        console.log('✅ setProducts called');
 
         // Load brands from API
         console.log('🏷️ Loading brands from API...');
-        const brandsFromAPI = await getAllBrands();
-        console.log('📊 Brands response:', brandsFromAPI);
-        
-        // Handle both array and object responses
-        const brandsArray = Array.isArray(brandsFromAPI) 
-          ? brandsFromAPI 
-          : (brandsFromAPI as any).brands || (brandsFromAPI as any).items || [];
-        
-        if (brandsArray.length > 0) {
-          console.log('✅ Found', brandsArray.length, 'brands from API');
-          setBrands(brandsArray.map((b: any) => ({
-            id: b.id,
-            name: b.name,
-            description: b.description || '',
-            products: b.products || 0,
-            image: b.image || ''
-          })));
-        } else {
-          console.log('⚠️ No brands in DynamoDB - add brands via admin panel');
+        try {
+          const brandsFromAPI = await getAllBrands();
+          console.log('📊 Brands response:', brandsFromAPI);
+          
+          const brandsArray = Array.isArray(brandsFromAPI) 
+            ? brandsFromAPI 
+            : (brandsFromAPI as any).brands || (brandsFromAPI as any).items || [];
+          
+          if (brandsArray.length > 0) {
+            console.log('✅ Found', brandsArray.length, 'brands from API');
+            setBrands(brandsArray.map((b: any) => ({
+              id: b.id,
+              name: b.name,
+              description: b.description || '',
+              products: b.products || 0,
+              image: b.image || ''
+            })));
+          } else {
+            console.log('⚠️ No brands in DynamoDB - add brands via admin panel');
+          }
+          console.log('✅ Found', brands.length, 'brands after load');
+        } catch (brandErr) {
+          console.log('⚠️ Could not load brands:', brandErr);
         }
-        console.log('✅ Found', brands.length, 'brands');
 
         // Load categories from products
         console.log('📂 Loading categories...');
@@ -391,7 +394,6 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
             existing.products = (existing.products || 0) + 1;
           }
         });
-        // REMOVED: setCategories(Array.from(categoryMap.values())); - This was overwriting localStorage!
         console.log('ℹ️ Categories: Using localStorage data (NOT overwriting with API data)');
 
         // Load orders using admin orders endpoint
@@ -410,10 +412,9 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
             setOrders(allOrders);
             console.log('✅ Found', allOrders.length, 'orders');
             
-            // Log summary with actual data (use orders/users state to avoid TS warnings)
+            // Log summary
             console.log('🎉 Dashboard data loaded successfully!');
-            console.log('📊 Summary - Products:', products.length, 'Brands:', brands.length, 'Categories:', categories.length, 'Users:', allUsers.length, 'Orders:', allOrders.length);
-            console.log('📋 State check - Orders:', orders.length, 'Users:', users.length);
+            console.log('📊 Summary - Products:', products.length, 'Categories:', categories.length, 'Users:', allUsers.length, 'Orders:', allOrders.length);
           } catch (ordersErr) {
             console.log('⚠️ Could not load orders:', ordersErr);
             setOrders([]);
@@ -1233,13 +1234,19 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
             </div>
           )}
 
-          {activeTab === 'products' && (
-            <div className="bg-white rounded-lg shadow">
-              <div className="p-6 border-b flex justify-end">
-                <button onClick={handleAddProduct} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
-                  Add Product
-                </button>
-              </div>
+{activeTab === 'products' && (
+             <div className="bg-white rounded-lg shadow">
+               <div className="p-6 border-b flex justify-between items-center">
+                 <div>
+                   <h3 className="text-xl font-bold">Products Management</h3>
+                   <p className="text-sm text-gray-600 mt-1">
+                     {products.length} products loaded
+                   </p>
+                 </div>
+                 <button onClick={handleAddProduct} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
+                   Add Product
+                 </button>
+               </div>
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>

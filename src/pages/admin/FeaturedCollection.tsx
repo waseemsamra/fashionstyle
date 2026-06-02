@@ -24,8 +24,8 @@ export default function FeaturedCollection() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const data = await api.listProducts();
-      const productsArray = Array.isArray(data) ? data : (data.items || data.products || []);
+      const data = await api.getAllProducts();
+      const productsArray = data.items || [];
       setAllProducts(productsArray);
       
       // Get currently featured products
@@ -125,11 +125,11 @@ export default function FeaturedCollection() {
           Back to Admin Dashboard
         </Button>
         
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Featured Collection</h1>
-            <p className="text-gray-600">Select up to {MAX_FEATURED} products to feature on the homepage</p>
-          </div>
+<div className="flex items-center justify-between mb-8">
+           <div>
+             <h1 className="text-3xl font-bold mb-2">Featured Collection</h1>
+             <p className="text-gray-600">Select up to {MAX_FEATURED} products to feature on the homepage ({allProducts.length} total available)</p>
+           </div>
           
           <div className="flex items-center gap-4">
             <div className="text-right">

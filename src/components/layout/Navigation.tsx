@@ -97,22 +97,9 @@ export default function Navigation() {
     const fetchAllProducts = async () => {
       try {
         setIsSearchLoading(true);
-        const items: any[] = [];
-        let nextToken: string | undefined;
-
-        do {
-          const data = await api.listProducts(nextToken ? { nextToken } : {});
-          if (Array.isArray(data?.items)) {
-            items.push(...data.items);
-          }
-
-          nextToken =
-            data?.nextToken ||
-            data?.lastEvaluatedKey ||
-            data?.LastEvaluatedKey ||
-            data?.paginationToken;
-        } while (nextToken);
-
+        const data = await api.getAllProducts();
+        const items = data.items || [];
+        
         if (isMounted) {
           setAllProducts(items);
         }

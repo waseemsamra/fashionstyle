@@ -15,7 +15,7 @@ export default function NewArrivals() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.listProducts().then(data => setProducts(data.items?.slice(0, 4) || []));
+    api.getAllProducts().then(data => setProducts(data.items?.slice(0, 4) || []));
   }, []);
 
   useEffect(() => {

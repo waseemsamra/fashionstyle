@@ -21,8 +21,8 @@ export default function WeddingTalesCMS() {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const data = await api.listProducts();
-      const productsArray = Array.isArray(data) ? data : (data.items || data.products || data.data || []);
+      const data = await api.getAllProducts();
+      const productsArray = data.items || [];
       
       // Filter wedding/bridal products
       const weddingProducts = productsArray.filter((p: any) => 
@@ -116,11 +116,11 @@ export default function WeddingTalesCMS() {
           Back to Admin Dashboard
         </Button>
         
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Wedding Tales - CMS</h1>
-            <p className="text-gray-600">Select products for the Wedding Tales carousel (max 20)</p>
-          </div>
+<div className="flex items-center justify-between mb-8">
+           <div>
+             <h1 className="text-3xl font-bold mb-2">Wedding Tales - CMS</h1>
+             <p className="text-gray-600">Select products for the Wedding Tales carousel (max 20) - {allProducts.length} wedding products available</p>
+           </div>
           
           <div className="flex items-center gap-4">
             <div className="text-right">
