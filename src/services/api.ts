@@ -128,9 +128,9 @@ export const api = {
     return response.data;
   },
 
-  // Get user profile (uses Users API)
-getUserProfile: async (userId: string) => {
-    const response = await fetch(`${USERS_API_URL}/users/${userId}/profile`, {
+// Get user profile (uses Users API) - userId is actually email
+  getUserProfile: async (email: string) => {
+    const response = await fetch(`${USERS_API_URL}/users/${encodeURIComponent(email)}/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
@@ -147,10 +147,10 @@ getUserProfile: async (userId: string) => {
   },
 
   // Update user profile (uses Users API)
-  updateUserProfile: async (userId: string, profile: any) => {
-    const response = await fetch(`${USERS_API_URL}/users/${userId}/profile`, {
+  updateUserProfile: async (email: string, profile: any) => {
+    const response = await fetch(`${USERS_API_URL}/users/${encodeURIComponent(email)}/profile`, {
       method: 'POST',
-headers: {
+      headers: {
         'Content-Type': 'application/json'
       },
       mode: 'cors',
@@ -166,22 +166,22 @@ headers: {
   },
 
   // Create user profile (uses Users API)
-  createUserProfile: async (userId: string, email: string) => {
+  createUserProfile: async (email: string, emailParam: string) => {
     const defaultProfile = {
-      userId: userId,
+      userId: email,
       firstName: '',
       lastName: '',
       dob: '',
       contact: '',
       whatsapp: '',
-      email: email,
+      email: emailParam,
       role: 'customer',
       status: 'active'
     };
 
-    const response = await fetch(`${USERS_API_URL}/users/${userId}/profile`, {
+    const response = await fetch(`${USERS_API_URL}/users/${encodeURIComponent(email)}/profile`, {
       method: 'POST',
-headers: {
+      headers: {
         'Content-Type': 'application/json'
       },
       mode: 'cors',

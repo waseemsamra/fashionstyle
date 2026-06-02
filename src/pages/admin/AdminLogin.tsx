@@ -31,20 +31,22 @@ const handleSubmit = async (e: React.FormEvent) => {
       if (result.isSignedIn) {
         // 2. Get user profile from Users API (role verification)
         const email = credentials.username;
-        const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
+        console.log('🔍 Fetching user profile for:', email);
         
-        console.log('🔍 Fetching user profile for:', userId);
-        const response = await fetch(
-          `${USERS_API_URL}/users/${encodeURIComponent(userId)}/profile`,
-          { mode: 'cors' }
-        );
+        const response = await fetch(`${USERS_API_URL}/users/${encodeURIComponent(email)}/profile`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          mode: 'cors'
+        });
         
         const profile = response.ok ? await response.json() : {};
         console.log('📋 User profile:', profile);
-        console.log('📋 User role:', profile.role);
+        console.log('📋 User role:', profile?.role);
 
         // Check if admin
-        if (profile.role === 'admin') {
+        if (profile?.role === 'admin') {
           console.log('🎉 Admin access granted');
           // Store admin session
           localStorage.setItem('adminAuthenticated', 'true');

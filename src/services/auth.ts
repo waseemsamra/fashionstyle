@@ -1,6 +1,8 @@
 import { usersApiClient } from './api';
 
 // Auth service for handling authentication with the backend API
+const USERS_API = import.meta.env.VITE_USERS_API_URL || 'https://7uymscqv6xcutr5f6b2yvcgqri0wnkuj.lambda-url.us-east-1.on.aws';
+
 export const authService = {
   // Sign up a new user
   signup: async (email: string, password: string, name?: string) => {
@@ -15,14 +17,20 @@ export const authService = {
       if (response.data && (response.data.message || response.data.success)) {
         console.log('✅ Backend signup successful, creating profile...');
         try {
-          // Use full email for userId (replace @ and . with -)
-          const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
-          await usersApiClient.put(`/users/${userId}/profile`, {
-            email,
-            firstName: name?.split(' ')[0] || '',
-            lastName: name?.split(' ')[1] || '',
-            role: 'customer',
-            status: 'active'
+          // Use email for profile path
+          await fetch(`${USERS_API}/users/${encodeURIComponent(email)}/profile`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            mode: 'cors',
+            body: JSON.stringify({
+              email,
+              firstName: name?.split(' ')[0] || '',
+              lastName: name?.split(' ')[1] || '',
+              role: 'customer',
+              status: 'active'
+            })
           });
           console.log('✅ User profile created for:', email);
         } catch (profileErr) {
@@ -56,14 +64,19 @@ export const authService = {
           localStorage.setItem('refreshToken', response.data.refreshToken);
         }
 
-        // Try to create/update user profile (idempotent operation)
+        // Try to create/update user profile (idempotent operation) - use email path
         try {
-          // Use full email for userId (replace @ and . with -)
-          const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
-          await usersApiClient.put(`/users/${userId}/profile`, {
-            email,
-            role: 'customer',
-            status: 'active'
+          await fetch(`${USERS_API}/users/${encodeURIComponent(email)}/profile`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            mode: 'cors',
+            body: JSON.stringify({
+              email,
+              role: 'customer',
+              status: 'active'
+            })
           });
           console.log('✅ User profile ensured for:', email);
         } catch (profileErr: any) {
