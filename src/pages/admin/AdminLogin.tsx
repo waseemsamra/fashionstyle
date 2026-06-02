@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signIn, fetchAuthSession } from 'aws-amplify/auth';
+import { signIn, fetchAuthSession, signOut } from 'aws-amplify/auth';
 import { Button } from '@/components/ui/button';
 import { Lock, User, KeyRound } from 'lucide-react';
+
+const USERS_API_URL = import.meta.env.VITE_USERS_API_URL || 'https://7uymscqv6xcutr5f6b2yvcgqri0wnkuj.lambda-url.us-east-1.on.aws';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -18,7 +20,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     try {
       console.log('🔐 Admin login attempt for:', credentials.username);
 
-      // Try Cognito signin directly (admin API requires CORS/auth setup)
+      // 1. Cognito authentication
       const result = await signIn({
         username: credentials.username,
         password: credentials.password
@@ -27,25 +29,41 @@ const handleSubmit = async (e: React.FormEvent) => {
       console.log('✅ Cognito signin result:', result);
 
       if (result.isSignedIn) {
-        // Get the session tokens
-        const session = await fetchAuthSession();
-        if (session.tokens) {
-          const email = session.tokens.idToken?.payload?.email as string || credentials.username;
-          const groups = session.tokens.accessToken?.payload['cognito:groups'] as string[] || [];
-          
-          localStorage.setItem('jwt_token', session.tokens.accessToken.toString());
-          localStorage.setItem('user_email', email);
+        // 2. Get user profile from Users API (role verification)
+        const email = credentials.username;
+        const userId = email.replace(/[^a-zA-Z0-9]/g, '-');
+        
+        console.log('🔍 Fetching user profile for:', userId);
+        const response = await fetch(
+          `${USERS_API_URL}/users/${encodeURIComponent(userId)}/profile`,
+          { mode: 'cors' }
+        );
+        
+        const profile = response.ok ? await response.json() : {};
+        console.log('📋 User profile:', profile);
+        console.log('📋 User role:', profile.role);
 
-          // Check if user has admin role
-          const isAdmin = groups.includes('Admins') || email.toLowerCase().includes('admin');
-          
-          if (isAdmin) {
-            console.log('🎉 Admin login successful!');
-            navigate('/admin/dashboard');
-          } else {
-            setError('Access denied. Admin privileges required.');
-            await fetchAuthSession(); // Will trigger signOut
+        // Check if admin
+        if (profile.role === 'admin') {
+          console.log('🎉 Admin access granted');
+          // Store admin session
+          localStorage.setItem('adminAuthenticated', 'true');
+          localStorage.setItem('adminEmail', email);
+          // Get session tokens
+          const session = await fetchAuthSession();
+          if (session.tokens) {
+            localStorage.setItem('jwt_token', session.tokens.accessToken.toString());
+            localStorage.setItem('user_email', email);
           }
+          // Redirect to admin dashboard
+          navigate('/admin/dashboard');
+        } else {
+          console.log('❌ Not an admin user');
+          // Sign out Cognito user
+          await signOut();
+          localStorage.removeItem('jwt_token');
+          localStorage.removeItem('user_email');
+          setError('Access denied. Admin privileges required.');
         }
       }
     } catch (error: any) {
