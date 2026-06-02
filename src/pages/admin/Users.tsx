@@ -209,13 +209,13 @@ export default function Users() {
                     >
                       <Edit className="w-4 h-4" />
                     </button>
-                    <button 
-                      onClick={() => handleDelete(user.userId)} 
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete user"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+<button 
+                       onClick={() => handleDelete(user.email || user.userId)} 
+                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                       title="Delete user"
+                     >
+                       <Trash2 className="w-4 h-4" />
+                     </button>
                   </div>
                 </td>
               </tr>

@@ -8,9 +8,9 @@ export interface User {
 }
 
 export const userService = {
-  // Get user by ID
-  getUserById: async (userId: string): Promise<User> => {
-    const response = await usersApiClient.get(`/users/${userId}`);
+  // Get user by ID - userId is actually email
+  getUserById: async (email: string): Promise<User> => {
+    const response = await usersApiClient.get(`/users/${encodeURIComponent(email)}`);
     return response.data;
   },
 

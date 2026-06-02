@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signIn, fetchAuthSession, signOut } from 'aws-amplify/auth';
+import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Lock, User, KeyRound } from 'lucide-react';
-
-const USERS_API_URL = import.meta.env.VITE_USERS_API_URL || 'https://7uymscqv6xcutr5f6b2yvcgqri0wnkuj.lambda-url.us-east-1.on.aws';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -33,15 +32,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         const email = credentials.username;
         console.log('🔍 Fetching user profile for:', email);
         
-        const response = await fetch(`${USERS_API_URL}/users/${encodeURIComponent(email)}/profile`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          mode: 'cors'
-        });
-        
-        const profile = response.ok ? await response.json() : {};
+        const profile = await api.getUserProfile(email);
         console.log('📋 User profile:', profile);
         console.log('📋 User role:', profile?.role);
 

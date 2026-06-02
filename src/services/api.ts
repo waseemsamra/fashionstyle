@@ -517,9 +517,9 @@ export const api = {
     return response.data;
   },
 
-  // Get single user (admin - uses Users API)
-  getUser: async (userId: string) => {
-    const response = await usersApiClient.get(`/users/${userId}`);
+  // Get single user (admin - uses Users API) - userId is actually email
+  getUser: async (email: string) => {
+    const response = await usersApiClient.get(`/users/${encodeURIComponent(email)}`);
     return response.data;
   },
 
@@ -529,15 +529,15 @@ export const api = {
     return response.data;
   },
 
-  // Update user (admin - uses Users API)
-  updateUser: async (userId: string, userData: any) => {
-    const response = await usersApiClient.put(`/users/${userId}`, userData);
+  // Update user (admin - uses Users API) - userId is actually email
+  updateUser: async (email: string, userData: any) => {
+    const response = await usersApiClient.put(`/users/${encodeURIComponent(email)}`, userData);
     return response.data;
   },
 
-  // Delete user (admin - uses Users API)
-  deleteUser: async (userId: string) => {
-    const response = await usersApiClient.delete(`/users/${userId}`);
+  // Delete user (admin - uses Users API) - userId is actually email
+  deleteUser: async (email: string) => {
+    const response = await usersApiClient.delete(`/users/${encodeURIComponent(email)}`);
     return response.data;
   },
 
