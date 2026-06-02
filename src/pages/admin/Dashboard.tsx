@@ -1088,7 +1088,7 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
           )}
 
 {activeTab === 'orders' && (
-             <div className="bg-white rounded-lg shadow">
+            <div className="bg-white rounded-lg shadow">
                <div className="p-6 border-b">
                  <h3 className="text-xl font-bold">Orders Management</h3>
                  <p className="text-sm text-gray-600 mt-1">
@@ -1236,60 +1236,7 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
              </div>
            )}
 
-          {activeTab === 'products' && (
-            <div className="bg-white rounded-lg shadow">
-              <div className="p-6 border-b flex justify-between items-center">
-                <div>
-                  <h3 className="text-xl font-bold">Products Management</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {products.length} products loaded
-                  </p>
-                </div>
-                <button onClick={handleAddProduct} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
-                  Add Product
-                </button>
-              </div>
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Image</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Product</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Category</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Brand</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Price</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Stock</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {products.slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage).map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded" />
-                      </td>
-                      <td className="px-6 py-4 font-medium">{product.name}</td>
-                      <td className="px-6 py-4">{product.category}</td>
-                      <td className="px-6 py-4">{product.brand}</td>
-                      <td className="px-6 py-4 font-semibold">${product.price}</td>
-                      <td className="px-6 py-4">{product.stock}</td>
-<td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button onClick={() => handleEdit(product)} className="p-2 text-blue-600 hover:bg-blue-50 rounded">
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDelete(product.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {activeTab === 'products' && (
+{activeTab === 'products' && (
              <div className="bg-white rounded-lg shadow">
                <div className="p-6 border-b flex justify-between items-center">
                  <div>

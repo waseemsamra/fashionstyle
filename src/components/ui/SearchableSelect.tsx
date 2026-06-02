@@ -49,8 +49,8 @@ export default function SearchableSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSelect = (optionId: string | number) => {
-    onChange(String(optionId));
+  const handleSelect = (optionName: string) => {
+    onChange(optionName);
     setIsOpen(false);
     setSearchTerm('');
   };
@@ -63,7 +63,7 @@ export default function SearchableSelect({
     }
   };
 
-  const selectedOption = options.find(opt => opt.id != null && String(opt.id) === value);
+  const selectedOption = options.find(opt => opt.name === value);
 
   return (
     <div className="space-y-2" ref={dropdownRef}>
@@ -130,9 +130,9 @@ export default function SearchableSelect({
                   <button
                     key={option.id}
                     type="button"
-                    onClick={() => handleSelect(option.id)}
+                    onClick={() => handleSelect(option.name)}
                     className={`w-full p-3 text-left hover:bg-gray-50 flex items-center justify-between ${
-                      value === String(option.id) ? 'bg-gold/10' : ''
+                      value === option.name ? 'bg-gold/10' : ''
                     }`}
                   >
                     <div>
@@ -141,7 +141,7 @@ export default function SearchableSelect({
                         <div className="text-xs text-gray-500">{option.description}</div>
                       )}
                     </div>
-                    {value === String(option.id) && (
+                    {value === option.name && (
                       <Check className="w-4 h-4 text-gold" />
                     )}
                   </button>
