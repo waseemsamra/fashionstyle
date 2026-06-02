@@ -782,27 +782,21 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
 
       if (isUpdate) {
         console.log('🔄 Updating existing product...');
-
-        let apiSuccess = false;
+        
         try {
           await updateProduct(productData);
           console.log('✅ Product updated via API');
-          apiSuccess = true;
-        } catch (apiErr) {
-          console.log('⚠️ API not available, saving locally only');
-        }
-
-        // Update local state
-        const updatedProducts = products.map(p => {
-          if (p.id === editingProduct.id) {
-            return { ...p, ...productData };
-          }
-          return p;
-        });
-
-        setProducts(updatedProducts);
-        if (!apiSuccess) {
-          console.log('⚠️ Note: Changes saved locally only.');
+          const updatedProducts = products.map(p => {
+            if (p.id === editingProduct.id) {
+              return { ...p, ...productData };
+            }
+            return p;
+          });
+          setProducts(updatedProducts);
+        } catch (apiErr: any) {
+          console.error('❌ Failed to update product:', apiErr);
+          alert('Failed to save product: ' + (apiErr.response?.data?.message || apiErr.message));
+          return;
         }
       } else {
         console.log('➕ Creating new product...');
@@ -810,10 +804,10 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
           const newProduct = await createProduct(productData);
           console.log('✅ Product created via API');
           setProducts([...products, { ...productData, ...newProduct }]);
-        } catch (apiErr) {
-          console.log('⚠️ API not available, saving locally only');
-          const newProduct = { ...productData, id: Date.now() };
-          setProducts([...products, newProduct]);
+        } catch (apiErr: any) {
+          console.error('❌ Failed to create product:', apiErr);
+          alert('Failed to create product: ' + (apiErr.response?.data?.message || apiErr.message));
+          return;
         }
       }
 
@@ -828,15 +822,10 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     if (confirm('Delete this product?')) {
       try {
         console.log('🗑️ Deleting product:', id);
-        const success = await deleteProduct(id.toString());
-        
-        if (success) {
-          setProducts(products.filter(p => p.id !== id));
-          console.log('✅ Product deleted');
-          alert('Product deleted successfully!');
-        } else {
-          alert('Failed to delete product');
-        }
+        await deleteProduct(id.toString());
+        setProducts(products.filter(p => p.id !== id));
+        console.log('✅ Product deleted');
+        alert('Product deleted successfully!');
       } catch (error: any) {
         console.error('❌ Failed to delete product:', error);
         alert('Failed to delete product: ' + (error.response?.data?.message || error.message));

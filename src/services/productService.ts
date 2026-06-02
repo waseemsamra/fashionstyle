@@ -1,6 +1,9 @@
 import axios from 'axios';
 
+// Public API for reading products/brands (read-only)
 const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
+// Admin API for write operations (create/update/delete)
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
 
 export interface Product {
   id: string;
@@ -29,15 +32,15 @@ export const createProduct = async (product: Product): Promise<Product> => {
     console.log('📦 Creating product:', product.name);
     
     const token = localStorage.getItem('jwt_token');
+    const cleanToken = token ? token.replace(/^["']|["']$/g, '') : null;
     
-    // Use correct endpoint: POST /products
     const response = await axios.post(
-      `${API_URL}/products`,
+      `${ADMIN_API_URL}/products`,
       product,
       {
         headers: {
           'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
+          ...(cleanToken && { 'Authorization': `Bearer ${cleanToken}` })
         }
       }
     );
@@ -61,19 +64,19 @@ export const updateProduct = async (product: Product): Promise<Product> => {
     console.log('📝 Full product data:', product);
     
     const token = localStorage.getItem('jwt_token');
+    const cleanToken = token ? token.replace(/^["']|["']$/g, '') : null;
     
-    const url = `${API_URL}/products/${product.id}`;
-    console.log('🌐 PUT URL:', url);
-    console.log('🔑 Token exists:', !!token);
+    const url = `${ADMIN_API_URL}/products/${product.id}`;
+    console.log('🌐 PUT URL (Admin API):', url);
+    console.log('🔑 Token exists:', !!cleanToken);
     
-    // Try WITHOUT Authorization header first (public API)
     const response = await axios.put(
       url,
       product,
       {
         headers: {
-          'Content-Type': 'application/json'
-          // No Authorization header - test if API is public
+          'Content-Type': 'application/json',
+          ...(cleanToken && { 'Authorization': `Bearer ${cleanToken}` })
         }
       }
     );
@@ -85,30 +88,6 @@ export const updateProduct = async (product: Product): Promise<Product> => {
     console.error('❌ Failed to update product:', error);
     console.error('❌ Error response:', error.response?.data);
     console.error('❌ Error status:', error.response?.status);
-    
-    // If 403, try with Authorization header
-    if (error.response?.status === 403) {
-      console.log('🔑 403 detected, trying with Authorization header...');
-      const token = localStorage.getItem('jwt_token');
-      if (token) {
-        const cleanToken = token.replace(/^["']|["']$/g, '');
-        
-        const retryResponse = await axios.put(
-          `${API_URL}/products/${product.id}`,
-          product,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${cleanToken}`
-            }
-          }
-        );
-        
-        console.log('✅ Retry successful:', retryResponse.data);
-        return retryResponse.data;
-      }
-    }
-    
     throw error;
   }
 };
@@ -116,27 +95,27 @@ export const updateProduct = async (product: Product): Promise<Product> => {
 /**
  * Delete a product
  */
-export const deleteProduct = async (productId: string): Promise<boolean> => {
+export const deleteProduct = async (productId: string): Promise<void> => {
   try {
     console.log('🗑️ Deleting product:', productId);
     
     const token = localStorage.getItem('jwt_token');
+    const cleanToken = token ? token.replace(/^["']|["']$/g, '') : null;
     
-    // Use correct endpoint: DELETE /products/{id}
     await axios.delete(
-      `${API_URL}/products/${productId}`,
+      `${ADMIN_API_URL}/products/${productId}`,
       {
         headers: {
-          ...(token && { Authorization: `Bearer ${token}` })
+          'Content-Type': 'application/json',
+          ...(cleanToken && { 'Authorization': `Bearer ${cleanToken}` })
         }
       }
     );
     
     console.log('✅ Product deleted');
-    return true;
   } catch (error: any) {
     console.error('❌ Failed to delete product:', error);
-    return false;
+    throw error;
   }
 };
 
