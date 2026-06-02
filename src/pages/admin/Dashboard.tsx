@@ -1085,146 +1085,199 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
             </div>
           )}
 
-          {activeTab === 'orders' && (
+{activeTab === 'orders' && (
+             <div className="bg-white rounded-lg shadow">
+               <div className="p-6 border-b">
+                 <h3 className="text-xl font-bold">Orders Management</h3>
+                 <p className="text-sm text-gray-600 mt-1">
+                   {orders.length} orders loaded
+                 </p>
+               </div>
+               <table className="w-full">
+                 <thead className="bg-gray-50 border-b">
+                   <tr>
+                     <th className="px-6 py-4 text-left text-sm font-semibold">Order ID</th>
+                     <th className="px-6 py-4 text-left text-sm font-semibold">Customer</th>
+                     <th className="px-6 py-4 text-left text-sm font-semibold">Email</th>
+                     <th className="px-6 py-4 text-left text-sm font-semibold">Total</th>
+                     <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
+                     <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
+                     <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
+                   </tr>
+                 </thead>
+                 <tbody className="divide-y">
+                   {orders.map((order) => (
+                     <tr key={order.orderId} className="hover:bg-gray-50">
+                       <td className="px-6 py-4 font-medium">{order.orderId}</td>
+                       <td className="px-6 py-4">{order.fullName}</td>
+                       <td className="px-6 py-4">{order.email}</td>
+                       <td className="px-6 py-4 font-semibold">${order.totalPrice?.toFixed(2)}</td>
+                       <td className="px-6 py-4">
+                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                           order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
+                           order.status === 'Out for Delivery' ? 'bg-purple-100 text-purple-700' :
+                           order.status === 'Shipped' ? 'bg-indigo-100 text-indigo-700' :
+                           order.status === 'Ready for Delivery' ? 'bg-blue-100 text-blue-700' :
+                           order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
+                           'bg-yellow-100 text-yellow-700'
+                         }`}>
+                           {order.status || 'Processing'}
+                         </span>
+                       </td>
+                       <td className="px-6 py-4 text-gray-600">
+                         {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                       </td>
+                       <td className="px-6 py-4">
+                         <div className="relative">
+                           <button 
+                             onClick={() => setActiveOrder(activeOrder === order.orderId ? null : order.orderId)}
+                             className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
+                           >
+                             ⚙️ Actions ▼
+                           </button>
+                           {activeOrder === order.orderId && (
+                             <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border z-10">
+                               <button 
+                                 onClick={() => {
+                                   handleViewOrderDetails(order);
+                                   setActiveOrder(null);
+                                 }}
+                                 className="w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2"
+                               >
+                                 📋 View Details
+                               </button>
+                               <div className="border-t my-1"></div>
+                               <button 
+                                 onClick={() => {
+                                   handleUpdateOrderStatus(order, 'Processing');
+                                   setActiveOrder(null);
+                                 }}
+                                 className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                   order.status === 'Processing' ? 'bg-yellow-50 text-yellow-700' : ''
+                                 }`}
+                               >
+                                 🟡 Processing
+                               </button>
+                               <button 
+                                 onClick={() => {
+                                   handleUpdateOrderStatus(order, 'Ready for Delivery');
+                                   setActiveOrder(null);
+                                 }}
+                                 className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                   order.status === 'Ready for Delivery' ? 'bg-blue-50 text-blue-700' : ''
+                                 }`}
+                               >
+                                 🔵 Ready for Delivery
+                               </button>
+                               <button 
+                                 onClick={() => {
+                                   handleUpdateOrderStatus(order, 'Shipped');
+                                   setActiveOrder(null);
+                                 }}
+                                 className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                   order.status === 'Shipped' ? 'bg-indigo-50 text-indigo-700' : ''
+                                 }`}
+                               >
+                                 🚚 Shipped
+                               </button>
+                               <button 
+                                 onClick={() => {
+                                   handleUpdateOrderStatus(order, 'Out for Delivery');
+                                   setActiveOrder(null);
+                                 }}
+                                 className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                   order.status === 'Out for Delivery' ? 'bg-purple-50 text-purple-700' : ''
+                                 }`}
+                               >
+                                 📦 Out for Delivery
+                               </button>
+                               <button 
+                                 onClick={() => {
+                                   handleUpdateOrderStatus(order, 'Delivered');
+                                   setActiveOrder(null);
+                                 }}
+                                 className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                   order.status === 'Delivered' ? 'bg-green-50 text-green-700' : ''
+                                 }`}
+                               >
+                                 ✅ Delivered
+                               </button>
+                               <button 
+                                 onClick={() => {
+                                   handleUpdateOrderStatus(order, 'Cancelled');
+                                   setActiveOrder(null);
+                                 }}
+                                 className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
+                                   order.status === 'Cancelled' ? 'bg-red-50 text-red-700' : ''
+                                 }`}
+                               >
+                                 ❌ Cancelled
+                               </button>
+                               <div className="border-t my-1"></div>
+                               <button 
+                                 onClick={() => {
+                                   handleDeleteOrder(order);
+                                   setActiveOrder(null);
+                                 }}
+                                 className="w-full px-4 py-2 text-left text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
+                               >
+                                 🗑️ Delete Order
+                               </button>
+                             </div>
+                           )}
+                         </div>
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+           )}
+
+          {activeTab === 'products' && (
             <div className="bg-white rounded-lg shadow">
-              <div className="p-6 border-b">
-                <h3 className="text-xl font-bold">Orders Management</h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  {orders.length} orders loaded
-                </p>
+              <div className="p-6 border-b flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold">Products Management</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {products.length} products loaded
+                  </p>
+                </div>
+                <button onClick={handleAddProduct} className="px-4 py-2 bg-gold text-white rounded-lg hover:bg-gold/90">
+                  Add Product
+                </button>
               </div>
               <table className="w-full">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Order ID</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Customer</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Email</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Total</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Status</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Date</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Image</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Product</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Category</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Brand</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Price</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Stock</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {orders.map((order) => (
-                    <tr key={order.orderId} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 font-medium">{order.orderId}</td>
-                      <td className="px-6 py-4">{order.fullName}</td>
-                      <td className="px-6 py-4">{order.email}</td>
-                      <td className="px-6 py-4 font-semibold">${order.totalPrice?.toFixed(2)}</td>
+                  {products.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          order.status === 'Delivered' ? 'bg-green-100 text-green-700' :
-                          order.status === 'Out for Delivery' ? 'bg-purple-100 text-purple-700' :
-                          order.status === 'Shipped' ? 'bg-indigo-100 text-indigo-700' :
-                          order.status === 'Ready for Delivery' ? 'bg-blue-100 text-blue-700' :
-                          order.status === 'Cancelled' ? 'bg-red-100 text-red-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {order.status || 'Processing'}
-                        </span>
+                        <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded" />
                       </td>
-                      <td className="px-6 py-4 text-gray-600">
-                        {new Date(order.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="relative">
-                          <button 
-                            onClick={() => setActiveOrder(activeOrder === order.orderId ? null : order.orderId)}
-                            className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
-                          >
-                            ⚙️ Actions ▼
+                      <td className="px-6 py-4 font-medium">{product.name}</td>
+                      <td className="px-6 py-4">{product.category}</td>
+                      <td className="px-6 py-4">{product.brand}</td>
+                      <td className="px-6 py-4 font-semibold">${product.price}</td>
+                      <td className="px-6 py-4">{product.stock}</td>
+<td className="px-6 py-4">
+                        <div className="flex gap-2">
+                          <button onClick={() => handleEdit(product)} className="p-2 text-blue-600 hover:bg-blue-50 rounded">
+                            <Edit className="w-4 h-4" />
                           </button>
-                          {activeOrder === order.orderId && (
-                            <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border z-10">
-                              <button 
-                                onClick={() => {
-                                  handleViewOrderDetails(order);
-                                  setActiveOrder(null);
-                                }}
-                                className="w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2"
-                              >
-                                📋 View Details
-                              </button>
-                              <div className="border-t my-1"></div>
-                              <button 
-                                onClick={() => {
-                                  handleUpdateOrderStatus(order, 'Processing');
-                                  setActiveOrder(null);
-                                }}
-                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                                  order.status === 'Processing' ? 'bg-yellow-50 text-yellow-700' : ''
-                                }`}
-                              >
-                                🟡 Processing
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  handleUpdateOrderStatus(order, 'Ready for Delivery');
-                                  setActiveOrder(null);
-                                }}
-                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                                  order.status === 'Ready for Delivery' ? 'bg-blue-50 text-blue-700' : ''
-                                }`}
-                              >
-                                🔵 Ready for Delivery
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  handleUpdateOrderStatus(order, 'Shipped');
-                                  setActiveOrder(null);
-                                }}
-                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                                  order.status === 'Shipped' ? 'bg-indigo-50 text-indigo-700' : ''
-                                }`}
-                              >
-                                🚚 Shipped
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  handleUpdateOrderStatus(order, 'Out for Delivery');
-                                  setActiveOrder(null);
-                                }}
-                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                                  order.status === 'Out for Delivery' ? 'bg-purple-50 text-purple-700' : ''
-                                }`}
-                              >
-                                📦 Out for Delivery
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  handleUpdateOrderStatus(order, 'Delivered');
-                                  setActiveOrder(null);
-                                }}
-                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                                  order.status === 'Delivered' ? 'bg-green-50 text-green-700' : ''
-                                }`}
-                              >
-                                ✅ Delivered
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  handleUpdateOrderStatus(order, 'Cancelled');
-                                  setActiveOrder(null);
-                                }}
-                                className={`w-full px-4 py-2 text-left text-xs hover:bg-gray-100 flex items-center gap-2 ${
-                                  order.status === 'Cancelled' ? 'bg-red-50 text-red-700' : ''
-                                }`}
-                              >
-                                ❌ Cancelled
-                              </button>
-                              <div className="border-t my-1"></div>
-                              <button 
-                                onClick={() => {
-                                  handleDeleteOrder(order);
-                                  setActiveOrder(null);
-                                }}
-                                className="w-full px-4 py-2 text-left text-xs hover:bg-red-50 text-red-600 flex items-center gap-2"
-                              >
-                                🗑️ Delete Order
-                              </button>
-                            </div>
-                          )}
+                          <button onClick={() => handleDelete(product.id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -1234,7 +1287,7 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
             </div>
           )}
 
-{activeTab === 'products' && (
+          {activeTab === 'products' && (
              <div className="bg-white rounded-lg shadow">
                <div className="p-6 border-b flex justify-between items-center">
                  <div>
