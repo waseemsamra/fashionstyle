@@ -333,7 +333,9 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
         // Load products
         console.log('📦 Loading products...');
         const productsData = await api.listProducts();
-        const products = productsData.items || productsData;
+        console.log('📊 Raw productsData:', productsData);
+        const products = productsData.items || productsData.items || [];
+        console.log('📦 Products array length:', products.length, 'Total:', productsData.total);
         if (Array.isArray(products)) {
           console.log('✅ Found', products.length, 'products');
           setProducts(products.map((p: any) => ({

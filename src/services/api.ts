@@ -14,11 +14,6 @@ console.log('🔧 Users API URL:', USERS_API_URL);
 console.log('🔧 Orders API URL:', ORDERS_API_URL);
 console.log('🔧 Upload API URL:', UPLOAD_API_URL);
 
-// In-memory cache for products
-let productsCache: any = null;
-let productsCacheTime: number = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
 // Create axios instances for each API base URL
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -98,22 +93,8 @@ export const api = {
 
   // List products with caching
   listProducts: async (params: { category?: string; brand?: string; nextToken?: string } = {}) => {
-    if (!params.nextToken && !params.category && !params.brand) {
-      const now = Date.now();
-      if (productsCache && (now - productsCacheTime) < CACHE_DURATION) {
-        return productsCache;
-      }
-    }
-
     const response = await apiClient.get('/products', { params });
-    const data = response.data;
-
-    if (!params.nextToken && !params.category && !params.brand) {
-      productsCache = data;
-      productsCacheTime = Date.now();
-    }
-
-    return data;
+    return response.data;
   },
 
   // Get single product
