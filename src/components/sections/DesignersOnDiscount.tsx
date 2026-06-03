@@ -35,10 +35,10 @@ useEffect(() => {
            }
          }
          
-         // If still no products, fall back to sale products
-         if (discount.length === 0) {
-           discount = productsArray.filter((p: any) => p.isSale || p.originalPrice).slice(0, 20);
-         }
+// If still no products, fall back to sale products
+          if (discount.length === 0) {
+            discount = productsArray.filter((p: any) => p && (p.isSale === true || p.originalPrice)).slice(0, 20);
+          }
          
          setProducts(discount.slice(0, 20));
        } catch (error) {
