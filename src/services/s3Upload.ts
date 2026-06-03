@@ -25,25 +25,25 @@ export const uploadImageToS3 = async (
     console.log('📤 Getting presigned URL for upload...', file.name);
     console.log('📤 Upload API URL:', UPLOAD_API_URL);
 
-    // Get auth token
-    const token = localStorage.getItem('jwt_token');
-
-    // Step 1: Get presigned URL from backend using fetch (better CORS handling)
+    // Step 1: Get presigned URL from backend using fetch
     const presignedResponse = await fetch(UPLOAD_API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        ...(token && { Authorization: `Bearer ${token}` })
+        'Content-Type': 'application/json'
       },
       mode: 'cors',
       body: JSON.stringify({
         filename: file.name,
-        contentType: file.type
+        contentType: file.type,
+        folder: folder
       })
     });
 
+    console.log('📤 Presigned response status:', presignedResponse.status);
+
     if (!presignedResponse.ok) {
-      throw new Error(`HTTP ${presignedResponse.status}`);
+      const errorText = await presignedResponse.text();
+      throw new Error(`HTTP ${presignedResponse.status}: ${errorText}`);
     }
 
     const presignedData = await presignedResponse.json();
@@ -86,7 +86,7 @@ export const uploadImageToS3 = async (
     console.error('❌ Image upload failed:', error);
     console.error('❌ Error details:', error.message);
     
-    // Fallback: Return local preview URL
+    // Fallback: Return local preview URL for preview purposes
     const localUrl = URL.createObjectURL(file);
     return {
       success: false,

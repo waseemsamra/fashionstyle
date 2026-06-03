@@ -3,7 +3,7 @@ import axios from 'axios';
 // Use correct API URLs from environment variables
 const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
 const USERS_API_URL = import.meta.env.VITE_USERS_API_URL || 'https://7uymscqv6xcutr5f6b2yvcgqri0wnkuj.lambda-url.us-east-1.on.aws';
-const ORDERS_API_URL = import.meta.env.VITE_ORDERS_API_URL || 'https://ooii1l1zf9.execute-api.us-east-1.amazonaws.com/prod/orders';
+const ORDERS_API_URL = import.meta.env.VITE_ORDERS_API_URL || 'https://wthvt3ydseyko2cb5rzxqyfute0vlwpi.lambda-url.us-east-1.on.aws/orders';
 const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || 'https://4dzwj3v7m4mm2ij7q5eibkbdlq0tynyd.lambda-url.us-east-1.on.aws';
 const CATEGORIES_API = import.meta.env.VITE_CATEGORIES_API || 'https://8wzvwch1pi.execute-api.us-east-1.amazonaws.com/prod/categories';
 const SETTINGS_API = import.meta.env.VITE_SETTINGS_API || 'https://c1ntcc0rt6.execute-api.us-east-1.amazonaws.com/prod/settings';
