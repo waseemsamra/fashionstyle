@@ -99,7 +99,7 @@ export default function Categories() {
 {/* Image */}
                <div className={`relative overflow-hidden ${index % 3 === 0 ? 'h-[400px] lg:h-[600px]' : 'h-[280px] lg:h-[290px]'}`}>
                  <img
-                   src={category.image || `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-${category.name.toLowerCase().replace(/\s+/g, '-')}.jpg`}
+                   src={category.image || `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/uploads/category-${category.name.toLowerCase().replace(/\s+/g, '-')}.jpg`}
                    alt={category.name}
                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                    onError={(e) => {
