@@ -98,24 +98,28 @@ export const api = {
   },
 
 // Get all products (handles pagination)
-  getAllProducts: async () => {
-    try {
-      console.log('🔄 getAllProducts: Fetching all products...');
-      // Use URL with limit parameter to get all products in one request
-      const response = await apiClient.get('/products?limit=2000');
-      const data = response.data;
-      
-      console.log('📦 getAllProducts: Response received, items:', data.items?.length || 0, 'total:', data.total);
-      
-      const allItems = data.items || [];
-      
-      console.log('✅ getAllProducts: Returning all', allItems.length, 'products');
-      return { items: allItems, total: allItems.length };
-    } catch (error) {
-      console.error('❌ Error fetching all products:', error);
-      return { items: [], total: 0 };
-    }
-  },
+   getAllProducts: async () => {
+     try {
+       console.log('🔄 getAllProducts: Fetching all products...');
+       
+       // Try public API first (for frontend sections)
+       const response = await fetch(`${API_URL}/products?limit=2000`);
+       
+       if (!response.ok) {
+         throw new Error(`HTTP ${response.status}`);
+       }
+       
+       const data = await response.json();
+       console.log('📦 getAllProducts: Response received, items:', data.items?.length || 0, 'total:', data.total);
+       
+       const allItems = data.items || [];
+       console.log('✅ getAllProducts: Returning all', allItems.length, 'products');
+       return { items: allItems, total: allItems.length };
+     } catch (error: any) {
+       console.error('❌ Error fetching all products:', error);
+       return { items: [], total: 0 };
+     }
+   },
 
   // Get single product
   getProduct: async (id: string) => {

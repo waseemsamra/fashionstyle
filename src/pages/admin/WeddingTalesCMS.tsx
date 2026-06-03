@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
+
 export default function WeddingTalesCMS() {
   const navigate = useNavigate();
   const [allProducts, setAllProducts] = useState<any[]>([]);
@@ -18,30 +20,30 @@ export default function WeddingTalesCMS() {
     loadProducts();
   }, []);
 
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getAllProducts();
-      const productsArray = data.items || [];
-      
-      // Filter wedding/bridal products
-      const weddingProducts = productsArray.filter((p: any) => 
-        p.category?.toLowerCase().includes('bridal') || 
-        p.category?.toLowerCase().includes('wedding') ||
-        p.occasions?.some((o: any) => o.toLowerCase().includes('wedding'))
-      );
-      
-      setAllProducts(weddingProducts);
-      
-      // Get currently selected from backend (isWeddingTales flag)
-      const selected = weddingProducts.filter((p: any) => p.isWeddingTales).map((p: any) => p.id);
-      setSelectedIds(selected);
-    } catch (error) {
-      console.error('Failed to load products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadProducts = async () => {
+     try {
+       setLoading(true);
+       const data = await api.getAllProducts();
+       const productsArray = (data.items || []).filter((p: any) => p && p.id);
+       
+       // Filter wedding/bridal products
+       const weddingProducts = productsArray.filter((p: any) => 
+         p.category?.toLowerCase().includes('bridal') || 
+         p.category?.toLowerCase().includes('wedding') ||
+         (p.occasions || []).some((o: any) => o?.toLowerCase?.().includes('wedding'))
+       );
+       
+       setAllProducts(weddingProducts);
+       
+       // Get currently selected from backend (isWeddingTales flag)
+       const selected = weddingProducts.filter((p: any) => p.isWeddingTales).map((p: any) => p.id);
+       setSelectedIds(selected);
+     } catch (error) {
+       console.error('Failed to load products:', error);
+     } finally {
+       setLoading(false);
+     }
+   };
 
   const toggleSelected = (productId: string) => {
     setSelectedIds(prev => {
@@ -70,30 +72,32 @@ export default function WeddingTalesCMS() {
       
       console.log('📝 Starting save with', selectedIds.length, 'wedding tales products');
       
-      // Update all products in batch
-      const response = await fetch(
-        'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products/batch-wedding',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            weddingIds: selectedIds
-          })
+      // Update all products individually using admin API
+      const updatePromises = allProducts.map(async (product: any) => {
+        const shouldFlag = selectedIds.includes(product.id);
+        if (product.isWeddingTales !== shouldFlag) {
+          try {
+            await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+              },
+              body: JSON.stringify({
+                ...product,
+                isWeddingTales: shouldFlag
+              })
+            });
+          } catch (err) {
+            console.error('Failed to update product:', product.id);
+          }
         }
-      );
+      });
       
-      if (response.ok) {
-        const result = await response.json();
-        alert(`✅ Successfully saved ${selectedIds.length} products to Wedding Tales!`);
-        console.log('✅ Wedding Tales updated:', result);
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Save failed:', response.status, errorText);
-        alert(`❌ Failed to save: ${response.status}`);
-      }
+      await Promise.all(updatePromises);
+      
+      alert(`✅ Successfully saved ${selectedIds.length} products to Wedding Tales!`);
+      console.log('✅ Wedding Tales updated:', selectedIds);
     } catch (error: any) {
       console.error('Failed to save wedding tales:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));

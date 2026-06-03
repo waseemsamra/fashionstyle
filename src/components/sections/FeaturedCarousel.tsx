@@ -16,19 +16,20 @@ export default function FeaturedCarousel() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = await api.getAllProducts();
-        let productsArray = data.items || [];
-        const featured = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
-        setProducts(featured.length > 0 ? featured : productsArray.slice(0, 8));
-      } catch (error) {
-        setProducts([]);
-      }
-    };
-    loadProducts();
-  }, []);
+useEffect(() => {
+     const loadProducts = async () => {
+       try {
+         const data = await api.getAllProducts();
+         let productsArray = (data.items || []).filter((p: any) => p && p.id);
+         const featured = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
+         setProducts(featured.length > 0 ? featured : productsArray.slice(0, 8));
+       } catch (error) {
+         console.error('Error loading featured products:', error);
+         setProducts([]);
+       }
+     };
+     loadProducts();
+   }, []);
 
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;

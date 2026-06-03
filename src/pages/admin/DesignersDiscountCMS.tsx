@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
 
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
+
 export default function DesignersDiscountCMS() {
   const navigate = useNavigate();
   const [step, setStep] = useState<'brands' | 'products'>('brands');
@@ -20,28 +22,28 @@ export default function DesignersDiscountCMS() {
     loadData();
   }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getAllProducts();
-      const productsArray = data.items || [];
-      
-      // Get all unique brands
-      const uniqueBrands = [...new Set(productsArray.map((p: any) => p.brand).filter(Boolean))] as string[];
-      setAllBrands(uniqueBrands);
-      setProducts(productsArray);
-      
-      // Get currently selected brands and products
-      const discountProducts = productsArray.filter((p: any) => p.isDesignersDiscount);
-      const selectedBrandSet = new Set(discountProducts.map((p: any) => p.brand) as string[]);
-      setSelectedBrands([...selectedBrandSet]);
-      setSelectedProductIds(discountProducts.map((p: any) => p.id));
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadData = async () => {
+     try {
+       setLoading(true);
+       const data = await api.getAllProducts();
+       const productsArray = (data.items || []).filter((p: any) => p && p.id);
+       
+       // Get all unique brands
+       const uniqueBrands = [...new Set(productsArray.map((p: any) => p.brand).filter(Boolean))] as string[];
+       setAllBrands(uniqueBrands);
+       setProducts(productsArray);
+       
+       // Get currently selected brands and products
+       const discountProducts = productsArray.filter((p: any) => p.isDesignersDiscount);
+       const selectedBrandSet = new Set(discountProducts.map((p: any) => p.brand).filter(Boolean) as string[]);
+       setSelectedBrands([...selectedBrandSet]);
+       setSelectedProductIds(discountProducts.map((p: any) => p.id));
+     } catch (error) {
+       console.error('Failed to load data:', error);
+     } finally {
+       setLoading(false);
+     }
+   };
 
   const toggleBrand = (brand: string) => {
     setSelectedBrands(prev => {
@@ -83,27 +85,27 @@ export default function DesignersDiscountCMS() {
       
       console.log('📝 Starting save with', selectedProductIds.length, 'products from', selectedBrands.length, 'brands');
       
-      // Update all products in backend
-      const updatePromises = products.map(async (product: any) => {
-        const shouldFlag = selectedProductIds.includes(product.id);
-        if (product.isDesignersDiscount !== shouldFlag) {
-          try {
-            await fetch(`https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products/${product.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                ...product,
-                isDesignersDiscount: shouldFlag
-              })
-            });
-          } catch (err) {
-            console.error('Failed to update product:', product.id);
-          }
-        }
-      });
+// Update all products in backend
+       const updatePromises = products.map(async (product: any) => {
+         const shouldFlag = selectedProductIds.includes(product.id);
+         if (product.isDesignersDiscount !== shouldFlag) {
+           try {
+             await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+               method: 'PUT',
+               headers: {
+                 'Content-Type': 'application/json',
+                 'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+               },
+               body: JSON.stringify({
+                 ...product,
+                 isDesignersDiscount: shouldFlag
+               })
+             });
+           } catch (err) {
+             console.error('Failed to update product:', product.id);
+           }
+         }
+       });
       
       await Promise.all(updatePromises);
       
@@ -117,16 +119,17 @@ export default function DesignersDiscountCMS() {
     }
   };
 
-  // Filter products by selected brands and search
-  const filteredProducts = products.filter(p => 
-    selectedBrands.includes(p.brand) &&
-    (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+// Filter products by selected brands and search
+   const filteredProducts = products.filter(p => 
+     selectedBrands.includes(p.brand) &&
+     p && p.name && p.brand &&
+     (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
+   );
 
-  const filteredBrands = allBrands.filter(brand => 
-    brand.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const filteredBrands = allBrands.filter(brand => 
+     brand && brand.toLowerCase().includes(searchTerm.toLowerCase())
+   );
 
   return (
     <div className="min-h-screen bg-beige-100 py-12">

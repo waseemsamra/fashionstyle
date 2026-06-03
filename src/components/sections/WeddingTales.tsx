@@ -16,31 +16,32 @@ export default function WeddingTales() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = await api.getAllProducts();
-        let productsArray = data.items || [];
-        
-        // First try to load products with isWeddingTales flag
-        let wedding = productsArray.filter((p: any) => p.isWeddingTales);
-        
-        // If no products have the flag, fall back to category filtering
-        if (wedding.length === 0) {
-          wedding = productsArray.filter((p: any) => 
-            p.category?.toLowerCase().includes('bridal') || 
-            p.category?.toLowerCase().includes('wedding') ||
-            p.occasions?.some((o: any) => o.toLowerCase().includes('wedding'))
-          );
-        }
-        
-        setProducts(wedding.slice(0, 20));
-      } catch (error) {
-        setProducts([]);
-      }
-    };
-    loadProducts();
-  }, []);
+useEffect(() => {
+     const loadProducts = async () => {
+       try {
+         const data = await api.getAllProducts();
+         let productsArray = (data.items || []).filter((p: any) => p && p.id);
+         
+         // First try to load products with isWeddingTales flag
+         let wedding = productsArray.filter((p: any) => p.isWeddingTales);
+         
+         // If no products have the flag, fall back to category filtering
+         if (wedding.length === 0) {
+           wedding = productsArray.filter((p: any) => 
+             p.category?.toLowerCase().includes('bridal') || 
+             p.category?.toLowerCase().includes('wedding') ||
+             (p.occasions || []).some((o: any) => o?.toLowerCase?.().includes('wedding'))
+           );
+         }
+         
+         setProducts(wedding.slice(0, 20));
+       } catch (error) {
+         console.error('Error loading wedding tales:', error);
+         setProducts([]);
+       }
+     };
+     loadProducts();
+   }, []);
 
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;

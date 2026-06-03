@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
+
 const MAX_FEATURED = 20;
 
 export default function FeaturedCollection() {
@@ -21,22 +23,22 @@ export default function FeaturedCollection() {
     loadProducts();
   }, []);
 
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getAllProducts();
-      const productsArray = data.items || [];
-      setAllProducts(productsArray);
-      
-      // Get currently featured products
-      const featured = productsArray.filter((p: any) => p.isFeatured);
-      setFeaturedIds(featured.map((p: any) => p.id));
-    } catch (error) {
-      console.error('Failed to load products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadProducts = async () => {
+     try {
+       setLoading(true);
+       const data = await api.getAllProducts();
+       const productsArray = (data.items || []).filter((p: any) => p && p.id);
+       setAllProducts(productsArray);
+       
+       // Get currently featured products
+       const featured = productsArray.filter((p: any) => p.isFeatured);
+       setFeaturedIds(featured.map((p: any) => p.id));
+     } catch (error) {
+       console.error('Failed to load products:', error);
+     } finally {
+       setLoading(false);
+     }
+   };
 
   const toggleFeatured = (productId: string) => {
     setFeaturedIds(prev => {
@@ -77,21 +79,21 @@ export default function FeaturedCollection() {
       console.log('✅ Featured:', featured);
       console.log('❌ Not Featured:', notFeatured);
       
-      // Send batch update request
-      const response = await fetch(
-        'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws/products/batch-featured',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            featured,
-            notFeatured
-          })
-        }
-      );
+// Send batch update request
+       const response = await fetch(
+         `${ADMIN_API_URL}/products/batch-featured`,
+         {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+             'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+           },
+           body: JSON.stringify({
+             featured,
+             notFeatured
+           })
+         }
+       );
       
       if (response.ok) {
         const result = await response.json();

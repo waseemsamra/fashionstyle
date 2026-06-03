@@ -17,38 +17,39 @@ export default function DesignersOnDiscount() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const data = await api.getAllProducts();
-        let productsArray = data.items || [];
-        
-        // First try to load products with isDesignersDiscount flag
-        let discount = productsArray.filter((p: any) => p.isDesignersDiscount);
-        
-        // If no flagged products, check localStorage (for testing before Lambda deployed)
-        if (discount.length === 0) {
-          const savedProductIds = localStorage.getItem('designersDiscountProducts');
-          if (savedProductIds) {
-            const ids = JSON.parse(savedProductIds);
-            discount = productsArray.filter((p: any) => ids.includes(p.id));
-          }
-        }
-        
-        // If still no products, fall back to sale products
-        if (discount.length === 0) {
-          discount = productsArray.filter((p: any) => p.isSale || p.originalPrice).slice(0, 20);
-        }
-        
-        setProducts(discount.slice(0, 20));
-      } catch (error) {
-        setProducts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadProducts();
-  }, []);
+useEffect(() => {
+     const loadProducts = async () => {
+       try {
+         const data = await api.getAllProducts();
+         let productsArray = (data.items || []).filter((p: any) => p && p.id);
+         
+         // First try to load products with isDesignersDiscount flag
+         let discount = productsArray.filter((p: any) => p.isDesignersDiscount);
+         
+         // If no flagged products, check localStorage (for testing before Lambda deployed)
+         if (discount.length === 0) {
+           const savedProductIds = localStorage.getItem('designersDiscountProducts');
+           if (savedProductIds) {
+             const ids = JSON.parse(savedProductIds);
+             discount = productsArray.filter((p: any) => ids.includes(p.id));
+           }
+         }
+         
+         // If still no products, fall back to sale products
+         if (discount.length === 0) {
+           discount = productsArray.filter((p: any) => p.isSale || p.originalPrice).slice(0, 20);
+         }
+         
+         setProducts(discount.slice(0, 20));
+       } catch (error) {
+         console.error('Error loading designers discount:', error);
+         setProducts([]);
+       } finally {
+         setIsLoading(false);
+       }
+     };
+     loadProducts();
+   }, []);
 
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;
