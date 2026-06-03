@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
 
-const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://u3c5ywl3vp3gz3tkcczpr5pztm0ozkbc.lambda-url.us-east-1.on.aws';
 
 export default function DesignersDiscountCMS() {
   const navigate = useNavigate();
