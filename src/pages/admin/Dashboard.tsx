@@ -364,53 +364,50 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
 
 // Load categories from API
         console.log('📂 Loading categories...');
-        const savedCategories = localStorage.getItem('admin_categories');
         
-        if (!savedCategories) {
-          try {
-            const categoryData = await api.getCategories();
-            console.log('📊 Categories API response:', categoryData);
-            
-            if (Array.isArray(categoryData) && categoryData.length > 0) {
-              // Handle both string array and object array responses
-              const categoryObjects = categoryData.map((item: any, index: number) => {
-                if (typeof item === 'string') {
-                  return { id: index + 1, name: item, description: `${item} collection`, products: 0, image: '' };
-                }
-                return {
-                  id: item.id || index + 1,
-                  name: item.name,
-                  description: item.description || `${item.name} collection`,
-                  products: item.products || 0,
-                  image: item.image || ''
-                };
-              });
-              
-              // Try to add product counts
-              let items: any[] = [];
-              try {
-                const productsData = await api.getAllProducts();
-                items = productsData.items || [];
-              } catch (productErr) {
-                console.warn('Could not load products for counts:', productErr);
+        try {
+          const categoryData = await api.getCategories();
+          console.log('📊 Categories API response:', categoryData);
+          
+          if (Array.isArray(categoryData) && categoryData.length > 0) {
+            // Handle both string array and object array responses
+            const categoryObjects = categoryData.map((item: any, index: number) => {
+              if (typeof item === 'string') {
+                return { id: index + 1, name: item, description: `${item} collection`, products: 0, image: '' };
               }
-              
-              // Add product counts while preserving images from API
-              const categoriesWithCounts = categoryObjects.map((cat: any) => {
-                const catProducts = items.filter((p: any) => p.category === cat.name);
-                return {
-                  ...cat,
-                  products: catProducts.length
-                };
-              });
-              
-              console.log('✅ Loaded', categoriesWithCounts.length, 'categories from API');
-              setCategories(categoriesWithCounts);
-              localStorage.setItem('admin_categories', JSON.stringify(categoriesWithCounts));
+              return {
+                id: item.id || index + 1,
+                name: item.name,
+                description: item.description || `${item.name} collection`,
+                products: item.products || 0,
+                image: item.image || ''
+              };
+            });
+            
+            // Try to add product counts
+            let items: any[] = [];
+            try {
+              const productsData = await api.getAllProducts();
+              items = productsData.items || [];
+            } catch (productErr) {
+              console.warn('Could not load products for counts:', productErr);
             }
-          } catch (catErr) {
-            console.log('⚠️ Failed to load categories from API:', catErr);
+            
+            // Add product counts while preserving images from API
+            const categoriesWithCounts = categoryObjects.map((cat: any) => {
+              const catProducts = items.filter((p: any) => p.category === cat.name);
+              return {
+                ...cat,
+                products: catProducts.length
+              };
+            });
+            
+            console.log('✅ Loaded', categoriesWithCounts.length, 'categories from API');
+            setCategories(categoriesWithCounts);
+            localStorage.setItem('admin_categories', JSON.stringify(categoriesWithCounts));
           }
+        } catch (catErr) {
+          console.log('⚠️ Failed to load categories from API:', catErr);
         }
         
         // Load orders using admin orders endpoint
@@ -473,27 +470,9 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
       }
     };
     checkAuth();
-  }, [navigate]);
-
-// EFFECT 1: Load categories from localStorage or extract from products
-   useEffect(() => {
-     console.log('🔍 Loading categories from localStorage...');
-     const savedCategories = localStorage.getItem('admin_categories');
-     
-     if (savedCategories) {
-       try {
-         const parsed = JSON.parse(savedCategories);
-         console.log('✅ Loaded', parsed.length, 'categories from localStorage');
-         console.log('📋 Categories:', parsed.map((c: any) => c.name));
-         setCategories(parsed);
-       } catch (e) {
-         console.error('❌ Failed to parse localStorage categories:', e);
-       }
-     }
-     // If no localStorage, categories will be extracted from products in useEffect
-   }, []);
-
-  // EFFECT 2: Load dashboard settings from API (runs second)
+}, [navigate]);
+   
+   // EFFECT 2: Load dashboard settings from API (runs second)
   useEffect(() => {
     let mounted = true;
 
