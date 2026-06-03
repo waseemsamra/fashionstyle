@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
-const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || 'https://wpswtrwvil.execute-api.us-east-1.amazonaws.com/prod/generate-upload-url';
+const UPLOAD_API_URL = import.meta.env.VITE_UPLOAD_API_URL || 'https://4dzwj3v7m4mm2ij7q5eibkbdlq0tynyd.lambda-url.us-east-1.on.aws';
 const S3_BUCKET = import.meta.env.VITE_S3_BUCKET || 'fashionstore-products-1773891614v';
 const S3_REGION = import.meta.env.VITE_S3_REGION || 'us-east-1';
 const S3_BASE_URL = import.meta.env.VITE_S3_BASE_URL || 'https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com';
@@ -28,25 +28,28 @@ export const uploadImageToS3 = async (
     // Get auth token
     const token = localStorage.getItem('jwt_token');
 
-    // Step 1: Get presigned URL from backend
-    const presignedResponse = await axios.post<UploadResponse>(
-      UPLOAD_API_URL,
-      {
-        fileName: file.name,
-        fileType: file.type,
-        folder: folder
+    // Step 1: Get presigned URL from backend using fetch (better CORS handling)
+    const presignedResponse = await fetch(UPLOAD_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` })
       },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` })
-        }
-      }
-    );
+      mode: 'cors',
+      body: JSON.stringify({
+        filename: file.name,
+        contentType: file.type
+      })
+    });
 
-    console.log('✅ Presigned URL received:', presignedResponse.data.uploadUrl ? 'URL obtained' : 'No URL');
+    if (!presignedResponse.ok) {
+      throw new Error(`HTTP ${presignedResponse.status}`);
+    }
 
-    const { uploadUrl, imageUrl, key } = presignedResponse.data;
+    const presignedData = await presignedResponse.json();
+    console.log('✅ Presigned URL received:', presignedData.uploadUrl ? 'URL obtained' : 'No URL');
+
+    const { uploadUrl, imageUrl, key } = presignedData;
 
     if (!uploadUrl) {
       throw new Error('No upload URL received from backend');
@@ -57,11 +60,17 @@ export const uploadImageToS3 = async (
     console.log('📤 S3 Bucket:', S3_BUCKET);
     console.log('📤 Region:', S3_REGION);
     
-    await axios.put(uploadUrl, file, {
+    const s3Response = await fetch(uploadUrl, {
+      method: 'PUT',
       headers: {
         'Content-Type': file.type
-      }
+      },
+      body: file
     });
+
+    if (!s3Response.ok) {
+      throw new Error(`S3 upload failed: ${s3Response.status}`);
+    }
 
     console.log('✅ Image uploaded successfully to S3:', imageUrl);
     console.log('📤 Final Image URL:', imageUrl || `${S3_BASE_URL}/${key}`);
@@ -75,7 +84,7 @@ export const uploadImageToS3 = async (
 
   } catch (error: any) {
     console.error('❌ Image upload failed:', error);
-    console.error('❌ Error details:', error.response?.data || error.message);
+    console.error('❌ Error details:', error.message);
     
     // Fallback: Return local preview URL
     const localUrl = URL.createObjectURL(file);
@@ -83,7 +92,7 @@ export const uploadImageToS3 = async (
       success: false,
       imageUrl: localUrl,
       key: '',
-      message: error.response?.data?.message || error.message || 'Upload failed, using local preview'
+      message: error.message || 'Upload failed, using local preview'
     };
   }
 };
