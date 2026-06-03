@@ -102,34 +102,34 @@ const [selectedImage, setSelectedImage] = useState<string>('');
         </Button>
 
         <div className="grid md:grid-cols-2 gap-8 bg-white rounded-lg shadow-lg p-8">
-          <div>
-            {/* Main Image Gallery */}
-            <div className="space-y-4">
-              {/* Main Image */}
-              <LazyImage
-                src={selectedImage}
-                alt={product.name}
-                productName={product.name}
-                productId={product.id}
-                className="w-full rounded-lg aspect-[3/4]"
-              />
-              {/* Thumbnail Gallery */}
-              {product.images && product.images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {product.images.map((img: string, index: number) => (
-                    <img
-                      key={index}
-                      src={img}
-                      alt={`${product.name} - view ${index + 1}`}
-                      className={`w-20 h-20 object-cover rounded cursor-pointer border-2 transition ${selectedImage === img ? 'border-gold' : 'border-transparent hover:border-gold'}`}
-                      loading="lazy"
-                      onClick={() => setSelectedImage(img)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+<div>
+             {/* Image Gallery - Vertical thumbnails on left */}
+             <div className="flex gap-4">
+               {/* Thumbnails - Vertical on left */}
+               {product.images && product.images.length > 1 && (
+                 <div className="flex flex-col gap-2 overflow-y-auto max-h-[600px] pr-2">
+                   {product.images.map((img: string, index: number) => (
+                     <img
+                       key={index}
+                       src={img}
+                       alt={`${product.name} - view ${index + 1}`}
+                       className={`w-20 h-20 object-cover rounded cursor-pointer border-2 transition flex-shrink-0 ${selectedImage === img ? 'border-gold' : 'border-transparent hover:border-gold'}`}
+                       loading="lazy"
+                       onClick={() => setSelectedImage(img)}
+                     />
+                   ))}
+                 </div>
+               )}
+               {/* Main Image */}
+               <LazyImage
+                 src={selectedImage}
+                 alt={product.name}
+                 productName={product.name}
+                 productId={product.id}
+                 className="flex-1 rounded-lg aspect-[3/4]"
+               />
+             </div>
+           </div>
 
           <div className="space-y-6">
             <div>
