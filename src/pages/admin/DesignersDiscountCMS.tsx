@@ -120,17 +120,19 @@ const handleSave = async () => {
     }
   };
 
-// Filter products by selected brands and search
-    const filteredProducts = products.filter(p => 
-      p && p.name && p.brand &&
-      selectedBrands.includes(p.brand) &&
-      (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+// Filter products by selected brands and search (only on step 2)
+    const filteredProducts = step === 'products' 
+      ? products.filter(p => 
+          p && p.name && p.brand &&
+          selectedBrands.includes(p.brand) &&
+          (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+      : [];
 
-const filteredBrands = allBrands.filter(brand => 
-     brand && brand.toLowerCase().includes(searchTerm.toLowerCase())
-   );
+    const filteredBrands = allBrands.filter(brand => 
+      brand && brand.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   return (
     <div className="min-h-screen bg-beige-100 py-12">
