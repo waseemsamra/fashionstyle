@@ -22,17 +22,21 @@ useEffect(() => {
          const data = await api.getAllProducts();
          let productsArray = (data.items || []).filter((p: any) => p && p.id);
          
-         // First try to load products with isWeddingTales flag
-         let wedding = productsArray.filter((p: any) => p.isWeddingTales);
-         
-         // If no products have the flag, fall back to category filtering
-         if (wedding.length === 0) {
-           wedding = productsArray.filter((p: any) => 
-             p.category?.toLowerCase().includes('bridal') || 
-             p.category?.toLowerCase().includes('wedding') ||
-             (p.occasions || []).some((o: any) => o?.toLowerCase?.().includes('wedding'))
-           );
-         }
+// First try to load products with isWeddingTales flag
+        let wedding = productsArray.filter((p: any) => p && p.isWeddingTales);
+        
+        // If no products have the flag, fall back to category filtering
+        if (wedding.length === 0) {
+          wedding = productsArray.filter((p: any) => {
+            if (!p || !p.category) return false;
+            const catLower = String(p.category || '').toLowerCase();
+            const occasionsMatch = p.occasions && Array.isArray(p.occasions) && 
+              p.occasions.some((o: any) => String(o || '').toLowerCase().includes('wedding'));
+            return catLower.includes('bridal') || 
+                   catLower.includes('wedding') ||
+                   occasionsMatch;
+          });
+        }
          
          setProducts(wedding.slice(0, 20));
        } catch (error) {
@@ -151,7 +155,7 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onAddToCar
         </div>
       </div>
       <div className="p-4">
-        <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
+        <p className="text-gray-500 text-xs uppercase mb-1">{product.category || product.brand || ''}</p>
         <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold mb-2 group-hover:text-gold cursor-pointer">{product.name}</h3>
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (<Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />))}

@@ -112,12 +112,15 @@ const loadProducts = async () => {
     }
   };
 
-  const filteredProducts = allProducts.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const filteredProducts = allProducts.filter(product => {
+     if (!product || !product.name) return false;
+     const searchLower = searchTerm.toLowerCase();
+     const nameMatch = product.name.toLowerCase().includes(searchLower);
+     const brandMatch = product.brand && product.brand.toLowerCase().includes(searchLower);
+     const categoryMatch = product.category && product.category.toLowerCase().includes(searchLower);
+     const skuMatch = product.sku && product.sku.toLowerCase().includes(searchLower);
+     return nameMatch || brandMatch || categoryMatch || skuMatch;
+   });
 
   return (
     <div className="min-h-screen bg-beige-100 py-12">
@@ -201,7 +204,7 @@ function ProductCard({ product, isFeatured, onToggle, disabled }: any) {
       </div>
       <div className="p-4">
         <h3 className="font-semibold text-sm mb-1 line-clamp-2">{product.name}</h3>
-        <p className="text-xs text-gray-500 mb-2">{product.brand} • {product.category}</p>
+        <p className="text-xs text-gray-500 mb-2">{product.brand || ''} • {product.category || ''}</p>
         <p className="text-gold font-bold">${product.price}</p>
       </div>
     </div>
@@ -217,11 +220,11 @@ function ProductListItem({ product, isFeatured, onToggle, disabled }: any) {
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold line-clamp-1">{product.name}</h3>
         <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-          <span>{product.brand}</span>
+          <span>{product.brand || ''}</span>
           <span>•</span>
-          <span>{product.category}</span>
+          <span>{product.category || ''}</span>
           <span>•</span>
-          <span>SKU: {product.sku}</span>
+          <span>SKU: {product.sku || ''}</span>
         </div>
       </div>
       <div className="text-right">

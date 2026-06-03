@@ -120,12 +120,12 @@ const loadData = async () => {
   };
 
 // Filter products by selected brands and search
-   const filteredProducts = products.filter(p => 
-     selectedBrands.includes(p.brand) &&
-     p && p.name && p.brand &&
-     (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
-   );
+    const filteredProducts = products.filter(p => 
+      p && p.name && p.brand &&
+      selectedBrands.includes(p.brand) &&
+      (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       p.brand.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
 
 const filteredBrands = allBrands.filter(brand => 
      brand && brand.toLowerCase().includes(searchTerm.toLowerCase())
@@ -267,7 +267,7 @@ const filteredBrands = allBrands.filter(brand =>
                   />
                 </div>
                 <div className="p-4">
-                  <p className="text-xs text-gray-500 uppercase mb-1">{product.brand}</p>
+                  <p className="text-xs text-gray-500 uppercase mb-1">{product.brand || ''}</p>
                   <h3 className="font-semibold text-sm mb-2 line-clamp-2">{product.name}</h3>
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-gold">${product.price}</span>

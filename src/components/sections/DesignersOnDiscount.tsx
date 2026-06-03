@@ -181,7 +181,7 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
             onClick={(e) => { e.stopPropagation(); onBrandNavigate(); }}
             className="bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full font-bold uppercase text-sm tracking-wide shadow-lg whitespace-nowrap hover:bg-gray-100"
           >
-            {product.brand}
+            {product.brand || product.name || 'Product'}
           </button>
         </div>
         
@@ -213,7 +213,7 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
             onClick={(e) => { e.stopPropagation(); onBrandNavigate(); }}
             className="underline hover:text-gold"
           >
-            {product.brand}
+            {product.brand || ''}
           </button>
         </p>
         <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer">{product.name}</h3>

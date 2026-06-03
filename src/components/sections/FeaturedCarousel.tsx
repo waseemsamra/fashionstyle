@@ -20,7 +20,7 @@ useEffect(() => {
      const loadProducts = async () => {
        try {
          const data = await api.getAllProducts();
-         let productsArray = (data.items || []).filter((p: any) => p && p.id);
+         let productsArray = ((data.items || []).filter((p: any) => p && p.id && p.name)).filter((p: any) => p);
          const featured = productsArray.filter((p: any) => p.isFeatured).slice(0, 20);
          setProducts(featured.length > 0 ? featured : productsArray.slice(0, 8));
        } catch (error) {
@@ -139,7 +139,7 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onAddToCar
         </div>
       </div>
       <div className="p-4">
-        <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
+        <p className="text-gray-500 text-xs uppercase mb-1">{product.category || ''}</p>
         <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold mb-2 group-hover:text-gold cursor-pointer">{product.name}</h3>
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (<Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />))}

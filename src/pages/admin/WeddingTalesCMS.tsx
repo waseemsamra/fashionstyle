@@ -26,12 +26,12 @@ const loadProducts = async () => {
        const data = await api.getAllProducts();
        const productsArray = (data.items || []).filter((p: any) => p && p.id);
        
-       // Filter wedding/bridal products
-       const weddingProducts = productsArray.filter((p: any) => 
-         p.category?.toLowerCase().includes('bridal') || 
-         p.category?.toLowerCase().includes('wedding') ||
-         (p.occasions || []).some((o: any) => o?.toLowerCase?.().includes('wedding'))
-       );
+// Filter wedding/bridal products
+        const weddingProducts = productsArray.filter((p: any) => 
+          (p.category && p.category.toLowerCase().includes('bridal')) || 
+          (p.category && p.category.toLowerCase().includes('wedding')) ||
+          (p.occasions && Array.isArray(p.occasions) && p.occasions.some((o: any) => String(o || '').toLowerCase().includes('wedding')))
+        );
        
        setAllProducts(weddingProducts);
        
@@ -106,11 +106,14 @@ const loadProducts = async () => {
     }
   };
 
-  const filteredProducts = allProducts.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const filteredProducts = allProducts.filter(product => {
+     if (!product || !product.name) return false;
+     const searchLower = searchTerm.toLowerCase();
+     const nameMatch = product.name.toLowerCase().includes(searchLower);
+     const brandMatch = product.brand && product.brand.toLowerCase().includes(searchLower);
+     const categoryMatch = product.category && product.category.toLowerCase().includes(searchLower);
+     return nameMatch || brandMatch || categoryMatch;
+   });
 
   return (
     <div className="min-h-screen bg-beige-100 py-12">
@@ -206,7 +209,7 @@ function ProductCard({ product, isSelected, onToggle }: any) {
       </div>
 
       <div className="p-4">
-        <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{product.category}</p>
+        <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{product.category || ''}</p>
         <h3 className="font-playfair text-lg font-semibold text-black mb-2">{product.name}</h3>
         <p className="text-gold font-semibold text-lg">${product.price}</p>
       </div>
