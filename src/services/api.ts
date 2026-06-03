@@ -375,28 +375,32 @@ export const api = {
   },
 
 // Get categories (uses Categories API)
-  getCategories: async () => {
-    try {
-      const response = await fetch(`${CATEGORIES_API}`, {
-        method: 'GET',
-        headers: {
-          
-          'Content-Type': 'application/json'
-        },
-        mode: 'cors'
-      });
+   getCategories: async () => {
+     try {
+       const response = await fetch(`${CATEGORIES_API}`, {
+         method: 'GET',
+         headers: {
+           
+           'Content-Type': 'application/json'
+         },
+         mode: 'cors'
+       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to fetch categories');
-      }
+       if (!response.ok) {
+         const error = await response.text();
+         throw new Error(error || 'Failed to fetch categories');
+       }
 
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to get categories:', error);
-      throw error;
-    }
-  },
+       return await response.json();
+     } catch (error) {
+       console.error('Failed to get categories:', error);
+       // Return fallback categories array instead of throwing
+       return [
+         'Accessories', 'Bridal Wear', 'Casual Wear', 'Footwear', 'Formal Wear',
+         'Kids Wear', 'Men Wear', 'New Arrivals', 'Party Wear', 'Summer Collection', 'Winter Collection'
+       ];
+     }
+   },
 
 // Save categories (uses Categories API)
   saveCategories: async (categories: any[]) => {

@@ -32,8 +32,15 @@ export default function Categories() {
       try {
         // Fetch categories from the dedicated categories API
         const categoryList = await api.getCategories();
-        const data = await api.getAllProducts();
-        const items = data.items || [];
+        
+        // Try to get products for counts, but continue if it fails
+        let items: any[] = [];
+        try {
+          const data = await api.getAllProducts();
+          items = data.items || [];
+        } catch (productErr) {
+          console.warn('Could not load products for category counts:', productErr);
+        }
         
         // Build category objects with product counts
         setCategories(categoryList.map((name: string, index: number) => ({
