@@ -375,16 +375,14 @@ export const api = {
   },
 
 // Get categories (uses Categories API)
-   getCategories: async () => {
-     try {
-       const response = await fetch(`${CATEGORIES_API}`, {
-         method: 'GET',
-         headers: {
-           
-           'Content-Type': 'application/json'
-         },
-         mode: 'cors'
-       });
+    getCategories: async () => {
+      try {
+        const response = await fetch(`${CATEGORIES_API}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
 
        if (!response.ok) {
          const error = await response.text();
