@@ -31,7 +31,6 @@ export const uploadImageToS3 = async (
       headers: {
         'Content-Type': 'application/json'
       },
-      mode: 'cors',
       body: JSON.stringify({
         filename: file.name,
         contentType: file.type,
