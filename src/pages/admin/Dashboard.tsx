@@ -5,8 +5,9 @@ import { api } from '@/services/api';
 import { userService } from '@/services/user';
 import { createProduct, updateProduct, deleteProduct } from '@/services/productService';
 import { getAllBrands, createBrand } from '@/services/brandService';
+import { uploadImageToS3 } from '@/services/s3Upload';
 import ProductForm from '@/components/admin/ProductForm';
-import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle } from 'lucide-react';
+import { Package, ShoppingCart, Users as UsersIcon, DollarSign, LogOut, LayoutDashboard, Settings, Tag, Edit, Trash2, X, UserCircle, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 type DashboardProps = { minimal?: boolean };
@@ -361,89 +362,57 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
           console.log('⚠️ Could not load brands:', brandErr);
         }
 
-// Load categories from API or extract from products
+// Load categories from API
         console.log('📂 Loading categories...');
         const savedCategories = localStorage.getItem('admin_categories');
         
         if (!savedCategories) {
           try {
-            // Try to get categories from dedicated API endpoint (same as Categories.tsx)
-            const categoryNames = await api.getCategories();
-            console.log('📊 Categories API response:', categoryNames);
+            const categoryData = await api.getCategories();
+            console.log('📊 Categories API response:', categoryData);
             
-            if (Array.isArray(categoryNames) && categoryNames.length > 0) {
-              // Build category objects with product counts
-              const categoryMap = new Map();
-              products.forEach((p: any) => {
-                if (p.category) {
-                  if (!categoryMap.has(p.category)) {
-                    categoryMap.set(p.category, {
-                      id: categoryMap.size + 1,
-                      name: p.category,
-                      description: `${p.category} collection`,
-                      products: 1
-                    });
-                  } else {
-                    const existing = categoryMap.get(p.category);
-                    existing.products = (existing.products || 0) + 1;
-                  }
+            if (Array.isArray(categoryData) && categoryData.length > 0) {
+              // Handle both string array and object array responses
+              const categoryObjects = categoryData.map((item: any, index: number) => {
+                if (typeof item === 'string') {
+                  return { id: index + 1, name: item, description: `${item} collection`, products: 0, image: '' };
                 }
+                return {
+                  id: item.id || index + 1,
+                  name: item.name,
+                  description: item.description || `${item.name} collection`,
+                  products: item.products || 0,
+                  image: item.image || ''
+                };
               });
               
-              // Merge API categories with product counts
-              const mergedCategories = categoryNames.map((name: string, index: number) => {
-                const existing = categoryMap.get(name) || { id: index + 1, name, description: `${name} collection`, products: 0 };
-                return existing;
+              // Try to add product counts
+              let items: any[] = [];
+              try {
+                const productsData = await api.getAllProducts();
+                items = productsData.items || [];
+              } catch (productErr) {
+                console.warn('Could not load products for counts:', productErr);
+              }
+              
+              // Add product counts while preserving images from API
+              const categoriesWithCounts = categoryObjects.map((cat: any) => {
+                const catProducts = items.filter((p: any) => p.category === cat.name);
+                return {
+                  ...cat,
+                  products: catProducts.length
+                };
               });
               
-              console.log('✅ Loaded', mergedCategories.length, 'categories from API');
-              setCategories(mergedCategories);
-              localStorage.setItem('admin_categories', JSON.stringify(mergedCategories));
-            } else {
-              // Fallback: extract categories from products
-              const categoryMap = new Map();
-              products.forEach((p: any) => {
-                if (p.category && !categoryMap.has(p.category)) {
-                  categoryMap.set(p.category, {
-                    id: categoryMap.size + 1,
-                    name: p.category,
-                    description: `${p.category} collection`,
-                    products: 1
-                  });
-                } else if (p.category) {
-                  const existing = categoryMap.get(p.category);
-                  existing.products = (existing.products || 0) + 1;
-                }
-              });
-              const extractedCategories = Array.from(categoryMap.values());
-              console.log('✅ Extracted', extractedCategories.length, 'categories from products');
-              setCategories(extractedCategories);
-              localStorage.setItem('admin_categories', JSON.stringify(extractedCategories));
+              console.log('✅ Loaded', categoriesWithCounts.length, 'categories from API');
+              setCategories(categoriesWithCounts);
+              localStorage.setItem('admin_categories', JSON.stringify(categoriesWithCounts));
             }
           } catch (catErr) {
-            console.log('⚠️ Failed to load categories from API, extracting from products:', catErr);
-            const categoryMap = new Map();
-            products.forEach((p: any) => {
-              if (p.category && !categoryMap.has(p.category)) {
-                categoryMap.set(p.category, {
-                  id: categoryMap.size + 1,
-                  name: p.category,
-                  description: `${p.category} collection`,
-                  products: 1
-                });
-              } else if (p.category) {
-                const existing = categoryMap.get(p.category);
-                existing.products = (existing.products || 0) + 1;
-              }
-            });
-            const extractedCategories = Array.from(categoryMap.values());
-            setCategories(extractedCategories);
-            localStorage.setItem('admin_categories', JSON.stringify(extractedCategories));
+            console.log('⚠️ Failed to load categories from API:', catErr);
           }
-        } else {
-          console.log('ℹ️ Categories: Using localStorage data');
         }
-
+        
         // Load orders using admin orders endpoint
         console.log('📋 Loading orders...');
         try {
@@ -1865,6 +1834,38 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
                   className="w-full p-3 border rounded-lg"
                   rows={3}
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Category Image</label>
+                <div className="flex items-center gap-3">
+                  {editingCategory.image && (
+                    <img src={editingCategory.image} alt="Preview" className="w-20 h-20 object-cover rounded" />
+                  )}
+                  <label className="flex-1 cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const uploadResult = await uploadImageToS3(file, 'categories');
+                          if (uploadResult.success) {
+                            setEditingCategory({...editingCategory, image: uploadResult.imageUrl});
+                            toast.success('Image uploaded successfully');
+                          } else {
+                            toast.error('Failed to upload image');
+                          }
+                        }
+                      }}
+                      className="hidden"
+                    />
+                    <div className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200">
+                      <Upload className="w-4 h-4" />
+                      <span className="text-sm">Upload Image</span>
+                    </div>
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Upload a category image to S3. If none uploaded, first product image will be used.</p>
               </div>
               <div className="flex gap-4 pt-4">
                 <button onClick={handleSaveCategory} className="flex-1 py-3 bg-gold text-white rounded-lg hover:bg-gold/90">

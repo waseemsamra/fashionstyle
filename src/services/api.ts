@@ -391,14 +391,37 @@ export const api = {
          throw new Error(error || 'Failed to fetch categories');
        }
 
-       return await response.json();
+       const data = await response.json();
+       
+       // Support both array of strings and array of category objects
+       if (Array.isArray(data)) {
+         if (typeof data[0] === 'string') {
+           // It's an array of category names, convert to objects
+           return (data as string[]).map((name: string, index: number) => ({
+             id: index + 1,
+             name,
+             description: '',
+             products: 0,
+             image: ''
+           }));
+         }
+         return data;
+       }
+       
+       return data.items || [];
      } catch (error) {
        console.error('Failed to get categories:', error);
        // Return fallback categories array instead of throwing
        return [
          'Accessories', 'Bridal Wear', 'Casual Wear', 'Footwear', 'Formal Wear',
          'Kids Wear', 'Men Wear', 'New Arrivals', 'Party Wear', 'Summer Collection', 'Winter Collection'
-       ];
+       ].map((name: string, index: number) => ({
+         id: index + 1,
+         name,
+         description: '',
+         products: 0,
+         image: ''
+       }));
      }
    },
 

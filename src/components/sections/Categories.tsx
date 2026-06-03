@@ -31,7 +31,7 @@ export default function Categories() {
     const loadCategories = async () => {
       try {
         // Fetch categories from the dedicated categories API
-        const categoryList = await api.getCategories();
+        const categoryData = await api.getCategories();
         
         // Try to get products for counts, but continue if it fails
         let items: any[] = [];
@@ -42,12 +42,21 @@ export default function Categories() {
           console.warn('Could not load products for category counts:', productErr);
         }
         
-        // Build category objects with product counts
-        setCategories(categoryList.map((name: string, index: number) => ({
-          id: index + 1,
-          name,
-          itemCount: items.filter((p: any) => p.category === name).length
-        })));
+        // Handle both string array and object array responses
+        const categoryList = Array.isArray(categoryData) ? categoryData : [];
+        const processedCategories = categoryList.map((item: any, index: number) => {
+          const name = typeof item === 'string' ? item : item.name;
+          const categoryProducts = items.filter((p: any) => p.category === name);
+          return {
+            id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
+            name,
+            itemCount: categoryProducts.length,
+            // Use the image from API if available, otherwise fallback
+            image: (typeof item === 'string' ? '' : item.image) || ''
+          };
+        });
+        
+        setCategories(processedCategories);
       } catch (error) {
         console.error('Failed to load categories:', error);
       }
@@ -87,17 +96,17 @@ export default function Categories() {
                 transitionDuration: '700ms',
               }}
             >
-              {/* Image */}
-              <div className={`relative overflow-hidden ${index % 3 === 0 ? 'h-[400px] lg:h-[600px]' : 'h-[280px] lg:h-[290px]'}`}>
-                <img
-                  src={`https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-${category.name.toLowerCase().replace(/\s+/g, '-')}.jpg`}
-                  alt={category.name}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.src = 'https://via.placeholder.com/600x800/f5f5dc/333333?text=' + encodeURIComponent(category.name) + '';
-                  }}
-                />
+{/* Image */}
+               <div className={`relative overflow-hidden ${index % 3 === 0 ? 'h-[400px] lg:h-[600px]' : 'h-[280px] lg:h-[290px]'}`}>
+                 <img
+                   src={category.image || `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-${category.name.toLowerCase().replace(/\s+/g, '-')}.jpg`}
+                   alt={category.name}
+                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                   onError={(e) => {
+                     const target = e.currentTarget as HTMLImageElement;
+                     target.src = 'https://placehold.co/600x800/f5f5dc/333333?text=' + encodeURIComponent(category.name);
+                   }}
+                 />
                 
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
