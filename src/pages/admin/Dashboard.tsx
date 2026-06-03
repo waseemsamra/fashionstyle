@@ -89,12 +89,7 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     { id: 3, name: 'Chiffon', description: 'Light and elegant' },
     { id: 4, name: 'Lawn', description: 'Summer fabric' },
   ]);
-  const [categories, setCategories] = useState([
-    { id: 1, name: 'Casual Wear', description: 'Everyday clothing', products: 120 },
-    { id: 2, name: 'Formal Wear', description: 'Special occasion dresses', products: 78 },
-    { id: 3, name: 'Bridal Wear', description: 'Wedding ensembles', products: 45 },
-    { id: 4, name: 'Accessories', description: 'Complete your look', products: 56 },
-  ]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -102,21 +97,7 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 100;
 
-  // FORCE LOAD categories from localStorage IMMEDIATELY on mount
-  if (typeof window !== 'undefined') {
-    const savedCategories = localStorage.getItem('admin_categories');
-    if (savedCategories) {
-      try {
-        const parsed = JSON.parse(savedCategories);
-        console.log('🚀 FORCE LOAD: Categories from localStorage:', parsed.length, 'categories');
-        // Don't set here - let useEffect handle it to avoid hydration issues
-      } catch (e) {
-        console.error('❌ Failed to parse localStorage categories:', e);
-      }
-    }
-  }
-
-  // Track ALL category state changes
+// Track ALL category state changes
   useEffect(() => {
     console.log('👀 CATEGORIES STATE CHANGED!');
     console.log('  - Count:', categories.length, 'categories');
@@ -380,23 +361,88 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
           console.log('⚠️ Could not load brands:', brandErr);
         }
 
-        // Load categories from products
+// Load categories from API or extract from products
         console.log('📂 Loading categories...');
-        const categoryMap = new Map();
-        products.forEach((p: any) => {
-          if (p.category && !categoryMap.has(p.category)) {
-            categoryMap.set(p.category, {
-              id: categoryMap.size + 1,
-              name: p.category,
-              description: `${p.category} collection`,
-              products: 1
+        const savedCategories = localStorage.getItem('admin_categories');
+        
+        if (!savedCategories) {
+          try {
+            // Try to get categories from dedicated API endpoint (same as Categories.tsx)
+            const categoryNames = await api.getCategories();
+            console.log('📊 Categories API response:', categoryNames);
+            
+            if (Array.isArray(categoryNames) && categoryNames.length > 0) {
+              // Build category objects with product counts
+              const categoryMap = new Map();
+              products.forEach((p: any) => {
+                if (p.category) {
+                  if (!categoryMap.has(p.category)) {
+                    categoryMap.set(p.category, {
+                      id: categoryMap.size + 1,
+                      name: p.category,
+                      description: `${p.category} collection`,
+                      products: 1
+                    });
+                  } else {
+                    const existing = categoryMap.get(p.category);
+                    existing.products = (existing.products || 0) + 1;
+                  }
+                }
+              });
+              
+              // Merge API categories with product counts
+              const mergedCategories = categoryNames.map((name: string, index: number) => {
+                const existing = categoryMap.get(name) || { id: index + 1, name, description: `${name} collection`, products: 0 };
+                return existing;
+              });
+              
+              console.log('✅ Loaded', mergedCategories.length, 'categories from API');
+              setCategories(mergedCategories);
+              localStorage.setItem('admin_categories', JSON.stringify(mergedCategories));
+            } else {
+              // Fallback: extract categories from products
+              const categoryMap = new Map();
+              products.forEach((p: any) => {
+                if (p.category && !categoryMap.has(p.category)) {
+                  categoryMap.set(p.category, {
+                    id: categoryMap.size + 1,
+                    name: p.category,
+                    description: `${p.category} collection`,
+                    products: 1
+                  });
+                } else if (p.category) {
+                  const existing = categoryMap.get(p.category);
+                  existing.products = (existing.products || 0) + 1;
+                }
+              });
+              const extractedCategories = Array.from(categoryMap.values());
+              console.log('✅ Extracted', extractedCategories.length, 'categories from products');
+              setCategories(extractedCategories);
+              localStorage.setItem('admin_categories', JSON.stringify(extractedCategories));
+            }
+          } catch (catErr) {
+            console.log('⚠️ Failed to load categories from API, extracting from products:', catErr);
+            const categoryMap = new Map();
+            products.forEach((p: any) => {
+              if (p.category && !categoryMap.has(p.category)) {
+                categoryMap.set(p.category, {
+                  id: categoryMap.size + 1,
+                  name: p.category,
+                  description: `${p.category} collection`,
+                  products: 1
+                });
+              } else if (p.category) {
+                const existing = categoryMap.get(p.category);
+                existing.products = (existing.products || 0) + 1;
+              }
             });
-          } else if (p.category) {
-            const existing = categoryMap.get(p.category);
-            existing.products = (existing.products || 0) + 1;
+            const extractedCategories = Array.from(categoryMap.values());
+            setCategories(extractedCategories);
+            localStorage.setItem('admin_categories', JSON.stringify(extractedCategories));
           }
-        });
-        console.log('ℹ️ Categories: Using localStorage data (NOT overwriting with API data)');
+        } else {
+          console.log('ℹ️ Categories: Using localStorage data');
+        }
 
         // Load orders using admin orders endpoint
         console.log('📋 Loading orders...');
@@ -460,24 +506,23 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     checkAuth();
   }, [navigate]);
 
-  // EFFECT 1: Load categories from localStorage ONLY - NO API calls
-  useEffect(() => {
-    console.log('🔍 Loading categories from localStorage...');
-    const savedCategories = localStorage.getItem('admin_categories');
-    
-    if (savedCategories) {
-      try {
-        const parsed = JSON.parse(savedCategories);
-        console.log('✅ Loaded', parsed.length, 'categories from localStorage');
-        console.log('📋 Categories:', parsed.map((c: any) => c.name));
-        setCategories(parsed);
-      } catch (e) {
-        console.error('❌ Failed to parse localStorage categories:', e);
-      }
-    } else {
-      console.log('⚠️ No saved categories in localStorage, using defaults');
-    }
-  }, []);
+// EFFECT 1: Load categories from localStorage or extract from products
+   useEffect(() => {
+     console.log('🔍 Loading categories from localStorage...');
+     const savedCategories = localStorage.getItem('admin_categories');
+     
+     if (savedCategories) {
+       try {
+         const parsed = JSON.parse(savedCategories);
+         console.log('✅ Loaded', parsed.length, 'categories from localStorage');
+         console.log('📋 Categories:', parsed.map((c: any) => c.name));
+         setCategories(parsed);
+       } catch (e) {
+         console.error('❌ Failed to parse localStorage categories:', e);
+       }
+     }
+     // If no localStorage, categories will be extracted from products in useEffect
+   }, []);
 
   // EFFECT 2: Load dashboard settings from API (runs second)
   useEffect(() => {
