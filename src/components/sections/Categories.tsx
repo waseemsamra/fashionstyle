@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
-import { categories } from '@/data/products';
+import { api } from '@/services/api';
 
 export default function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const navigate = useNavigate();
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -24,6 +25,27 @@ export default function Categories() {
     }
 
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        // Fetch categories from the dedicated categories API
+        const categoryList = await api.getCategories();
+        const data = await api.getAllProducts();
+        const items = data.items || [];
+        
+        // Build category objects with product counts
+        setCategories(categoryList.map((name: string, index: number) => ({
+          id: index + 1,
+          name,
+          itemCount: items.filter((p: any) => p.category === name).length
+        })));
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    };
+    loadCategories();
   }, []);
 
   return (
@@ -54,16 +76,20 @@ export default function Categories() {
                 index % 3 === 0 ? 'lg:row-span-2' : ''
               } ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}
               style={{
-                transitionDelay: isVisible ? `${index * 80 + 200}ms` : '0ms',
+                transitionDelay: `${index * 80 + 200}ms`,
                 transitionDuration: '700ms',
               }}
             >
               {/* Image */}
               <div className={`relative overflow-hidden ${index % 3 === 0 ? 'h-[400px] lg:h-[600px]' : 'h-[280px] lg:h-[290px]'}`}>
                 <img
-                  src={category.image}
+                  src={`https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-${category.name.toLowerCase().replace(/\s+/g, '-')}.jpg`}
                   alt={category.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.src = 'https://via.placeholder.com/600x800/f5f5dc/333333?text=' + encodeURIComponent(category.name) + '';
+                  }}
                 />
                 
                 {/* Gradient Overlay */}
@@ -80,11 +106,6 @@ export default function Categories() {
                   <h3 className="font-playfair text-xl md:text-2xl font-semibold text-white mb-1 group-hover:-translate-y-1 transition-transform duration-300">
                     {category.name}
                   </h3>
-                  
-                  {/* Description */}
-                  <p className="text-white/70 text-sm mb-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75">
-                    {category.description}
-                  </p>
                   
                   {/* Arrow */}
                   <div className="flex items-center gap-2 text-gold opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100">
