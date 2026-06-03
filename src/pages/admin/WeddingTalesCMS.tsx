@@ -72,32 +72,33 @@ const loadProducts = async () => {
       
       console.log('📝 Starting save with', selectedIds.length, 'wedding tales products');
       
-      // Update all products individually using admin API
+      // Update all products individually using the working product update endpoint
       const updatePromises = allProducts.map(async (product: any) => {
         const shouldFlag = selectedIds.includes(product.id);
         if (product.isWeddingTales !== shouldFlag) {
-          try {
-            await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
-              },
-              body: JSON.stringify({
-                ...product,
-                isWeddingTales: shouldFlag
-              })
-            });
-          } catch (err) {
-            console.error('Failed to update product:', product.id);
+          const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+            },
+            body: JSON.stringify({
+              ...product,
+              isWeddingTales: shouldFlag
+            })
+          });
+          if (!response.ok) {
+            console.error('Failed to update product:', product.id, response.status);
           }
+          return response;
         }
       });
       
-      await Promise.all(updatePromises);
+      const results = await Promise.all(updatePromises);
+      const successCount = results.filter(r => r?.ok).length;
       
       alert(`✅ Successfully saved ${selectedIds.length} products to Wedding Tales!`);
-      console.log('✅ Wedding Tales updated:', selectedIds);
+      console.log('✅ Wedding Tales updated:', successCount, 'products');
     } catch (error: any) {
       console.error('Failed to save wedding tales:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));

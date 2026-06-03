@@ -1,0 +1,304 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Batch endpoints for Featured, Wedding Tales, and Designers Discount
+
+Parameters:
+  RestApiId:
+    Type: String
+    Description: Existing API Gateway REST API ID
+    Default: l7u50xa9j4
+
+  ProductsTableName:
+    Type: String
+    Default: fashionstore-products-prod
+
+  Environment:
+    Type: String
+    Default: prod
+
+Resources:
+  # Batch Featured Lambda
+  BatchFeaturedFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub fashionstore-${Environment}-batch-featured
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          PRODUCTS_TABLE: !Ref ProductsTableName
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+          const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE;
+          exports.handler = async (event) => {
+            const headers = {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+              'Access-Control-Allow-Methods': 'POST,OPTIONS'
+            };
+            if (event.httpMethod === 'OPTIONS') {
+              return { statusCode: 200, headers, body: '' };
+            }
+            try {
+              const body = JSON.parse(event.body);
+              const { featuredIds } = body;
+              if (!Array.isArray(featuredIds)) {
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'featuredIds must be an array' }) };
+              }
+              const scanResult = await dynamodb.scan({ TableName: PRODUCTS_TABLE }).promise();
+              const products = scanResult.Items;
+              const updatePromises = [];
+              for (const product of products) {
+                const isFeatured = featuredIds.includes(product.id);
+                if (product.isFeatured !== isFeatured) {
+                  updatePromises.push(dynamodb.update({
+                    TableName: PRODUCTS_TABLE,
+                    Key: { id: product.id, PK: `PRODUCT#${product.id}` },
+                    UpdateExpression: 'SET isFeatured = :isFeatured, updatedAt = :updatedAt',
+                    ExpressionAttributeValues: { ':isFeatured': isFeatured, ':updatedAt': new Date().toISOString() }
+                  }).promise());
+                }
+              }
+              await Promise.all(updatePromises);
+              return { statusCode: 200, headers, body: JSON.stringify({ message: 'Featured products updated', updated: updatePromises.length }) };
+            } catch (error) {
+              return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+            }
+          };
+
+  # Batch Wedding Tales Lambda
+  BatchWeddingFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub fashionstore-${Environment}-batch-wedding
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          PRODUCTS_TABLE: !Ref ProductsTableName
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+          const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE;
+          exports.handler = async (event) => {
+            const headers = {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+              'Access-Control-Allow-Methods': 'POST,OPTIONS'
+            };
+            if (event.httpMethod === 'OPTIONS') {
+              return { statusCode: 200, headers, body: '' };
+            }
+            try {
+              const body = JSON.parse(event.body);
+              const { weddingIds } = body;
+              if (!Array.isArray(weddingIds)) {
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'weddingIds must be an array' }) };
+              }
+              const scanResult = await dynamodb.scan({ TableName: PRODUCTS_TABLE }).promise();
+              const products = scanResult.Items;
+              const updatePromises = [];
+              for (const product of products) {
+                const isWeddingTales = weddingIds.includes(product.id);
+                if (product.isWeddingTales !== isWeddingTales) {
+                  updatePromises.push(dynamodb.update({
+                    TableName: PRODUCTS_TABLE,
+                    Key: { id: product.id, PK: `PRODUCT#${product.id}` },
+                    UpdateExpression: 'SET isWeddingTales = :val, updatedAt = :updatedAt',
+                    ExpressionAttributeValues: { ':val': isWeddingTales, ':updatedAt': new Date().toISOString() }
+                  }).promise());
+                }
+              }
+              await Promise.all(updatePromises);
+              return { statusCode: 200, headers, body: JSON.stringify({ message: 'Wedding Tales updated', updated: updatePromises.length }) };
+            } catch (error) {
+              return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+            }
+          };
+
+  # Batch Designers Discount Lambda
+  BatchDesignersFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub fashionstore-${Environment}-batch-designers
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 30
+      Environment:
+        Variables:
+          PRODUCTS_TABLE: !Ref ProductsTableName
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+          const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE;
+          exports.handler = async (event) => {
+            const headers = {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+              'Access-Control-Allow-Methods': 'POST,OPTIONS'
+            };
+            if (event.httpMethod === 'OPTIONS') {
+              return { statusCode: 200, headers, body: '' };
+            }
+            try {
+              const body = JSON.parse(event.body);
+              const { designersDiscount } = body;
+              if (!Array.isArray(designersDiscount)) {
+                return { statusCode: 400, headers, body: JSON.stringify({ error: 'designersDiscount must be an array' }) };
+              }
+              const scanResult = await dynamodb.scan({ TableName: PRODUCTS_TABLE }).promise();
+              const products = scanResult.Items;
+              const updatePromises = [];
+              for (const product of products) {
+                const isDesignersDiscount = designersDiscount.includes(product.id);
+                if (product.isDesignersDiscount !== isDesignersDiscount) {
+                  updatePromises.push(dynamodb.update({
+                    TableName: PRODUCTS_TABLE,
+                    Key: { id: product.id, PK: `PRODUCT#${product.id}` },
+                    UpdateExpression: 'SET isDesignersDiscount = :val, updatedAt = :updatedAt',
+                    ExpressionAttributeValues: { ':val': isDesignersDiscount, ':updatedAt': new Date().toISOString() }
+                  }).promise());
+                }
+              }
+              await Promise.all(updatePromises);
+              return { statusCode: 200, headers, body: JSON.stringify({ message: 'Designers Discount updated', updated: updatePromises.length }) };
+            } catch (error) {
+              return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+            }
+          };
+
+  # IAM Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Scan
+                Resource: !Ref ProductsTableName
+
+  # API Gateway Resources
+  ProductsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref RestApiId
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: products
+
+  # OPTIONS /products (CORS)
+  ProductsOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref ProductsResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,POST,PUT,DELETE,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  # POST /products/batch-featured
+  BatchFeaturedMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref ProductsResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BatchFeaturedFunction.Arn}/invocations
+
+  # POST /products/batch-wedding
+  BatchWeddingMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref ProductsResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BatchWeddingFunction.Arn}/invocations
+
+  # POST /products/batch-designers
+  BatchDesignersMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref RestApiId
+      ResourceId: !Ref ProductsResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${BatchDesignersFunction.Arn}/invocations
+
+  # Lambda Permissions
+  BatchFeaturedPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BatchFeaturedFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApiId}/*/*
+
+  BatchWeddingPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BatchWeddingFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApiId}/*/*
+
+  BatchDesignersPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BatchDesignersFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${RestApiId}/*/*
+
+Outputs:
+  ApiUrl:
+    Value: !Sub https://${RestApiId}.execute-api.${AWS::Region}.amazonaws.com/${Environment}
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiUrl'

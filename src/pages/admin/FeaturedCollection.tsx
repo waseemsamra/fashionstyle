@@ -68,42 +68,34 @@ const loadProducts = async () => {
       }
       
       console.log('📝 Starting save with', featuredIds.length, 'featured products');
-      console.log('⭐ Featured IDs:', featuredIds);
       
-      // Separate products into featured and notFeatured
-      const featured = featuredIds;
-      const notFeatured = allProducts
-        .filter((p: any) => !featuredIds.includes(p.id))
-        .map((p: any) => p.id);
+      // Update all products individually using the working product update endpoint
+      const updatePromises = allProducts.map(async (product: any) => {
+        const shouldFlag = featuredIds.includes(product.id);
+        if (product.isFeatured !== shouldFlag) {
+          const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+            },
+            body: JSON.stringify({
+              ...product,
+              isFeatured: shouldFlag
+            })
+          });
+          if (!response.ok) {
+            console.error('Failed to update product:', product.id, response.status);
+          }
+          return response;
+        }
+      });
       
-      console.log('✅ Featured:', featured);
-      console.log('❌ Not Featured:', notFeatured);
+      const results = await Promise.all(updatePromises);
+      const successCount = results.filter(r => r?.ok).length;
       
-// Send batch update request
-       const response = await fetch(
-         `${ADMIN_API_URL}/products/batch-featured`,
-         {
-           method: 'POST',
-           headers: {
-             'Content-Type': 'application/json',
-             'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
-           },
-           body: JSON.stringify({
-             featured,
-             notFeatured
-           })
-         }
-       );
-      
-      if (response.ok) {
-        const result = await response.json();
-        alert(`✅ Successfully saved ${featured.length} featured products!`);
-        console.log('✅ Featured collection updated:', result);
-      } else {
-        const errorText = await response.text();
-        console.error('❌ Save failed:', response.status, errorText);
-        alert(`❌ Failed to save: ${response.status}`);
-      }
+      alert(`✅ Successfully saved ${featuredIds.length} featured products!`);
+      console.log('✅ Featured collection updated:', successCount, 'products');
     } catch (error: any) {
       console.error('Failed to save featured collection:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));

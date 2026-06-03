@@ -69,7 +69,7 @@ const loadData = async () => {
     });
   };
 
-  const handleSave = async () => {
+const handleSave = async () => {
     try {
       setSaving(true);
       
@@ -85,32 +85,33 @@ const loadData = async () => {
       
       console.log('📝 Starting save with', selectedProductIds.length, 'products from', selectedBrands.length, 'brands');
       
-// Update all products in backend
-       const updatePromises = products.map(async (product: any) => {
-         const shouldFlag = selectedProductIds.includes(product.id);
-         if (product.isDesignersDiscount !== shouldFlag) {
-           try {
-             await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
-               method: 'PUT',
-               headers: {
-                 'Content-Type': 'application/json',
-                 'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
-               },
-               body: JSON.stringify({
-                 ...product,
-                 isDesignersDiscount: shouldFlag
-               })
-             });
-           } catch (err) {
-             console.error('Failed to update product:', product.id);
-           }
-         }
-       });
+      // Update all products individually using the working product update endpoint
+      const updatePromises = products.map(async (product: any) => {
+        const shouldFlag = selectedProductIds.includes(product.id);
+        if (product.isDesignersDiscount !== shouldFlag) {
+          const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+            },
+            body: JSON.stringify({
+              ...product,
+              isDesignersDiscount: shouldFlag
+            })
+          });
+          if (!response.ok) {
+            console.error('Failed to update product:', product.id, response.status);
+          }
+          return response;
+        }
+      });
       
-      await Promise.all(updatePromises);
+      const results = await Promise.all(updatePromises);
+      const successCount = results.filter(r => r?.ok).length;
       
       alert(`✅ Successfully saved ${selectedProductIds.length} products to Designers On Discount!`);
-      console.log('✅ Designers Discount updated:', selectedProductIds);
+      console.log('✅ Designers Discount updated:', successCount, 'products');
     } catch (error: any) {
       console.error('Failed to save designers discount:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));
