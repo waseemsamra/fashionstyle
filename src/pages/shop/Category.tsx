@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { featuredProducts, newArrivals } from '@/data/products';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ShoppingBag, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
@@ -12,17 +12,42 @@ export default function Category() {
   const { name } = useParams();
   const navigate = useNavigate();
   const { addToCart, setIsCartOpen } = useCart();
+  const [products, setProducts] = useState<any[]>([]);
+
+  const normalize = (value: unknown) =>
+    String(value ?? '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [name]);
 
-  const allProducts = [...featuredProducts, ...newArrivals];
-  const categoryProducts = allProducts.filter(
-    (product) => product.category.toLowerCase() === name?.toLowerCase()
-  );
+  useEffect(() => {
+    let isMounted = true;
+    const fetchProducts = async () => {
+      try {
+        const data = await api.getAllProducts();
+        if (isMounted) {
+          setProducts(data.items || []);
+        }
+      } catch (error) {
+        console.error('Failed to load category products:', error);
+        if (isMounted) {
+          setProducts([]);
+        }
+      }
+    };
+    fetchProducts();
+    return () => { isMounted = false };
+  }, []);
 
-  const handleAddToCart = (product: typeof allProducts[0]) => {
+  const categoryProducts = useMemo(() => products.filter(
+    (product) => normalize(product?.category) === normalize(name)
+  ), [products, name]);
+
+  const handleAddToCart = (product: any) => {
     addToCart(product);
     toast.success(`${product.name} added to cart!`, {
       action: {
