@@ -1288,8 +1288,8 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
                   <tr>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Image</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Product</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">Category</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Brand</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold">Category</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Price</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Stock</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold">Actions</th>
@@ -1302,8 +1302,8 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
                         <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded" />
                       </td>
                       <td className="px-6 py-4 font-medium">{product.name}</td>
-                      <td className="px-6 py-4">{product.category}</td>
                       <td className="px-6 py-4">{product.brand}</td>
+                      <td className="px-6 py-4">{product.category}</td>
                       <td className="px-6 py-4 font-semibold">${product.price}</td>
                       <td className="px-6 py-4">{product.stock}</td>
                       <td className="px-6 py-4">

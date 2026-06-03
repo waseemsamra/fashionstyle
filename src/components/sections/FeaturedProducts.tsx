@@ -251,7 +251,7 @@ useEffect(() => {
 
                   {/* Product Info */}
                   <div className="p-4">
-                    <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{product.category || ''}</p>
+                    <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{product.brand || ''}</p>
                     <h3 onClick={() => navigate(getProductUrl(product))} className="font-playfair text-lg font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer">{product.name}</h3>
                     <div className="flex items-center gap-1 mb-2">
                       {[...Array(5)].map((_, i) => (<Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />))}

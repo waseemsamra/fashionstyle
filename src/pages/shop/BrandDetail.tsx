@@ -143,7 +143,7 @@ export default function BrandDetail() {
                 </div>
               </div>
               <div className="p-4">
-                <p className="text-gray-500 text-xs uppercase mb-1">{product.category}</p>
+                <p className="text-gray-500 text-xs uppercase mb-1">{product.brand}</p>
                 <h3
                   onClick={() => navigate(getProductUrl(product))}
                   className="font-semibold text-lg mb-2 cursor-pointer hover:text-gold transition"

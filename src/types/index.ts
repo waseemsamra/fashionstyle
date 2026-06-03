@@ -5,6 +5,7 @@ export interface Product {
   originalPrice?: number;
   image: string;
   category: string;
+  brand?: string;
   isNew?: boolean;
   isSale?: boolean;
   rating?: number;

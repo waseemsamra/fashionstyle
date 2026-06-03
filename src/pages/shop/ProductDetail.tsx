@@ -133,11 +133,11 @@ const [selectedImage, setSelectedImage] = useState<string>('');
 
           <div className="space-y-6">
             <div>
-              <span className="text-sm text-gray-500 uppercase">{product.category}</span>
+              <span className="text-sm text-gray-500 uppercase">{product.brand}</span>
               <h1 className="text-3xl font-bold mt-2">{product.name}</h1>
               <p className="text-sm text-gray-600 mt-1">Product ID: {product.id || product.PK}</p>
-              {product.brand && (
-                <p className="text-sm text-gray-600 mt-1">Brand: {product.brand}</p>
+              {product.category && (
+                <p className="text-sm text-gray-600 mt-1">Category: {product.category}</p>
               )}
             </div>
 
