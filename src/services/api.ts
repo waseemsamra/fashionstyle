@@ -123,8 +123,9 @@ export const api = {
 
   // Get single product
   getProduct: async (id: string) => {
-    const products = await api.listProducts();
-    return products.find((p: any) => p.id === id) || null;
+    const data = await api.getAllProducts();
+    const items = Array.isArray(data?.items) ? data.items : [];
+    return items.find((p: any) => String(p.id) === String(id) || String(p.PK) === String(id)) || null;
   },
 
   // Search products

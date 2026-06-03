@@ -27,7 +27,8 @@ export const useProduct = (id: string) => {
       // Fallback: get from list (cached)
       const allProducts = await api.listProducts();
       const items = Array.isArray(allProducts?.items) ? allProducts.items : [];
-      return items.find((p: any) => String(p.id) === String(id) || String(p.PK) === String(id));
+      const found = items.find((p: any) => String(p.id) === String(id) || String(p.PK) === String(id));
+      return found || null;
     },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
