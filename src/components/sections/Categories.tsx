@@ -68,13 +68,11 @@ export default function Categories() {
           const imageFromApi = typeof item === 'string' ? '' : (item.image || '');
           let image = '';
           
-          if (imageFromApi && imageFromApi.includes('categories/')) {
-            const parts = imageFromApi.split('categories/');
-            const filename = parts[1] || '';
-            // Use mapped filename for categories/ folder
-            const s3Name = categoryImageMap[name.toLowerCase()] || name.toLowerCase().replace(/\s+/g, '-');
-            image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${s3Name}.jpg`;
-          } else if (imageFromApi) {
+if (imageFromApi && imageFromApi.includes('categories/')) {
+             // Use mapped filename for categories/ folder
+             const s3Name = categoryImageMap[name.toLowerCase()] || name.toLowerCase().replace(/\s+/g, '-');
+             image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${s3Name}.jpg`;
+           } else if (imageFromApi) {
             image = imageFromApi;
           }
           
