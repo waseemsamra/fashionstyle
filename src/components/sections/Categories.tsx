@@ -5,9 +5,20 @@ import { api } from '@/services/api';
 
 export default function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true); // Show immediately
   const navigate = useNavigate();
   const [categories, setCategories] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // Track loading state
+  
+  // Static placeholder categories for immediate render
+  const placeholderCategories = [
+    { id: 1, name: 'Accessories', itemCount: 0, image: 'https://placehold.co/600x800/f5f5dc/333333?text=Accessories' },
+    { id: 2, name: 'Bridal Wear', itemCount: 0, image: 'https://placehold.co/600x800/f5f5dc/333333?text=Bridal+Wear' },
+    { id: 3, name: 'Casual Wear', itemCount: 0, image: 'https://placehold.co/600x800/f5f5dc/333333?text=Casual+Wear' },
+    { id: 4, name: 'Formal Wear', itemCount: 0, image: 'https://placehold.co/600x800/f5f5dc/333333?text=Formal+Wear' },
+  ];
+  
+  const displayCategories = isLoading ? placeholderCategories : categories;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
