@@ -59,14 +59,36 @@ export default function Category() {
 
   return (
     <div className="min-h-screen bg-beige-100 py-12">
-      <div className="container mx-auto px-4">
-        <Button variant="ghost" onClick={() => navigate('/')} className="mb-6">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
-        </Button>
+      {/* Hero Section - Same style as BrandDetail */}
+      <div className="relative h-[400px] bg-gradient-to-r from-black to-gray-800 mb-12">
+        <div className="absolute inset-0 opacity-20">
+          <img
+            src="https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-accessories.jpg"
+            alt="Category"
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="relative container mx-auto px-4 h-full flex flex-col justify-center">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/')} 
+            className="mb-6 text-white hover:text-gold w-fit"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Button>
+          <h1 className="text-5xl font-bold text-white mb-4">{decodeURIComponent(name || '')}</h1>
+          <p className="text-white/80 text-lg max-w-2xl">
+            Explore our collection of {decodeURIComponent(name || '').toLowerCase()} category. 
+            Quality and style in every piece.
+          </p>
+        </div>
+      </div>
 
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">{name}</h1>
+      {/* Products Section */}
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-3xl font-bold">Products</h2>
           <p className="text-gray-600">
             Showing {categoryProducts.length} products
           </p>
