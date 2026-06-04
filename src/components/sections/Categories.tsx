@@ -27,75 +27,44 @@ export default function Categories() {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        // Fetch categories from the dedicated categories API
-        const categoryData = await api.getCategories();
-        
-        // Try to get products for counts, but continue if it fails
-        let items: any[] = [];
-        try {
-          const data = await api.getAllProducts();
-          items = data.items || [];
-        } catch (productErr) {
-          console.warn('Could not load products for category counts:', productErr);
-        }
-        
-// Handle both string array and object array responses
-        const categoryList = Array.isArray(categoryData) ? categoryData : [];
-        
-        // Map category names to their image filenames in S3
-        const categoryImageMap: Record<string, string> = {
-          'accessories': 'accessories',
-          'bridal wear': 'bridal',
-          'casual wear': 'casual',
-          'festive collection': 'festive',
-          'formal wear': 'formal',
-          'footwear': 'footwear',
-          'kids wear': 'kids-wear',
-          'men wear': 'men-wear',
-          'new arrivals': 'new-arrivals',
-          'party wear': 'party-wear',
-          'summer collection': 'summer-collection',
-          'winter collection': 'winter-collection'
-        };
-        
-        const processedCategories = categoryList.map((item: any, index: number) => {
-          const name = typeof item === 'string' ? item : item.name;
-          const categoryProducts = items.filter((p: any) => p.category === name);
-          // Transform API image path to match S3 structure
-          const imageFromApi = typeof item === 'string' ? '' : (item.image || '');
-          let image = '';
-          
-if (imageFromApi && imageFromApi.includes('categories/')) {
-             // Use mapped filename for categories/ folder
-             const s3Name = categoryImageMap[name.toLowerCase()] || name.toLowerCase().replace(/\s+/g, '-');
-             image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${s3Name}.jpg`;
-           } else if (imageFromApi) {
-            image = imageFromApi;
-          }
-          
-          // Fallback to first product image if no category image
-          if (!image) {
-            image = categoryProducts[0]?.image || '';
-          }
-          
-          return {
-            id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
-            name,
-            itemCount: categoryProducts.length,
-            image
-          };
-        });
-        
-        setCategories(processedCategories);
-      } catch (error) {
-        console.error('Failed to load categories:', error);
-      }
-    };
-    loadCategories();
-  }, []);
+useEffect(() => {
+     const loadCategories = async () => {
+       try {
+         // Fetch categories from the dedicated categories API
+         const categoryData = await api.getCategories();
+         
+         // Try to get products for counts, but continue if it fails
+         let items: any[] = [];
+         try {
+           const data = await api.getAllProducts();
+           items = data.items || [];
+         } catch (productErr) {
+           console.warn('Could not load products for category counts:', productErr);
+         }
+         
+         const categoryList = Array.isArray(categoryData) ? categoryData : [];
+         
+         const processedCategories = categoryList.map((item: any, index: number) => {
+           const name = typeof item === 'string' ? item : item.name;
+           const categoryProducts = items.filter((p: any) => p.category === name);
+           // Use image from API directly (stored in DynamoDB)
+           const image = typeof item === 'string' ? '' : (item.image || categoryProducts[0]?.image || '');
+           
+           return {
+             id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
+             name,
+             itemCount: categoryProducts.length,
+             image
+           };
+         });
+         
+         setCategories(processedCategories);
+       } catch (error) {
+         console.error('Failed to load categories:', error);
+       }
+     };
+     loadCategories();
+   }, []);
 
   return (
     <section id="categories" ref={sectionRef} className="section-padding bg-beige-100">
