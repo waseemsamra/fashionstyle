@@ -590,6 +590,18 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
   const loadSettings = () => {
     console.log('🔍 Loading settings from localStorage...');
     
+    // Load categories from localStorage first (source of truth)
+    const savedCategories = localStorage.getItem('admin_categories');
+    if (savedCategories) {
+      try {
+        const parsed = JSON.parse(savedCategories);
+        console.log('✅ Loaded categories from localStorage:', parsed.length);
+        setCategories(parsed);
+      } catch (e) {
+        console.error('Failed to parse categories from localStorage:', e);
+      }
+    }
+    
     // Load from localStorage ONLY (no API calls to avoid CORS)
     const saved = localStorage.getItem('admin_settings');
     console.log('📦 localStorage admin_settings:', saved ? 'FOUND' : 'NOT FOUND');

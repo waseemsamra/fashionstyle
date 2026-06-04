@@ -5,20 +5,9 @@ import { api } from '@/services/api';
 
 export default function Categories() {
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(true); // Show immediately
+  const [isVisible, setIsVisible] = useState(true);
   const navigate = useNavigate();
   const [categories, setCategories] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Track loading state
-  
-  // Static placeholder categories for immediate render
-  const placeholderCategories = [
-    { id: 1, name: 'Accessories', itemCount: 0, image: 'https://placehold.co/600x800/f5f5dc/333333?text=Accessories' },
-    { id: 2, name: 'Bridal Wear', itemCount: 0, image: 'https://placehold.co/600x800/f5f5dc/333333?text=Bridal+Wear' },
-    { id: 3, name: 'Casual Wear', itemCount: 0, image: 'https://placehold.co/600x800/f5f5dc/333333?text=Casual+Wear' },
-    { id: 4, name: 'Formal Wear', itemCount: 0, image: 'https://placehold.co/600x800/f5f5dc/333333?text=Formal+Wear' },
-  ];
-  
-  const displayCategories = isLoading ? placeholderCategories : categories;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -38,71 +27,64 @@ export default function Categories() {
     return () => observer.disconnect();
   }, []);
 
-useEffect(() => {
-      const loadCategories = async () => {
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoryData = await api.getCategories();
+        
+        let items: any[] = [];
         try {
-          // Fetch categories from the dedicated categories API
-          const categoryData = await api.getCategories();
-          
-          // Try to get products for counts, but continue if it fails
-          let items: any[] = [];
-          try {
-            const data = await api.getAllProducts();
-            items = data.items || [];
-          } catch (productErr) {
-            console.warn('Could not load products for category counts:', productErr);
+          const data = await api.getAllProducts();
+          items = data.items || [];
+        } catch (productErr) {
+          console.warn('Could not load products for category counts:', productErr);
+        }
+        
+        const categoryList = Array.isArray(categoryData) ? categoryData : [];
+        
+        const processedCategories = categoryList.map((item: any, index: number) => {
+          const name = typeof item === 'string' ? item : item.name;
+          const categoryProducts = items.filter((p: any) => p.category === name);
+          const apiImage = typeof item === 'string' ? '' : (item.image || '');
+          let image = apiImage;
+          if (image) {
+            image = image.replace('s3.amazonaws.com', 's3.us-east-1.amazonaws.com');
+            if (image.includes('categories/accessories.jpg')) {
+              image = image.replace('categories/accessories.jpg', 'categories/category-accessories.jpg');
+            }
+            if (image.includes('categories/bridal-wear.jpg')) {
+              image = image.replace('categories/bridal-wear.jpg', 'categories/bridal.jpg');
+            }
+            if (image.includes('categories/kids-wear.jpg')) {
+              image = image.replace('categories/kids-wear.jpg', 'categories/kids.jpg');
+            }
+            if (image.includes('categories/footwear.jpg')) {
+              image = image.replace('categories/footwear.jpg', 'categories/footwear.jpeg');
+            }
+          } else {
+            const safeName = name.toLowerCase().replace(/\s+/g, '-');
+            image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${safeName}.jpg`;
           }
           
-          const categoryList = Array.isArray(categoryData) ? categoryData : [];
-          
-          const processedCategories = categoryList.map((item: any, index: number) => {
-            const name = typeof item === 'string' ? item : item.name;
-            const categoryProducts = items.filter((p: any) => p.category === name);
-            // Get image from API and fix incorrect paths
-            const apiImage = typeof item === 'string' ? '' : (item.image || '');
-            let image = apiImage;
-            if (image) {
-              // Fix: s3.amazonaws.com -> s3.us-east-1.amazonaws.com
-              image = image.replace('s3.amazonaws.com', 's3.us-east-1.amazonaws.com');
-              // Fix: /filename.jpg -> /category-filename.jpg or correct filename
-              if (image.includes('categories/accessories.jpg')) {
-                image = image.replace('categories/accessories.jpg', 'categories/category-accessories.jpg');
-              }
-              if (image.includes('categories/bridal-wear.jpg')) {
-                image = image.replace('categories/bridal-wear.jpg', 'categories/bridal.jpg');
-              }
-              if (image.includes('categories/kids-wear.jpg')) {
-                image = image.replace('categories/kids-wear.jpg', 'categories/kids.jpg');
-              }
-              if (image.includes('categories/footwear.jpg')) {
-                image = image.replace('categories/footwear.jpg', 'categories/footwear.jpeg');
-              }
-            } else {
-              // Fallback: generate category image URL
-              const safeName = name.toLowerCase().replace(/\s+/g, '-');
-              image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${safeName}.jpg`;
-            }
-            
-            return {
-              id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
-              name,
-              itemCount: categoryProducts.length,
-              image
-            };
-          });
-          
-          setCategories(processedCategories);
-        } catch (error) {
-          console.error('Failed to load categories:', error);
-        }
-      };
-      loadCategories();
-    }, []);
+          return {
+            id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
+            name,
+            itemCount: categoryProducts.length,
+            image
+          };
+        });
+        
+        setCategories(processedCategories);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+      }
+    };
+    loadCategories();
+  }, []);
 
   return (
     <section id="categories" ref={sectionRef} className="section-padding bg-beige-100">
       <div className="container-custom">
-        {/* Section Header */}
         <div className={`flex flex-col md:flex-row md:items-end md:justify-between mb-12 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <div>
             <span className="text-gold text-sm font-medium tracking-wider uppercase mb-2 block">
@@ -117,7 +99,6 @@ useEffect(() => {
           </p>
         </div>
 
-        {/* Categories Grid - Masonry Style */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {categories.map((category, index) => (
             <div
@@ -131,34 +112,24 @@ useEffect(() => {
                 transitionDuration: '700ms',
               }}
             >
-{/* Image */}
-               <div className={`relative overflow-hidden ${index % 3 === 0 ? 'h-[400px] lg:h-[600px]' : 'h-[280px] lg:h-[290px]'}`}>
-<img
-                    src={category.image}
-                    alt={category.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    onError={(e) => {
-                      const target = e.currentTarget as HTMLImageElement;
-                      target.src = 'https://placehold.co/600x800/f5f5dc/333333?text=' + encodeURIComponent(category.name);
-                    }}
-                  />
-                
-                {/* Gradient Overlay */}
+              <div className={`relative overflow-hidden ${index % 3 === 0 ? 'h-[400px] lg:h-[600px]' : 'h-[280px] lg:h-[290px]'}`}>
+                <img
+                  src={category.image}
+                  alt={category.name}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.src = 'https://placehold.co/600x800/f5f5dc/333333?text=' + encodeURIComponent(category.name);
+                  }}
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
-                
-                {/* Content */}
                 <div className="absolute inset-0 p-6 flex flex-col justify-end">
-                  {/* Item Count Badge */}
                   <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white text-xs font-medium w-fit mb-3 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                     {category.itemCount} Items
                   </span>
-                  
-                  {/* Title */}
                   <h3 className="font-playfair text-xl md:text-2xl font-semibold text-white mb-1 group-hover:-translate-y-1 transition-transform duration-300">
                     {category.name}
                   </h3>
-                  
-                  {/* Arrow */}
                   <div className="flex items-center gap-2 text-gold opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100">
                     <span className="text-sm font-medium">Explore</span>
                     <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
