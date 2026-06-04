@@ -51,22 +51,22 @@ export default function Categories() {
           // Transform API image path to match S3 structure
           const imageFromApi = typeof item === 'string' ? '' : (item.image || '');
           let image = '';
-          if (imageFromApi) {
-            // If image is from S3 and has categories/ path, check if it exists
-            // S3 stores: categories/category-{name}.jpg
-            // API returns: categories/{name}.jpg
-            if (imageFromApi.includes('categories/')) {
-              const parts = imageFromApi.split('categories/');
-              const filename = parts[1] || '';
-              // Try both paths - the one with category- prefix should work
-              image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${filename}`;
-            } else {
-              image = imageFromApi;
-            }
-          } else {
-            // Use first product image as fallback
+          
+          if (imageFromApi && imageFromApi.includes('categories/')) {
+            // Try transformed path: categories/{name}.jpg → categories/category-{name}.jpg
+            const parts = imageFromApi.split('categories/');
+            const filename = parts[1] || '';
+            const s3Path = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${filename}`;
+            image = s3Path;
+          } else if (imageFromApi) {
+            image = imageFromApi;
+          }
+          
+          // Fallback to first product image if no category image
+          if (!image) {
             image = categoryProducts[0]?.image || '';
           }
+          
           return {
             id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
             name,

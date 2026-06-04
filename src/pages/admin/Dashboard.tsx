@@ -1827,7 +1827,7 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const uploadResult = await uploadImageToS3(file, 'categories');
+                          const uploadResult = await uploadImageToS3(file, 'categories', true);
                           if (uploadResult.success) {
                             setEditingCategory({...editingCategory, image: uploadResult.imageUrl});
                             toast.success('Image uploaded successfully');

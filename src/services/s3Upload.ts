@@ -19,7 +19,8 @@ export interface UploadResponse {
  */
 export const uploadImageToS3 = async (
   file: File,
-  folder: string = 'products'
+  folder: string = 'products',
+  isCategory: boolean = false
 ): Promise<UploadResponse> => {
   try {
     console.log('📤 Getting presigned URL for upload...', file.name);
@@ -74,9 +75,17 @@ export const uploadImageToS3 = async (
     console.log('✅ Image uploaded successfully to S3:', imageUrl);
     console.log('📤 Final Image URL:', imageUrl || `${S3_BASE_URL}/${key}`);
     
+    // For category uploads, transform path to match S3 structure
+    let finalImageUrl = imageUrl || `${S3_BASE_URL}/${key}`;
+    if (isCategory && finalImageUrl.includes('categories/') && !finalImageUrl.includes('category-')) {
+      const parts = finalImageUrl.split('categories/');
+      const filename = parts[1] || '';
+      finalImageUrl = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${filename}`;
+    }
+    
     return {
       success: true,
-      imageUrl: imageUrl || `${S3_BASE_URL}/${key}`,
+      imageUrl: finalImageUrl,
       key: key || `${folder}/${Date.now()}-${file.name}`,
       message: 'Upload successful'
     };
@@ -101,13 +110,14 @@ export const uploadImageToS3 = async (
  */
 export const uploadMultipleImages = async (
   files: File[],
-  folder: string = 'products'
+  folder: string = 'products',
+  isCategory: boolean = false
 ): Promise<UploadResponse[]> => {
   const results: UploadResponse[] = [];
   
   for (const file of files) {
     try {
-      const result = await uploadImageToS3(file, folder);
+      const result = await uploadImageToS3(file, folder, isCategory);
       results.push(result);
     } catch (error) {
       console.error('Failed to upload file:', file.name);
