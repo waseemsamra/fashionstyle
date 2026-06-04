@@ -45,12 +45,12 @@ export default function Categories() {
         // Handle both string array and object array responses
         const categoryList = Array.isArray(categoryData) ? categoryData : [];
         
-        // Map category names to S3 image filenames
+// Map category names to S3 image filenames
         const categoryImageMap: Record<string, string> = {
-          'accessories': 'accssoris',
+          'accessories': 'accessories',
           'bridal wear': 'bridal',
           'casual wear': 'casual',
-          'festive collection': 'fstiv',
+          'festive collection': 'festive',
           'formal wear': 'formal',
           'footwear': 'footwear',
           'kids wear': 'kids-wear',
@@ -64,16 +64,18 @@ export default function Categories() {
         const processedCategories = categoryList.map((item: any, index: number) => {
           const name = typeof item === 'string' ? item : item.name;
           const categoryProducts = items.filter((p: any) => p.category === name);
-          // Map category names to S3 image filenames (existing images are at category-{name}.jpg)
-          const imageName = categoryImageMap[name.toLowerCase()] || name.toLowerCase().replace(/\s+/g, '-');
-          const fallbackImage = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/catgor-${imageName}.jpg`;
+          // Use category image from API, or first product image as fallback
+          const imageFromApi = typeof item === 'string' ? '' : (item.image || '');
           const firstProductImage = categoryProducts[0]?.image || '';
-          // Use fallback S3 image, or first product image, or API image as last resort
+          // Try S3 image by mapped name
+          const imageName = categoryImageMap[name.toLowerCase()] || name.toLowerCase().replace(/\s+/g, '-');
+          // Use category-{name}.jpg format (existing S3 images use this)
+          const fallbackImage = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/category-${imageName}.jpg`;
           return {
             id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
             name,
             itemCount: categoryProducts.length,
-            image: fallbackImage || firstProductImage || (typeof item === 'string' ? '' : (item.image || ''))
+            image: imageFromApi || firstProductImage || fallbackImage
           };
         });
         
