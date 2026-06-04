@@ -28,12 +28,19 @@ export const uploadImageToS3 = async (
     console.log('📤 Upload API URL:', UPLOAD_API_URL);
 
     // Construct filename with category- prefix for category uploads
+    // Use original file extension
+    const getFileExtension = (filename: string) => {
+      const ext = filename.split('.').pop()?.toLowerCase();
+      return ext && ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg';
+    };
+    
     let filename = file.name;
     if (isCategory && categoryName) {
-      // Convert "Accessories" to "category-accessories.jpg"
+      // Convert "Accessories" to "category-accessories.jpg" or preserve extension
       const safeName = categoryName.toLowerCase().replace(/\s+/g, '-');
+      const ext = getFileExtension(file.name);
       if (!file.name.startsWith('category-')) {
-        filename = `category-${safeName}.jpg`;
+        filename = `category-${safeName}.${ext}`;
       }
     }
 

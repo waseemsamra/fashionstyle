@@ -47,9 +47,17 @@ useEffect(() => {
           const processedCategories = categoryList.map((item: any, index: number) => {
             const name = typeof item === 'string' ? item : item.name;
             const categoryProducts = items.filter((p: any) => p.category === name);
-            // Generate category image URL from name - S3 structure is categories/category-{name}.jpg
-            const safeName = name.toLowerCase().replace(/\s+/g, '-');
-            const image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${safeName}.jpg`;
+            // Get image from API, normalize URL to use region-specific endpoint
+            const apiImage = typeof item === 'string' ? '' : (item.image || '');
+            let image = apiImage;
+            if (image) {
+              // Fix: s3.amazonaws.com -> s3.us-east-1.amazonaws.com
+              image = image.replace('s3.amazonaws.com', 's3.us-east-1.amazonaws.com');
+            } else {
+              // Fallback: generate category image URL
+              const safeName = name.toLowerCase().replace(/\s+/g, '-');
+              image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${safeName}.jpg`;
+            }
             
             return {
               id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
