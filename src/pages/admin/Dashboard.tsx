@@ -362,8 +362,20 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
           console.log('⚠️ Could not load brands:', brandErr);
         }
 
-// Load categories from API
+// Load categories from API - but prefer localStorage if available
         console.log('📂 Loading categories...');
+        
+        // Check localStorage first (source of truth after admin edits)
+        const savedCategories = localStorage.getItem('admin_categories');
+        if (savedCategories) {
+          try {
+            const parsed = JSON.parse(savedCategories);
+            console.log('✅ Loaded', parsed.length, 'categories from localStorage');
+            setCategories(parsed);
+          } catch (e) {
+            console.error('Failed to parse saved categories:', e);
+          }
+        }
         
         try {
           const categoryData = await api.getCategories();
