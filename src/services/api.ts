@@ -140,8 +140,7 @@ export const api = {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
-      },
-      mode: 'cors'
+      }
     });
 
     if (!response.ok) {
@@ -159,7 +158,7 @@ export const api = {
       headers: {
         'Content-Type': 'application/json'
       },
-      mode: 'cors',
+      // No CORS mode,
       body: JSON.stringify(profile)
     });
 
@@ -190,7 +189,7 @@ export const api = {
       headers: {
         'Content-Type': 'application/json'
       },
-      mode: 'cors',
+      // No CORS mode,
       body: JSON.stringify(defaultProfile)
     });
 
@@ -212,7 +211,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors'
+        // No CORS mode
       });
 
       if (!response.ok) {
@@ -236,7 +235,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         body: JSON.stringify(paymentData)
       });
 
@@ -261,7 +260,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         body: JSON.stringify(paymentData)
       });
 
@@ -286,7 +285,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors'
+        // No CORS mode
       });
 
       if (!response.ok) {
@@ -310,7 +309,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors'
+        // No CORS mode
       });
 
       if (!response.ok) {
@@ -334,7 +333,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors'
+        // No CORS mode
       });
 
       if (!response.ok) {
@@ -358,7 +357,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         body: JSON.stringify(settings)
       });
 
@@ -432,7 +431,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         body: JSON.stringify({ items: categories })
       });
 
@@ -457,7 +456,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors'
+        // No CORS mode
       });
 
       if (!response.ok) {
@@ -481,7 +480,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         body: JSON.stringify({ data })
       });
 
@@ -512,7 +511,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         credentials: 'include',
         cache: 'no-store'
       });
@@ -583,7 +582,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         credentials: 'include'
       });
 
@@ -623,7 +622,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         credentials: 'include'
       });
 
@@ -654,7 +653,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         credentials: 'include',
         body: JSON.stringify({ status })
       });
@@ -693,7 +692,7 @@ export const api = {
           
           'Content-Type': 'application/json'
         },
-        mode: 'cors',
+        // No CORS mode,
         credentials: 'include'
       });
 

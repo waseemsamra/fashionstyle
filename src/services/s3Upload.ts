@@ -20,20 +20,32 @@ export interface UploadResponse {
 export const uploadImageToS3 = async (
   file: File,
   folder: string = 'products',
+  categoryName: string = '',
   isCategory: boolean = false
 ): Promise<UploadResponse> => {
   try {
     console.log('📤 Getting presigned URL for upload...', file.name);
     console.log('📤 Upload API URL:', UPLOAD_API_URL);
 
+    // Construct filename with category- prefix for category uploads
+    let filename = file.name;
+    if (isCategory && categoryName) {
+      // Convert "Accessories" to "category-accessories.jpg"
+      const safeName = categoryName.toLowerCase().replace(/\s+/g, '-');
+      if (!file.name.startsWith('category-')) {
+        filename = `category-${safeName}.jpg`;
+      }
+    }
+
     // Step 1: Get presigned URL from backend using fetch
     const presignedResponse = await fetch(UPLOAD_API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'categoryName': categoryName  // Send category name in header for backend processing
       },
       body: JSON.stringify({
-        filename: file.name,
+        filename: filename,
         contentType: file.type,
         folder: folder
       })
@@ -75,12 +87,14 @@ export const uploadImageToS3 = async (
     console.log('✅ Image uploaded successfully to S3:', imageUrl);
     console.log('📤 Final Image URL:', imageUrl || `${S3_BASE_URL}/${key}`);
     
-    // For category uploads, transform path to match S3 structure
+    // For category uploads, ensure the URL matches S3 structure
     let finalImageUrl = imageUrl || `${S3_BASE_URL}/${key}`;
-    if (isCategory && finalImageUrl.includes('categories/') && !finalImageUrl.includes('category-')) {
-      const parts = finalImageUrl.split('categories/');
-      const filename = parts[1] || '';
-      finalImageUrl = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${filename}`;
+    if (isCategory && categoryName) {
+      // Ensure the saved path is: categories/category-{name}.jpg
+      const safeName = categoryName.toLowerCase().replace(/\s+/g, '-');
+if (!finalImageUrl.includes(`category-${safeName}`) && 'categories/' in finalImageUrl) {
+         finalImageUrl = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${safeName}.jpg`;
+       }
     }
     
     return {
@@ -117,7 +131,7 @@ export const uploadMultipleImages = async (
   
   for (const file of files) {
     try {
-      const result = await uploadImageToS3(file, folder, isCategory);
+      const result = await uploadImageToS3(file, folder, '', isCategory);
       results.push(result);
     } catch (error) {
       console.error('Failed to upload file:', file.name);

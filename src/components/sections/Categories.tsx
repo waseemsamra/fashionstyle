@@ -45,6 +45,22 @@ export default function Categories() {
 // Handle both string array and object array responses
         const categoryList = Array.isArray(categoryData) ? categoryData : [];
         
+        // Map category names to their image filenames in S3
+        const categoryImageMap: Record<string, string> = {
+          'accessories': 'accessories',
+          'bridal wear': 'bridal',
+          'casual wear': 'casual',
+          'festive collection': 'festive',
+          'formal wear': 'formal',
+          'footwear': 'footwear',
+          'kids wear': 'kids-wear',
+          'men wear': 'men-wear',
+          'new arrivals': 'new-arrivals',
+          'party wear': 'party-wear',
+          'summer collection': 'summer-collection',
+          'winter collection': 'winter-collection'
+        };
+        
         const processedCategories = categoryList.map((item: any, index: number) => {
           const name = typeof item === 'string' ? item : item.name;
           const categoryProducts = items.filter((p: any) => p.category === name);
@@ -53,11 +69,11 @@ export default function Categories() {
           let image = '';
           
           if (imageFromApi && imageFromApi.includes('categories/')) {
-            // Try transformed path: categories/{name}.jpg → categories/category-{name}.jpg
             const parts = imageFromApi.split('categories/');
             const filename = parts[1] || '';
-            const s3Path = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${filename}`;
-            image = s3Path;
+            // Use mapped filename for categories/ folder
+            const s3Name = categoryImageMap[name.toLowerCase()] || name.toLowerCase().replace(/\s+/g, '-');
+            image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${s3Name}.jpg`;
           } else if (imageFromApi) {
             image = imageFromApi;
           }

@@ -1827,9 +1827,17 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          const uploadResult = await uploadImageToS3(file, 'categories', true);
+                          const uploadResult = await uploadImageToS3(file, 'categories', editingCategory.name || '', true);
                           if (uploadResult.success) {
-                            setEditingCategory({...editingCategory, image: uploadResult.imageUrl});
+                            // Ensure the image path uses the correct S3 structure for categories
+                            let categoryImage = uploadResult.imageUrl;
+                            // Fix: ensure path is categories/category-{filename}.jpg format
+                            if (categoryImage && categoryImage.includes('categories/') && !categoryImage.includes('category-')) {
+                              const parts = categoryImage.split('categories/');
+                              const filename = parts[1] || '';
+                              categoryImage = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${filename}`;
+                            }
+                            setEditingCategory({...editingCategory, image: categoryImage});
                             toast.success('Image uploaded successfully');
                           } else {
                             toast.error('Failed to upload image');

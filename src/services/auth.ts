@@ -18,20 +18,19 @@ export const authService = {
         console.log('✅ Backend signup successful, creating profile...');
         try {
           // Use email for profile path
-          await fetch(`${USERS_API}/users/${encodeURIComponent(email)}/profile`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            mode: 'cors',
-            body: JSON.stringify({
-              email,
-              firstName: name?.split(' ')[0] || '',
-              lastName: name?.split(' ')[1] || '',
-              role: 'customer',
-              status: 'active'
-            })
-          });
+await fetch(`${USERS_API}/users/${encodeURIComponent(email)}/profile`, {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json'
+             },
+             body: JSON.stringify({
+               email,
+               firstName: name?.split(' ')[0] || '',
+               lastName: name?.split(' ')[1] || '',
+               role: 'customer',
+               status: 'active'
+             })
+           });
           console.log('✅ User profile created for:', email);
         } catch (profileErr) {
           console.log('⚠️ Profile creation will happen on first login:', email);
@@ -66,18 +65,17 @@ export const authService = {
 
         // Try to create/update user profile (idempotent operation) - use email path
         try {
-          await fetch(`${USERS_API}/users/${encodeURIComponent(email)}/profile`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            mode: 'cors',
-            body: JSON.stringify({
-              email,
-              role: 'customer',
-              status: 'active'
-            })
-          });
+await fetch(`${USERS_API}/users/${encodeURIComponent(email)}/profile`, {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json'
+             },
+             body: JSON.stringify({
+               email,
+               role: 'customer',
+               status: 'active'
+             })
+           });
           console.log('✅ User profile ensured for:', email);
         } catch (profileErr: any) {
           console.log('⚠️ Profile update skipped:', profileErr.message);
