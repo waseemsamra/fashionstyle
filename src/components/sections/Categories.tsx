@@ -28,43 +28,44 @@ export default function Categories() {
   }, []);
 
 useEffect(() => {
-     const loadCategories = async () => {
-       try {
-         // Fetch categories from the dedicated categories API
-         const categoryData = await api.getCategories();
-         
-         // Try to get products for counts, but continue if it fails
-         let items: any[] = [];
-         try {
-           const data = await api.getAllProducts();
-           items = data.items || [];
-         } catch (productErr) {
-           console.warn('Could not load products for category counts:', productErr);
-         }
-         
-         const categoryList = Array.isArray(categoryData) ? categoryData : [];
-         
-         const processedCategories = categoryList.map((item: any, index: number) => {
-           const name = typeof item === 'string' ? item : item.name;
-           const categoryProducts = items.filter((p: any) => p.category === name);
-           // Use image from API directly (stored in DynamoDB)
-           const image = typeof item === 'string' ? '' : (item.image || categoryProducts[0]?.image || '');
-           
-           return {
-             id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
-             name,
-             itemCount: categoryProducts.length,
-             image
-           };
-         });
-         
-         setCategories(processedCategories);
-       } catch (error) {
-         console.error('Failed to load categories:', error);
-       }
-     };
-     loadCategories();
-   }, []);
+      const loadCategories = async () => {
+        try {
+          // Fetch categories from the dedicated categories API
+          const categoryData = await api.getCategories();
+          
+          // Try to get products for counts, but continue if it fails
+          let items: any[] = [];
+          try {
+            const data = await api.getAllProducts();
+            items = data.items || [];
+          } catch (productErr) {
+            console.warn('Could not load products for category counts:', productErr);
+          }
+          
+          const categoryList = Array.isArray(categoryData) ? categoryData : [];
+          
+          const processedCategories = categoryList.map((item: any, index: number) => {
+            const name = typeof item === 'string' ? item : item.name;
+            const categoryProducts = items.filter((p: any) => p.category === name);
+            // Generate category image URL from name - S3 structure is categories/category-{name}.jpg
+            const safeName = name.toLowerCase().replace(/\s+/g, '-');
+            const image = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${safeName}.jpg`;
+            
+            return {
+              id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
+              name,
+              itemCount: categoryProducts.length,
+              image
+            };
+          });
+          
+          setCategories(processedCategories);
+        } catch (error) {
+          console.error('Failed to load categories:', error);
+        }
+      };
+      loadCategories();
+    }, []);
 
   return (
     <section id="categories" ref={sectionRef} className="section-padding bg-beige-100">
