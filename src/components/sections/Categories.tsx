@@ -44,15 +44,36 @@ export default function Categories() {
         
         // Handle both string array and object array responses
         const categoryList = Array.isArray(categoryData) ? categoryData : [];
+        
+        // Map category names to S3 image filenames
+        const categoryImageMap: Record<string, string> = {
+          'accessories': 'accssoris',
+          'bridal wear': 'bridal',
+          'casual wear': 'casual',
+          'festive collection': 'fstiv',
+          'formal wear': 'formal',
+          'footwear': 'footwear',
+          'kids wear': 'kids-wear',
+          'men wear': 'men-wear',
+          'new arrivals': 'new-arrivals',
+          'party wear': 'party-wear',
+          'summer collection': 'summer-collection',
+          'winter collection': 'winter-collection'
+        };
+        
         const processedCategories = categoryList.map((item: any, index: number) => {
           const name = typeof item === 'string' ? item : item.name;
           const categoryProducts = items.filter((p: any) => p.category === name);
+          // Map category names to S3 image filenames (existing images are at category-{name}.jpg)
+          const imageName = categoryImageMap[name.toLowerCase()] || name.toLowerCase().replace(/\s+/g, '-');
+          const fallbackImage = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/catgor-${imageName}.jpg`;
+          const firstProductImage = categoryProducts[0]?.image || '';
+          // Use fallback S3 image, or first product image, or API image as last resort
           return {
             id: typeof item === 'string' ? index + 1 : (item.id || index + 1),
             name,
             itemCount: categoryProducts.length,
-            // Use the image from API if available, otherwise fallback
-            image: (typeof item === 'string' ? '' : item.image) || ''
+            image: fallbackImage || firstProductImage || (typeof item === 'string' ? '' : (item.image || ''))
           };
         });
         
@@ -98,15 +119,15 @@ export default function Categories() {
             >
 {/* Image */}
                <div className={`relative overflow-hidden ${index % 3 === 0 ? 'h-[400px] lg:h-[600px]' : 'h-[280px] lg:h-[290px]'}`}>
-                 <img
-                   src={category.image || `https://fashionstore-products-1773891614v.s3.amazonaws.com/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}.jpg`}
-                   alt={category.name}
-                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                   onError={(e) => {
-                     const target = e.currentTarget as HTMLImageElement;
-                     target.src = 'https://placehold.co/600x800/f5f5dc/333333?text=' + encodeURIComponent(category.name);
-                   }}
-                 />
+<img
+                    src={category.image}
+                    alt={category.name}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    onError={(e) => {
+                      const target = e.currentTarget as HTMLImageElement;
+                      target.src = 'https://placehold.co/600x800/f5f5dc/333333?text=' + encodeURIComponent(category.name);
+                    }}
+                  />
                 
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
