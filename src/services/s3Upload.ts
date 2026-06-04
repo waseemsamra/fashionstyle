@@ -96,13 +96,17 @@ export const uploadImageToS3 = async (
     
     // For category uploads, ensure the URL matches S3 structure
     let finalImageUrl = imageUrl || `${S3_BASE_URL}/${key}`;
-    if (isCategory && categoryName) {
-      // Ensure the saved path is: categories/category-{name}.jpg
-      const safeName = categoryName.toLowerCase().replace(/\s+/g, '-');
-if (!finalImageUrl.includes(`category-${safeName}`) && 'categories/' in finalImageUrl) {
-         finalImageUrl = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${safeName}.jpg`;
+if (isCategory && categoryName) {
+       // Ensure the saved path includes category- prefix
+       const safeName = categoryName.toLowerCase().replace(/\s+/g, '-');
+       if (finalImageUrl.includes('categories/') && !finalImageUrl.includes(`category-${safeName}`)) {
+         // Extract the actual filename from the URL and add category- prefix
+         const urlParts = finalImageUrl.split('categories/');
+         const filename = urlParts[1]?.split('?')[0] || '';
+         const extension = filename.includes('.') ? filename.split('.').pop() : 'jpg';
+         finalImageUrl = `https://fashionstore-products-1773891614v.s3.us-east-1.amazonaws.com/categories/category-${safeName}.${extension}`;
        }
-    }
+     }
     
     return {
       success: true,

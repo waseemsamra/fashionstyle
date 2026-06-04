@@ -47,12 +47,25 @@ useEffect(() => {
           const processedCategories = categoryList.map((item: any, index: number) => {
             const name = typeof item === 'string' ? item : item.name;
             const categoryProducts = items.filter((p: any) => p.category === name);
-            // Get image from API, normalize URL to use region-specific endpoint
+            // Get image from API and fix incorrect paths
             const apiImage = typeof item === 'string' ? '' : (item.image || '');
             let image = apiImage;
             if (image) {
               // Fix: s3.amazonaws.com -> s3.us-east-1.amazonaws.com
               image = image.replace('s3.amazonaws.com', 's3.us-east-1.amazonaws.com');
+              // Fix: /filename.jpg -> /category-filename.jpg or correct filename
+              if (image.includes('categories/accessories.jpg')) {
+                image = image.replace('categories/accessories.jpg', 'categories/category-accessories.jpg');
+              }
+              if (image.includes('categories/bridal-wear.jpg')) {
+                image = image.replace('categories/bridal-wear.jpg', 'categories/bridal.jpg');
+              }
+              if (image.includes('categories/kids-wear.jpg')) {
+                image = image.replace('categories/kids-wear.jpg', 'categories/kids.jpg');
+              }
+              if (image.includes('categories/footwear.jpg')) {
+                image = image.replace('categories/footwear.jpg', 'categories/footwear.jpeg');
+              }
             } else {
               // Fallback: generate category image URL
               const safeName = name.toLowerCase().replace(/\s+/g, '-');
