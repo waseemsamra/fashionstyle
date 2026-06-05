@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ArrowLeft, Save, Grid, List, ChevronRight, Package } from 'lucide-react';
+import { Search, ArrowLeft, Save, Grid, List, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
@@ -29,7 +29,7 @@ export default function LeadingBrandsCMS() {
       const productsArray = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
       setAllProducts(productsArray);
       
-      const brandList = Array.from(new Set(productsArray.map((p: any) => p.brand).filter(Boolean)));
+      const brandList = (Array.from(new Set(productsArray.map((p: any) => p.brand).filter(Boolean))) as string[]).filter((b: string) => b.length > 0);
       setBrands(brandList);
       
       const collectionProducts = productsArray.filter((p: any) => p.isLeadingBrands);
