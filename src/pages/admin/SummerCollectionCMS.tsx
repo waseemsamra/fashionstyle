@@ -29,7 +29,11 @@ export default function SummerCollectionCMS() {
       const productsArray = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
       setAllProducts(productsArray);
       
-      const featured = productsArray.filter((p: any) => p.isSummerCollection);
+      const featured = productsArray.filter((p: any) => p.isSummerCollection).slice(0, MAX_SUMMER);
+      const allFlagged = productsArray.filter((p: any) => p.isSummerCollection);
+      if (allFlagged.length > MAX_SUMMER) {
+        console.warn(`Backend has ${allFlagged.length} summer products, capping to ${MAX_SUMMER} for editing`);
+      }
       setSelectedIds(featured.map((p: any) => p.id));
     } catch (error) {
       console.error('Failed to load products:', error);
@@ -63,54 +67,68 @@ export default function SummerCollectionCMS() {
         return;
       }
       
-      const uniqueIds = [...new Set(selectedIds)];
+      const uniqueIds = [...new Set(selectedIds)].slice(0, MAX_SUMMER);
       
-      const updatePromises = uniqueIds.map(async (productId) => {
-        const product = allProducts.find((p: any) => p.id === productId);
-        if (!product) return { ok: false, productId, reason: 'Product not found' };
+      // Find products that need to be UNFLAGGED (was selected but no longer is)
+      const previouslyFlagged = allProducts.filter((p: any) => p.isSummerCollection && !uniqueIds.includes(p.id));
+      // Find products that need to be FLAGGED (now selected but wasn't)
+      const newlyFlagged = allProducts.filter((p: any) => !p.isSummerCollection && uniqueIds.includes(p.id));
+      
+      const toUpdate = [...previouslyFlagged, ...newlyFlagged];
+      console.log(`Unflagging ${previouslyFlagged.length}, Flagging ${newlyFlagged.length}`);
+      
+      if (toUpdate.length === 0) {
+        alert('No changes to save');
+        setSaving(false);
+        return;
+      }
+      
+      const batchSize = 5;
+      const succeeded: string[] = [];
+      const failed: any[] = [];
+      
+      for (let i = 0; i < toUpdate.length; i += batchSize) {
+        const batch = toUpdate.slice(i, i + batchSize);
+        console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(toUpdate.length / batchSize)}:`, batch.map(p => ({ id: p.id, name: p.name, flag: !uniqueIds.includes(p.id) })));
         
-        const payload = {
-          ...product,
-          isSummerCollection: true
-        };
-        
-        try {
-          const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
-            },
-            body: JSON.stringify(payload)
-          });
+        const batchPromises = batch.map(async (product) => {
+          const shouldFlag = uniqueIds.includes(product.id);
+          const payload = { ...product, isSummerCollection: shouldFlag };
           
-          const responseText = await response.text().catch(() => '');
-          
-          if (!response.ok) {
-            console.error(`Failed to update product ${product.id}:`, {
-              status: response.status,
-              body: responseText
+          try {
+            const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+              },
+              body: JSON.stringify(payload)
             });
-            return { ok: false, productId, status: response.status, body: responseText };
+            
+            const responseText = await response.text().catch(() => '');
+            
+            if (!response.ok) {
+              console.error(`Failed product ${product.id}:`, response.status, responseText);
+              failed.push({ productId: product.id, status: response.status, body: responseText });
+            } else {
+              console.log(`Updated product ${product.id}:`, product.name, '→', shouldFlag);
+              succeeded.push(product.id);
+            }
+          } catch (err: any) {
+            console.error(`Network error product ${product.id}:`, err.message);
+            failed.push({ productId: product.id, reason: err.message });
           }
-          
-          console.log(`Updated product ${product.id}:`, product.name);
-          return { ok: true, productId };
-        } catch (err: any) {
-          console.error(`Network error updating product ${product.id}:`, err.message);
-          return { ok: false, productId, reason: err.message };
+        });
+        
+        await Promise.allSettled(batchPromises);
+        
+        if (i + batchSize < toUpdate.length) {
+          await new Promise(r => setTimeout(r, 300));
         }
-      });
-      
-      const results = await Promise.allSettled(updatePromises);
-      const settled = results.filter(r => r.status === 'fulfilled').map(r => (r as PromiseFulfilledResult<any>).value);
-      const failed = settled.filter(r => !r?.ok);
-      const succeeded = settled.filter(r => r?.ok);
+      }
       
       console.log(`Save complete: ${succeeded.length} succeeded, ${failed.length} failed`);
-      if (failed.length > 0) {
-        console.table(failed);
-      }
+      if (failed.length > 0) console.table(failed);
       
       if (failed.length > 0) {
         alert(`⚠️ ${failed.length} products failed to save. Check console for details.`);
@@ -125,7 +143,7 @@ export default function SummerCollectionCMS() {
       setSaving(false);
     }
   };
-
+         
   const filteredProducts = allProducts.filter(product => {
     if (!product || !product.name) return false;
     const searchLower = searchTerm.toLowerCase();
