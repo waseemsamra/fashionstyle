@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
-const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
+const ADMIN_PRODUCTS_URL = import.meta.env.VITE_ADMIN_PRODUCTS_URL || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
 const MAX_SUMMER = 20;
 
 export default function SummerCollectionCMS() {
@@ -63,20 +63,17 @@ export default function SummerCollectionCMS() {
         return;
       }
       
-      // Update products via Lambda API
+      // Only update products whose isSummerCollection flag changed
       const updatePromises = allProducts.map(async (product) => {
         const shouldFlag = selectedIds.includes(product.id);
         if (product.isSummerCollection !== shouldFlag) {
-          const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+          const response = await fetch(`${ADMIN_PRODUCTS_URL}/products/${product.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
             },
-            body: JSON.stringify({
-              ...product,
-              isSummerCollection: shouldFlag
-            })
+            body: JSON.stringify({ isSummerCollection: shouldFlag })
           });
           if (!response.ok) {
             console.error('Failed to update product:', product.id, response.status);
@@ -92,6 +89,7 @@ export default function SummerCollectionCMS() {
         alert(`⚠️ ${failed.length} products failed to save. Check console for details.`);
       } else {
         alert(`✅ Successfully saved ${selectedIds.length} products!`);
+        loadProducts();
       }
     } catch (error: any) {
       alert('Failed to save: ' + (error.message || 'Unknown error'));
