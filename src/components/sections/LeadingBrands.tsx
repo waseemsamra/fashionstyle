@@ -39,22 +39,24 @@ export default function LeadingBrands() {
       try {
         const response = await fetch(`${API_URL}/products?limit=2000`);
         const data = await response.json();
-        const allItems = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
-        const flagged = allItems.filter((p: any) => p.isLeadingBrands);
-        const source = flagged.length > 0 ? flagged : allItems.filter((p: any) => p.isNew).slice(0, 20);
-        const cleaned = source.filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
+        const allProducts = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
+        const activeIds = getActiveProductIds(allProducts);
+        let leading: any[] = [];
 
-        if (cleaned.length === 0) {
-          setProducts([]);
-          setBrands([]);
-          setSelectedBrand('');
-          return;
+        if (activeIds.length > 0) {
+          leading = allProducts.filter((p: any) => activeIds.includes(String(p.id)));
         }
 
-        setProducts(cleaned);
-        const uniqueBrands = Array.from(new Set(cleaned.map((p: any) => p.brand).filter(Boolean))) as string[];
-        setBrands(uniqueBrands);
-        if (uniqueBrands.length > 0 && !selectedBrand) setSelectedBrand(uniqueBrands[0]);
+        if (leading.length === 0) {
+          leading = allProducts.filter((p: any) => p.isNew).slice(0, 20);
+        }
+
+        if (leading.length > 0) {
+          setProducts(leading);
+          const brandList = Array.from(new Set(leading.map((p: any) => p.brand).filter(Boolean)));
+          setBrands(brandList);
+          if (brandList.length > 0 && !selectedBrand) setSelectedBrand(brandList[0]);
+        }
       } catch (error) {
         console.error('Error loading leading brands:', error);
         setProducts([]);
@@ -64,21 +66,25 @@ export default function LeadingBrands() {
       }
     };
     loadProducts();
-  }, []);
+  }, [selectedBrand]);
+
+  const brandProducts = products.filter((p: any) => p.brand === selectedBrand);
+  const maxSlide = Math.max(0, brandProducts.length - 2);
 
   useEffect(() => {
-    if (!isAutoPlaying || products.length === 0) return;
-    const brandProducts = products.filter((p: any) => p.brand === selectedBrand);
-    const cardsPerView = 2;
-    const maxSlide = Math.max(0, brandProducts.length - cardsPerView);
+    if (!isAutoPlaying || brandProducts.length <= 2) return;
+    const maxSlide = Math.max(0, brandProducts.length - 2);
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
     }, 4000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, products, selectedBrand]);
+  }, [isAutoPlaying, brandProducts.length, selectedBrand]);
 
-  const brandProducts = products.filter((p: any) => p.brand === selectedBrand);
-  const maxSlide = Math.max(0, brandProducts.length - 2);
+  const handleAddToCart = (product: any) => {
+    addToCart(product);
+    setIsCartOpen(true);
+    toast.success(`${product.name && product.name !== 'undefined' ? product.name : 'Product'} added!`);
+  };
 
   const scrollLeft = () => {
     setCurrentSlide((prev) => (prev <= 0 ? maxSlide : prev - 1));
@@ -88,12 +94,6 @@ export default function LeadingBrands() {
   const scrollRight = () => {
     setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
     setIsAutoPlaying(false);
-  };
-
-  const handleAddToCart = (product: any) => {
-    addToCart(product);
-    setIsCartOpen(true);
-    toast.success(`${product.name && product.name !== 'undefined' ? product.name : 'Product'} added!`);
   };
 
   return (
@@ -119,7 +119,7 @@ export default function LeadingBrands() {
                   <p className="text-sm text-gray-500">Loading brands...</p>
                 </div>
               ) : brands.length === 0 ? (
-                <p className="text-gray-500 text-sm mb-6">No brands available.</p>
+                <p className="text-gray-500 text-sm mb-6">No brands available. Please add products in Admin → Leading Brands.</p>
               ) : (
                 <div className="space-y-3 mb-8">
                   {brands.map((brand) => (
@@ -159,7 +159,7 @@ export default function LeadingBrands() {
               </div>
             ) : brandProducts.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-2xl">
-                <p className="text-gray-600">No products found for {selectedBrand || 'selected brand'}</p>
+                <p className="text-gray-600">No products found for {selectedBrand}. Please select products in Admin → Leading Brands.</p>
               </div>
             ) : (
               <div className="relative">
@@ -204,10 +204,10 @@ export default function LeadingBrands() {
 
                 {brandProducts.length > 2 && (
                   <>
-                    <button onClick={scrollLeft} className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8">
+                    <button onClick={() => { setCurrentSlide((prev) => (prev <= 0 ? Math.max(0, brandProducts.length - 2) : prev - 1)); setIsAutoPlaying(false); }} className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8">
                       <ChevronLeft className="w-6 h-6" />
                     </button>
-                    <button onClick={scrollRight} className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6 lg:-mr-8">
+                    <button onClick={() => { setCurrentSlide((prev) => (prev >= Math.max(0, brandProducts.length - 2) ? 0 : prev + 1)); setIsAutoPlaying(false); }} className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6 lg:-mr-8">
                       <ChevronRight className="w-6 h-6" />
                     </button>
                   </>
@@ -219,4 +219,15 @@ export default function LeadingBrands() {
       </div>
     </section>
   );
+}
+
+function getActiveProductIds(): string[] {
+  try {
+    const stored = localStorage.getItem('leadingBrandsProducts');
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
 }
