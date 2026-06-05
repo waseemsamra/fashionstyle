@@ -1024,14 +1024,6 @@ export default function Dashboard({ minimal = false }: DashboardProps) {
     { id: 'users', label: 'Users', icon: UsersIcon, link: '/admin/users' },
     { id: 'brands', label: 'Brands', icon: Tag },
     { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'summer-collection', label: 'Summer Collection', icon: Package, link: '/admin/summer-collection' },
-    { id: 'trending-now', label: 'Trending Now', icon: Package, link: '/admin/trending-now' },
-    { id: 'leading-brands', label: 'Leading Brands', icon: Package, link: '/admin/leading-brands' },
-    { id: 'designers-spotlight', label: 'Designers Spotlight', icon: Package, link: '/admin/designers-spotlight' },
-    { id: 'best-selling-designers', label: 'Best Selling Designers', icon: Package, link: '/admin/best-selling-designers' },
-    { id: 'ready-to-ship', label: 'Ready To Ship', icon: Package, link: '/admin/ready-to-ship' },
-    { id: 'hand-picked', label: 'Hand Picked', icon: Package, link: '/admin/hand-picked' },
-    { id: 'celebrity-closet', label: 'Celebrity Closet', icon: Package, link: '/admin/celebrity-closet' },
     { id: 'profile', label: 'Profile', icon: UserCircle, link: '/admin/profile' },
   ];
 

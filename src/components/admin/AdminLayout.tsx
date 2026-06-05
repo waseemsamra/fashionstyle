@@ -138,7 +138,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       subItems: [
         { id: 'featured', label: 'Featured Collection', icon: Star, path: '/admin/featured' },
         { id: 'wedding', label: 'Wedding Tales', icon: Heart, path: '/admin/wedding-tales' },
-        { id: 'designers', label: 'Designers Discount', icon: ShoppingBag, path: '/admin/designers-discount' }
+        { id: 'designers', label: 'Designers Discount', icon: ShoppingBag, path: '/admin/designers-discount' },
+        { id: 'summer-collection', label: 'Summer Collection', icon: Package, path: '/admin/summer-collection' },
+        { id: 'trending-now', label: 'Trending Now', icon: Package, path: '/admin/trending-now' },
+        { id: 'leading-brands', label: 'Leading Brands', icon: Package, path: '/admin/leading-brands' },
+        { id: 'designers-spotlight', label: 'Designers Spotlight', icon: Package, path: '/admin/designers-spotlight' },
+        { id: 'best-selling-designers', label: 'Best Selling Designers', icon: Package, path: '/admin/best-selling-designers' },
+        { id: 'ready-to-ship', label: 'Ready To Ship', icon: Package, path: '/admin/ready-to-ship' },
+        { id: 'hand-picked', label: 'Hand Picked', icon: Package, path: '/admin/hand-picked' },
+        { id: 'celebrity-closet', label: 'Celebrity Closet', icon: Package, path: '/admin/celebrity-closet' }
       ]
     },
     { id: 'products', label: 'Products', icon: Package, path: resolveMenuPath('products') },
