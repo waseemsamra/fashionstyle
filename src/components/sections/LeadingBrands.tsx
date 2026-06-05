@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
@@ -50,17 +50,23 @@ export default function LeadingBrands() {
     loadProducts();
   }, []);
 
-  const brandProducts = products.filter((p: any) => p.brand === selectedBrand);
+  const brandProducts = useMemo(() => products.filter((p: any) => p.brand === selectedBrand), [products, selectedBrand]);
   const cardsPerView = 3;
-  const maxSlide = Math.max(0, brandProducts.length - cardsPerView);
+  const cardWidth = 320;
+  const duplicatedProducts = useMemo(() => {
+    if (brandProducts.length <= cardsPerView) return brandProducts;
+    return [...brandProducts, ...brandProducts];
+  }, [brandProducts]);
+
+  const maxSlide = duplicatedProducts.length - cardsPerView;
 
   useEffect(() => {
-    if (!isAutoPlaying || brandProducts.length <= cardsPerView) return;
+    if (!isAutoPlaying || duplicatedProducts.length <= cardsPerView) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
     }, 4000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, brandProducts.length, selectedBrand, maxSlide]);
+  }, [isAutoPlaying, duplicatedProducts.length, maxSlide]);
 
   const scrollLeft = useCallback(() => {
     setCurrentSlide((prev) => (prev <= 0 ? maxSlide : prev - 1));
@@ -81,36 +87,34 @@ export default function LeadingBrands() {
   return (
     <section id="leading-brands" ref={sectionRef} className="section-padding bg-white">
       <div className="container-custom">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Left Column: Brand Name + Tagline + CTA */}
-          <div className="lg:col-span-4 flex flex-col justify-center pt-8 lg:pt-16 pb-8 lg:pb-16">
-            <div className="lg:sticky lg:top-32">
-              {isLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold mx-auto mb-3" />
-                </div>
-              ) : (
-                <>
-                  <h2 className="font-playfair text-4xl md:text-5xl lg:text-6xl font-semibold text-black mb-4 leading-tight">
-                    {selectedBrand || 'Leading Brands'}
-                  </h2>
-                  <p className="text-gray-600 leading-relaxed mb-8">
-                    Where grace meets modernity.
-                  </p>
-                  <button
-                    onClick={() => navigate('/leading-brands')}
-                    className="group inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full font-medium hover:bg-gold transition-colors duration-300"
-                  >
-                    Explore All
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-300" />
-                  </button>
-                </>
-              )}
-            </div>
+          <div className="lg:col-span-5 flex flex-col justify-center items-center lg:items-start text-center lg:text-left">
+            {isLoading ? (
+              <div className="text-center py-8 w-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold mx-auto mb-3" />
+              </div>
+            ) : (
+              <>
+                <h2 className="font-playfair text-4xl md:text-5xl lg:text-6xl font-semibold text-black mb-4 leading-tight">
+                  {selectedBrand || 'Leading Brands'}
+                </h2>
+                <p className="text-gray-600 leading-relaxed mb-8">
+                  Where grace meets modernity.
+                </p>
+                <button
+                  onClick={() => navigate('/leading-brands')}
+                  className="group inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full font-medium hover:bg-gold transition-colors duration-300"
+                >
+                  Explore All
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-300" />
+                </button>
+              </>
+            )}
           </div>
 
-          {/* Right Column: 3-card Carousel for Selected Brand */}
-          <div className="lg:col-span-8">
+          {/* Right Column: Continuous 3-card Carousel */}
+          <div className="lg:col-span-7">
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
@@ -125,11 +129,11 @@ export default function LeadingBrands() {
                 <div className="overflow-hidden">
                   <div
                     className="flex transition-transform duration-500"
-                    style={{ transform: `translateX(-${currentSlide * (100 / cardsPerView)}%)` }}
+                    style={{ transform: `translateX(-${currentSlide * cardWidth}px)` }}
                   >
-                    {brandProducts.map((product) => (
-                      <div key={product.id} className={`flex-shrink-0 ${cardsPerView === 3 ? 'w-[280px]' : 'w-[220px]'} px-2`}>
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2 mx-1">
+                    {duplicatedProducts.map((product, idx) => (
+                      <div key={`${product.id}-${idx}`} className="flex-shrink-0 px-2" style={{ width: cardWidth }}>
+                        <div className="bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2 mx-auto">
                           <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                             <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => handleImageError(e, product.name)} />
                             {product.isSale && <span className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white text-xs rounded-full">Sale</span>}
@@ -150,16 +154,12 @@ export default function LeadingBrands() {
                   </div>
                 </div>
 
-                {brandProducts.length > cardsPerView && (
-                  <>
-                    <button onClick={scrollLeft} className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-4">
-                      <ChevronLeft className="w-6 h-6" />
-                    </button>
-                    <button onClick={scrollRight} className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-4">
-                      <ChevronRight className="w-6 h-6" />
-                    </button>
-                  </>
-                )}
+                <button onClick={scrollLeft} className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-4">
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button onClick={scrollRight} className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-4">
+                  <ChevronRight className="w-6 h-6" />
+                </button>
               </div>
             )}
           </div>
