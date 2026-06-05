@@ -131,11 +131,12 @@ export default function LeadingBrandsCMS() {
       
       console.log(`Save complete: ${succeeded.length} succeeded, ${failed.length} failed`);
       if (failed.length > 0) console.table(failed);
-      
+
       if (failed.length > 0) {
         alert(`⚠️ ${failed.length} products failed to save. Check console for details.`);
       } else {
         alert(`✅ Successfully saved ${uniqueIds.length} products!`);
+        localStorage.setItem('leadingBrandsProducts', JSON.stringify(uniqueIds));
         loadProducts();
       }
     } catch (error: any) {
