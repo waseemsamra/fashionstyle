@@ -39,26 +39,40 @@ export default function LeadingBrands() {
       try {
         const response = await fetch(`${API_URL}/products?limit=2000`);
         const data = await response.json();
-        let productsArray = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
+        const allItems = data.items || [];
+        const productsArray = allItems.filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
 
-        let leading = productsArray.filter((p: any) => p.isLeadingBrands && p.name && p.name !== 'undefined');
-        console.log('Leading Brands - API flagged:', leading.length, 'Sample:', leading.slice(0, 3).map((p: any) => ({ id: p.id, name: p.name, brand: p.brand, isLeadingBrands: p.isLeadingBrands })));
+        const leading = productsArray.filter((p: any) => p.isLeadingBrands);
+        console.log('Leading Brands - Total products:', productsArray.length, 'Flagged:', leading.length);
+        if (productsArray.length > 0) {
+          console.log('Leading Brands - Sample product keys:', Object.keys(productsArray[0]));
+          console.log('Leading Brands - Sample flagged products (first 5):', leading.slice(0, 5).map((p: any) => ({ id: p.id, name: p.name, brand: p.brand, isLeadingBrands: p.isLeadingBrands })));
+        }
 
         if (leading.length === 0) {
           const savedProductIds = localStorage.getItem('leadingBrandsProducts');
           if (savedProductIds) {
             const ids = JSON.parse(savedProductIds);
-            leading = productsArray.filter((p: any) => ids.includes(p.id) && p.name && p.name !== 'undefined');
-            console.log('Leading Brands - Using localStorage fallback:', leading.length);
+            const fallback = productsArray.filter((p: any) => ids.includes(p.id));
+            console.log('Leading Brands - Using localStorage fallback:', fallback.length);
+            if (fallback.length > 0) {
+              setProducts(fallback);
+              const brandList = (Array.from(new Set(fallback.map((p: any) => p.brand).filter(Boolean))) as string[]).filter((b: string) => b.length > 0);
+              setBrands(brandList);
+              if (brandList.length > 0) setSelectedBrand(brandList[0]);
+              return;
+            }
           }
+          setProducts([]);
+          setBrands([]);
+          setSelectedBrand('');
+          return;
         }
 
-        if (leading.length > 0) {
-          setProducts(leading);
-          const brandList = (Array.from(new Set(leading.map((p: any) => p.brand).filter(Boolean))) as string[]).filter((b: string) => b.length > 0);
-          setBrands(brandList);
-          if (brandList.length > 0 && !selectedBrand) setSelectedBrand(brandList[0]);
-        }
+        setProducts(leading);
+        const brandList = (Array.from(new Set(leading.map((p: any) => p.brand).filter(Boolean))) as string[]).filter((b: string) => b.length > 0);
+        setBrands(brandList);
+        if (brandList.length > 0) setSelectedBrand(brandList[0]);
       } catch (error) {
         console.error('Error loading leading brands:', error);
         setProducts([]);
