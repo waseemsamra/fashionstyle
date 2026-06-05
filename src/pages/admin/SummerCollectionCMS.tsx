@@ -26,7 +26,7 @@ export default function SummerCollectionCMS() {
     try {
       setLoading(true);
       const data = await api.getAllProducts();
-      const productsArray = (data.items || []).filter((p: any) => p && p.id);
+      const productsArray = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
       setAllProducts(productsArray);
       
       const featured = productsArray.filter((p: any) => p.isSummerCollection);

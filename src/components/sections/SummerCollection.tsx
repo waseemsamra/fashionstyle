@@ -23,12 +23,10 @@ export default function SummerCollection() {
       try {
         const response = await fetch(`${API_URL}/products?limit=2000`);
         const data = await response.json();
-        let productsArray = (data.items || []).filter((p: any) => p && p.id);
+        let productsArray = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
         
-        // First try to load products with isSummerCollection flag
-        let summer = productsArray.filter((p: any) => p.isSummerCollection);
+        let summer = productsArray.filter((p: any) => p.isSummerCollection && p.name);
         
-        // If no flagged products, check localStorage (for testing before Lambda deployed)
         if (summer.length === 0) {
           const savedProductIds = localStorage.getItem('summerCollectionProducts');
           if (savedProductIds) {
@@ -37,7 +35,6 @@ export default function SummerCollection() {
           }
         }
         
-        // If still no products, fall back to new arrival products
         if (summer.length === 0) {
           summer = productsArray.filter((p: any) => p && p.isNew).slice(0, 20);
         }
@@ -142,7 +139,7 @@ export default function SummerCollection() {
                         isInWishlist={isInWishlist(product.id)}
                         onNavigate={() => navigate(getProductUrl(product))}
                         onBrandNavigate={() => navigate(`/brand/${encodeURIComponent(product.brand)}`)}
-                        onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name} added!`); }}
+                        onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name && product.name !== 'undefined' ? product.name : 'Product'} added!`); }}
                       />
                     </div>
                   ))}
@@ -183,7 +180,7 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
             onClick={(e) => { e.stopPropagation(); onBrandNavigate(); }}
             className="bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full font-bold uppercase text-sm tracking-wide shadow-lg whitespace-nowrap hover:bg-gray-100"
           >
-            {product.brand || product.name || 'Product'}
+             {product.brand || ''}
           </button>
         </div>
         
@@ -218,7 +215,7 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
             {product.brand || ''}
           </button>
         </p>
-        <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer">{product.name}</h3>
+         <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer">{product.name || 'Unnamed Product'}</h3>
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (
             <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />
