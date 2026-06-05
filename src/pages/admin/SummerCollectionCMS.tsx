@@ -63,31 +63,43 @@ export default function SummerCollectionCMS() {
         return;
       }
       
+      // Save to localStorage as backup
+      localStorage.setItem('summerCollectionProducts', JSON.stringify(selectedIds));
+      
+      const errors: string[] = [];
       const updatePromises = allProducts.map(async (product) => {
         const shouldFlag = selectedIds.includes(product.id);
         if (product.isSummerCollection !== shouldFlag) {
-          const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
-            },
-            body: JSON.stringify({
-              ...product,
-              isSummerCollection: shouldFlag
-            })
-          });
-          if (!response.ok) {
-            console.error('Failed to update product:', product.id, response.status);
+          try {
+            const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+              },
+              body: JSON.stringify({
+                ...product,
+                isSummerCollection: shouldFlag
+              })
+            });
+            if (!response.ok) {
+              const errorText = await response.text();
+              errors.push(`Product ${product.id}: ${response.status} - ${errorText}`);
+              console.error('Failed to update product:', product.id, response.status, errorText);
+            }
+          } catch (err: any) {
+            errors.push(`Product ${product.id}: ${err.message}`);
           }
-          return response;
         }
-      }).filter(Boolean);
+      });
       
-      if (updatePromises.length > 0) {
-        await Promise.all(updatePromises);
+      await Promise.all(updatePromises);
+      
+      if (errors.length > 0) {
+        alert(`⚠️ Saved some products, but errors occurred:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? `... and ${errors.length - 3} more` : ''}`);
+      } else {
+        alert(`✅ Successfully saved ${selectedIds.length} products!`);
       }
-      alert(`✅ Successfully saved ${selectedIds.length} products!`);
     } catch (error: any) {
       alert('Failed to save: ' + (error.message || 'Unknown error'));
     } finally {
