@@ -58,11 +58,16 @@ export default function LeadingBrandsCMS() {
       
       const uniqueIds = [...new Set(selectedIds)].slice(0, MAX_LEADING);
       
+      console.log(`LeadingBrands save start: selected=${uniqueIds.length}`);
+      console.log('Using endpoint:', ADMIN_API_URL);
+      console.log('Token present:', !!token);
+      
       const previouslyFlagged = allProducts.filter((p: any) => p.isLeadingBrand && !uniqueIds.includes(p.id));
       const newlyFlagged = allProducts.filter((p: any) => !p.isLeadingBrand && uniqueIds.includes(p.id));
       
       const toUpdate = [...previouslyFlagged, ...newlyFlagged];
       console.log(`LeadingBrands: Unflagging ${previouslyFlagged.length}, Flagging ${newlyFlagged.length}`);
+      console.log('Products to update:', toUpdate.map(p => p.id));
       
       if (toUpdate.length === 0) {
         alert('No changes to save');
