@@ -83,7 +83,7 @@ export default function LeadingBrands() {
       <div className="container-custom">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           {/* Left Column: Brand Name + Tagline + CTA */}
-          <div className="lg:col-span-5 flex flex-col justify-center">
+          <div className="lg:col-span-4 flex flex-col justify-center pt-8 lg:pt-16 pb-8 lg:pb-16">
             <div className="lg:sticky lg:top-32">
               {isLoading ? (
                 <div className="text-center py-8">
@@ -91,7 +91,7 @@ export default function LeadingBrands() {
                 </div>
               ) : (
                 <>
-                  <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold text-black mb-4 leading-tight">
+                  <h2 className="font-playfair text-4xl md:text-5xl lg:text-6xl font-semibold text-black mb-4 leading-tight">
                     {selectedBrand || 'Leading Brands'}
                   </h2>
                   <p className="text-gray-600 leading-relaxed mb-8">
@@ -110,7 +110,7 @@ export default function LeadingBrands() {
           </div>
 
           {/* Right Column: 3-card Carousel for Selected Brand */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-8">
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
@@ -128,7 +128,7 @@ export default function LeadingBrands() {
                     style={{ transform: `translateX(-${currentSlide * (100 / cardsPerView)}%)` }}
                   >
                     {brandProducts.map((product) => (
-                      <div key={product.id} className={`flex-shrink-0 ${cardsPerView === 3 ? 'w-1/3' : 'w-1/2'} px-2`}>
+                      <div key={product.id} className={`flex-shrink-0 ${cardsPerView === 3 ? 'w-[280px]' : 'w-[220px]'} px-2`}>
                         <div className="bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2 mx-1">
                           <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                             <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => handleImageError(e, product.name)} />
