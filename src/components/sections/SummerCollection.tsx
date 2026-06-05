@@ -45,7 +45,7 @@ export default function SummerCollection() {
 
   useEffect(() => {
     if (!isAutoPlaying || products.length === 0) return;
-    const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
+    const maxSlide = Math.max(0, products.length - Math.min(2, products.length));
     const interval = setInterval(() => {
       setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
     }, 4000);
@@ -53,12 +53,12 @@ export default function SummerCollection() {
   }, [isAutoPlaying, products.length]);
 
   const scrollLeft = () => {
-    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(4, products.length)) : prev - 1);
+    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(2, products.length)) : prev - 1);
     setIsAutoPlaying(false);
   };
 
   const scrollRight = () => {
-    const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
+    const maxSlide = Math.max(0, products.length - Math.min(2, products.length));
     setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
     setIsAutoPlaying(false);
   };
@@ -123,9 +123,9 @@ export default function SummerCollection() {
 
               {/* Slides Container */}
               <div className="overflow-hidden">
-                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 25}%)` }}>
+                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 50}%)` }}>
                   {products.map((product) => (
-                    <div key={product.id} className="min-w-[25%] px-3">
+                    <div key={product.id} className="min-w-[50%] md:min-w-[25%] px-3">
                       <ProductCard
                         product={product}
                         onWishlist={(e: any) => handleWishlist(product, e)}
@@ -208,7 +208,7 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
             {product.brand || ''}
           </button>
         </p>
-         <h3 onClick={onNavigate} className="font-playfair text-lg font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer">{product.name || 'Unnamed Product'}</h3>
+         <h3 onClick={onNavigate} className="text-xs sm:text-sm font-semibold text-black mb-2 group-hover:text-gold transition-colors duration-300 cursor-pointer line-clamp-2">{product.name || 'Unnamed Product'}</h3>
         <div className="flex items-center gap-1 mb-2">
           {[...Array(5)].map((_, i) => (
             <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating || 0) ? 'text-gold fill-gold' : 'text-gray-300'}`} />
