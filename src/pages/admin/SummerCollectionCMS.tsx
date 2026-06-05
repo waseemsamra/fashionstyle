@@ -63,38 +63,63 @@ export default function SummerCollectionCMS() {
         return;
       }
       
-      // Only update products that need to be marked as summer collection
-      const updatePromises = selectedIds.map(async (productId) => {
+      const uniqueIds = [...new Set(selectedIds)];
+      
+      const updatePromises = uniqueIds.map(async (productId) => {
         const product = allProducts.find((p: any) => p.id === productId);
-        if (product && !product.isSummerCollection) {
+        if (!product) return { ok: false, productId, reason: 'Product not found' };
+        
+        const payload = {
+          ...product,
+          isSummerCollection: true
+        };
+        
+        try {
           const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
             },
-            body: JSON.stringify({
-              ...product,
-              isSummerCollection: true
-            })
+            body: JSON.stringify(payload)
           });
+          
+          const responseText = await response.text().catch(() => '');
+          
           if (!response.ok) {
-            console.error('Failed to update product:', product.id, response.status);
+            console.error(`Failed to update product ${product.id}:`, {
+              status: response.status,
+              body: responseText
+            });
+            return { ok: false, productId, status: response.status, body: responseText };
           }
-          return response;
+          
+          console.log(`Updated product ${product.id}:`, product.name);
+          return { ok: true, productId };
+        } catch (err: any) {
+          console.error(`Network error updating product ${product.id}:`, err.message);
+          return { ok: false, productId, reason: err.message };
         }
-      }).filter(Boolean);
+      });
       
-      const results = await Promise.all(updatePromises);
-      const failed = results.filter(r => !r?.ok);
+      const results = await Promise.allSettled(updatePromises);
+      const settled = results.filter(r => r.status === 'fulfilled').map(r => (r as PromiseFulfilledResult<any>).value);
+      const failed = settled.filter(r => !r?.ok);
+      const succeeded = settled.filter(r => r?.ok);
+      
+      console.log(`Save complete: ${succeeded.length} succeeded, ${failed.length} failed`);
+      if (failed.length > 0) {
+        console.table(failed);
+      }
       
       if (failed.length > 0) {
         alert(`⚠️ ${failed.length} products failed to save. Check console for details.`);
       } else {
-        alert(`✅ Successfully saved ${selectedIds.length} products!`);
+        alert(`✅ Successfully saved ${uniqueIds.length} products!`);
         loadProducts();
       }
     } catch (error: any) {
+      console.error('Save error:', error);
       alert('Failed to save: ' + (error.message || 'Unknown error'));
     } finally {
       setSaving(false);

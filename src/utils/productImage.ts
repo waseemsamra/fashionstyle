@@ -28,10 +28,12 @@ export const getProductImage = (product: { image?: string; name?: string; id?: s
 export const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, name: string, size: string = '300x400') => {
   const target = e.currentTarget;
   const safeName = (name && name !== 'undefined') ? name : 'No Image';
-  // Only replace with placeholder if not already using placeholder
-  if (!target.src.includes('via.placeholder.com')) {
-    target.src = `https://via.placeholder.com/${size}/f5f5dc/333333?text=${encodeURIComponent(safeName)}`;
-  }
+  const [w, h] = size.split('x');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <rect fill="#f5f5dc" width="${w}" height="${h}"/>
+    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#999" font-size="14" font-family="sans-serif">${encodeURIComponent(safeName)}</text>
+  </svg>`;
+  target.src = `data:image/svg+xml;base64,${btoa(svg)}`;
 };
 
 // Helper to get S3 asset URL
