@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
 import { getProductUrl } from '@/utils/productUrl';
@@ -11,27 +11,13 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s
 export default function LeadingBrands() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-    const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const { addToCart, setIsCartOpen } = useCart();
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1 }
-    );
-    if (sectionRef.current) observer.observe(sectionRef.current);
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -51,7 +37,7 @@ export default function LeadingBrands() {
         setProducts(leading);
         const brandList = (Array.from(new Set(leading.map((p: any) => p.brand).filter(Boolean))) as string[]).filter((b: string) => b.length > 0);
         setBrands(brandList);
-        if (brandList.length > 0 && !selectedBrand) setSelectedBrand(brandList[0]);
+        if (brandList.length > 0) setSelectedBrand(brandList[0]);
       } catch (error) {
         console.error('Error loading leading brands:', error);
         setProducts([]);
@@ -64,19 +50,34 @@ export default function LeadingBrands() {
   }, []);
 
   const brandProducts = products.filter((p: any) => p.brand === selectedBrand);
-  const maxSlide = Math.max(0, brandProducts.length - 2);
 
   useEffect(() => {
-    return () => {};
-  }, []);
+    if (!selectedBrand && brands.length > 0) {
+      setSelectedBrand(brands[0]);
+    }
+  }, [brands, selectedBrand]);
+
+  const getCardsPerView = useCallback(() => 3, []);
+  const cardsPerView = getCardsPerView();
+  const maxSlide = Math.max(0, brandProducts.length - cardsPerView);
 
   useEffect(() => {
-    if (!isAutoPlaying || brandProducts.length <= 2) return;
+    if (!isAutoPlaying || brandProducts.length <= cardsPerView) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
     }, 4000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, brandProducts.length, selectedBrand]);
+  }, [isAutoPlaying, brandProducts.length, selectedBrand, maxSlide, cardsPerView]);
+
+  const scrollLeft = useCallback(() => {
+    setCurrentSlide((prev) => (prev <= 0 ? maxSlide : prev - 1));
+    setIsAutoPlaying(false);
+  }, [maxSlide]);
+
+  const scrollRight = useCallback(() => {
+    setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
+    setIsAutoPlaying(false);
+  }, [maxSlide]);
 
   const handleAddToCart = (product: any) => {
     addToCart(product);
@@ -87,37 +88,36 @@ export default function LeadingBrands() {
   return (
     <section id="leading-brands" ref={sectionRef} className="section-padding bg-white">
       <div className="container-custom">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column: Brand Names Only */}
-          <div>
-            <h2 className="font-playfair text-3xl md:text-4xl font-semibold text-black mb-6">Leading Brands</h2>
-            {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold mx-auto mb-3" />
-              </div>
-            ) : brands.length === 0 ? (
-              <p className="text-gray-500 text-sm">No brands available.</p>
-            ) : (
-              <div className="space-y-3">
-                {brands.map((brand) => (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+          {/* Left Column: Brand + Tagline + CTA */}
+          <div className="lg:col-span-5 flex flex-col justify-center">
+            <div className="lg:sticky lg:top-32">
+              {isLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold mx-auto mb-3" />
+                </div>
+              ) : (
+                <>
+                  <h2 className="font-playfair text-3xl md:text-4xl lg:text-5xl font-semibold text-black mb-4 leading-tight">
+                    {selectedBrand || 'Leading Brands'}
+                  </h2>
+                  <p className="text-gray-600 leading-relaxed mb-8">
+                    Where grace meets modernity.
+                  </p>
                   <button
-                    key={brand}
-                    onClick={() => { setSelectedBrand(brand); setCurrentSlide(0); setIsAutoPlaying(true); }}
-                    className={`w-full text-left px-6 py-4 rounded-xl text-lg font-medium transition-all duration-300 ${
-                      selectedBrand === brand
-                        ? 'bg-gold text-white shadow-lg'
-                        : 'bg-white text-black hover:bg-gold/10 hover:text-gold shadow-sm'
-                    }`}
+                    onClick={() => navigate('/leading-brands')}
+                    className="group inline-flex items-center gap-2 bg-black text-white px-6 py-3 rounded-full font-medium hover:bg-gold transition-colors duration-300"
                   >
-                    {brand}
+                    Explore All
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-300" />
                   </button>
-                ))}
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Right Column: Brand Products Carousel */}
-          <div>
+          {/* Right Column: 3-card Carousel */}
+          <div className="lg:col-span-7">
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4" />
@@ -130,10 +130,13 @@ export default function LeadingBrands() {
             ) : (
               <div className="relative">
                 <div className="overflow-hidden">
-                  <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 50}%)` }}>
+                  <div
+                    className="flex transition-transform duration-500"
+                    style={{ transform: `translateX(-${currentSlide * (100 / cardsPerView)}%)` }}
+                  >
                     {brandProducts.map((product) => (
-                      <div key={product.id} className="min-w-[50%] md:min-w-[25%] px-3">
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
+                      <div key={product.id} className={`flex-shrink-0 px-2 ${cardsPerView === 3 ? 'w-1/3' : 'w-1/2'}`}>
+                        <div className="bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2 mx-1">
                           <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={() => navigate(getProductUrl(product))}>
                             <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => handleImageError(e, product.name)} />
                             {product.isSale && <span className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white text-xs rounded-full">Sale</span>}
@@ -154,12 +157,12 @@ export default function LeadingBrands() {
                   </div>
                 </div>
 
-                {brandProducts.length > 2 && (
+                {brandProducts.length > cardsPerView && (
                   <>
-                    <button onClick={() => { setCurrentSlide((prev) => (prev <= 0 ? Math.max(0, brandProducts.length - 2) : prev - 1)); setIsAutoPlaying(false); }} className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-4">
+                    <button onClick={scrollLeft} className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-4">
                       <ChevronLeft className="w-6 h-6" />
                     </button>
-                    <button onClick={() => { setCurrentSlide((prev) => (prev >= Math.max(0, brandProducts.length - 2) ? 0 : prev + 1)); setIsAutoPlaying(false); }} className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-4">
+                    <button onClick={scrollRight} className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-4">
                       <ChevronRight className="w-6 h-6" />
                     </button>
                   </>
