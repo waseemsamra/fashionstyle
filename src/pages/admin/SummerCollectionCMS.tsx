@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
-const ADMIN_PRODUCTS_URL = import.meta.env.VITE_ADMIN_PRODUCTS_URL || 'https://l7u50xa9j4.execute-api.us-east-1.amazonaws.com/prod';
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://u3c5ywl3vp3gz3tkcczpr5pztm0ozkbc.lambda-url.us-east-1.on.aws';
 const MAX_SUMMER = 20;
 
 export default function SummerCollectionCMS() {
@@ -63,17 +63,20 @@ export default function SummerCollectionCMS() {
         return;
       }
       
-      // Only update products whose isSummerCollection flag changed
-      const updatePromises = allProducts.map(async (product) => {
-        const shouldFlag = selectedIds.includes(product.id);
-        if (product.isSummerCollection !== shouldFlag) {
-          const response = await fetch(`${ADMIN_PRODUCTS_URL}/products/${product.id}`, {
+      // Only update products that need to be marked as summer collection
+      const updatePromises = selectedIds.map(async (productId) => {
+        const product = allProducts.find((p: any) => p.id === productId);
+        if (product && !product.isSummerCollection) {
+          const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
             },
-            body: JSON.stringify({ isSummerCollection: shouldFlag })
+            body: JSON.stringify({
+              ...product,
+              isSummerCollection: true
+            })
           });
           if (!response.ok) {
             console.error('Failed to update product:', product.id, response.status);
