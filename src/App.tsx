@@ -69,8 +69,8 @@ function Layout() {
             <Route path="/try-on" element={<VirtualTryOnPage />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Dashboard minimal />} />
-              <Route path="dashboard" element={<Dashboard minimal />} />
+              <Route index element={<Dashboard />} />
+              <Route path="dashboard" element={<Dashboard />} />
               <Route path="featured" element={<FeaturedCollection />} />
               <Route path="wedding-tales" element={<WeddingTalesCMS />} />
               <Route path="designers-discount" element={<DesignersDiscountCMS />} />
