@@ -27,7 +27,7 @@ export default function LeadingBrandsShop() {
         if (isMounted) {
           const items = (data.items || []);
           setProducts(items);
-          const brandList = Array.from(new Set(items.filter((p: any) => p.isLeadingBrands).map((p: any) => (p.brand || '')).filter((b: any) => typeof b === 'string' && b.length > 0))) as string[];
+          const brandList = Array.from(new Set(items.filter((p: any) => p.isLeadingBrands).map((p: any) => p.brand).filter(Boolean))) as string[];
           setBrands(brandList);
           if (brandList.length > 0) setSelectedBrand(brandList[0]);
         }
