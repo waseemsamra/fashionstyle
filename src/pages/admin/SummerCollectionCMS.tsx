@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
-const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://u3c5ywl3vp3gz3tkcczpr5pztm0ozkbc.lambda-url.us-east-1.on.aws';
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
 const MAX_SUMMER = 20;
 
 export default function SummerCollectionCMS() {
@@ -63,40 +63,33 @@ export default function SummerCollectionCMS() {
         return;
       }
       
-      // Save to localStorage as backup
-      localStorage.setItem('summerCollectionProducts', JSON.stringify(selectedIds));
-      
-      const errors: string[] = [];
+      // Update products via Lambda API
       const updatePromises = allProducts.map(async (product) => {
         const shouldFlag = selectedIds.includes(product.id);
         if (product.isSummerCollection !== shouldFlag) {
-          try {
-            const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
-              },
-              body: JSON.stringify({
-                ...product,
-                isSummerCollection: shouldFlag
-              })
-            });
-            if (!response.ok) {
-              const errorText = await response.text();
-              errors.push(`Product ${product.id}: ${response.status} - ${errorText}`);
-              console.error('Failed to update product:', product.id, response.status, errorText);
-            }
-          } catch (err: any) {
-            errors.push(`Product ${product.id}: ${err.message}`);
+          const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+            },
+            body: JSON.stringify({
+              ...product,
+              isSummerCollection: shouldFlag
+            })
+          });
+          if (!response.ok) {
+            console.error('Failed to update product:', product.id, response.status);
           }
+          return response;
         }
-      });
+      }).filter(Boolean);
       
-      await Promise.all(updatePromises);
+      const results = await Promise.all(updatePromises);
+      const failed = results.filter(r => !r?.ok);
       
-      if (errors.length > 0) {
-        alert(`⚠️ Saved some products, but errors occurred:\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? `... and ${errors.length - 3} more` : ''}`);
+      if (failed.length > 0) {
+        alert(`⚠️ ${failed.length} products failed to save. Check console for details.`);
       } else {
         alert(`✅ Successfully saved ${selectedIds.length} products!`);
       }
