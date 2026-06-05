@@ -211,7 +211,7 @@ function ProductCard({ product, isSelected, onToggle }: any) {
 
       <div className="p-4">
         <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{product.brand || ''}</p>
-        <h3 className="font-playfair text-lg font-semibold text-black mb-2">{product.name}</h3>
+        <h3 className="text-xs sm:text-sm font-semibold text-black mb-2">{product.name}</h3>
         <p className="text-gold font-semibold text-lg">${product.price}</p>
       </div>
     </div>
