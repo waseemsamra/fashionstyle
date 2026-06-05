@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://u3c5ywl3vp3gz3tkcczpr5pztm0ozkbc.lambda-url.us-east-1.on.aws';
 
 export default function LeadingBrands() {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -36,7 +36,7 @@ export default function LeadingBrands() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const response = await fetch(`${API_URL}/products?limit=2000`);
+        const response = await fetch(`${ADMIN_API_URL}/products?limit=2000`);
         const data = await response.json();
         const allProducts = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
         const leading = allProducts.filter((p: any) => p.isLeadingBrand && p.name && p.name !== 'undefined');
