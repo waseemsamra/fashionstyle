@@ -25,15 +25,8 @@ export default function SummerCollection() {
         const data = await response.json();
         let productsArray = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
         
-        let summer = productsArray.filter((p: any) => p.isSummerCollection && p.name);
+        let summer = productsArray.filter((p: any) => p.isSummerCollection && p.name && p.name !== 'undefined');
         
-        if (summer.length === 0) {
-          const savedProductIds = localStorage.getItem('summerCollectionProducts');
-          if (savedProductIds) {
-            const ids = JSON.parse(savedProductIds);
-            summer = productsArray.filter((p: any) => ids.includes(p.id));
-          }
-        }
         
         if (summer.length === 0) {
           summer = productsArray.filter((p: any) => p && p.isNew).slice(0, 20);
