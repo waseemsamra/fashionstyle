@@ -49,27 +49,86 @@ export default function LeadingBrandsCMS() {
     try {
       setSaving(true);
       const token = localStorage.getItem('jwt_token');
-      if (!token) return navigate('/admin/login');
-      const uniqueIds = [...new Set(selectedIds)].slice(0, MAX_LEADING);
-      const toUpdate = allProducts.filter((p: any) => uniqueIds.includes(p.id));
-      const batchSize = 5;
-      const failed: any[] = [];
-      for (let i = 0; i < uniqueIds.length; i += batchSize) {
-        const batch = uniqueIds.slice(i, i + batchSize).map((id) => toUpdate.find((p: any) => p.id === id)).filter(Boolean);
-        await Promise.allSettled(batch.map(async (product) => {
-          const res = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}` },
-            body: JSON.stringify({ ...product, isLeadingBrand: true })
-          });
-          if (!res.ok) failed.push(product.id);
-        }));
-        if (i + batchSize < uniqueIds.length) await new Promise(r => setTimeout(r, 300));
+      
+      if (!token) {
+        alert('Please login as admin first');
+        navigate('/admin/login');
+        return;
       }
-      if (failed.length) alert(`⚠️ ${failed.length} failed`);
-      else { alert('Saved'); loadProducts(); }
-    } catch (e: any) { alert('Failed'); }
-    finally { setSaving(false); }
+      
+      const uniqueIds = [...new Set(selectedIds)].slice(0, MAX_LEADING);
+      
+      const previouslyFlagged = allProducts.filter((p: any) => p.isLeadingBrand && !uniqueIds.includes(p.id));
+      const newlyFlagged = allProducts.filter((p: any) => !p.isLeadingBrand && uniqueIds.includes(p.id));
+      
+      const toUpdate = [...previouslyFlagged, ...newlyFlagged];
+      console.log(`LeadingBrands: Unflagging ${previouslyFlagged.length}, Flagging ${newlyFlagged.length}`);
+      
+      if (toUpdate.length === 0) {
+        alert('No changes to save');
+        setSaving(false);
+        return;
+      }
+      
+      const batchSize = 5;
+      const succeeded: string[] = [];
+      const failed: any[] = [];
+      
+      for (let i = 0; i < toUpdate.length; i += batchSize) {
+        const batch = toUpdate.slice(i, i + batchSize);
+        console.log(`Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(toUpdate.length / batchSize)}:`, batch.map(p => ({ id: p.id, name: p.name, flag: !uniqueIds.includes(p.id) })));
+        
+        const batchPromises = batch.map(async (product) => {
+          const shouldFlag = uniqueIds.includes(product.id);
+          const payload = { ...product, isLeadingBrand: shouldFlag };
+          
+          try {
+            const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+              },
+              body: JSON.stringify(payload)
+            });
+            
+            const responseText = await response.text().catch(() => '');
+            
+            if (!response.ok) {
+              console.error(`Failed product ${product.id}:`, response.status, responseText);
+              failed.push({ productId: product.id, status: response.status, body: responseText });
+            } else {
+              console.log(`Updated product ${product.id}:`, product.name, '→', shouldFlag);
+              succeeded.push(product.id);
+            }
+          } catch (err: any) {
+            console.error(`Network error product ${product.id}:`, err.message);
+            failed.push({ productId: product.id, reason: err.message });
+          }
+        });
+        
+        await Promise.allSettled(batchPromises);
+        
+        if (i + batchSize < toUpdate.length) {
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
+      
+      console.log(`Save complete: ${succeeded.length} succeeded, ${failed.length} failed`);
+      if (failed.length > 0) console.table(failed);
+      
+      if (failed.length > 0) {
+        alert(`⚠️ ${failed.length} products failed to save. Check console for details.`);
+      } else {
+        alert(`✅ Successfully saved ${uniqueIds.length} products!`);
+        loadProducts();
+      }
+    } catch (error: any) {
+      console.error('Save error:', error);
+      alert('Failed to save: ' + (error.message || 'Unknown error'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const filteredProducts = allProducts.filter(product => {
