@@ -89,7 +89,7 @@ export default function LeadingBrands() {
       <div className="container-custom">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Left Column: Brand Name + Tagline + CTA */}
-          <div className="lg:col-span-5 flex flex-col justify-center items-center lg:items-start text-center lg:text-left">
+          <div className="lg:col-span-5 flex flex-col justify-center items-center text-center">
             {isLoading ? (
               <div className="text-center py-8 w-full">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gold mx-auto mb-3" />
