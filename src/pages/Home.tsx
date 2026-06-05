@@ -8,6 +8,7 @@ import DesignersOnDiscount from '@/components/sections/DesignersOnDiscount';
 import SummerCollection from '@/components/sections/SummerCollection';
 import TrendingNow from '@/components/sections/TrendingNow';
 import LeadingBrands from '@/components/sections/LeadingBrands';
+import DesignersSpotlight from '@/components/sections/DesignersSpotlight';
 import About from '@/components/sections/About';
 import Testimonials from '@/components/sections/Testimonials';
 import Newsletter from '@/components/sections/Newsletter';
@@ -25,6 +26,7 @@ export default function Home() {
       <SummerCollection />
       <TrendingNow />
       <LeadingBrands />
+      <DesignersSpotlight />
       <About />
       <Testimonials />
       <Newsletter />
