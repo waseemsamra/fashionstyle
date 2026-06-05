@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
@@ -17,59 +17,76 @@ export default function DesignersOnDiscount() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
-useEffect(() => {
-     const loadProducts = async () => {
-       try {
-         const data = await api.getAllProducts();
-         let productsArray = (data.items || []).filter((p: any) => p && p.id);
-         
-         // First try to load products with isDesignersDiscount flag
-         let discount = productsArray.filter((p: any) => p.isDesignersDiscount);
-         
-         // If no flagged products, check localStorage (for testing before Lambda deployed)
-         if (discount.length === 0) {
-           const savedProductIds = localStorage.getItem('designersDiscountProducts');
-           if (savedProductIds) {
-             const ids = JSON.parse(savedProductIds);
-             discount = productsArray.filter((p: any) => ids.includes(p.id));
-           }
-         }
-         
-// If still no products, fall back to sale products
-          if (discount.length === 0) {
-            discount = productsArray.filter((p: any) => p && (p.isSale === true || p.originalPrice)).slice(0, 20);
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const data = await api.getAllProducts();
+        let productsArray = (data.items || []).filter((p: any) => p && p.id);
+        
+        let discount = productsArray.filter((p: any) => p.isDesignersDiscount);
+        
+        if (discount.length === 0) {
+          const savedProductIds = localStorage.getItem('designersDiscountProducts');
+          if (savedProductIds) {
+            const ids = JSON.parse(savedProductIds);
+            discount = productsArray.filter((p: any) => ids.includes(p.id));
           }
-         
-         setProducts(discount.slice(0, 20));
-       } catch (error) {
-         console.error('Error loading designers discount:', error);
-         setProducts([]);
-       } finally {
-         setIsLoading(false);
-       }
-     };
-     loadProducts();
-   }, []);
+        }
+        
+        if (discount.length === 0) {
+          discount = productsArray.filter((p: any) => p && (p.isSale === true || p.originalPrice)).slice(0, 20);
+        }
+        
+        setProducts(discount.slice(0, 20));
+      } catch (error) {
+        console.error('Error loading designers discount:', error);
+        setProducts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProducts();
+  }, []);
+
+  const cardsPerView = typeof window !== 'undefined' ? (window.innerWidth < 768 ? 2 : 4) : 2;
+  const duplicatedProducts = useMemo(() => {
+    if (products.length <= cardsPerView) return products;
+    return [...products, ...products, ...products, ...products, ...products];
+  }, [products]);
+
+  const maxSlide = products.length * 4;
 
   useEffect(() => {
-    if (!isAutoPlaying || products.length === 0) return;
-    const maxSlide = Math.max(0, products.length - Math.min(2, products.length));
+    if (!isAutoPlaying || products.length <= cardsPerView) return;
     const interval = setInterval(() => {
-      setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
+      setCurrentSlide((prev) => {
+        if (prev >= maxSlide) return 0;
+        return prev + 1;
+      });
     }, 4000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, products.length]);
+  }, [isAutoPlaying, products.length, maxSlide]);
 
-  const scrollLeft = () => {
-    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(2, products.length)) : prev - 1);
+  const scrollLeft = useCallback(() => {
+    setCurrentSlide((prev) => (prev <= 0 ? maxSlide : prev - 1));
     setIsAutoPlaying(false);
-  };
+  }, [maxSlide]);
 
-  const scrollRight = () => {
-    const maxSlide = Math.max(0, products.length - Math.min(2, products.length));
-    setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
+  const scrollRight = useCallback(() => {
+    setCurrentSlide((prev) => {
+      if (prev >= maxSlide) return 0;
+      return prev + 1;
+    });
     setIsAutoPlaying(false);
-  };
+  }, [maxSlide]);
+
+  const scrollRight = useCallback(() => {
+    setCurrentSlide((prev) => {
+      if (prev >= maxSlide) return 0;
+      return prev + 1;
+    });
+    setIsAutoPlaying(false);
+  }, [maxSlide]);
 
   const handleWishlist = (product: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -86,12 +103,9 @@ useEffect(() => {
     }
   };
 
-  const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
-
   return (
     <section className="section-padding bg-white">
       <div className="container-custom">
-        {/* Header: Title Left, View All Right */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <span className="text-gold text-sm font-medium tracking-wider uppercase block mb-1">Designer Deals</span>
@@ -118,52 +132,39 @@ useEffect(() => {
             </p>
           </div>
         ) : (
-          <>
-            {/* Carousel */}
-            <div className="relative">
-              {/* Left Arrow */}
-              <button 
-                onClick={scrollLeft} 
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
+          <div className="relative">
+            <button
+              onClick={scrollLeft}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
 
-              {/* Slides Container */}
-              <div className="overflow-hidden">
-                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 50}%)` }}>
-                  {products.map((product) => (
-                    <div key={product.id} className="min-w-[50%] md:min-w-[25%] px-3">
-                      <ProductCard
-                        product={product}
-                        onWishlist={(e: any) => handleWishlist(product, e)}
-                        isInWishlist={isInWishlist(product.id)}
-                        onNavigate={() => navigate(getProductUrl(product))}
-                        onBrandNavigate={() => navigate(`/brand/${encodeURIComponent(product.brand)}`)}
-                        onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name} added!`); }}
-                      />
-                    </div>
-                  ))}
-                </div>
+            <div className="overflow-hidden">
+              <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * (100 / cardsPerView)}%)` }}>
+                {duplicatedProducts.map((product, idx) => (
+                  <div key={`${product.id}-${idx}`} className={`flex-shrink-0 ${cardsPerView === 4 ? 'w-1/4' : 'w-1/2'} px-3`}>
+                    <ProductCard
+                      product={product}
+                      onWishlist={(e: any) => handleWishlist(product, e)}
+                      isInWishlist={isInWishlist(product.id)}
+                      onNavigate={() => navigate(getProductUrl(product))}
+                      onBrandNavigate={() => navigate(`/brand/${encodeURIComponent(product.brand)}`)}
+                      onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name} added!`); }}
+                    />
+                  </div>
+                ))}
               </div>
+            </div>
 
-          {/* Right Arrow */}
-          <button 
-            onClick={scrollRight} 
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6 lg:-mr-8"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* Indicators */}
-        <div className="flex justify-center gap-2 mt-8">
-          {Array.from({ length: Math.max(1, maxSlide + 1) }).map((_, i) => (
-            <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
-          ))}
-        </div>
-      </>
-    )}
+            <button
+              onClick={scrollRight}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6 lg:-mr-8"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -174,8 +175,7 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
     <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
       <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
         <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => handleImageError(e, product.name)} />
-        
-        {/* Brand Name - Centered on Image */}
+
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
           <button
             onClick={(e) => { e.stopPropagation(); onBrandNavigate(); }}
@@ -184,11 +184,9 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
             {product.brand || product.name || 'Product'}
           </button>
         </div>
-        
-        {/* Sale Badge */}
+
         {product.isSale && <span className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white text-xs rounded-full">Sale</span>}
-        
-        {/* Quick Actions */}
+
         <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
           <button onClick={onWishlist} className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${isInWishlist ? 'bg-gold text-white' : 'bg-white text-gray-700 hover:bg-gold hover:text-white'}`}>
             <Heart className={`w-4 h-4 ${isInWishlist ? 'fill-current' : ''}`} />
@@ -198,7 +196,6 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
           </button>
         </div>
 
-        {/* Add to Cart */}
         <div className="absolute bottom-0 left-0 right-0 p-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
           <button onClick={onAddToCart} className="w-full py-3 bg-black text-white text-sm font-medium rounded-full flex items-center justify-center gap-2 hover:bg-gold transition-colors duration-300">
             <ShoppingBag className="w-4 h-4" /> Add to Cart
@@ -206,7 +203,6 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
         </div>
       </div>
 
-      {/* Product Info */}
       <div className="p-4">
         <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">
           <button
