@@ -80,14 +80,6 @@ export default function DesignersOnDiscount() {
     setIsAutoPlaying(false);
   }, [maxSlide]);
 
-  const scrollRight = useCallback(() => {
-    setCurrentSlide((prev) => {
-      if (prev >= maxSlide) return 0;
-      return prev + 1;
-    });
-    setIsAutoPlaying(false);
-  }, [maxSlide]);
-
   const handleWishlist = (product: any, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!localStorage.getItem('jwt_token')) {

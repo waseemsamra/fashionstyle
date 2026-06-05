@@ -85,7 +85,7 @@ export default function LeadingBrandsCMS() {
         
         const batchPromises = batch.map(async (product) => {
           const shouldFlag = uniqueIds.includes(product.id);
-          const payload = { ...product, isLeadingBrand: shouldFlag };
+          const payload = { isLeadingBrand: shouldFlag };
           
           try {
             const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
