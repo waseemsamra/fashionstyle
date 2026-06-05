@@ -6,6 +6,7 @@ import NewArrivals from '@/components/sections/NewArrivals';
 import WeddingTales from '@/components/sections/WeddingTales';
 import DesignersOnDiscount from '@/components/sections/DesignersOnDiscount';
 import SummerCollection from '@/components/sections/SummerCollection';
+import TrendingNow from '@/components/sections/TrendingNow';
 import About from '@/components/sections/About';
 import Testimonials from '@/components/sections/Testimonials';
 import Newsletter from '@/components/sections/Newsletter';
@@ -21,6 +22,7 @@ export default function Home() {
       <WeddingTales />
       <DesignersOnDiscount />
       <SummerCollection />
+      <TrendingNow />
       <About />
       <Testimonials />
       <Newsletter />
