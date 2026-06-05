@@ -4,9 +4,10 @@ import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-reac
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { toast } from 'sonner';
-import { api } from '@/services/api';
 import { getProductUrl } from '@/utils/productUrl';
 import { getProductImage, handleImageError } from '@/utils/productImage';
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://ckj2m3ffztqonucij3mlh7s4mu0qafmg.lambda-url.us-east-1.on.aws';
 
 export default function SummerCollection() {
   const navigate = useNavigate();
@@ -20,7 +21,8 @@ export default function SummerCollection() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const data = await api.getAllProducts();
+        const response = await fetch(`${API_URL}/products?limit=2000`);
+        const data = await response.json();
         let productsArray = (data.items || []).filter((p: any) => p && p.id);
         
         // First try to load products with isSummerCollection flag
@@ -35,7 +37,7 @@ export default function SummerCollection() {
           }
         }
         
-        // If still no products, fall back to summer/new arrival products
+        // If still no products, fall back to new arrival products
         if (summer.length === 0) {
           summer = productsArray.filter((p: any) => p && p.isNew).slice(0, 20);
         }
