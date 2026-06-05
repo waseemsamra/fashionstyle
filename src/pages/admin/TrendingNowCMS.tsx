@@ -7,7 +7,7 @@ import { api } from '@/services/api';
 import { getProductImage, handleImageError } from '@/utils/productImage';
 
 const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://u3c5ywl3vp3gz3tkcczpr5pztm0ozkbc.lambda-url.us-east-1.on.aws';
-const MAX_TRENDING = 8;
+const MAX_TRENDING = 20;
 
 export default function TrendingNowCMS() {
   const navigate = useNavigate();

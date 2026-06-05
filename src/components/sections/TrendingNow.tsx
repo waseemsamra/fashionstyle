@@ -42,7 +42,7 @@ export default function TrendingNow() {
     loadProducts();
   }, []);
 
-  const cardsPerView = 2;
+  const cardsPerView = typeof window !== 'undefined' ? (window.innerWidth < 768 ? 2 : 4) : 2;
   const duplicatedProducts = useMemo(() => {
     if (products.length <= cardsPerView) return products;
     return [...products, ...products];
@@ -123,7 +123,7 @@ export default function TrendingNow() {
             <div className="overflow-hidden">
               <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * (100 / cardsPerView)}%)` }}>
                 {duplicatedProducts.map((product, idx) => (
-                  <div key={`${product.id}-${idx}`} className={`flex-shrink-0 ${cardsPerView === 2 ? 'w-1/2' : 'w-1/3'} px-3`}>
+                  <div key={`${product.id}-${idx}`} className={`flex-shrink-0 ${cardsPerView === 4 ? 'w-1/4' : 'w-1/2'} px-3`}>
                     <ProductCard
                       product={product}
                       onWishlist={(e: any) => handleWishlist(product, e)}
