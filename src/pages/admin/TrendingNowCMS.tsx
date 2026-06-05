@@ -1,122 +1,223 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, ArrowLeft, Save, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Search, Check, ArrowLeft, Save, Grid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/services/api';
+import { getProductImage, handleImageError } from '@/utils/productImage';
 
 const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || 'https://u3c5ywl3vp3gz3tkcczpr5pztm0ozkbc.lambda-url.us-east-1.on.aws';
+const MAX_TRENDING = 8;
 
 export default function TrendingNowCMS() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'brands' | 'products'>('brands');
-  const [allBrands, setAllBrands] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
-const loadData = async () => {
-     try {
-       setLoading(true);
-       const data = await api.getAllProducts();
-       const productsArray = (data.items || []).filter((p: any) => p && p.id);
-       
-      const uniqueBrands = [...new Set(productsArray.map((p: any) => p.brand).filter(Boolean))] as string[];
-      setAllBrands(uniqueBrands);
-      setProducts(productsArray);
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getAllProducts();
+      const productsArray = (data.items || []).filter((p: any) => p && p.id);
+      setAllProducts(productsArray);
       
-      const collectionProducts = productsArray.filter((p: any) => p.isTrendingNow);
-      const selectedBrandSet = new Set(collectionProducts.map((p: any) => p.brand).filter(Boolean) as string[]);
-      setSelectedBrands([...selectedBrandSet]);
-      setSelectedProductIds(collectionProducts.map((p: any) => p.id));
+      const trending = productsArray.filter((p: any) => p.isTrendingNow);
+      setSelectedIds(trending.map((p: any) => p.id));
     } catch (error) {
-      console.error('Failed to load data:', error);
+      console.error('Failed to load products:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleBrand = (brand: string) => {
-    setSelectedBrands(prev => prev.includes(brand) ? prev.filter(b => b !== brand) : [...prev, brand]);
-  };
-
   const toggleProduct = (productId: string) => {
-    setSelectedProductIds(prev => {
-      if (prev.includes(productId)) return prev.filter(id => id !== productId);
-      if (prev.length >= 8) { alert('You can only select up to 8 products'); return prev; }
-      return [...prev, productId];
+    setSelectedIds(prev => {
+      if (prev.includes(productId)) {
+        return prev.filter(id => id !== productId);
+      } else {
+        if (prev.length >= MAX_TRENDING) {
+          alert(`You can only select up to ${MAX_TRENDING} products. Please deselect one first.`);
+          return prev;
+        }
+        return [...prev, productId];
+      }
     });
   };
 
-const handleSave = async () => {
+  const handleSave = async () => {
     try {
       setSaving(true);
-      localStorage.setItem('trendingNowProducts', JSON.stringify(selectedProductIds));
       const token = localStorage.getItem('jwt_token');
-      if (!token) { alert('✅ Saved locally! Please login to save to backend.'); return; }
-      const updatePromises = products.map(async (product: any) => {
-        const shouldFlag = selectedProductIds.includes(product.id);
+      
+      if (!token) {
+        alert('Please login as admin first');
+        navigate('/admin/login');
+        return;
+      }
+      
+      const updatePromises = allProducts.map(async (product) => {
+        const shouldFlag = selectedIds.includes(product.id);
         if (product.isTrendingNow !== shouldFlag) {
-          return fetch(`${ADMIN_API_URL}/products/${product.id}`, {
-            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}` },
-            body: JSON.stringify({ ...product, isTrendingNow: shouldFlag })
+          const response = await fetch(`${ADMIN_API_URL}/products/${product.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token.replace(/^["']|["']$/g, '')}`
+            },
+            body: JSON.stringify({
+              ...product,
+              isTrendingNow: shouldFlag
+            })
           });
+          if (!response.ok) {
+            console.error('Failed to update product:', product.id, response.status);
+          }
+          return response;
         }
-      });
-      await Promise.all(updatePromises);
-      alert(`✅ Successfully saved ${selectedProductIds.length} products to Trending Now!`);
+      }).filter(Boolean);
+      
+      if (updatePromises.length > 0) {
+        await Promise.all(updatePromises);
+      }
+      alert(`✅ Successfully saved ${selectedIds.length} products!`);
     } catch (error: any) {
       alert('Failed to save: ' + (error.message || 'Unknown error'));
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
-const filteredProducts = step === 'products' ? products.filter(p => p && p.name && p.brand && selectedBrands.includes(p.brand) && (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.brand.toLowerCase().includes(searchTerm.toLowerCase()))) : [];
-const filteredBrands = allBrands.filter(brand => brand && brand.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredProducts = allProducts.filter(product => {
+    if (!product || !product.name) return false;
+    const searchLower = searchTerm.toLowerCase();
+    const nameMatch = product.name.toLowerCase().includes(searchLower);
+    const brandMatch = product.brand && product.brand.toLowerCase().includes(searchLower);
+    const categoryMatch = product.category && product.category.toLowerCase().includes(searchLower);
+    const skuMatch = product.sku && product.sku.toLowerCase().includes(searchLower);
+    return nameMatch || brandMatch || categoryMatch || skuMatch;
+  });
 
-return (
+  return (
     <div className="min-h-screen bg-beige-100 py-12">
       <div className="container mx-auto px-4 max-w-7xl">
         <Button variant="ghost" onClick={() => navigate('/admin/dashboard')} className="mb-4">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Admin Dashboard
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Admin Dashboard
         </Button>
         
-        <div className="flex items-center justify-center mb-8">
-          <div className="flex items-center gap-4">
-            <div className={`flex items-center gap-2 px-6 py-3 rounded-full ${step === 'brands' ? 'bg-gold text-white' : 'bg-gray-200'}`}>
-              <span className="font-bold">1</span><span>Select Brands</span>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Trending Now</h1>
+            <p className="text-gray-600">Select up to {MAX_TRENDING} products to feature in Trending Now ({allProducts.length} total available)</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-gray-600">Selected</p>
+            <p className={`text-2xl font-bold ${selectedIds.length >= MAX_TRENDING ? 'text-red-600' : 'text-gold'}`}>
+              {selectedIds.length} / {MAX_TRENDING}
+            </p>
+          </div>
+          <Button onClick={handleSave} disabled={saving || selectedIds.length === 0} className="bg-gold hover:bg-gold/90 disabled:opacity-50">
+            <Save className="w-4 h-4 mr-2" />
+            {saving ? 'Saving...' : 'Save Collection'}
+          </Button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4 mb-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input placeholder="Search products..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
             </div>
-            <ChevronRight className="w-6 h-6 text-gray-400" />
-            <div className={`flex items-center gap-2 px-6 py-3 rounded-full ${step === 'products' ? 'bg-gold text-white' : 'bg-gray-200'}`}>
-              <span className="font-bold">2</span><span>Select Products</span>
+            <div className="flex items-center gap-2 border-l pl-4">
+              <Button variant={viewMode === 'grid' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('grid')}>
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button variant={viewMode === 'list' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('list')}>
+                <List className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{step === 'brands' ? 'Step 1: Select Brands' : 'Step 2: Select Products'}</h1>
-            <p className="text-gray-600">{step === 'brands' ? `Choose brands for Trending Now (${allBrands.length} brands)` : `Choose up to 8 products from ${selectedBrands.length} brands`}</p>
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading products...</p>
           </div>
-          <div className="flex items-center gap-4">
-            {step === 'products' && <Button variant="outline" onClick={() => setStep('brands')}><ChevronLeft className="w-4 h-4 mr-2" />Back</Button>}
-            <div className="text-right"><p className="text-sm text-gray-600">{step === 'brands' ? 'Selected' : 'Selected'}</p><p className={`text-2xl font-bold ${step === 'brands' ? 'text-gold' : selectedProductIds.length >= 8 ? 'text-red-600' : 'text-gold'}`}>{step === 'brands' ? selectedBrands.length : `${selectedProductIds.length} / 8`}</p></div>
-            <Button onClick={step === 'brands' ? () => setStep('products') : handleSave} disabled={saving || (step === 'brands' && selectedBrands.length === 0)} className="bg-gold hover:bg-gold/90 disabled:opacity-50"><Save className="w-4 h-4 mr-2" />{saving ? 'Saving...' : step === 'brands' ? 'Next' : 'Save'}</Button>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} isSelected={selectedIds.includes(product.id)} onToggle={() => toggleProduct(product.id)} disabled={selectedIds.length >= MAX_TRENDING && !selectedIds.includes(product.id)} />
+            ))}
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /><Input placeholder={step === 'brands' ? "Search brands..." : "Search products..."} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" /></div>
-        </div>
-        
-        {loading ? <div className="text-center py-12"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gold mx-auto mb-4"></div><p className="text-gray-600">Loading...</p></div> : step === 'brands' ? <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{filteredBrands.map((brand) => <div key={brand} className={`bg-white rounded-xl p-6 text-center border-2 transition-all cursor-pointer ${selectedBrands.includes(brand) ? 'border-gold bg-gold/5' : 'border-gray-200 hover:border-gold/50'}`} onClick={() => toggleBrand(brand)}><h3 className="font-semibold text-lg uppercase mb-3">{brand}</h3><span className={`inline-block px-4 py-2 rounded-full text-xs font-semibold uppercase ${selectedBrands.includes(brand) ? 'bg-gold text-white' : 'bg-gray-200 text-gray-700'}`}>{selectedBrands.includes(brand) ? 'SELECTED' : 'SELECT'}</span></div>)}</div> : <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">{filteredProducts.map((product: any) => <div key={product.id} className={`bg-white rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${selectedProductIds.includes(product.id) ? 'border-gold bg-gold/5' : 'border-gray-200 hover:border-gold/50'}`} onClick={() => toggleProduct(product.id)}><div className="aspect-[3/4] overflow-hidden bg-gray-100"><img src={product.image || '/placeholder.png'} alt={product.name} className="w-full h-full object-cover" /></div><div className="p-4"><p className="text-xs text-gray-500 uppercase mb-1">{product.brand || ''}</p><h3 className="font-semibold text-sm mb-2 line-clamp-2">{product.name}</h3><div className="flex items-center justify-between"><span className="font-bold text-gold">${product.price}</span><span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedProductIds.includes(product.id) ? 'bg-gold text-white' : 'bg-gray-200 text-gray-700'}`}>{selectedProductIds.includes(product.id) ? '✓' : '+'}</span></div></div></div>)}</div>}
-        
-        {((step === 'brands' && filteredBrands.length === 0) || (step === 'products' && filteredProducts.length === 0)) && <div className="text-center py-12"><p className="text-gray-600">{step === 'brands' ? 'No brands found.' : selectedBrands.length === 0 ? 'Select a brand first.' : 'No products found.'}</p></div>}
+        ) : (
+          <div className="bg-white rounded-lg shadow divide-y">
+            {filteredProducts.map((product) => (
+              <ProductListItem key={product.id} product={product} isSelected={selectedIds.includes(product.id)} onToggle={() => toggleProduct(product.id)} disabled={selectedIds.length >= MAX_TRENDING && !selectedIds.includes(product.id)} />
+            ))}
+          </div>
+        )}
+
+        {filteredProducts.length === 0 && !loading && (
+          <div className="text-center py-12">
+            <p className="text-gray-600">No products found matching your search.</p>
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+function ProductCard({ product, isSelected, onToggle, disabled }: any) {
+  return (
+    <div className={`bg-white rounded-lg shadow overflow-hidden transition-all ${disabled ? 'opacity-50' : 'hover:shadow-lg'}`}>
+      <div className="relative aspect-[3/4] bg-beige-50">
+        <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover" onError={(e) => handleImageError(e, product.name)} />
+        {isSelected && <div className="absolute top-2 left-2 px-3 py-1 bg-gold text-white text-xs font-medium rounded-full">Selected</div>}
+        <button onClick={onToggle} disabled={disabled && !isSelected} className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all ${isSelected ? 'bg-gold text-white' : disabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gold hover:text-white'}`}>
+          {isSelected ? <Check className="w-4 h-4" /> : <span className="text-lg font-bold">+</span>}
+        </button>
+      </div>
+      <div className="p-4">
+        <h3 className="font-semibold text-sm mb-1 line-clamp-2">{product.name}</h3>
+        <p className="text-xs text-gray-500 mb-2">{product.brand || ''} • {product.category || ''}</p>
+        <p className="text-gold font-bold">${product.price}</p>
+      </div>
+    </div>
+  );
+}
+
+function ProductListItem({ product, isSelected, onToggle, disabled }: any) {
+  return (
+    <div className={`p-4 flex items-center gap-4 transition-all ${disabled ? 'opacity-50' : 'hover:bg-gray-50'}`}>
+      <div className="w-20 h-24 bg-beige-50 rounded overflow-hidden flex-shrink-0">
+        <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover" onError={(e) => handleImageError(e, product.name)} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold line-clamp-1">{product.name}</h3>
+        <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+          <span>{product.brand || ''}</span>
+          <span>•</span>
+          <span>{product.category || ''}</span>
+          <span>•</span>
+          <span>SKU: {product.sku || ''}</span>
+        </div>
+      </div>
+      <div className="text-right">
+        <p className="text-gold font-bold text-lg">${product.price}</p>
+        {isSelected && <p className="text-xs text-gold mt-1">Selected</p>}
+      </div>
+      <button onClick={onToggle} disabled={disabled && !isSelected} className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isSelected ? 'bg-gold text-white' : disabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gold hover:text-white'}`}>
+        {isSelected ? <Check className="w-5 h-5" /> : <span className="text-xl font-bold">+</span>}
+      </button>
     </div>
   );
 }
