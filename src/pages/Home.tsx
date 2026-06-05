@@ -5,6 +5,7 @@ import FeaturedCarousel from '@/components/sections/FeaturedCarousel';
 import NewArrivals from '@/components/sections/NewArrivals';
 import WeddingTales from '@/components/sections/WeddingTales';
 import DesignersOnDiscount from '@/components/sections/DesignersOnDiscount';
+import SummerCollection from '@/components/sections/SummerCollection';
 import About from '@/components/sections/About';
 import Testimonials from '@/components/sections/Testimonials';
 import Newsletter from '@/components/sections/Newsletter';
@@ -19,6 +20,7 @@ export default function Home() {
       <NewArrivals />
       <WeddingTales />
       <DesignersOnDiscount />
+      <SummerCollection />
       <About />
       <Testimonials />
       <Newsletter />
