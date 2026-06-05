@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
@@ -24,14 +24,13 @@ export default function SummerCollection() {
         const response = await fetch(`${API_URL}/products?limit=2000`);
         const data = await response.json();
         let productsArray = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
-        
+
         let summer = productsArray.filter((p: any) => p.isSummerCollection && p.name && p.name !== 'undefined');
-        
-        
+
         if (summer.length === 0) {
           summer = productsArray.filter((p: any) => p && p.isNew).slice(0, 20);
         }
-        
+
         setProducts(summer.slice(0, 20));
       } catch (error) {
         console.error('Error loading summer collection:', error);
@@ -43,25 +42,31 @@ export default function SummerCollection() {
     loadProducts();
   }, []);
 
+  const cardsPerView = typeof window !== 'undefined' ? (window.innerWidth < 768 ? 2 : 4) : 2;
+  const duplicatedProducts = useMemo(() => {
+    if (products.length <= cardsPerView) return products;
+    return [...products, ...products];
+  }, [products]);
+
+  const maxSlide = duplicatedProducts.length - cardsPerView;
+
   useEffect(() => {
-    if (!isAutoPlaying || products.length === 0) return;
-    const maxSlide = Math.max(0, products.length - Math.min(2, products.length));
+    if (!isAutoPlaying || duplicatedProducts.length <= cardsPerView) return;
     const interval = setInterval(() => {
-      setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
+      setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
     }, 4000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, products.length]);
+  }, [isAutoPlaying, duplicatedProducts.length, maxSlide]);
 
-  const scrollLeft = () => {
-    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(2, products.length)) : prev - 1);
+  const scrollLeft = useCallback(() => {
+    setCurrentSlide((prev) => (prev <= 0 ? maxSlide : prev - 1));
     setIsAutoPlaying(false);
-  };
+  }, [maxSlide]);
 
-  const scrollRight = () => {
-    const maxSlide = Math.max(0, products.length - Math.min(2, products.length));
-    setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
+  const scrollRight = useCallback(() => {
+    setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
     setIsAutoPlaying(false);
-  };
+  }, [maxSlide]);
 
   const handleWishlist = (product: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -77,8 +82,6 @@ export default function SummerCollection() {
       toast.success(`Added ${product.name}`);
     }
   };
-
-  const maxSlide = Math.max(0, products.length - Math.min(4, products.length));
 
   return (
     <section className="section-padding bg-white">
@@ -123,9 +126,9 @@ export default function SummerCollection() {
 
               {/* Slides Container */}
               <div className="overflow-hidden">
-                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 50}%)` }}>
-                  {products.map((product) => (
-                    <div key={product.id} className="min-w-[50%] md:min-w-[25%] px-3">
+                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * (100 / cardsPerView)}%)` }}>
+                  {duplicatedProducts.map((product, idx) => (
+                    <div key={`${product.id}-${idx}`} className={`flex-shrink-0 ${cardsPerView === 4 ? 'w-1/4' : 'w-1/2'} px-3`}>
                       <ProductCard
                         product={product}
                         onWishlist={(e: any) => handleWishlist(product, e)}
@@ -149,11 +152,13 @@ export default function SummerCollection() {
             </div>
 
             {/* Indicators */}
-            <div className="flex justify-center gap-2 mt-8">
-              {Array.from({ length: Math.max(1, maxSlide + 1) }).map((_, i) => (
-                <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
-              ))}
-            </div>
+            {duplicatedProducts.length > cardsPerView && (
+              <div className="flex justify-center gap-2 mt-8">
+                {Array.from({ length: Math.max(1, maxSlide + 1) }).map((_, i) => (
+                  <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
