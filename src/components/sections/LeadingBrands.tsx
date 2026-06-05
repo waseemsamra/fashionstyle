@@ -67,6 +67,10 @@ export default function LeadingBrands() {
   const maxSlide = Math.max(0, brandProducts.length - 2);
 
   useEffect(() => {
+    return () => {};
+  }, []);
+
+  useEffect(() => {
     if (!isAutoPlaying || brandProducts.length <= 2) return;
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
