@@ -27,6 +27,14 @@ const Dashboard = lazy(() => import('@/pages/admin/Dashboard'));
 const FeaturedCollection = lazy(() => import('@/pages/admin/FeaturedCollection'));
 const WeddingTalesCMS = lazy(() => import('@/pages/admin/WeddingTalesCMS'));
 const DesignersDiscountCMS = lazy(() => import('@/pages/admin/DesignersDiscountCMS'));
+const SummerCollectionCMS = lazy(() => import('@/pages/admin/SummerCollectionCMS'));
+const TrendingNowCMS = lazy(() => import('@/pages/admin/TrendingNowCMS'));
+const LeadingBrandsCMS = lazy(() => import('@/pages/admin/LeadingBrandsCMS'));
+const DesignersSpotlightCMS = lazy(() => import('@/pages/admin/DesignersSpotlightCMS'));
+const BestSellingDesignersCMS = lazy(() => import('@/pages/admin/BestSellingDesignersCMS'));
+const ReadyToShipCMS = lazy(() => import('@/pages/admin/ReadyToShipCMS'));
+const HandPickedCMS = lazy(() => import('@/pages/admin/HandPickedCMS'));
+const CelebrityClosetCMS = lazy(() => import('@/pages/admin/CelebrityClosetCMS'));
 const Users = lazy(() => import('@/pages/admin/Users'));
 const Profile = lazy(() => import('@/pages/admin/Profile'));
 const AdminOrders = lazy(() => import('@/pages/admin/Orders'));
@@ -66,6 +74,14 @@ function Layout() {
               <Route path="featured" element={<FeaturedCollection />} />
               <Route path="wedding-tales" element={<WeddingTalesCMS />} />
               <Route path="designers-discount" element={<DesignersDiscountCMS />} />
+              <Route path="summer-collection" element={<SummerCollectionCMS />} />
+              <Route path="trending-now" element={<TrendingNowCMS />} />
+              <Route path="leading-brands" element={<LeadingBrandsCMS />} />
+              <Route path="designers-spotlight" element={<DesignersSpotlightCMS />} />
+              <Route path="best-selling-designers" element={<BestSellingDesignersCMS />} />
+              <Route path="ready-to-ship" element={<ReadyToShipCMS />} />
+              <Route path="hand-picked" element={<HandPickedCMS />} />
+              <Route path="celebrity-closet" element={<CelebrityClosetCMS />} />
               <Route path="users" element={<Users />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="orders/:orderId" element={<AdminOrderDetails />} />
