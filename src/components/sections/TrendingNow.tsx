@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingBag, Heart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
@@ -24,13 +24,13 @@ export default function TrendingNow() {
         const response = await fetch(`${API_URL}/products?limit=2000`);
         const data = await response.json();
         let productsArray = (data.items || []).filter((p: any) => p && p.id && p.name && p.name !== 'undefined' && p.price != null);
-        
+
         let trending = productsArray.filter((p: any) => p.isTrendingNow && p.name && p.name !== 'undefined');
-        
+
         if (trending.length === 0) {
           trending = productsArray.filter((p: any) => p && p.isNew).slice(0, 20);
         }
-        
+
         setProducts(trending.slice(0, 20));
       } catch (error) {
         console.error('Error loading trending now:', error);
@@ -42,25 +42,31 @@ export default function TrendingNow() {
     loadProducts();
   }, []);
 
+  const cardsPerView = 2;
+  const duplicatedProducts = useMemo(() => {
+    if (products.length <= cardsPerView) return products;
+    return [...products, ...products];
+  }, [products]);
+
+  const maxSlide = duplicatedProducts.length - cardsPerView;
+
   useEffect(() => {
-    if (!isAutoPlaying || products.length === 0) return;
-    const maxSlide = Math.max(0, products.length - Math.min(2, products.length));
+    if (!isAutoPlaying || duplicatedProducts.length <= cardsPerView) return;
     const interval = setInterval(() => {
-      setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
+      setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
     }, 4000);
     return () => clearInterval(interval);
-  }, [isAutoPlaying, products.length]);
+  }, [isAutoPlaying, duplicatedProducts.length, maxSlide]);
 
-  const scrollLeft = () => {
-    setCurrentSlide(prev => prev <= 0 ? Math.max(0, products.length - Math.min(2, products.length)) : prev - 1);
+  const scrollLeft = useCallback(() => {
+    setCurrentSlide((prev) => (prev <= 0 ? maxSlide : prev - 1));
     setIsAutoPlaying(false);
-  };
+  }, [maxSlide]);
 
-  const scrollRight = () => {
-    const maxSlide = Math.max(0, products.length - Math.min(2, products.length));
-    setCurrentSlide(prev => prev >= maxSlide ? 0 : prev + 1);
+  const scrollRight = useCallback(() => {
+    setCurrentSlide((prev) => (prev >= maxSlide ? 0 : prev + 1));
     setIsAutoPlaying(false);
-  };
+  }, [maxSlide]);
 
   const handleWishlist = (product: any, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -76,8 +82,6 @@ export default function TrendingNow() {
       toast.success(`Added ${product.name}`);
     }
   };
-
-  const maxSlide = Math.max(0, products.length - Math.min(2, products.length));
 
   return (
     <section className="section-padding bg-white">
@@ -108,46 +112,38 @@ export default function TrendingNow() {
             </p>
           </div>
         ) : (
-          <>
-            <div className="relative">
-              <button 
-                onClick={scrollLeft} 
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
+          <div className="relative">
+            <button
+              onClick={scrollLeft}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -ml-6 lg:-ml-8"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
 
-              <div className="overflow-hidden">
-                <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * 50}%)` }}>
-                  {products.map((product) => (
-                    <div key={product.id} className="min-w-[50%] md:min-w-[25%] px-3">
-                      <ProductCard
-                        product={product}
-                        onWishlist={(e: any) => handleWishlist(product, e)}
-                        isInWishlist={isInWishlist(product.id)}
-                        onNavigate={() => navigate(getProductUrl(product))}
-                        onBrandNavigate={() => navigate(`/brand/${encodeURIComponent(product.brand)}`)}
-                        onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name && product.name !== 'undefined' ? product.name : 'Product'} added!`); }}
-                      />
-                    </div>
-                  ))}
-                </div>
+            <div className="overflow-hidden">
+              <div className="flex transition-transform duration-500" style={{ transform: `translateX(-${currentSlide * (100 / cardsPerView)}%)` }}>
+                {duplicatedProducts.map((product, idx) => (
+                  <div key={`${product.id}-${idx}`} className={`flex-shrink-0 ${cardsPerView === 2 ? 'w-1/2' : 'w-1/3'} px-3`}>
+                    <ProductCard
+                      product={product}
+                      onWishlist={(e: any) => handleWishlist(product, e)}
+                      isInWishlist={isInWishlist(product.id)}
+                      onNavigate={() => navigate(getProductUrl(product))}
+                      onBrandNavigate={() => navigate(`/brand/${encodeURIComponent(product.brand)}`)}
+                      onAddToCart={() => { addToCart(product); setIsCartOpen(true); toast.success(`${product.name && product.name !== 'undefined' ? product.name : 'Product'} added!`); }}
+                    />
+                  </div>
+                ))}
               </div>
-
-              <button 
-                onClick={scrollRight} 
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6 lg:-mr-8"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
             </div>
 
-            <div className="flex justify-center gap-2 mt-8">
-              {Array.from({ length: Math.max(1, maxSlide + 1) }).map((_, i) => (
-                <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
-              ))}
-            </div>
-          </>
+            <button
+              onClick={scrollRight}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-20 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center hover:bg-gold hover:text-white transition-all duration-300 -mr-6 lg:-mr-8"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
+          </div>
         )}
       </div>
     </section>
@@ -159,7 +155,7 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
     <div className="group bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-hover transition-all duration-500 hover:-translate-y-2">
       <div className="relative aspect-[3/4] overflow-hidden bg-beige-50 cursor-pointer" onClick={onNavigate}>
         <img src={getProductImage(product)} alt={product.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onError={(e) => handleImageError(e, product.name)} />
-        
+
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
           <button
             onClick={(e) => { e.stopPropagation(); onBrandNavigate(); }}
@@ -168,9 +164,9 @@ function ProductCard({ product, onWishlist, isInWishlist, onNavigate, onBrandNav
              {product.brand || ''}
           </button>
         </div>
-        
+
         {product.isSale && <span className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white text-xs rounded-full">Sale</span>}
-        
+
         <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
           <button onClick={onWishlist} className={`w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all duration-300 ${isInWishlist ? 'bg-gold text-white' : 'bg-white text-gray-700 hover:bg-gold hover:text-white'}`}>
             <Heart className={`w-4 h-4 ${isInWishlist ? 'fill-current' : ''}`} />
