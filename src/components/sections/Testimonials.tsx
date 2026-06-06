@@ -129,22 +129,6 @@ export default function Testimonials() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              {/* Dots */}
-              <div className="flex items-center gap-2">
-                {testimonials.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveIndex(index)}
-                    className={`transition-all duration-300 ${
-                      index === activeIndex
-                        ? 'w-8 h-2 bg-gold rounded-full'
-                        : 'w-2 h-2 bg-gray-300 rounded-full hover:bg-gold/50'
-                    }`}
-                    aria-label={`Go to testimonial ${index + 1}`}
-                  />
-                ))}
-              </div>
-
               <button
                 onClick={goToNext}
                 className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-black hover:bg-gold hover:text-white transition-colors duration-300"

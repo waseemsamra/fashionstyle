@@ -121,12 +121,6 @@ useEffect(() => {
           </button>
         </div>
 
-        <div className="flex justify-center gap-2 mt-8">
-          {Array.from({ length: Math.max(1, products.length - 3) }).map((_, i) => (
-            <button key={i} onClick={() => { setCurrentSlide(i); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all ${currentSlide === i ? 'bg-gold w-8' : 'bg-gray-300'}`} />
-          ))}
-        </div>
-
         <div className="text-center mt-12">
           <button
             onClick={() => navigate('/wedding-tales')}

@@ -282,15 +282,6 @@ useEffect(() => {
           )}
         </div>
 
-        {/* Indicators */}
-        {products.length > 4 && (
-          <div className="flex justify-center gap-2 mt-8">
-            {Array.from({ length: totalSlides }).map((_, index) => (
-              <button key={index} onClick={() => { setCurrentSlide(index); setIsAutoPlaying(false); }} className={`w-3 h-3 rounded-full transition-all duration-300 ${currentSlide === index ? 'bg-gold w-8' : 'bg-gray-300'}`} />
-            ))}
-          </div>
-        )}
-
         {/* View All */}
         <div className={`text-center mt-12 transition-all duration-700 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <a href="#categories" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent text-black border border-black font-medium text-sm tracking-wide rounded-full transition-all duration-300 hover:bg-black hover:text-white">
