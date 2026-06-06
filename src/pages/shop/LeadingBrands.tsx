@@ -155,7 +155,7 @@ export default function LeadingBrandsShop() {
                 <p className="text-gray-500 text-xs uppercase mb-1">{product.brand}</p>
                 <h3
                   onClick={() => navigate(getProductUrl(product))}
-                  className="font-semibold text-lg mb-2 cursor-pointer hover:text-gold transition"
+                   className="text-xs sm:text-sm font-semibold text-black mb-2 cursor-pointer hover:text-gold transition"
                 >
                   {product.name}
                 </h3>
