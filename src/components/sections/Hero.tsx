@@ -62,7 +62,7 @@ export default function Hero() {
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full mb-6 animate-fade-in-up">
             <Sparkles className="w-4 h-4 text-gold" />
             <span className="text-white/90 text-sm font-medium tracking-wide">
-              New Collection 2024
+               New Collection 2026
             </span>
           </div>
 
