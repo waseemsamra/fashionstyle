@@ -10,6 +10,7 @@ import TrendingNow from '@/components/sections/TrendingNow';
 import LeadingBrands from '@/components/sections/LeadingBrands';
 import DesignersSpotlight from '@/components/sections/DesignersSpotlight';
 import HandPicked from '@/components/sections/HandPicked';
+import ReadyToShip from '@/components/sections/ReadyToShip';
 import CelebrityCloset from '@/components/sections/CelebrityCloset';
 import About from '@/components/sections/About';
 import Testimonials from '@/components/sections/Testimonials';
@@ -30,6 +31,7 @@ export default function Home() {
       <LeadingBrands />
       <DesignersSpotlight />
       <HandPicked />
+      <ReadyToShip />
       <CelebrityCloset />
       <About />
       <Testimonials />

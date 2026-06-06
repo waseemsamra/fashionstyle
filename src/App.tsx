@@ -19,6 +19,7 @@ const TrendingNow = lazy(() => import('@/pages/shop/TrendingNow'));
 const LeadingBrands = lazy(() => import('@/pages/shop/LeadingBrands'));
 const DesignersSpotlight = lazy(() => import('@/pages/shop/DesignersSpotlight'));
 const HandPicked = lazy(() => import('@/pages/shop/HandPicked'));
+const ReadyToShip = lazy(() => import('@/pages/shop/ReadyToShip'));
 const CelebrityCloset = lazy(() => import('@/pages/shop/CelebrityCloset'));
 const ProductDetail = lazy(() => import('@/pages/shop/ProductDetail'));
 const Wishlist = lazy(() => import('@/pages/shop/Wishlist'));
@@ -69,6 +70,7 @@ function Layout() {
               <Route path="/leading-brands" element={<LeadingBrands />} />
               <Route path="/designers-spotlight" element={<DesignersSpotlight />} />
               <Route path="/hand-picked" element={<HandPicked />} />
+              <Route path="/ready-to-ship" element={<ReadyToShip />} />
               <Route path="/celebrity-closet" element={<CelebrityCloset />} />
               <Route path="/product/:slug" element={<ProductDetail />} />
             <Route path="/wishlist" element={<Wishlist />} />
